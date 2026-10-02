@@ -19,7 +19,7 @@ Explore how an AI product is built, inspect the decisions inside it, evaluate it
 | Inspect an agent's structure | [Citadel Studio](apps/citadel-studio/) | Source maps kept separate from observed execution evidence |
 | Evaluate quality and cost | [Blindspot](apps/blindspot/) and [Model Arena](apps/model-arena/) | Traces, comparisons, grading and explicit review gates |
 | Give a coding agent a reusable capability | [Skills](#agent-skills) | Persistent context, review, workflow mapping, presentation templating and analytics |
-| Learn visually, without an API key | [Visual Learning Guide](learn/index.html) | Interactive explainers, an AI concept atlas and paired ML notebooks |
+| Learn visually, without an API key | [Visual Learning Guide](learn/index.html) | 50 selected visual guides and paired ML notebooks |
 
 ## Run the collection browser
 
@@ -86,13 +86,13 @@ Install only the skills you need, following their individual instructions. The d
 
 - **[Post-Training Lab](labs/post-training/):** evaluation-first CPT, SFT, DPO, RAG and refusal-training experiments. Includes fictional data, visible notebook steps, recorded results and their limitations. Existing results are not a claim that every experiment was rerun for this collection.
 - **[ESCI SFT Dataset Builder](labs/esci-sft/):** prepare pointwise and listwise training examples, inspect data and score retrieval relevance. Download the source dataset yourself; its upstream license and notice are retained.
-- **[ML Foundations](labs/ml-foundations/index.html):** 43 topic labs pairing an HTML explanation with a notebook, from leakage and metrics to trees, neural networks, diffusion and model comparison.
+- **[ML Foundations](labs/ml-foundations/index.html):** 26 selected topic labs pairing an HTML explanation with a notebook, from leakage and metrics to probabilistic models, neural networks and model comparison.
 
 Training notebooks can download datasets or model weights, use substantial memory and take time to run. Inspect the setup cells first. Notebook outputs in this collection are cleared; published result documents retain their explicitly stated scope.
 
 ## Visual Learning Guide
 
-**29 interactive guides, 129 concept diagrams, and 43 notebook/HTML labs.**
+**50 selected lessons: 24 visual guides and 26 notebook/HTML labs.**
 
 [Open the searchable guide](learn/index.html) or browse its [source catalog](learn/catalog.json).
 
@@ -101,9 +101,10 @@ Training notebooks can download datasets or model weights, use substantial memor
 - **Agent systems:** architecture decisions, orchestration, memory, frameworks and evaluation.
 - **Retrieval:** document processing, retrieval, grounded answers and evaluation.
 - **Model training:** fine-tuning, LoRA, preference learning and reward attribution.
-- **AI Concept Atlas:** 129 focused HTML concept diagrams.
-- **ML Foundations:** 43 visual explanations linked to hands-on notebooks.
+- **ML Foundations:** 26 visual explanations linked to hands-on notebooks.
 - **Inside the models:** additional learning artifacts recovered from the author's Claude library, reviewed and packaged as standalone pages.
+
+[Selection criteria](learn/CURATION.md): mechanism, worked example or experiment, interpretation, and distinct learning value. Short diagram cards and weaker or repetitive lessons are excluded.
 
 Lessons are educational material, not benchmarks or certification guarantees. Source attribution and license exceptions are recorded in [provenance](docs/PROVENANCE.md) and the learning catalog.
 
@@ -113,7 +114,7 @@ Lessons are educational material, not benchmarks or certification guarantees. So
 apps/                  Application source snapshots and local setup
 skills/                Reusable agent skills and plugins
 labs/                  Post-training, dataset preparation and ML notebooks
-learn/                 Interactive HTML lessons and concept atlas
+learn/                 Curated interactive HTML lessons
 assets/screenshots/    Application interface images
 docs/                  Provenance, verification and collection decisions
 scripts/               Collection validation

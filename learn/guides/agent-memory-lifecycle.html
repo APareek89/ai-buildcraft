@@ -189,7 +189,7 @@ if response.stop_reason == "end_turn":          # model is done
     save_message(session_id, next_turn(), "user",      str(result),     kind="tool_output")
     history.append(tool_result_block(call.id, result))
     response = client.messages.create(..., messages=history, tools=TOOLS)`,
-    n:"The inner tool loop from your P1 build. Prices arrive here, live, and only here — never from memory."},
+    n:"This is the inner tool loop. Prices arrive here, live, and only here — never from memory."},
   sysBase:{t:"Base instructions",tag:"system prompt",c:"c-sys",
     s:"The static part of the system prompt: who the agent is, its rules, its tone. Same every call. In production this stable prefix is also what prompt caching rewards.",
     code:`BASE_INSTRUCTIONS = """You are Sam, a shopping assistant for men's
@@ -256,7 +256,7 @@ if estimate_tokens(history) >= COMPACT_AT * MAX_TOKENS:
     })`,
     n:"Same table, same TTL — when the conversation's rows expire, its summaries go too."},
   cartRow:{t:"The cart — state, not memory",tag:"state",c:"c-state",
-    s:"\"Add the Herrera in size 9\" produced a row in the CART table — owned by the commerce backend, written through the add_to_cart tool. It is not a memory of any kind: it's a live business object that checkout, stock and pricing must act on exactly. This is why it survives to Day 2 even though the conversation doesn't get loaded. (This is the lesson you've missed twice in quizzes — here it's physically a different table.)",
+    s:"\"Add the Herrera in size 9\" produced a row in the CART table — owned by the commerce backend, written through the add_to_cart tool. It is not a memory of any kind: it's a live business object that checkout, stock and pricing must act on exactly. This is why it survives to Day 2 even though the conversation doesn't get loaded. Keeping the cart in a separate table makes that distinction explicit.",
     code:`def add_to_cart(user_id, product_id, size):
     cart_table.put_item(Item={
         "user_id": user_id, "product_id": product_id,
@@ -328,7 +328,7 @@ relevant = top_k(embed(new_query), all_episodes(user_id), k=2)`,
 "The Herrera tan brogues (Rs.2,799, size 9) in your cart? Happy to place it."`,
     n:"Had the price changed overnight, this fetch would show the NEW price — stored prices are stale prices."},
   ttl:{t:"Day 30–90: TTL reaps the old rows",tag:"retention",c:"c-dead",
-    s:"DynamoDB's TTL feature auto-deletes rows whose expires_at has passed — s1's turns AND its summary vanish together (same conversation, same TTL). What persists: the profile (tiny, curated, indefinite), episodes (small), orders (a business ledger with its own rules). Before reaping, an archive job can copy interesting transcripts to S3 — your P6 evals want them as a golden set.",
+    s:"DynamoDB's TTL feature auto-deletes rows whose expires_at has passed — s1's turns AND its summary vanish together (same conversation, same TTL). What persists: the profile (tiny, curated, indefinite), episodes (small), orders (a business ledger with its own rules). Before reaping, an archive job can copy selected transcripts to S3 for an evaluation golden set, subject to the same retention policy.",
     code:`# one-time table setting (console or CLI):
 aws dynamodb update-time-to-live --table-name memlab_conversations \\
   --time-to-live-specification "Enabled=true, AttributeName=expires_at"

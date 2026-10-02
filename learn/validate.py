@@ -61,11 +61,31 @@ def validate():
     references = 0
     node = shutil.which("node")
     catalog = json.loads((ROOT / "learn/catalog.json").read_text())
+    expected_count = catalog.get("curation", {}).get("selectedEntries")
+    if expected_count != len(catalog["guides"]):
+        errors.append("Curated entry count does not match the catalog")
+    for collection in catalog["collections"]:
+        actual = sum(item["collection"] == collection["id"] for item in catalog["guides"])
+        if actual != collection["count"]:
+            errors.append(f"Collection count mismatch: {collection['id']}")
+    published_pages = {item["path"] for item in catalog["guides"]}
+    lesson_pages = {str(path.relative_to(ROOT)) for path in (ROOT / "learn/guides").glob("*.html")}
+    lesson_pages |= {str(path.relative_to(ROOT)) for path in (ROOT / "labs/ml-foundations").glob("*/explainer.html")}
+    if published_pages != lesson_pages:
+        errors.append("Published lesson files differ from the curated catalog")
+    if any((ROOT / "learn/atlas").glob("*.html")):
+        errors.append("Removed diagram-only atlas contains publishable pages")
+    navigator = (ROOT / "learn/index.html").read_text()
+    embedded = re.search(r'<script id="catalog" type="application/json">(.*?)</script>', navigator, re.S)
+    if not embedded or json.loads(embedded.group(1)) != catalog:
+        errors.append("Learning navigator embeds an out-of-date catalog")
     slugs = set()
     for item in catalog["guides"]:
         if item["slug"] in slugs:
             errors.append(f"Duplicate catalog slug: {item['slug']}")
         slugs.add(item["slug"])
+        if not item.get("selectionReason") or not item.get("description"):
+            errors.append(f"Missing learning outcome or selection reason: {item['slug']}")
         for key in ("path", "notebook"):
             if key not in item:
                 continue

@@ -176,13 +176,13 @@ hr.soft{border:none;border-top:1px solid var(--border);margin:30px 0}
 <div class="hero">
   <div class="eyebrow">Retrieval-Augmented Generation · for beginners</div>
   <h1>From a raw document to a grounded answer</h1>
-  <p class="lede">An <span class="term" data-t="llm">LLM<sup>i</sup></span> only knows what it learned during training. <b>RAG</b> lets it look things up in <i>your</i> documents first — so answers are current, specific, and citable. This page walks the whole pipeline with live, clickable demos, using the real numbers from your Agentic Learning Studio app.</p>
+  <p class="lede">An <span class="term" data-t="llm">LLM<sup>i</sup></span> only knows what it learned during training. <b>RAG</b> lets it look things up in <i>your</i> documents first — so answers can use current, specific, citable evidence. This page walks the pipeline with interactive simulations and an archived Agentic Learning Studio worked example. The chunk counts, database version and retrieval score below illustrate that example; this page does not connect to a live knowledge base.</p>
   <div class="tagrow">
     <span class="tag">bge-small · 384-dim</span>
     <span class="tag">Supabase + pgvector</span>
     <span class="tag">HNSW + tsvector</span>
     <span class="tag">Hybrid + RRF</span>
-    <span class="tag">260 chunks live</span>
+    <span class="tag">260-chunk worked example</span>
   </div>
 </div>
 
@@ -239,8 +239,8 @@ hr.soft{border:none;border-top:1px solid var(--border);margin:30px 0}
       <p><b>Prose</b> — long free text (a guide, a research plan). Will be sliced into windows.<br><b>Records</b> — a catalog where each row is already one self-contained item (e.g. a list of tools). Each row becomes one chunk, no slicing.</p>
     </div>
     <div class="box">
-      <h4><span class="pill example">example</span> Your live KB</h4>
-      <p>Your app ingested <b>4 documents → 260 chunks</b>: a 247-row tool catalog (records), a research-plan <code>.docx</code> (prose, 11 chunks), and two small JSON files.</p>
+      <h4><span class="pill example">example</span> A 260-chunk knowledge base</h4>
+      <p>The worked example has <b>4 documents → 260 chunks</b>: a 247-row tool catalog (247 record chunks), a research-plan <code>.docx</code> (11 prose chunks), and two small JSON files (one chunk each). That is 247 + 11 + 1 + 1 = 260.</p>
     </div>
   </div>
 
@@ -274,7 +274,7 @@ hr.soft{border:none;border-top:1px solid var(--border);margin:30px 0}
       <p>If a sentence is split across two chunks, neither chunk fully contains the idea. A small <b>overlap</b> (the tail of one chunk repeats at the head of the next) means the idea survives in at least one chunk.</p>
     </div>
     <div class="box">
-      <h4><span class="pill tech">technical</span> Your settings</h4>
+      <h4><span class="pill tech">technical</span> Worked-example settings</h4>
       <p>~<b>320 words</b> per chunk, <b>60-word overlap</b>, split on paragraph boundaries. (~450 / ~80 tokens.)</p>
       <div class="codecap" style="margin-top:8px">src/rag/chunkers.ts</div>
 <pre>const TARGET_WORDS = <span class="n">320</span>;
@@ -297,7 +297,7 @@ const OVERLAP_WORDS = <span class="n">60</span>;</pre>
 <!-- STAGE 3 -->
 <section id="s3">
   <div class="sec-h"><span class="sec-num">3</span><h2>Embeddings — turning text into numbers</h2></div>
-  <p class="lead">An <span class="term" data-t="embedding">embedding<sup>i</sup></span> is a list of numbers (a <span class="term" data-t="vector">vector<sup>i</sup></span>) that captures the <i>meaning</i> of a piece of text. Texts about similar things get vectors that point in similar directions. Your app uses <b>bge-small-en-v1.5</b>, which outputs <b>384 numbers</b> per text, running locally (free, no API).</p>
+  <p class="lead">An <span class="term" data-t="embedding">embedding<sup>i</sup></span> is a list of numbers (a <span class="term" data-t="vector">vector<sup>i</sup></span>) that captures the <i>meaning</i> of a piece of text. Texts about similar things get vectors that point in similar directions. The worked example uses <b>bge-small-en-v1.5</b>, which outputs <b>384 numbers</b> per text and can run locally without an embedding API. The diagrams here simulate the mechanism; they do not load that model.</p>
 
   <div class="grid2">
     <div class="box">
@@ -377,8 +377,8 @@ const OVERLAP_WORDS = <span class="n">60</span>;</pre>
   [text, toVectorLiteral(vec), hash, …]);</pre>
 
   <div class="stats">
-    <div class="stat"><div class="v">260</div><div class="l">chunks stored (live)</div></div>
-    <div class="stat"><div class="v">260/260</div><div class="l">have embeddings</div></div>
+    <div class="stat"><div class="v">260</div><div class="l">example chunks stored</div></div>
+    <div class="stat"><div class="v">260/260</div><div class="l">embedded in the example</div></div>
     <div class="stat"><div class="v">384</div><div class="l">dimensions each</div></div>
     <div class="stat"><div class="v">0.8.0</div><div class="l">pgvector version</div></div>
   </div>
@@ -390,7 +390,7 @@ const OVERLAP_WORDS = <span class="n">60</span>;</pre>
   <div class="sec-h"><span class="sec-num">5</span><h2>Query — the question becomes a vector too</h2></div>
   <p class="lead">When you ask something, the system builds a search string and embeds it with <code>embedQuery()</code> (the prefixed one). Now the question lives in the <i>same</i> 384-D space as the chunks, so "nearest" is meaningful.</p>
   <div class="box">
-    <h4><span class="pill example">example</span> Your app's real query string</h4>
+    <h4><span class="pill example">example</span> The worked example's query string</h4>
     <p>The retriever blends the topic, the learner's goal, the must-cover items, and the raw prompt into one search string:</p>
 <pre><span class="s">"Agentic App Development — Build an agentic app with LangChain and</span>
 <span class="s"> LangGraph — LangChain LangGraph agents tools state — I want to learn</span>
@@ -462,7 +462,7 @@ const OVERLAP_WORDS = <span class="n">60</span>;</pre>
 <pre><span class="k">const</span> topSim = Math.max(...sims);              <span class="c">// best single match</span>
 <span class="k">const</span> strong = sims.filter(s =&gt; s &gt;= <span class="n">0.45</span>).length; <span class="c">// how many are strong</span>
 <span class="k">const</span> coverage = <span class="n">0.5</span>*topSim + <span class="n">0.5</span>*Math.min(<span class="n">1</span>, strong/(k*<span class="n">0.4</span>));</pre>
-    <div class="callout"><b>Live result</b> for the LangChain/LangGraph query: <b>8 chunks retrieved, coverage 0.872</b> — exactly the "88%" your app's UI shows.</div>
+    <div class="callout"><b>Worked-example result</b> for the LangChain/LangGraph query: <b>8 chunks retrieved, coverage 0.872 (87.2%)</b>. This is the example's retrieval heuristic, not a measured probability that the answer is correct.</div>
   </div>
 </section>
 
@@ -508,7 +508,7 @@ trust their recency over your training data):
 
 <!-- IN THIS APP -->
 <section id="appmap">
-  <div class="sec-h"><h2>Where each step lives in your codebase</h2></div>
+  <div class="sec-h"><h2>Where each step lives in the example codebase</h2></div>
   <ul class="filemap">
     <li>📄 Load → <code>src/rag/loaders.ts</code> &nbsp;·&nbsp; ✂️ Chunk → <code>src/rag/chunkers.ts</code></li>
     <li>🔢 Embed → <code>src/rag/embed.ts</code> &nbsp;·&nbsp; 🗄️ Store → <code>src/rag/store.ts</code> &nbsp;·&nbsp; orchestration → <code>src/rag/ingest.ts</code></li>
@@ -518,7 +518,7 @@ trust their recency over your training data):
   </ul>
 </section>
 
-<div class="foot">Built for learning · numbers verified against your live Supabase KB (260 chunks, pgvector 0.8.0) · click any <span style="color:var(--accent)">underlined term</span> for a definition.</div>
+<div class="foot">Built for learning · archived worked example (260 chunks, pgvector 0.8.0), not a live database check · click any <span style="color:var(--accent)">underlined term</span> for a definition.</div>
 
 </div>
 

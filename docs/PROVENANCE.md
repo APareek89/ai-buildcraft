@@ -1,6 +1,6 @@
 # Provenance and collection decisions
 
-AI Buildcraft collects Anand Pareek's applications, reusable skills and learning material in one reviewable repository. The collection was assembled on 2 October 2026. Source repositories and source commits are recorded in each exported package's `SOURCE.json`; the three media migrations also have a detailed `BUILDCRAFT.md`.
+AI Buildcraft collects Anand Pareek's applications, reusable skills and learning material in one reviewable repository. The collection was assembled on 2 October 2026 and subsequently curated to 50 substantive learning entries after a depth review. Source repositories and source commits are recorded in each exported package's `SOURCE.json`; the three media migrations also have a detailed `BUILDCRAFT.md`.
 
 ## What is included
 

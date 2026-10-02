@@ -15,7 +15,11 @@ The collection validator checks catalog targets, entry READMEs/provenance, root 
 
 Gitleaks scans the exact staged payload before the first commit. Its only configured exclusions are two explicitly synthetic Langfuse test values used to verify redaction. Runtime credentials, dependency directories, model-training caches, original Claude exports and browser account state are outside the staged payload.
 
-Learning validation passed for **201 catalog entries, 204 HTML pages, 429 local references, 73 inline JavaScript scripts, and 43 ML notebooks**. Nine additional Claude topics were included: seven sanitized imports and two tree lessons rebuilt from scratch with deterministic synthetic data.
+The learning collection now contains **50 selected entries: 24 visual guides and 26 notebook/HTML labs**. The depth review removed 129 diagram cards and 22 other entries. Seven retained topics came from the Claude artifact library: six sanitized imports and one tree-boosting lesson rebuilt with synthetic data. See [curation criteria](../learn/CURATION.md) for the editorial bar and the two corrected experiment protocols.
+
+Current collection validation **passed**: 50 learning entries, 53 HTML pages including navigation/glossary, 210 local references, 51 inline JavaScript scripts and 26 ML notebooks. All 48 notebooks across the complete repository have cleared execution outputs. The staged-change Gitleaks scan found no leaks.
+
+The regularization and Gaussian-process notebooks were corrected and rerun offline, regenerating their figures. Their checks verify split/selection boundaries and equal-budget comparison invariants respectively. Other retained notebook experiments were reviewed but not rerun for this curation; the static checks below do not execute training.
 
 The collection browser is checked in the in-app browser for navigation, search, filters, image loading and responsive layout. The learning navigator and representative recovered lessons are checked interactively. Portfolio screenshots are reviewed as illustrations; they are historical captures, not fresh live-provider evidence.
 
