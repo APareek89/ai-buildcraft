@@ -1794,14 +1794,15 @@ aws budgets create-budget --account-id 111122223333 --budget \
     bar.appendChild(b);
   });
   const btns = Array.from(bar.children);
-  let cur = parseInt(localStorage.getItem("cloudai.tab.v2") || "0", 10);
+  let cur = 0;
+  try { cur = parseInt(localStorage.getItem("cloudai.tab.v2") || "0", 10); } catch (_) {}
   if (isNaN(cur) || cur < 0 || cur >= tabs.length) cur = 0;
 
   function show(i){
     cur = i;
     tabs.forEach((s, j) => s.classList.toggle("active", j === i));
     btns.forEach((b, j) => b.classList.toggle("active", j === i));
-    localStorage.setItem("cloudai.tab.v2", String(i));
+    try { localStorage.setItem("cloudai.tab.v2", String(i)); } catch (_) {}
     window.scrollTo({top: 0});
   }
   document.getElementById("prevBtn").addEventListener("click", () => show(Math.max(0, cur - 1)));

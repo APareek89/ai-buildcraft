@@ -7,6 +7,7 @@ artifacts/*.html
 .claude/
 .env.backup
 .env.*
+!.env.example
 kb-build/raw/
 kb-build/backups/
 kb-build/worker-reports/

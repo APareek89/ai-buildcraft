@@ -100,8 +100,9 @@ def validate():
                 continue
             relative = path.relative_to(ROOT)
             source = path.read_text(encoding="utf-8")
+            content_source = re.sub(r"data:image/(?:png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+", "[embedded image]", source)
             for name, pattern in FORBIDDEN.items():
-                if pattern.search(html.unescape(source)):
+                if pattern.search(html.unescape(content_source)):
                     errors.append(f"{relative}: {name}")
             if path.suffix == ".py":
                 try:

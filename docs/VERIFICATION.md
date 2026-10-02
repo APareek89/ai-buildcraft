@@ -8,6 +8,9 @@ Run from the repository root:
 
 ```bash
 python3 scripts/validate_collection.py
+python3 scripts/test_learning_bundle.py
+node --test scripts/test_learning_viewer.js
+python3 scripts/build_learning_guide.py --check
 gitleaks git --pre-commit --staged --redact=100 --no-banner
 ```
 
@@ -17,7 +20,7 @@ Gitleaks scans the exact staged payload before the first commit. Its only config
 
 The learning collection now contains **50 selected entries: 24 visual guides and 26 notebook/HTML labs**. The depth review removed 129 diagram cards and 22 other entries. Seven retained topics came from the Claude artifact library: six sanitized imports and one tree-boosting lesson rebuilt with synthetic data. See [curation criteria](../learn/CURATION.md) for the editorial bar and the two corrected experiment protocols.
 
-Current collection validation **passed**: 50 learning entries, 53 HTML pages including navigation/glossary, 210 local references, 51 inline JavaScript scripts and 26 ML notebooks. All 48 notebooks across the complete repository have cleared execution outputs. The staged-change Gitleaks scan found no leaks.
+Collection validation **passed** for 50 learning entries and 26 ML notebooks. All 48 notebooks across the complete repository have cleared execution outputs. Full-history Gitleaks scanning of the original two commits found no leaks; publication changes are scanned again before committing.
 
 The regularization and Gaussian-process notebooks were corrected and rerun offline, regenerating their figures. Their checks verify split/selection boundaries and equal-budget comparison invariants respectively. Other retained notebook experiments were reviewed but not rerun for this curation; the static checks below do not execute training.
 
@@ -56,6 +59,12 @@ Skill and lab verification passed: **Agentlane 25 tests; ESCI 29 passed and one 
 
 Skill and lab packaging checks inspect local links, syntax, portable setup, notebook outputs and source notices. Training notebooks and historical experiments have not been rerun end to end. Live integrations such as analytics, payments, search, model APIs, databases and slide-rendering tools require the user's own configuration.
 
-## Before a public release
+## Public learning edition
 
-The repository remains private. A separate owner review decides whether to publish it. Verify the selected live provider paths on an appropriately configured account, reproduce important quickstarts on a clean machine, and resolve any remaining factual, licensing or security issue relevant to the intended use. Existing recorded numerical results remain historical unless independently reproduced.
+The owner approved public publication on 2 October 2026 after consolidation of the selected lessons. The single-file guide contains all 50 lessons, 26 paired notebook downloads, 26 figures, a glossary, and pinned offline math/code libraries with their license texts. Its nine subject groups and three ordered routes are built from an explicit mapping that requires every selected lesson exactly once.
+
+Nine bundle tests check source and asset hashes, all decoded text for publication hygiene, inline JavaScript syntax, deterministic builds, rejection of unexpected external dependencies and cloud-lesson navigation when browser storage fails. Seven viewer regression tests cover malformed hashes, lesson/fragment routing, sequence boundaries, clean offline exports, message-source validation, keyboard focus and unavailable storage. Clipboard fallback tests cover twelve success/denial/missing-API/error cases across three exported lessons. Agentic Learning Studio also passed TypeScript and two support-mail tests after removing the original owner mailbox as a runtime default.
+
+Browser smoke checks opened all 50 lessons inside the isolated reader. Math rendering, embedded figures, search, format and category filters, learning paths, previous/next controls, progress, notebook downloads and offline export are checked separately. The downloaded HTML was parsed to confirm all 50 payloads and all 26 notebooks, with no live iframe or user progress serialized. A downloaded notebook matched its source byte-for-byte. Direct `file://` opening was blocked by the automation browser URL policy, so browser rendering was verified through the local HTTP preview. Source pages remain editable; CI rejects a stale generated guide. Hosted grading/generation features from five original exports are explicitly disabled or ungraded in the offline edition.
+
+These checks establish packaging and tested interactions, not the factual accuracy of every statement or successful execution of every notebook. Live providers and important application quickstarts still need reproduction on the user's own configured account. Existing recorded numerical results remain historical unless independently reproduced.

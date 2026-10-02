@@ -1,0 +1,52 @@
+name: Publish learning guide
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'learn/**'
+      - 'labs/ml-foundations/**'
+      - 'scripts/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python3 scripts/validate_collection.py
+      - run: node --test scripts/test_learning_viewer.js
+      - run: python3 scripts/test_learning_bundle.py
+      - run: python3 scripts/build_learning_guide.py --check
+      - name: Stage only the self-contained guide
+        run: |
+          mkdir _site
+          cp learn/index.html _site/index.html
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy guide
+        id: deployment
+        uses: actions/deploy-pages@v4

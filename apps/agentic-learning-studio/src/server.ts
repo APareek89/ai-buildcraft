@@ -60,6 +60,7 @@ import { moduleCacheKey } from "./lib/hash";
 import { saveSupportRequest, saveConsent, CONSENT_VERSION, SUPPORT_CATEGORIES } from "./lib/support";
 import { saveFeedback, logEvent } from "./lib/beta";
 import { sendSupportEmail, sendAckEmail } from "./lib/email";
+import { contactEmail, renderContactLink } from "./lib/support-config";
 import { z } from "zod";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import type { ChatMessage, ArtifactRef } from "./agent/state";
@@ -212,12 +213,14 @@ app.get("/account", (_req, res) => sendIndex(res));
 // Hands-On notebook page (browser-run Pyodide practice). Opened in a new tab from a lesson.
 
 
-// Single swappable contact address — change here (or via the CONTACT_EMAIL env var) and it updates
-// across all policy pages (they use a {{CONTACT_EMAIL}} token, injected when served below).
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL || "findkailash@gmail.com";
+// Each deployment supplies its own contact address. No author mailbox is a default.
+const CONTACT_EMAIL = contactEmail();
+const CONTACT_HELP = CONTACT_EMAIL
+  ? `email ${CONTACT_EMAIL} directly`
+  : "try again later or contact this deployment's operator";
 
 // Legal / compliance pages at pretty URLs (NOT nav tabs — linked only from the home footer).
-// Served with {{CONTACT_EMAIL}} replaced so the address lives in one place.
+// Policy pages show the configured address or direct readers to the support form.
 const PAGE_ROUTES: Record<string, string> = {
   "/security": "security.html",
   "/privacy": "privacy.html",
@@ -230,7 +233,7 @@ for (const [route, file] of Object.entries(PAGE_ROUTES)) {
   app.get(route, async (_req, res) => {
     try {
       const html = await readFile(join(PUBLIC_DIR, file), "utf8");
-      res.type("html").send(html.split("{{CONTACT_EMAIL}}").join(CONTACT_EMAIL));
+      res.type("html").send(renderContactLink(html));
     } catch { res.sendFile(join(PUBLIC_DIR, file)); }
   });
 }
@@ -309,7 +312,7 @@ app.use("/api/", apiLimiter);
 // Beta feedback: modest per-IP cap so the popup can't be used to spam, but generous enough for a tester.
 const betaLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false, keyGenerator: ipKey });
 const supportLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, keyGenerator: ipKey,
-  message: { error: `Too many submissions — please wait an hour before sending another, or email ${CONTACT_EMAIL} directly.` } });
+  message: { error: `Too many submissions — please wait an hour before sending another, or ${CONTACT_HELP}.` } });
 
 /** Write one named SSE event with a JSON payload onto a response stream. */
 function sseSend(res: express.Response, event: string, data: unknown): void {
@@ -1527,8 +1530,8 @@ app.post("/api/support/complaint", supportLimiter, async (req, res) => {
     });
   } catch (e) { console.error("[support] save failed:", (e as Error).message); }
   if (!saved) {
-    // We could not record it — do NOT pretend success; point the user at direct email.
-    res.status(503).json({ error: `We couldn't record your request right now. Please email ${CONTACT_EMAIL} directly.` });
+    // Do not pretend success; give the configured contact or an honest retry path.
+    res.status(503).json({ error: `We couldn't record your request right now. Please ${CONTACT_HELP}.` });
     return;
   }
   const payload = { requestId: saved.id, category: b.category, name: b.name, email: b.email, subject: b.subject,

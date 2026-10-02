@@ -8,12 +8,15 @@ The supported first run is the database-free fixture demo in [README.md](README.
 
 The full authenticated application additionally needs PostgreSQL/pgvector with the original base schema, private S3 storage and runtime configuration. The retained ownership migration assumes existing tables and is not a fresh-schema installer. [Full configuration](docs/auth-and-launch.md) records that boundary. Historical deployment instructions, copying scripts, private operational logs and search-console verification were omitted.
 
+Support mail is disabled until `RESEND_API_KEY` and a valid operator-owned `SUPPORT_TO_EMAIL` or `CONTACT_EMAIL` are configured. `CONTACT_EMAIL` is the optional public address on policy pages; without it, those pages link to the support form. There is no author mailbox fallback. The application still saves support requests to its database when email is disabled.
+
 ## Checks on 2026-10-02
 
 - `npm run check`: passed.
 - `npm run test:provider-wire`: 4 passed.
 - `npm run test:embedding-batches`: 5 passed.
 - `npm run test:boundaries`: 3 passed.
+- `npm run test:support-email`: 2 passed; missing or invalid recipients prevent all outbound mail, configured destinations are respected, and policy contact links have a usable fallback. Provider transport was mocked.
 - `npm run demo` plus `npm run test:demo` on an isolated loopback port: all 100 fixture HTML pages rendered; overview → build → reading → progress → download passed; paid/mutation routes rejected.
 
 Full account/database integration, object storage and live lesson generation were not exercised.

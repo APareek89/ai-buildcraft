@@ -1,6 +1,6 @@
 # AI Buildcraft contributor instructions
 
-This collection is being prepared for private review. Do not change repository visibility or publish a site without explicit owner approval.
+The owner approved the public release of this collection and its consolidated learning guide on 2 October 2026. Keep publication limited to reviewed collection content; do not import private source material or publish live application deployments without authorization.
 
 - Keep examples synthetic or based on redistributable public sources. Do not include private company data, credentials, local session exports or personal context.
 - Preserve upstream licenses and attribution. Distinguish copied references from original work.

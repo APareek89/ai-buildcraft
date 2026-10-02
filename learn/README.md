@@ -1,8 +1,12 @@
 # Visual learning guide
 
-**[Open the searchable collection](index.html)** · [ML notebook labs](../labs/ml-foundations/index.html) · [Machine-readable catalog](catalog.json)
+**[Read online](https://apareek89.github.io/ai-buildcraft/)** · **[Download the complete HTML](https://github.com/APareek89/ai-buildcraft/releases/latest/download/ai-buildcraft-learning-guide.html)** · [Local guide](index.html) · [ML notebook labs](../labs/ml-foundations/index.html) · [Machine-readable catalog](catalog.json)
 
-**50 selected lessons: 24 visual guides and 26 notebook/HTML pairs.** Read the [selection criteria](CURATION.md). The HTML lessons can be opened directly; pages using remote fonts or a public CDN need a network connection for those assets. The navigator works without fetching a manifest or calling an API.
+**50 selected lessons: 24 visual guides and 26 notebook/HTML pairs.** Read the [selection criteria](CURATION.md). The consolidated `index.html` contains every selected lesson, all figures, 26 notebook downloads, a supporting glossary, mathematical typesetting, code highlighting and license notices. Save one file and open it in a modern browser. No server, model key or network connection is required to read and interact. External references and notebook package/data downloads require internet.
+
+The home page offers nine subject categories, three ordered learning paths, search, format filters and completion tracking. Progress stays in browser storage when available. Python notebooks are downloadable source; they do not execute inside HTML.
+
+Five exported lessons originally included hosted grading or hands-on generation. In this offline edition, those controls are removed or explicitly presented as ungraded practice. Local simulations remain interactive.
 
 ## A route through the material
 
@@ -54,7 +58,12 @@ See [attribution and license scope](ATTRIBUTION.md) for the retained upstream no
 From the repository root:
 
 ```bash
+python3 scripts/build_learning_guide.py --check
+python3 scripts/test_learning_bundle.py
+node --test scripts/test_learning_viewer.js
 python3 learn/validate.py
 ```
 
 This checks catalog targets, local HTML references, HTML structure, notebook output hygiene, Python syntax, inline JavaScript syntax when Node.js is installed, and publication hygiene patterns across HTML, scripts, Markdown and notebooks. It does not execute training or authenticate with external APIs. An automated scan cannot establish complete factual accuracy; report corrections with the page, claim and a primary source.
+
+To rebuild after changing a lesson, figure, catalog or viewer template, run `python3 scripts/build_learning_guide.py`. The builder uses pinned local dependencies and fails on unknown external runtime assets.

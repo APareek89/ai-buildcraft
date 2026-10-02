@@ -1034,8 +1034,20 @@ print(result.quality_score)  # e.g. 87  (always an int, never "high")
   function copyCode(btn){
     var pre = btn.parentElement.querySelector("pre.code"); if(!pre) return;
     var txt = pre.innerText;
-    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){flash(btn);}); }
-    else { var ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); flash(btn); }
+    function selectCode(){
+      var range = document.createRange(); range.selectNodeContents(pre);
+      var selection = window.getSelection();
+      if(selection){ selection.removeAllRanges(); selection.addRange(range); }
+      btn.textContent = "Selected · Ctrl/Cmd+C";
+      btn.setAttribute("aria-label", "Code selected. Press Control or Command plus C to copy.");
+      setTimeout(function(){ btn.textContent="Copy"; btn.removeAttribute("aria-label"); },4000);
+    }
+    try {
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        return navigator.clipboard.writeText(txt).then(function(){flash(btn);},selectCode);
+      }
+    } catch(e) { /* Clipboard access may be denied by the browser or embedded reader. */ }
+    selectCode();
   }
   function flash(btn){ var o=btn.textContent; btn.textContent="Copied"; setTimeout(function(){btn.textContent=o;},1200); }
   function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }

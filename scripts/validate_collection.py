@@ -69,7 +69,10 @@ for rel in selected:
         fail(rel, 'embedded platform/authentication state')
     # The dedicated public provider skill is intentional; no company markers
     # belong in application source, lessons or training material.
-    if rel.parts[0] in {'apps', 'learn', 'labs'} and company.search(html.unescape(text)):
+    # Binary figure bytes can coincidentally spell a short company marker.
+    # Bundle tests verify their hashes and separately scan decoded text payloads.
+    content_text = re.sub(r'data:image/(?:png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+', '[embedded image]', text)
+    if rel.parts[0] in {'apps', 'learn', 'labs'} and company.search(html.unescape(content_text)):
         fail(rel, 'company/provider marker outside the dedicated API skill')
     if path.suffix == '.ipynb':
         notebooks += 1

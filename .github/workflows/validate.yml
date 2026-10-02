@@ -17,3 +17,8 @@ jobs:
           node-version: '22'
       - name: Validate catalogs, learning pages and publication hygiene
         run: python3 scripts/validate_collection.py
+      - name: Verify offline bundle and source equivalence
+        run: |
+          node --test scripts/test_learning_viewer.js
+          python3 scripts/test_learning_bundle.py
+          python3 scripts/build_learning_guide.py --check

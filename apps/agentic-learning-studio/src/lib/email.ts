@@ -1,11 +1,13 @@
 /**
  * # Support email — Resend via REST (no SDK dependency; same fetch pattern as lemonsqueezy.ts)
  *
- * Graceful-optional: with no RESEND_API_KEY we LOG the payload and return sent:false
+ * Graceful-optional: without a key and configured recipient we return sent:false
  * so local/dev works and complaints are never lost. The complaint is already
  * persisted in `support_requests` (the durable record) — email is only a
  * notification, so a missing/failed email never drops a complaint.
  */
+
+import { supportRecipient, validEmail } from "./support-config";
 
 export interface SupportEmail {
   requestId: string;
@@ -21,14 +23,12 @@ export interface SupportEmail {
 
 const RESEND_URL = "https://api.resend.com/emails";
 const DEFAULT_FROM = "Agentic Learning Studio Support <onboarding@resend.dev>"; // works until a verified domain is set
-const DEFAULT_TO = process.env.CONTACT_EMAIL || "findkailash@gmail.com";
-
 export function emailConfigured(): boolean {
-  return !!(process.env.RESEND_API_KEY && (process.env.SUPPORT_TO_EMAIL || DEFAULT_TO));
+  return !!(process.env.RESEND_API_KEY?.trim() && supportRecipient());
 }
 
 async function resendSend(payload: Record<string, unknown>): Promise<{ ok: boolean; status?: number; error?: string }> {
-  const key = process.env.RESEND_API_KEY;
+  const key = process.env.RESEND_API_KEY?.trim();
   if (!key) return { ok: false, error: "no-key" };
   try {
     const res = await fetch(RESEND_URL, {
@@ -50,7 +50,11 @@ async function resendSend(payload: Record<string, unknown>): Promise<{ ok: boole
 
 /** Notify the operator of a new support request. Best-effort; the complaint is already in the DB. */
 export async function sendSupportEmail(e: SupportEmail): Promise<{ sent: boolean }> {
-  const to = (process.env.SUPPORT_TO_EMAIL || DEFAULT_TO).trim();
+  const to = supportRecipient();
+  if (!emailConfigured() || !to) {
+    console.info("[support] Email disabled: configure RESEND_API_KEY and a valid SUPPORT_TO_EMAIL or CONTACT_EMAIL. Request remains saved in DB.");
+    return { sent: false };
+  }
   const from = (process.env.SUPPORT_FROM_EMAIL || DEFAULT_FROM).trim();
   const text = [
     "New support / complaint / data-rights request",
@@ -67,10 +71,6 @@ export async function sendSupportEmail(e: SupportEmail): Promise<{ sent: boolean
     "Message:",
     e.message,
   ].join("\n");
-  if (!process.env.RESEND_API_KEY) {
-    console.log("[support] RESEND_API_KEY not set — email not sent (request IS saved in DB). Payload:\n" + text);
-    return { sent: false };
-  }
   const r = await resendSend({
     from, to, reply_to: e.email,
     subject: `[Agentic Learning Studio ${e.category}] ${e.subject} (#${e.requestId.slice(0, 8)})`,
@@ -79,9 +79,9 @@ export async function sendSupportEmail(e: SupportEmail): Promise<{ sent: boolean
   return { sent: r.ok };
 }
 
-/** Acknowledge the submitter with their request id + timelines. Best-effort (no-op without a key). */
+/** Acknowledge the submitter only after this deployment configures support email. */
 export async function sendAckEmail(e: SupportEmail): Promise<void> {
-  if (!process.env.RESEND_API_KEY) return;
+  if (!emailConfigured() || !validEmail(e.email)) return;
   const from = (process.env.SUPPORT_FROM_EMAIL || DEFAULT_FROM).trim();
   const text = [
     `Hi${e.name ? " " + e.name : ""},`,
@@ -95,7 +95,7 @@ export async function sendAckEmail(e: SupportEmail): Promise<void> {
     "",
     "Please don't reply with passwords, payment card data, Aadhaar, or other sensitive details.",
     "",
-    "— Anand Pareek, operating Agentic Learning Studio",
+    "— Agentic Learning Studio support",
   ].join("\n");
   await resendSend({ from, to: e.email, subject: `We received your request (#${e.requestId.slice(0, 8)})`, text });
 }

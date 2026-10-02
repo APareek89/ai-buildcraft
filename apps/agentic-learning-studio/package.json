@@ -22,6 +22,7 @@
     "test:auth": "node scripts/test-auth.mjs",
     "test:boundaries": "node --import tsx --test tests/request-scope.test.ts",
     "test:embedding-batches": "node --import tsx --test tests/embedding-batches.test.ts",
+    "test:support-email": "node --import tsx --test tests/support-email.test.ts",
     "test:provider-wire": "node --import tsx --test tests/provider-wire.test.ts tests/openai-primary.test.ts"
   },
   "dependencies": {

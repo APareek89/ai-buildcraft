@@ -27,4 +27,4 @@ The learning collection preserves public references and framework attribution. A
 
 The collection is organized around building, inspecting, evaluating and understanding AI systems. It includes runnable source and local learning pages, with evidence and limitations beside them. A large link-only list was rejected because it would make readers leave the collection before they could inspect how a project works.
 
-Original repositories and deployed applications were left unchanged. The new repository remains private until the owner separately approves publication.
+Original repositories and deployed applications were left unchanged. The owner explicitly approved publication after completion of the consolidated learning guide on 2 October 2026. The hosted site serves the guide only; application source is available in GitHub with its own setup instructions.

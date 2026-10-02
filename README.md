@@ -6,9 +6,9 @@
 
 Explore how an AI product is built, inspect the decisions inside it, evaluate its behavior, and learn the underlying mechanisms. This collection brings together independently developed applications, portable agent skills, model-training experiments, and interactive visual lessons by **Anand Pareek**.
 
-**[Preview locally](#run-the-collection-browser)** · **[Visual Learning Guide](learn/README.md)** · **[Start with a lab](#model--machine-learning-labs)** · **[Contribute](CONTRIBUTING.md)**
+**[Open the learning guide](https://apareek89.github.io/ai-buildcraft/)** · **[Download one HTML](https://github.com/APareek89/ai-buildcraft/releases/latest/download/ai-buildcraft-learning-guide.html)** · **[Preview all projects locally](#run-the-collection-browser)** · **[Start with a lab](#model--machine-learning-labs)** · **[Contribute](CONTRIBUTING.md)**
 
-> Private review edition. Source snapshots are included in this repository so the collection can be inspected without relying on links to earlier repositories. See [verification and scope](docs/VERIFICATION.md) for what has actually been tested.
+> Source snapshots are included in this repository so the collection can be inspected without relying on links to earlier repositories. See [verification and scope](docs/VERIFICATION.md) for what has actually been tested.
 
 ## Start here
 
@@ -29,7 +29,7 @@ cd ai-buildcraft
 python3 -m http.server 8040 --bind 127.0.0.1
 ```
 
-Open **http://127.0.0.1:8040**. GitHub displays HTML source; this local preview runs the interactive pages. The collection browser and most visual lessons run without API keys. Each application has its own environment, dependencies and setup instructions; there is no single command that launches all apps.
+Open **http://127.0.0.1:8040**. GitHub displays HTML source; this local preview runs the collection browser. The [hosted learning guide](https://apareek89.github.io/ai-buildcraft/) runs directly in your browser, or download its single HTML from the [latest release](https://github.com/APareek89/ai-buildcraft/releases/latest). The collection browser and most visual lessons run without API keys. Each application has its own environment, dependencies and setup instructions; there is no single command that launches all apps.
 
 ## Applications
 
@@ -94,7 +94,13 @@ Training notebooks can download datasets or model weights, use substantial memor
 
 **50 selected lessons: 24 visual guides and 26 notebook/HTML labs.**
 
-[Open the searchable guide](learn/index.html) or browse its [source catalog](learn/catalog.json).
+![Visual learning guide homepage](assets/screenshots/learning-home.png)
+
+[Read online](https://apareek89.github.io/ai-buildcraft/) · [Download one complete HTML](https://github.com/APareek89/ai-buildcraft/releases/latest/download/ai-buildcraft-learning-guide.html) · [Source catalog](learn/catalog.json).
+
+One self-contained file with a categorized card homepage, nine subjects, three learning paths, search, lesson navigation, completion tracking, 26 embedded notebook downloads and a glossary. Figures, mathematical typesetting and code highlighting work offline. Notebook execution needs Python and its dependencies; external reference links need internet access.
+
+**Suggested paths:** build your first ML model; design a reliable AI agent; understand how models adapt.
 
 ![Searchable visual learning library](assets/screenshots/visual-learning.png)
 
@@ -123,6 +129,8 @@ scripts/               Collection validation
 ## Contribute something useful
 
 Good first contributions include reproducing a setup on a clean machine, improving one visual explanation, adding an evaluation case, documenting a failure mode, or extending an adapter with tests. Keep the contribution small enough for someone else to review and run.
+
+The [18-app roadmap](docs/ROADMAP.md) prioritizes a tool contract tester, citation evidence auditor and SFT dataset quality gate.
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the [verification record](docs/VERIFICATION.md). Source availability does not mean every configuration is production-ready.
 
