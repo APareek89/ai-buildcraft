@@ -1,0 +1,10 @@
+flowchart LR
+  Owner[Owner-reviewed prompt and optional image] --> Adapter[Server-side media adapter]
+  Adapter --> Gemini[Gemini generateContent]
+  Adapter --> Veo[Veo predictLongRunning]
+  Veo --> Poll[Validated operation and bounded polling]
+  Poll --> Download[Host-checked download]
+  Gemini --> Bytes[Validated media bytes]
+  Download --> Bytes
+  Bytes --> Postgres[PostgreSQL media]
+  Postgres --> UI[Storefront and owner studio]

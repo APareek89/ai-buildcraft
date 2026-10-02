@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/APareek89/claude-skills-toolkit",
+  "commit": "c01c1abc765598be2141d658638026456e37cbe4",
+  "snapshot": "Selected source files; personal state, historical operations documents and runtime artifacts omitted.",
+  "collection_changes": "Packaging repairs local setup links and restores normal TLS certificate/hostname verification in API helpers and the revenue recipe."
+}

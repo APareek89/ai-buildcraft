@@ -1,0 +1,542 @@
+[
+  {
+    "id": "q_125_price_bengaluru_inr",
+    "question": "What is the on-road price in Bengaluru of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_price_bengaluru_inr",
+    "expected_value": 136900,
+    "unit": "INR",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_110_charge_time_hours",
+    "question": "What is the time for a full charge on the standard charger of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_charge_time_hours",
+    "expected_value": 4.5,
+    "unit": "hours",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_125_boot_litres",
+    "question": "What is the under-seat storage of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_boot_litres",
+    "expected_value": 28,
+    "unit": "litres",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_unans_04",
+    "question": "Who manufactures the battery cells used in Meridian scooters?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_x_service_interval_km",
+    "question": "What is the service interval of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_service_interval_km",
+    "expected_value": 6000,
+    "unit": "km",
+    "source_doc": "warranty_policy"
+  },
+  {
+    "id": "q_x_range_km",
+    "question": "What is the certified range on a full charge of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_range_km",
+    "expected_value": 152,
+    "unit": "km",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_unans_10",
+    "question": "How much does a replacement battery cost for the Arc 110?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_125_service_interval_km",
+    "question": "What is the service interval of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_service_interval_km",
+    "expected_value": 6000,
+    "unit": "km",
+    "source_doc": "warranty_policy"
+  },
+  {
+    "id": "q_125_price_delhi_inr",
+    "question": "What is the on-road price in Delhi of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_price_delhi_inr",
+    "expected_value": 133900,
+    "unit": "INR",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_x_launch_year",
+    "question": "What is the launch year of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_launch_year",
+    "expected_value": 2026,
+    "unit": null,
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_110_service_interval_km",
+    "question": "What is the service interval of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_service_interval_km",
+    "expected_value": 5000,
+    "unit": "km",
+    "source_doc": "warranty_policy"
+  },
+  {
+    "id": "q_x_price_bengaluru_inr",
+    "question": "What is the on-road price in Bengaluru of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_price_bengaluru_inr",
+    "expected_value": 181400,
+    "unit": "INR",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_125_battery_kwh",
+    "question": "What is the battery capacity of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_battery_kwh",
+    "expected_value": 3.4,
+    "unit": "kWh",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_110_price_delhi_inr",
+    "question": "What is the on-road price in Delhi of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_price_delhi_inr",
+    "expected_value": 104900,
+    "unit": "INR",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_125_range_km",
+    "question": "What is the certified range on a full charge of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_range_km",
+    "expected_value": 118,
+    "unit": "km",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_unans_00",
+    "question": "What is the resale value of a Meridian Pulse 125 after three years?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_110_motor_kw",
+    "question": "What is the peak motor power of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_motor_kw",
+    "expected_value": 2.7,
+    "unit": "kW",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_125_kerb_weight_kg",
+    "question": "What is the kerb weight of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_kerb_weight_kg",
+    "expected_value": 119,
+    "unit": "kg",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_unans_09",
+    "question": "What is the ground clearance of the Meridian Pulse 125?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_unans_14",
+    "question": "What is the noise level in decibels of the Pulse 125?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_unans_03",
+    "question": "What is the insurance premium for a Meridian Volt X in Chennai?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_unans_12",
+    "question": "What is the company's annual revenue?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_125_launch_year",
+    "question": "What is the launch year of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_launch_year",
+    "expected_value": 2025,
+    "unit": null,
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_110_launch_year",
+    "question": "What is the launch year of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_launch_year",
+    "expected_value": 2024,
+    "unit": null,
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_x_colours",
+    "question": "What is the available colours of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_colours",
+    "expected_value": "Graphite, Pearl White, Signal Orange",
+    "unit": null,
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_110_battery_kwh",
+    "question": "What is the battery capacity of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_battery_kwh",
+    "expected_value": 2.9,
+    "unit": "kWh",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_x_fast_charge_minutes",
+    "question": "What is the time to reach 80 percent on the fast charger of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_fast_charge_minutes",
+    "expected_value": 40,
+    "unit": "minutes",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_110_price_bengaluru_inr",
+    "question": "What is the on-road price in Bengaluru of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_price_bengaluru_inr",
+    "expected_value": 107400,
+    "unit": "INR",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_x_battery_kwh",
+    "question": "What is the battery capacity of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_battery_kwh",
+    "expected_value": 4.6,
+    "unit": "kWh",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_x_motor_kw",
+    "question": "What is the peak motor power of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_motor_kw",
+    "expected_value": 6.1,
+    "unit": "kW",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_110_fast_charge_minutes",
+    "question": "What is the time to reach 80 percent on the fast charger of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_fast_charge_minutes",
+    "expected_value": 0,
+    "unit": "minutes",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_x_kerb_weight_kg",
+    "question": "What is the kerb weight of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_kerb_weight_kg",
+    "expected_value": 131,
+    "unit": "kg",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_x_charge_time_hours",
+    "question": "What is the time for a full charge on the standard charger of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_charge_time_hours",
+    "expected_value": 3.0,
+    "unit": "hours",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_unans_02",
+    "question": "Does the Meridian Arc 110 qualify for the FAME subsidy in Kerala?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_unans_11",
+    "question": "Is the Meridian Volt X available in Nepal?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_x_battery_warranty_km",
+    "question": "What is the battery warranty distance limit of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_battery_warranty_km",
+    "expected_value": 80000,
+    "unit": "km",
+    "source_doc": "warranty_policy"
+  },
+  {
+    "id": "q_unans_08",
+    "question": "Does Meridian offer a buyback scheme?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_125_colours",
+    "question": "What is the available colours of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_colours",
+    "expected_value": "Midnight Blue, Ember Red, Ivory",
+    "unit": null,
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_110_warranty_years",
+    "question": "What is the vehicle warranty period of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_warranty_years",
+    "expected_value": 3,
+    "unit": "years",
+    "source_doc": "warranty_policy"
+  },
+  {
+    "id": "q_unans_07",
+    "question": "What is the waiting period for a Meridian Volt X in Pune?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_unans_05",
+    "question": "What is the Meridian Pulse 125's crash test rating?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_110_price_mumbai_inr",
+    "question": "What is the on-road price in Mumbai of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_price_mumbai_inr",
+    "expected_value": 109900,
+    "unit": "INR",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_110_colours",
+    "question": "What is the available colours of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_colours",
+    "expected_value": "Slate Grey, Ivory, Cobalt",
+    "unit": null,
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_unans_13",
+    "question": "Does the Arc 110 support vehicle-to-load charging?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_125_motor_kw",
+    "question": "What is the peak motor power of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_motor_kw",
+    "expected_value": 4.2,
+    "unit": "kW",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_x_price_mumbai_inr",
+    "question": "What is the on-road price in Mumbai of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_price_mumbai_inr",
+    "expected_value": 184900,
+    "unit": "INR",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_125_price_mumbai_inr",
+    "question": "What is the on-road price in Mumbai of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_price_mumbai_inr",
+    "expected_value": 139900,
+    "unit": "INR",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_125_battery_warranty_km",
+    "question": "What is the battery warranty distance limit of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_battery_warranty_km",
+    "expected_value": 60000,
+    "unit": "km",
+    "source_doc": "warranty_policy"
+  },
+  {
+    "id": "q_x_top_speed_kmph",
+    "question": "What is the top speed of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_top_speed_kmph",
+    "expected_value": 104,
+    "unit": "km/h",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_110_kerb_weight_kg",
+    "question": "What is the kerb weight of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_kerb_weight_kg",
+    "expected_value": 108,
+    "unit": "kg",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_125_top_speed_kmph",
+    "question": "What is the top speed of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_top_speed_kmph",
+    "expected_value": 88,
+    "unit": "km/h",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_110_top_speed_kmph",
+    "question": "What is the top speed of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_top_speed_kmph",
+    "expected_value": 72,
+    "unit": "km/h",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_110_battery_warranty_km",
+    "question": "What is the battery warranty distance limit of the Meridian Arc 110?",
+    "answerable": true,
+    "fact_id": "110_battery_warranty_km",
+    "expected_value": 50000,
+    "unit": "km",
+    "source_doc": "warranty_policy"
+  },
+  {
+    "id": "q_125_fast_charge_minutes",
+    "question": "What is the time to reach 80 percent on the fast charger of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_fast_charge_minutes",
+    "expected_value": 55,
+    "unit": "minutes",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_x_boot_litres",
+    "question": "What is the under-seat storage of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_boot_litres",
+    "expected_value": 24,
+    "unit": "litres",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_x_price_delhi_inr",
+    "question": "What is the on-road price in Delhi of the Meridian Volt X?",
+    "answerable": true,
+    "fact_id": "x_price_delhi_inr",
+    "expected_value": 177900,
+    "unit": "INR",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_125_charge_time_hours",
+    "question": "What is the time for a full charge on the standard charger of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_charge_time_hours",
+    "expected_value": 3.5,
+    "unit": "hours",
+    "source_doc": "spec_sheet"
+  },
+  {
+    "id": "q_unans_01",
+    "question": "How many units of the Meridian Volt X were sold in 2026?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  },
+  {
+    "id": "q_125_warranty_years",
+    "question": "What is the vehicle warranty period of the Meridian Pulse 125?",
+    "answerable": true,
+    "fact_id": "125_warranty_years",
+    "expected_value": 3,
+    "unit": "years",
+    "source_doc": "warranty_policy"
+  },
+  {
+    "id": "q_unans_06",
+    "question": "Can I ride a Meridian Arc 110 without a licence?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null
+  }
+]

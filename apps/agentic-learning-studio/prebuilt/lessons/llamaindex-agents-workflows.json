@@ -1,0 +1,1224 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "LlamaIndex Agents and Workflows",
+    "title": "LlamaIndex Agents and Workflows",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "LlamaIndex Agents and Workflows is practical when learners can apply it to this concrete case: A LlamaIndex workflow searches product docs, checks sources, and escalates low-confidence answers. By the end, they should be able to build or review LlamaIndex agent workflow with retrieval and citation nodes, measure source-backed answers on known support issues, and catch the failure where the workflow retrieves good nodes but drops source metadata before generation."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "LlamaIndex Agents and Workflows",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "LlamaIndex Agents and Workflows: mental map",
+    "caption": "Teach LlamaIndex agents and workflows as data-centric RAG plus tools, query engines, and event-driven multi-step processes.",
+    "oneLineThesis": "LlamaIndex is the right framework lesson when data preparation and retrieval quality are central to the agent’s work.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Data preparation is the center of gravity",
+        "sub": "Agents work best when the indexed data layer is trustworthy.",
+        "what": "Learners place LlamaIndex around data-centric applications.",
+        "relevance": "This avoids using agents to compensate for weak retrieval.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Start with readers, nodes, and query engines before agent logic.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Query engines become tools",
+        "sub": "Agents can call data interfaces and ordinary functions.",
+        "what": "Learners map query engines to agent tools.",
+        "relevance": "A query tool and a side-effect tool need different policies.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Define tool boundaries around query engines and actions.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Workflows coordinate multi-step data tasks",
+        "sub": "LlamaIndex workflows combine agents, connectors, and tool calls.",
+        "what": "Learners distinguish simple agents from workflow processes.",
+        "relevance": "Some data tasks require explicit steps beyond one agent loop.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use workflows when query, extraction, and action need order.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code a query-engine-backed agent",
+        "sub": "The useful example prints source nodes.",
+        "what": "Learners see how data tools feed agent answers.",
+        "relevance": "Source-node inspection catches weak retrieval before trust.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Connect a query engine tool to an agent and inspect evidence.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Evaluate retrieval before agent skill",
+        "sub": "An agent cannot reason from evidence it never receives.",
+        "what": "Learners set production checks for LlamaIndex agents.",
+        "relevance": "Agent workflows can amplify retrieval errors if not tested.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Gate agents with source-node and faithfulness tests.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Data preparation is the center of gravity",
+      "sub": "Agents work best when the indexed data layer is trustworthy.",
+      "summary": "The agent inherits the quality of the index.",
+      "objectives": [
+        "Explain why LlamaIndex is data-centric.",
+        "Connect documents, nodes, indexes, and query engines to agents.",
+        "Choose LlamaIndex for retrieval-heavy products."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "LlamaIndex agents stand on query engines",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a research assistant answers over product manuals, policy PDFs, and support tickets. The hard part is loading, parsing, indexing, retrieving, and citing data. LlamaIndex gives those steps first-class objects."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "An agent can call query engines as tools, but the query engine must already retrieve useful source nodes. Tool orchestration cannot fix bad parsing."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Inspect source nodes before judging the agent answer."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ],
+          "analogy": "The agent is the tour guide; the index is the map."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Case study: manual-search assistant",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "One query engine covers product manuals and another covers release notes. The agent chooses which engine to query, then synthesizes an answer with source nodes."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If release note parsing drops version headings, the agent cannot recover that provenance later."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Load and parse documents into nodes."
+                  }
+                ],
+                [
+                  {
+                    "text": "Build indexes and query engines."
+                  }
+                ],
+                [
+                  {
+                    "text": "Expose query engines as tools."
+                  }
+                ],
+                [
+                  {
+                    "text": "Evaluate retrieved source nodes."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Center of gravity",
+          "prompt": "What should be fixed first if a LlamaIndex agent cites weak snippets?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The agent’s backstory.",
+              "correct": false
+            },
+            {
+              "text": "The data parsing, node metadata, index, or retriever behind the query engine.",
+              "correct": true
+            },
+            {
+              "text": "The UI icon.",
+              "correct": false
+            }
+          ],
+          "explanation": "Retrieval quality comes before agent orchestration.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb7",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Query engines become tools",
+      "sub": "Agents can call data interfaces and ordinary functions.",
+      "summary": "LlamaIndex agents can combine data tools with action tools.",
+      "objectives": [
+        "Expose query engines as tools.",
+        "Write tool names and descriptions that guide model choice.",
+        "Separate read tools from side-effect tools."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "A query engine is a safe read tool when scoped well",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A query engine tool should have a narrow name, description, and source scope: search_product_manual, search_release_notes, or search_policy. This helps the model choose the right evidence source."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Ordinary functions can also be tools, such as calculators or ticket lookups. Side-effecting tools need the same validation and approval discipline as any agent framework."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Tool descriptions should mention what the tool cannot answer."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ],
+          "analogy": "Each query engine is a reference desk with a clearly labeled section."
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "LlamaIndex agent tool choices",
+          "criteria": [
+            "Tool",
+            "Use when",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Query engine tool",
+              "cells": [
+                {
+                  "criterion": "Tool",
+                  "text": "Ask indexed data for cited evidence.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Answers depend on documents.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Bad nodes lead to weak citations.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for RAG-backed answers.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Function tool",
+              "cells": [
+                {
+                  "criterion": "Tool",
+                  "text": "Run calculation or API operation.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Task needs non-document action.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Side effects need policy.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use with validation and approval.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "All-purpose search",
+              "cells": [
+                {
+                  "criterion": "Tool",
+                  "text": "One broad tool for every corpus.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Rarely.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Model cannot choose source reliably.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Avoid for production teaching.",
+              "cost": "Low",
+              "complexity": "Low"
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Tool boundary",
+          "prompt": "Why expose release notes and manuals as separate tools?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Separate tools remove the need for metadata.",
+              "correct": false
+            },
+            {
+              "text": "The model can choose the evidence source more reliably and traces are clearer.",
+              "correct": true
+            },
+            {
+              "text": "It makes retrieval impossible.",
+              "correct": false
+            }
+          ],
+          "explanation": "Narrow tools improve routing and evaluation.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb7",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Workflows coordinate multi-step data tasks",
+      "sub": "LlamaIndex workflows combine agents, connectors, and tool calls.",
+      "summary": "Workflows organize event-driven data/agent processes.",
+      "objectives": [
+        "Describe LlamaIndex workflows at a practical level.",
+        "Choose workflow steps for extraction or review.",
+        "Avoid hiding data errors inside agents."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Workflows make data processes explicit",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A document assistant may need to ingest a file, extract entities, query related notes, ask an agent to draft, and run a faithfulness check. A workflow gives that process named steps."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use workflows when ordering, branching, or review matters. Use a simple query engine when the task is direct Q&A."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If a step has a deterministic validator, keep it as code rather than asking the agent to self-certify."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ],
+          "analogy": "A workflow is a checklist the agent cannot skip."
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Worked workflow: extract, query, verify",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A support-ticket workflow extracts product/version, queries manuals and release notes, drafts a response, then verifies that cited source nodes support every claim."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Unsupported claims route to revision or refusal."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Extract structured request fields."
+                  }
+                ],
+                [
+                  {
+                    "text": "Query scoped engines."
+                  }
+                ],
+                [
+                  {
+                    "text": "Draft with source nodes."
+                  }
+                ],
+                [
+                  {
+                    "text": "Run faithfulness check before final."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Workflow fit",
+          "prompt": "When should you use a LlamaIndex workflow instead of only a query engine?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "When no data is involved.",
+              "correct": false
+            },
+            {
+              "text": "When the process has ordered steps such as extraction, multiple queries, verification, or action.",
+              "correct": true
+            },
+            {
+              "text": "When you want to hide all traces.",
+              "correct": false
+            }
+          ],
+          "explanation": "Workflows coordinate multi-step processes.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb7",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code a query-engine-backed agent",
+      "sub": "The useful example prints source nodes.",
+      "summary": "A LlamaIndex agent should expose the evidence path.",
+      "objectives": [
+        "Build query engine and tool shape.",
+        "Predict which tool answers a question.",
+        "Inspect source nodes or tool outputs."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Agent answers need source-node inspection",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A minimal example should load documents, create an index, expose the query engine, and show the source nodes behind the response. The agent layer is only useful when evidence remains visible."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from RAG faithfulness, final claims must map to retrieved context. LlamaIndex source nodes are the review surface."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Add one question the index cannot answer and verify refusal."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "LlamaIndex query engine as an agent tool",
+          "language": "python",
+          "code": "from llama_index.core import Document, VectorStoreIndex\n\nmanuals = [Document(text=\"Refund exceptions for enterprise plans require finance approval.\", metadata={\"source\": \"billing.md\"})]\nindex = VectorStoreIndex.from_documents(manuals)\nquery_engine = index.as_query_engine(similarity_top_k=2)\n\ndef search_billing_policy(question: str) -> str:\n    response = query_engine.query(question)\n    sources = [n.metadata.get(\"source\") for n in response.source_nodes]\n    return f\"{response}\nSources: {sources}\"\n\nprint(search_billing_policy(\"Who approves enterprise refund exceptions?\"))",
+          "explanation": "The function wraps a query engine and returns sources with the answer. A full FunctionAgent would register this as a tool.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict which source should appear.",
+            "answer": "`billing.md` should appear because the document contains the finance-approval fact."
+          },
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Source node review",
+          "prompt": "What should you inspect if the agent answer is wrong?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only the agent name.",
+              "correct": false
+            },
+            {
+              "text": "The query engine’s retrieved source nodes and metadata.",
+              "correct": true
+            },
+            {
+              "text": "Only the final punctuation.",
+              "correct": false
+            }
+          ],
+          "explanation": "The data layer is the likely failure surface.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb7",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Evaluate retrieval before agent skill",
+      "sub": "An agent cannot reason from evidence it never receives.",
+      "summary": "Data eval is the release gate.",
+      "objectives": [
+        "Measure expected source-node presence.",
+        "Check answer faithfulness.",
+        "Test tool selection and no-answer cases."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The agent is downstream of retrieval",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Evaluation should record question, expected source nodes, retrieved nodes, final answer, and claim support. Tool selection matters too: the model should choose manuals for policy questions and release notes for version questions."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Failure modes include bad parsing, wrong index, weak tool descriptions, overbroad query engines, missing refusal behavior, and source nodes that do not support claims."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Do not add more agents until direct query-engine eval passes."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output from LlamaIndex agents",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review answer, selected tool, and source nodes."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The selected query engine matches the question and corpus."
+                  }
+                ],
+                [
+                  {
+                    "text": "Source nodes include the facts used in the answer."
+                  }
+                ],
+                [
+                  {
+                    "text": "Node metadata supports readable citations."
+                  }
+                ],
+                [
+                  {
+                    "text": "The agent refuses or asks when evidence is absent."
+                  }
+                ],
+                [
+                  {
+                    "text": "Workflow validators route unsupported claims to revision or refusal."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "LlamaIndex gate",
+          "prompt": "What should block adding a multi-step agent workflow?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The query engine prints source nodes.",
+              "correct": false
+            },
+            {
+              "text": "The underlying query engine fails direct retrieval and faithfulness checks.",
+              "correct": true
+            },
+            {
+              "text": "The corpus has metadata.",
+              "correct": false
+            }
+          ],
+          "explanation": "Reliable data retrieval is the foundation.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb7",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb7",
+        "kb6"
+      ]
+    }
+  ],
+  "glossary": {
+    "framework": {
+      "id": "framework",
+      "label": "Framework",
+      "laymanDefinition": "A library or platform that provides agent building blocks and conventions.",
+      "technicalNote": "Framework choice affects state handling, tools, tracing, deployment model, ecosystem fit, and how much control the application keeps.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "graph": {
+      "id": "graph",
+      "label": "Graph",
+      "laymanDefinition": "A workflow shape where nodes and edges define how work moves between steps.",
+      "technicalNote": "Graph-based agents make branching, retries, checkpoints, and human review more explicit than a single loose loop.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "checkpoint": {
+      "id": "checkpoint",
+      "label": "Checkpoint",
+      "laymanDefinition": "A saved workflow state that lets execution resume or be inspected later.",
+      "technicalNote": "Checkpoints are essential for durable agents because retries, approvals, and debugging need the exact state at a step boundary.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "handoff": {
+      "id": "handoff",
+      "label": "Handoff",
+      "laymanDefinition": "Passing work from one agent, tool, or human role to another.",
+      "technicalNote": "Handoffs need a typed payload, ownership transfer, stop condition, and audit trail so context does not vanish between actors.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "sdk": {
+      "id": "sdk",
+      "label": "SDK",
+      "laymanDefinition": "A software development kit with APIs and helpers for building applications.",
+      "technicalNote": "Agent SDKs encode assumptions about models, tools, sessions, tracing, and deployment, so evaluate those assumptions against the product architecture.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Software development kit"
+    },
+    "orchestration": {
+      "id": "orchestration",
+      "label": "Orchestration",
+      "laymanDefinition": "Coordinating steps, agents, tools, state, and decisions in a workflow.",
+      "technicalNote": "Orchestration owns sequencing, parallelism, retries, timeouts, approvals, and failure visibility across the agent system.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for LlamaIndex Agents and Workflows",
+    "themes": [
+      {
+        "name": "LlamaIndex agent fit",
+        "questions": [
+          {
+            "q": "Is the agent mainly orchestrating tools around private or structured data indexes?",
+            "why": "LlamaIndex shines when readers, nodes, indexes, retrievers, and query engines dominate behavior.",
+            "opts": [
+              "LlamaIndex query-engine tool agent",
+              "LangChain integration agent",
+              "LangGraph explicit state workflow"
+            ],
+            "rot": "Use LlamaIndex when data objects and retrieval quality are the heart of the agent; use graph frameworks when control flow dominates."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct LlamaIndex agents by naming readers, nodes, indexes, retrievers, query engines, tools, FunctionAgent, workflows, and source-node evaluation."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "LlamaIndex agent path from indexed data to tool-using workflow",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Data preparation is the center of gravity",
+          "sub": "Agents work best when the indexed data layer is trustworthy.",
+          "what": "Learners place LlamaIndex around data-centric applications.",
+          "relevance": "This avoids using agents to compensate for weak retrieval.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Start with readers, nodes, and query engines before agent logic.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Query engines become tools",
+          "sub": "Agents can call data interfaces and ordinary functions.",
+          "what": "Learners map query engines to agent tools.",
+          "relevance": "A query tool and a side-effect tool need different policies.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Define tool boundaries around query engines and actions.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Workflows coordinate multi-step data tasks",
+          "sub": "LlamaIndex workflows combine agents, connectors, and tool calls.",
+          "what": "Learners distinguish simple agents from workflow processes.",
+          "relevance": "Some data tasks require explicit steps beyond one agent loop.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use workflows when query, extraction, and action need order.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code a query-engine-backed agent",
+          "sub": "The useful example prints source nodes.",
+          "what": "Learners see how data tools feed agent answers.",
+          "relevance": "Source-node inspection catches weak retrieval before trust.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Connect a query engine tool to an agent and inspect evidence.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Evaluate retrieval before agent skill",
+          "sub": "An agent cannot reason from evidence it never receives.",
+          "what": "Learners set production checks for LlamaIndex agents.",
+          "relevance": "Agent workflows can amplify retrieval errors if not tested.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Gate agents with source-node and faithfulness tests.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Data preparation is the center of gravity",
+        "detail": "The agent inherits the quality of the index."
+      },
+      {
+        "step": 2,
+        "label": "Query engines become tools",
+        "detail": "LlamaIndex agents can combine data tools with action tools."
+      },
+      {
+        "step": 3,
+        "label": "Workflows coordinate multi-step data tasks",
+        "detail": "Workflows organize event-driven data/agent processes."
+      },
+      {
+        "step": 4,
+        "label": "Code a query-engine-backed agent",
+        "detail": "A LlamaIndex agent should expose the evidence path."
+      },
+      {
+        "step": 5,
+        "label": "Evaluate retrieval before agent skill",
+        "detail": "Data eval is the release gate."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_fit",
+        "label": "Can you justify the fit described in \"Data preparation is the center of gravity\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_impl",
+        "label": "Can you inspect the implementation surface in \"Code a query-engine-backed agent\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Evaluate retrieval before agent skill\" define production checks?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Design a LlamaIndex research assistant with two query-engine tools, one calculator tool, source-node inspection, and a workflow step that refuses unsupported claims. Next rung: compare with LangChain and LangGraph.",
+      "scopedTo": "LlamaIndex Agents and Workflows"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LangGraph documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "kb7": {
+      "id": "kb7",
+      "kind": "kb",
+      "title": "KB: LlamaIndex",
+      "url": "https://developers.llamaindex.ai/python/framework/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb6": {
+      "id": "kb6",
+      "kind": "kb",
+      "title": "KB: LangGraph",
+      "url": "https://docs.langchain.com/oss/python/langgraph/overview",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

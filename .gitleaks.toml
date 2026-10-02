@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Two deliberate, nonfunctional Langfuse fixtures used to verify redaction"
+regexTarget = "secret"
+regexes = [
+  '''^sk-lf-fixture-secret-key-12345$''',
+  '''^sk-lf-synthetic-fixture-123456$'''
+]

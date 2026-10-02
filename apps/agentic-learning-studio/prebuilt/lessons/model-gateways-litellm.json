@@ -1,0 +1,1865 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Model Gateways with LiteLLM",
+    "title": "Model Gateways with LiteLLM",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 34,
+    "thesis": "A model gateway like LiteLLM puts one stable interface in front of many LLM providers, so your app can switch, fall back, balance load, and track cost without rewriting calls."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Model Gateways with LiteLLM",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Model Gateways with LiteLLM: mental map",
+    "caption": "Follow the path top to bottom: what a gateway owns, how a call flows, when to use it, how to wire it, and how to run it safely.",
+    "oneLineThesis": "A model gateway like LiteLLM puts one stable interface in front of many providers so you can switch, fall back, balance load, and track cost without rewriting calls.",
+    "structureType": "procedural",
+    "entryNodeId": "n_m1",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "What a gateway owns",
+        "sub": "Place LiteLLM in the system map.",
+        "orient": "Why model sprawl hurts and what a gateway takes off your app's plate.",
+        "what": "What a gateway owns turns Model Gateways with LiteLLM into a usable mental model.",
+        "relevance": "It matters because you need to know which job LiteLLM does and which job stays in your app.",
+        "moduleId": "m1",
+        "order": 1,
+        "layer": "Path",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m2",
+        "label": "How a call flows",
+        "sub": "Trace one request through the gateway.",
+        "orient": "How one OpenAI-style request maps to a provider, returns, and is logged.",
+        "what": "How a call flows turns Model Gateways with LiteLLM into a usable mental model.",
+        "relevance": "It matters because understanding the request path is what lets you debug latency and errors later.",
+        "moduleId": "m2",
+        "order": 2,
+        "layer": "Path",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m3",
+        "label": "When to reach for it",
+        "sub": "Compare gateway vs. direct SDKs.",
+        "orient": "When a gateway earns its keep versus when a single provider SDK is simpler.",
+        "what": "When to reach for it turns Model Gateways with LiteLLM into a usable mental model.",
+        "relevance": "It matters because a gateway adds a hop and an operator burden you only want when it pays off.",
+        "moduleId": "m3",
+        "order": 3,
+        "layer": "Path",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m4",
+        "label": "Wire it up",
+        "sub": "See the smallest working config.",
+        "orient": "The minimal router config and call that proves the pattern end to end.",
+        "what": "Wire it up turns Model Gateways with LiteLLM into a usable mental model.",
+        "relevance": "It matters because the smallest working slice is what you extend into a real deployment.",
+        "moduleId": "m4",
+        "order": 4,
+        "layer": "Path",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m5",
+        "label": "Run it in production",
+        "sub": "Harden fallbacks, limits, and cost.",
+        "orient": "How the gateway breaks under load and the guards that keep it reliable.",
+        "what": "Run it in production turns Model Gateways with LiteLLM into a usable mental model.",
+        "relevance": "It matters because a gateway concentrates traffic, so its failure modes hit every model call at once.",
+        "moduleId": "m5",
+        "order": 5,
+        "layer": "Path",
+        "emphasis": "spine"
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "What a gateway owns",
+      "sub": "Starts the spine: the problem a model gateway solves.",
+      "summary": "Calling many LLM providers directly spreads provider-specific code across your app. A model gateway like LiteLLM owns that translation behind one interface. This module frames the problem before we trace a call.",
+      "objectives": [
+        "Explain why calling several LLM providers directly creates a maintenance problem.",
+        "State which job a model gateway owns and which job stays in your application.",
+        "Name one validation check that proves the gateway is routing correctly."
+      ],
+      "termIds": [
+        "gateway",
+        "serving",
+        "latency",
+        "throughput"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Why a model gateway exists",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When an app calls just one model provider, life is simple. The moment you add a second — say a cheaper model for drafts and a stronger one for final answers — your code fills with provider-specific clients, auth, retry logic, and response shapes that don't match."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A "
+                },
+                {
+                  "text": "model gateway",
+                  "term": "gateway",
+                  "strong": true
+                },
+                {
+                  "text": " solves this. "
+                },
+                {
+                  "text": "LiteLLM",
+                  "strong": true
+                },
+                {
+                  "text": " is one such gateway: it exposes a single OpenAI-style interface and translates each call into whatever the chosen provider expects. Your app sends one shape of request; the gateway handles OpenAI, Anthropic, Google, Bedrock, or a self-hosted model behind it."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The gateway owns",
+                    "strong": true
+                  },
+                  {
+                    "text": ": provider translation, routing, fallbacks, load balancing, rate limits, and cost tracking."
+                  }
+                ],
+                [
+                  {
+                    "text": "Your app still owns",
+                    "strong": true
+                  },
+                  {
+                    "text": ": the prompt, which model tier to ask for, and what to do with the answer."
+                  }
+                ],
+                [
+                  {
+                    "text": "Keep one measurable success signal",
+                    "strong": true
+                  },
+                  {
+                    "text": ": a request that names model "
+                  },
+                  {
+                    "code": true,
+                    "text": "gpt-4o"
+                  },
+                  {
+                    "text": " comes back tagged with the provider that actually served it."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: ",
+                  "strong": true
+                },
+                {
+                  "em": true,
+                  "text": "if your app talks to four providers directly and a fifth launches, how many places in your code have to change — and what would a gateway change instead?"
+                }
+              ]
+            }
+          ],
+          "analogy": "A model gateway is like a universal power adapter: your laptop plug stays the same, and the adapter handles whatever socket the country uses.",
+          "termIds": [
+            "gateway",
+            "serving"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_visual",
+          "kind": "steppedFlow",
+          "title": "Click through the flow",
+          "caption": "The smallest useful path a request takes through a model gateway.",
+          "steps": [
+            {
+              "label": "Request",
+              "detail": "Your app sends one OpenAI-style request naming a model, e.g. model=\"claude-3-5-sonnet\"."
+            },
+            {
+              "label": "Route",
+              "detail": "The gateway looks up which provider and credentials serve that model name."
+            },
+            {
+              "label": "Translate + call",
+              "detail": "It rewrites the request into the provider's format and forwards it."
+            },
+            {
+              "label": "Normalize + log",
+              "detail": "It maps the reply back to one standard shape and records tokens, cost, and latency."
+            }
+          ],
+          "min": 1,
+          "max": 5,
+          "unit": "level",
+          "stops": [
+            {
+              "at": 1,
+              "label": "Intuition",
+              "note": "One interface, many providers behind it."
+            },
+            {
+              "at": 3,
+              "label": "Working model",
+              "note": "Enough to predict where routing or translation can fail."
+            },
+            {
+              "at": 5,
+              "label": "Operational rigor",
+              "note": "Adds fallbacks, rate limits, and cost tracking."
+            }
+          ],
+          "termIds": [
+            "gateway",
+            "latency"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_walk",
+          "kind": "walkthrough",
+          "title": "How to reason about the boundary",
+          "steps": [
+            {
+              "label": "Name what the gateway owns",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Write one sentence: the gateway owns provider translation, routing, and reliability; it does not own your prompt or your business logic."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Attach evidence",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Confirm the model name you pass is one LiteLLM recognizes; check the provider docs for the exact identifier."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Choose a test",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Send the same prompt to two model names and verify each response reports the provider that served it — that proves routing works."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gateway",
+            "serving"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_example",
+          "kind": "functionalExample",
+          "title": "Concrete use case: drafts cheap, finals strong",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A support tool drafts replies with a small, cheap model and escalates hard tickets to a frontier model. Without a gateway, that's two SDKs, two auth flows, and two response parsers in the same codebase."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "With LiteLLM, the app calls "
+                },
+                {
+                  "code": true,
+                  "text": "completion(model=\"gpt-4o-mini\", ...)"
+                },
+                {
+                  "text": " for drafts and "
+                },
+                {
+                  "code": true,
+                  "text": "completion(model=\"claude-3-5-sonnet\", ...)"
+                },
+                {
+                  "text": " for escalations. Same call shape, same parsing — only the model name changes."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "gateway",
+            "serving"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_technical",
+          "kind": "technical",
+          "title": "Technical note: make routing observable",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The technical habit is to make the gateway's hidden choices visible: log the requested model name, the provider it resolved to, token counts, cost, and latency for every call."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "If a call's cost or latency would matter in a production review, the gateway should already be recording it — don't bolt logging on later."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gateway",
+            "latency",
+            "throughput"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "What does a model gateway like LiteLLM primarily own?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The prompts and business logic of your application.",
+              "correct": false
+            },
+            {
+              "text": "Provider translation, routing, fallbacks, and cost tracking behind one interface.",
+              "correct": true
+            },
+            {
+              "text": "Training the underlying language models.",
+              "correct": false
+            }
+          ],
+          "explanation": "A gateway puts one stable interface in front of many providers and owns the translation, routing, and reliability concerns — not your prompts or what you do with the answer.",
+          "termIds": [
+            "gateway"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "How a call flows",
+      "sub": "Follows module 1: open up the request path the gateway owns.",
+      "summary": "Now that you know what a gateway owns, trace one request through it: request in, route, translate, call, normalize, log. Seeing the path is what lets you debug it later.",
+      "objectives": [
+        "Trace a single request through the gateway from app call to normalized response.",
+        "Explain how the gateway maps a model name to a provider and credentials.",
+        "Identify the point in the path where most latency and errors appear."
+      ],
+      "termIds": [
+        "gateway",
+        "serving",
+        "latency",
+        "throughput"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The request lifecycle, end to end",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "In module 1 the gateway was a black box that owns translation. Open it up. A single call passes through four stages, and each one is a place you can inspect when something goes wrong."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Resolve",
+                    "strong": true
+                  },
+                  {
+                    "text": " — the requested model name is matched to a provider entry (endpoint, credentials, defaults)."
+                  }
+                ],
+                [
+                  {
+                    "text": "Translate",
+                    "strong": true
+                  },
+                  {
+                    "text": " — the OpenAI-style request is rewritten into the provider's native schema."
+                  }
+                ],
+                [
+                  {
+                    "text": "Call",
+                    "strong": true
+                  },
+                  {
+                    "text": " — the request is sent over the network; this is where most "
+                  },
+                  {
+                    "term": "latency",
+                    "text": "latency"
+                  },
+                  {
+                    "text": " lives."
+                  }
+                ],
+                [
+                  {
+                    "text": "Normalize",
+                    "strong": true
+                  },
+                  {
+                    "text": " — the reply is mapped back to one standard shape and the usage is logged."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Because every model call goes through the same path, you measure "
+                },
+                {
+                  "term": "throughput",
+                  "text": "throughput"
+                },
+                {
+                  "text": " and latency in one place instead of per provider."
+                }
+              ]
+            }
+          ],
+          "analogy": "The gateway is like an airport connections desk: it reads your ticket (resolve), reroutes your bags to the right carrier (translate), the flight itself takes the time (call), then it reprints one boarding pass in a format you recognize (normalize).",
+          "termIds": [
+            "gateway",
+            "latency",
+            "throughput"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_walk",
+          "kind": "walkthrough",
+          "title": "How to reason through one request",
+          "steps": [
+            {
+              "label": "Name the boundary",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Pin down where the app stops and the gateway starts: the app builds the request body; the gateway resolves the model and forwards it."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Attach evidence",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Read the gateway's log line for one call: requested model, resolved provider, status, latency, tokens."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Choose a test",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Send a request for an unknown model name and confirm it fails at Resolve with a clear error, not silently downstream."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gateway",
+            "serving"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_example",
+          "kind": "functionalExample",
+          "title": "Concrete use case: one prompt, two providers",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "You send the same prompt twice — once as "
+                },
+                {
+                  "code": true,
+                  "text": "model=\"gpt-4o\""
+                },
+                {
+                  "text": " and once as "
+                },
+                {
+                  "code": true,
+                  "text": "model=\"claude-3-5-sonnet\""
+                },
+                {
+                  "text": ". At Resolve, the first maps to OpenAI, the second to Anthropic."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "At Translate the two requests diverge into different native schemas, yet at Normalize both come back as the same response object your code reads identically. The only thing your app saw differ was the model string."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "gateway",
+            "serving"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_code",
+          "kind": "codeExample",
+          "title": "Minimal working call",
+          "language": "python",
+          "code": "from litellm import completion\n\nresp = completion(\n    model=\"claude-3-5-sonnet\",\n    messages=[{\"role\": \"user\", \"content\": \"Summarize this ticket.\"}],\n)\nprint(resp.choices[0].message.content)\nprint(resp.model)  # which provider model actually served it",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is the smallest runnable shape: one call, one response object. Note the response is OpenAI-shaped even though Anthropic served it — that normalization is the gateway's whole value."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Before running this, predict: at which of the four stages (Resolve, Translate, Call, Normalize) would a typo in the model name fail — and why?",
+            "answer": "It fails at Resolve. The gateway can't map an unknown model name to a provider, so it errors before any translation or network call happens — which is exactly where you want it to fail: early and cheap."
+          },
+          "syntax": [
+            {
+              "part": "completion(...)",
+              "explains": "The single unified entry point; the model= argument is what gets resolved."
+            },
+            {
+              "part": "messages=[...]",
+              "explains": "OpenAI-style message list, used regardless of provider."
+            },
+            {
+              "part": "resp.model",
+              "explains": "Reports the provider model that actually served the request — your routing check."
+            }
+          ],
+          "termIds": [
+            "gateway",
+            "serving"
+          ],
+          "sources": [
+            "canon1",
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Where in the request path does most latency live?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "At Resolve, while matching the model name.",
+              "correct": false
+            },
+            {
+              "text": "At Call, the network round-trip to the provider.",
+              "correct": true
+            },
+            {
+              "text": "At Normalize, while reshaping the response.",
+              "correct": false
+            }
+          ],
+          "explanation": "Resolve and Normalize are local and fast. The dominant latency is the network round-trip to the provider during the Call stage — which is why the gateway measures it there.",
+          "termIds": [
+            "latency"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "When to reach for it",
+      "sub": "Follows module 2: now decide whether the path you traced is worth the extra hop.",
+      "summary": "A gateway adds a hop and an operator to maintain. This module forces the choice: when does LiteLLM earn its keep, and when is a single provider SDK simpler?",
+      "objectives": [
+        "Compare a model gateway against direct provider SDKs on fit, burden, and risk.",
+        "State the conditions under which a gateway clearly pays off.",
+        "Pick the smallest option that meets the requirement and can be tested."
+      ],
+      "termIds": [
+        "gateway",
+        "serving",
+        "latency",
+        "throughput"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Gateway or direct SDK?",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A model gateway is not free. It adds a network hop, a config to maintain, and one more thing that can go down. The honest question is when that cost buys you enough."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Reach for a gateway when",
+                    "strong": true
+                  },
+                  {
+                    "text": " you use multiple providers, want fallbacks, need centralized cost/rate limits, or want to swap models without code changes."
+                  }
+                ],
+                [
+                  {
+                    "text": "Skip it when",
+                    "strong": true
+                  },
+                  {
+                    "text": " you use exactly one provider, have no fallback need, and value the fewest moving parts — a direct SDK is simpler."
+                  }
+                ],
+                [
+                  {
+                    "text": "The deciding signal",
+                    "strong": true
+                  },
+                  {
+                    "text": " is variety: the more provider variety and reliability demands you have, the more a gateway pays off."
+                  }
+                ]
+              ]
+            }
+          ],
+          "analogy": "A gateway is like hiring a dispatcher: pointless if you own one taxi, essential once you run a fleet that has to reroute around breakdowns.",
+          "termIds": [
+            "gateway",
+            "serving"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m3_walk",
+          "kind": "walkthrough",
+          "title": "How to reason through the choice",
+          "steps": [
+            {
+              "label": "Name the requirement",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Write the user-visible need in one line: e.g. \"answers must keep flowing even if one provider is down.\""
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Attach evidence",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Count how many providers and reliability guarantees the requirement actually implies — not how many you might want someday."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Choose the smallest fit",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Pick the lightest option that satisfies the requirement and can be tested; add the gateway only when the evidence demands it."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gateway",
+            "serving"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionMatrix",
+          "title": "Direct SDK vs. gateway vs. self-hosted proxy",
+          "criteria": [
+            "Fit",
+            "Operational burden",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Direct provider SDK",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Best for a single provider, simple needs.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Fewest moving parts.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "No fallback; provider outage stops you.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use when you commit to one provider and need no failover.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "LiteLLM SDK (in-process)",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Best for multi-provider apps wanting one call shape.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "A library, no extra service to run.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "No central control across services.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when one app needs provider flexibility and fallbacks.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "LiteLLM proxy server",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Best when many services share routing, keys, and cost rules.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "A service to deploy and monitor.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "A single choke point if not made reliable.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when central cost tracking and key management matter across teams.",
+              "cost": "Medium",
+              "complexity": "High"
+            }
+          ],
+          "howToRead": "Pick the smallest option that satisfies the requirement and can be tested. Move right only when variety, fallbacks, or central control force it.",
+          "termIds": [
+            "gateway",
+            "serving"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_technical",
+          "kind": "technical",
+          "title": "Technical note: the hidden cost of a hop",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A proxy gateway adds one network hop to every call. Usually it is small next to model latency, but it is real — and it concentrates risk: if the proxy is down, every model call is down."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "If you adopt the proxy, treat its uptime and added latency as first-class metrics from day one."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gateway",
+            "latency",
+            "throughput"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Which situation most clearly justifies adopting a model gateway?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "You call exactly one provider and never need failover.",
+              "correct": false
+            },
+            {
+              "text": "You route across several providers and need fallbacks and central cost tracking.",
+              "correct": true
+            },
+            {
+              "text": "You want the absolute fewest moving parts in a one-model prototype.",
+              "correct": false
+            }
+          ],
+          "explanation": "A gateway earns its hop and operator burden when provider variety, fallbacks, or centralized control are real requirements. With one provider and no failover, a direct SDK is simpler.",
+          "termIds": [
+            "gateway"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Choose how to call your models: direct provider SDK, LiteLLM SDK in-process, or a LiteLLM proxy server."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Wire it up",
+      "sub": "Follows module 3: once you've chosen the gateway, build the smallest working slice.",
+      "summary": "You decided a gateway fits. Now wire the smallest version that proves it: a router config with two models and a fallback, plus one call. Earlier modules showed worked examples; here a key line is left for you to complete.",
+      "objectives": [
+        "Write a minimal LiteLLM router config that maps model names to providers.",
+        "Add a fallback so a failed primary model retries on a backup.",
+        "Verify the routing and fallback before trusting AI-generated config."
+      ],
+      "termIds": [
+        "gateway",
+        "serving",
+        "latency",
+        "throughput"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_recall",
+          "kind": "note",
+          "tone": "info",
+          "body": [
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict from memory: ",
+                  "strong": true
+                },
+                {
+                  "em": true,
+                  "text": "in module 2 you traced four stages. Which stage decides which provider serves the request — and what config does that stage read?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The answer is "
+                },
+                {
+                  "text": "Resolve",
+                  "strong": true
+                },
+                {
+                  "text": ". It reads the router's model list to map a model name to a provider and credentials. The config below is exactly what Resolve consumes."
+                }
+              ]
+            }
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "The smallest working router",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A router config is just a list: each entry names a model and the provider that serves it. Add a "
+                },
+                {
+                  "text": "fallback",
+                  "strong": true
+                },
+                {
+                  "text": " and the router retries a backup model when the primary fails."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Map names",
+                    "strong": true
+                  },
+                  {
+                    "text": ": each model name points to a provider, an endpoint, and a credential reference."
+                  }
+                ],
+                [
+                  {
+                    "text": "Declare fallbacks",
+                    "strong": true
+                  },
+                  {
+                    "text": ": list a backup model so a transient failure doesn't surface to the user."
+                  }
+                ],
+                [
+                  {
+                    "text": "Keep secrets out of code",
+                    "strong": true
+                  },
+                  {
+                    "text": ": reference keys from the environment, never inline."
+                  }
+                ]
+              ]
+            }
+          ],
+          "analogy": "The router config is like a phone tree: 'call Sales; if no answer, ring the backup line.' The names route the call, the fallback catches the miss.",
+          "termIds": [
+            "gateway",
+            "serving"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Completion problem: finish the fallback",
+          "language": "python",
+          "code": "from litellm import Router\n\nrouter = Router(\n    model_list=[\n        {\"model_name\": \"primary\",\n         \"litellm_params\": {\"model\": \"gpt-4o\"}},\n        {\"model_name\": \"backup\",\n         \"litellm_params\": {\"model\": \"claude-3-5-sonnet\"}},\n    ],\n    # TODO: make 'primary' fall back to 'backup' on failure\n    fallbacks=[...],\n)\n\nresp = router.completion(\n    model=\"primary\",\n    messages=[{\"role\": \"user\", \"content\": \"Draft a reply.\"}],\n)",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The router knows two model names. The missing piece is the fallback wiring: when 'primary' errors, the router should automatically retry 'backup' before giving up."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Complete the TODO: what value should fallbacks= hold so that 'primary' retries 'backup' on failure?",
+            "answer": "fallbacks=[{\"primary\": [\"backup\"]}] — a list of maps from a failing model name to an ordered list of backups to try. When a call to 'primary' raises, the router transparently re-issues it as 'backup'."
+          },
+          "syntax": [
+            {
+              "part": "Router(model_list=[...])",
+              "explains": "Builds the routing table the Resolve stage reads."
+            },
+            {
+              "part": "litellm_params",
+              "explains": "Per-entry provider settings, including the real provider model id."
+            },
+            {
+              "part": "fallbacks=[...]",
+              "explains": "Maps a primary model name to ordered backups tried on failure."
+            }
+          ],
+          "termIds": [
+            "gateway",
+            "serving"
+          ],
+          "sources": [
+            "canon1",
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "note",
+          "tone": "warn",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If you let an AI assistant generate this router config, verify these before trusting it:",
+                  "strong": true
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Are the provider model ids exactly right? One wrong identifier fails at Resolve — diff them against the provider docs."
+                  }
+                ],
+                [
+                  {
+                    "text": "Do the fallback names match real model_name entries? A fallback pointing at a name not in the list silently never fires."
+                  }
+                ],
+                [
+                  {
+                    "text": "Are keys read from the environment, not hardcoded? Grep the generated config for literal secrets."
+                  }
+                ],
+                [
+                  {
+                    "text": "Did you actually trigger a fallback? Force the primary to fail once and confirm the backup served the request."
+                  }
+                ]
+              ]
+            }
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "A fallback you configured never fires even when the primary errors. What's the most likely cause?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The fallback names a model_name that isn't in the router's model_list.",
+              "correct": true
+            },
+            {
+              "text": "The network latency is too high.",
+              "correct": false
+            },
+            {
+              "text": "The response was normalized to the wrong shape.",
+              "correct": false
+            }
+          ],
+          "explanation": "Fallbacks reference model names. If the backup name isn't a real entry in model_list, the router has nothing to retry against, so the fallback silently does nothing — exactly why you test it by forcing a failure.",
+          "termIds": [
+            "gateway"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Run it in production",
+      "sub": "Follows module 4: take the working slice and make it survive real traffic.",
+      "summary": "A gateway concentrates every model call, so its failure modes hit everything at once. This late module covers how it breaks under load and the guards — fallbacks, rate limits, cost caps, versioning — that keep it reliable.",
+      "objectives": [
+        "Name the main ways a model gateway breaks under production load.",
+        "Match each failure mode to the guard that prevents it.",
+        "Decide the right level of operational rigor for your deployment."
+      ],
+      "termIds": [
+        "gateway",
+        "serving",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "note",
+          "tone": "info",
+          "body": [
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict from memory: ",
+                  "strong": true
+                },
+                {
+                  "em": true,
+                  "text": "in module 3 you weighed the proxy's one downside. What was the risk it concentrates — and why does that matter even more under load?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "It is the "
+                },
+                {
+                  "text": "single choke point",
+                  "strong": true
+                },
+                {
+                  "text": ": every model call flows through the gateway, so when it degrades, all of them degrade together. That is exactly why the guards below matter."
+                }
+              ]
+            }
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m5_failure",
+          "kind": "conceptual",
+          "title": "How the gateway breaks in practice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Knowing the happy path isn't enough. Because the gateway sits in front of every call, these are the failures that bite at scale — and the guard for each."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "1. Provider rate-limit storms"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Traffic spikes past a provider's quota and calls start returning 429s. Guard: per-model "
+                },
+                {
+                  "term": "throughput",
+                  "text": "throughput"
+                },
+                {
+                  "text": " limits in the router plus fallbacks to a second provider."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "2. Fallback masking real failures"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A misconfigured primary fails constantly and the backup quietly absorbs it all — your bill and "
+                },
+                {
+                  "term": "latency",
+                  "text": "latency"
+                },
+                {
+                  "text": " climb while dashboards look green. Guard: alert on fallback rate, not just error rate."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "3. Runaway cost"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A loop or a leaked key drives spend through the roof. Guard: per-key budget caps enforced at the gateway, which is the one place that sees every call."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "4. Silent model drift (non-obvious)"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A provider updates the model behind an alias and behavior shifts with no code change. Guard: pin exact model "
+                },
+                {
+                  "term": "versioning",
+                  "text": "versioning"
+                },
+                {
+                  "text": " in the router and log the served model on every call."
+                }
+              ]
+            }
+          ],
+          "analogy": "A gateway under load is like a single toll booth on a bridge: efficient until the booth jams, and then every car is stuck — so you build a second lane (fallback) and a counter that screams when traffic spikes (limits and alerts).",
+          "termIds": [
+            "gateway",
+            "throughput",
+            "latency",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_walk",
+          "kind": "walkthrough",
+          "title": "How to harden deliberately",
+          "steps": [
+            {
+              "label": "Pin versions",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Replace floating aliases with exact model ids so behavior can't drift under you."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Set limits and caps",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Add per-model throughput limits and per-key budget caps at the gateway before traffic grows."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Alert on fallback rate",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Treat a rising fallback rate as a primary-provider incident, not a success — it hides cost and latency growth."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gateway",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionMatrix",
+          "title": "How much rigor does this deployment need?",
+          "criteria": [
+            "Fit",
+            "Operational burden",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Bare router",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Fine for a prototype or internal tool.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Almost none.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "No caps; cost and outages can surprise you.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use while traffic is low and failures are cheap.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Router + fallbacks + limits",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Best when users depend on the result.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Needs config, alerts, and an owner.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Lower once fallback rate is monitored.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Use when uptime and predictable cost matter.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Full proxy + budgets + version pinning",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Best for many teams sharing models.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "A monitored service with key management.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Lowest, if the proxy itself is made reliable.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when central cost control and governance are required.",
+              "cost": "High",
+              "complexity": "High"
+            }
+          ],
+          "howToRead": "Pick the smallest option that satisfies the user-visible reliability requirement and can be tested. Add rigor only after a measured failure or growth, not preemptively.",
+          "termIds": [
+            "gateway",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Your error-rate dashboard is green but cost and latency are climbing. Which failure mode is most likely?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A fallback is masking a constantly-failing primary.",
+              "correct": true
+            },
+            {
+              "text": "The model name resolved to the wrong shape.",
+              "correct": false
+            },
+            {
+              "text": "The router has no model_list entries.",
+              "correct": false
+            }
+          ],
+          "explanation": "When a primary keeps failing and the backup silently absorbs it, user-facing errors stay near zero while spend and latency rise. That's why you alert on fallback rate, not just error rate.",
+          "termIds": [
+            "gateway",
+            "latency"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Choose the right level of operational rigor for your gateway: bare router, router with fallbacks and limits, or a full proxy with budgets and version pinning."
+    }
+  ],
+  "glossary": {
+    "gpu": {
+      "id": "gpu",
+      "label": "GPU",
+      "laymanDefinition": "A parallel accelerator for tensor computation.",
+      "technicalNote": "Relevant when a gateway routes to a self-hosted model whose serving cost is bounded by GPU throughput.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Graphics processing unit"
+    },
+    "serving": {
+      "id": "serving",
+      "label": "Serving",
+      "laymanDefinition": "Running a model so applications can send it requests and get responses.",
+      "technicalNote": "A gateway sits in front of one or more serving backends and routes requests to them.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "gateway": {
+      "id": "gateway",
+      "label": "Gateway",
+      "laymanDefinition": "A single interface that fronts many model providers and routes each call to the right one.",
+      "technicalNote": "LiteLLM is a model gateway: it normalizes requests/responses across providers and adds routing, fallbacks, limits, and cost tracking.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "latency": {
+      "id": "latency",
+      "label": "Latency",
+      "laymanDefinition": "How long a single request takes to return.",
+      "technicalNote": "In a gateway, most latency is the network call to the provider; the proxy hop adds a smaller, separately-measured amount.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "throughput": {
+      "id": "throughput",
+      "label": "Throughput",
+      "laymanDefinition": "How many requests the system handles per unit time.",
+      "technicalNote": "Per-model throughput limits in the router prevent rate-limit storms against a provider's quota.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "versioning": {
+      "id": "versioning",
+      "label": "Versioning",
+      "laymanDefinition": "Pinning the exact model variant so behavior doesn't change silently.",
+      "technicalNote": "Pin exact provider model ids in the router instead of floating aliases to avoid silent model drift.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts",
+    "themes": [
+      {
+        "name": "Adoption check",
+        "questions": [
+          {
+            "q": "Does your app's provider variety and reliability need justify a gateway?",
+            "why": "A gateway only pays for its extra hop when you route across providers, need fallbacks, or want central cost control.",
+            "opts": [
+              "Adopt the proxy",
+              "Use the SDK in-process",
+              "Stay on a direct SDK"
+            ],
+            "rot": "Prefer the smallest option that meets the requirement and can be tested."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct the whole path: name what a model gateway owns versus what your app owns, list the four stages one request passes through, state the condition that justifies a gateway over a direct SDK, and recall two production failure modes plus the guard that prevents each."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Reference path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "What a gateway owns",
+          "sub": "Place LiteLLM in the system map.",
+          "what": "What a gateway owns turns Model Gateways with LiteLLM into a usable mental model.",
+          "relevance": "It matters because you need to know which job LiteLLM does and which job stays in your app.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m2",
+          "label": "How a call flows",
+          "sub": "Trace one request through the gateway.",
+          "what": "How a call flows turns Model Gateways with LiteLLM into a usable mental model.",
+          "relevance": "It matters because the request path is what you debug for latency and errors.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal"
+        },
+        {
+          "id": "n_m3",
+          "label": "When to reach for it",
+          "sub": "Compare gateway vs. direct SDKs.",
+          "what": "When to reach for it turns Model Gateways with LiteLLM into a usable mental model.",
+          "relevance": "It matters because the gateway adds a hop you only want when it pays off.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m4",
+          "label": "Wire it up",
+          "sub": "See the smallest working config.",
+          "what": "Wire it up turns Model Gateways with LiteLLM into a usable mental model.",
+          "relevance": "It matters because the smallest working slice is what you extend into production.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal"
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Name what the gateway owns",
+        "detail": "Separate provider translation and routing from your prompts and logic."
+      },
+      {
+        "step": 2,
+        "label": "Trace one call's path",
+        "detail": "Resolve, translate, call, normalize — know where latency and errors live."
+      },
+      {
+        "step": 3,
+        "label": "Decide gateway vs. direct SDK",
+        "detail": "Adopt a gateway only when variety, fallbacks, or central control justify the hop."
+      },
+      {
+        "step": 4,
+        "label": "Wire the smallest router",
+        "detail": "Map two model names and add a fallback; test the failover."
+      },
+      {
+        "step": 5,
+        "label": "Harden for production",
+        "detail": "Add limits, budget caps, version pinning, and alert on fallback rate."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_owns",
+        "label": "Can you state what the gateway owns vs. what your app owns?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_fit",
+        "label": "Did you choose the smallest option that meets the reliability requirement?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_guard",
+        "label": "Are fallbacks, limits, caps, and version pinning in place and monitored?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Build a one-page LiteLLM plan: a router config with a primary model, a fallback, and a per-key budget cap; the single call your app makes; and the test that forces the primary to fail so you can confirm the backup serves it. Then point yourself at the next rung: add a provider-specific rate limit and a dashboard alert on fallback rate.",
+      "scopedTo": "Model Gateways with LiteLLM"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI Infrastructure and Serving",
+      "url": "https://docs.vllm.ai/en/v0.19.0/serving/openai_compatible_server/",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: AI Infrastructure and Serving",
+      "url": "https://docs.vllm.ai/en/v0.19.0/serving/openai_compatible_server/",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LiteLLM documentation",
+      "url": "https://docs.litellm.ai/docs/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "LiteLLM routing & fallbacks documentation",
+      "url": "https://docs.litellm.ai/docs/routing",
+      "asOfDate": "2026-06-20"
+    }
+  }
+}

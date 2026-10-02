@@ -1,0 +1,6 @@
+{
+  "name": "sharpen",
+  "version": "1.2.0",
+  "description": "Invisible expert-persona review for any substantive output — pre-built experts or a custom persona built from your boss/client's documents; drafts are interrogated and revised behind the scenes.",
+  "author": { "name": "Anand Pareek", "url": "https://github.com/APareek89" }
+}

@@ -1,0 +1,42 @@
+{
+  "prompts": 600,
+  "real_pairs": 98,
+  "synthetic_pairs": 42,
+  "train": 115,
+  "val": 25,
+  "by_failure": {
+    "refused": 19,
+    "off_topic": 11,
+    "invented_answer": 18,
+    "wrong_value": 90,
+    "refused_with_invented_fact": 2
+  },
+  "by_kind": {
+    "answer_with_gold_context": 68,
+    "refuse_near_miss": 28,
+    "refuse_gold_removed": 44
+  },
+  "by_source": {
+    "greedy": 38,
+    "sample": 27,
+    "sample_t1.0": 33,
+    "synthetic_lookalike": 42
+  },
+  "val_by_kind": {
+    "answer_with_gold_context": 8,
+    "refuse_gold_removed": 6,
+    "refuse_near_miss": 11
+  },
+  "gemini": {
+    "calls": 19,
+    "cache_hits": 5,
+    "failures": 0,
+    "last_call": 1790857275.087509,
+    "model_versions": [
+      "gemini-3.8-flash"
+    ],
+    "input_tokens": 53027,
+    "output_tokens": 61855
+  },
+  "saved_at": "2026-10-01 17:51:18"
+}

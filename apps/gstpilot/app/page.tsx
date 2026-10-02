@@ -1,0 +1,85 @@
+"use client";
+// The original question, citation, clarification and feedback loop stays on this page.
+// A separate filing action exposes the existing calculator with dated source coverage.
+// Only the server can create a permanently free prepared example; editable facts use the ordinary route.
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowUp, Calculator, ChevronDown, FileText, History, MessageSquare, Plus, Sparkles, ThumbsUp, TriangleAlert } from 'lucide-react';
+import { useRequests } from '@/components/AccountShell';
+import { CitationLink } from '@/components/CitationLink';
+import { hasHistoricalCalculation, type Citation } from '@/lib/client/citations';
+type Profile = { user_id: string; email: string; sells: string | null; state: string | null };
+type Analysis = { inputs?: Record<string, unknown>; calculation?: Record<string, unknown>; coverage?: { label?: string; historical?: boolean; [key: string]: unknown } };
+type Msg = { id?: string; role: 'user' | 'assistant'; content: string; tier?: string; citations?: Citation[]; messageId?: string; escalated?: boolean; feedback?: 'up' | 'down'; prepared?: boolean; kind?: string; analysis?: Analysis };
+type Thread = { id: string; title: string; kind: 'chat' | 'filing'; prepared: boolean };
+const STEPS: Record<string, string> = { intake: 'Understanding your question…', 'G1-schema': 'Checking risk…', router: 'Choosing the next step…', 'lane:calculation': 'Checking the calculation…', 'lane:rate_lookup': 'Checking available rate sources…', 'lane:change_over_time': 'Reading the timeline…', 'lane:guidance': 'Preparing guidance…', clarify: 'Checking missing details…', retrieval: 'Finding sources…', 'G2-retrieval-floor': 'Checking relevance…', resolution: 'Preparing the answer…', 'G4-citations': 'Checking citations…', 'G3-recompute': 'Verifying the numbers…', 'reply-synthesis': 'Preparing the reply…', 'G5-claim-check': 'Checking supported claims…', 'ca-handoff': 'Preparing a professional handoff…' };
+const EXAMPLES = ['footwear ka GST rate kya hai?', 'Amazon pe bechta hu, TCS kitna katega?', 'how do i get a GST refund?', 'GSTR-3B late file karne pe late fee?', 'e-way bill kab zaroori hota hai?'];
+const TIERS: Record<string, string> = { T1: 'General information', T2: 'Money or deadline', T3: 'Consult a Chartered Accountant' };
+const fieldLabels: Record<string, string> = { return_type: 'Return', period: 'Period', tax_period: 'Period', due_date: 'Supplied due date', filing_date: 'Filed on', nil_return: 'Nil return', annual_turnover_inr: 'Annual turnover (INR)', days_late: 'Days late', fee_per_day: 'Daily amount (INR)', computed_fee: 'Calculated amount (INR)', cap_applied: 'Cap applied (INR)', payable: 'Illustrative total (INR)' };
+export default function ChatPage() {
+  const requests = useRequests();
+  const [profile, setProfile] = useState<Profile | null>(null); const [profileLoaded, setProfileLoaded] = useState(false);
+  const [threads, setThreads] = useState<Thread[]>([]); const [msgs, setMsgs] = useState<Msg[]>([]); const [input, setInput] = useState('');
+  const [mode, setMode] = useState<'chat' | 'filing'>('chat'); const [prepared, setPrepared] = useState(false); const [busy, setBusy] = useState(false); const [restoring, setRestoring] = useState(true); const [status, setStatus] = useState(''); const [error, setError] = useState('');
+  const thread = useRef<string | null>(null); const end = useRef<HTMLDivElement>(null); const selection = useRef(0);
+  async function refreshHistory() { const result = await requests.request<{ threads: Thread[] }>('/api/threads'); if (result) { setThreads(result.threads); return result.threads; } return []; }
+  async function openThread(id: string) {
+    const serial = ++selection.current; const ticket = requests.capture(); setRestoring(true); setError('');
+    try { const result = await requests.request<{ thread: Thread; messages: Msg[] }>(`/api/threads/${encodeURIComponent(id)}`);
+      if (!result || !requests.current(ticket) || serial !== selection.current) return;
+      thread.current = result.thread.id; setMsgs(result.messages.map(m => ({ ...m, messageId: m.messageId ?? m.id }))); setMode(result.thread.kind === 'filing' ? 'filing' : 'chat'); setPrepared(!!result.thread.prepared); setInput(''); window.history.replaceState(null, '', `/?thread=${encodeURIComponent(id)}`);
+    } catch { if (requests.current(ticket) && serial === selection.current) setError('This conversation could not be opened. Please choose another or retry.'); }
+    finally { if (requests.current(ticket) && serial === selection.current) setRestoring(false); }
+  }
+  useEffect(() => {
+    const ticket = requests.capture();
+    void (async () => { try {
+      const [p, list] = await Promise.all([requests.request<Profile>('/api/user'), refreshHistory()]); if (!requests.current(ticket)) return;
+      if (p) setProfile(p); setProfileLoaded(true);
+      const selected = new URLSearchParams(window.location.search).get('thread') ?? list[0]?.id;
+      if (selected) await openThread(selected); else setRestoring(false);
+    } catch { if (requests.current(ticket)) { setError('The workspace could not be loaded. Reload to retry.'); setRestoring(false); } } })();
+  }, []);
+  useEffect(() => { if (busy) end.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [msgs, status, busy]);
+  function newThread(next: 'chat' | 'filing' = mode, text = '') { selection.current++; thread.current = null; setMsgs([]); setInput(text); setMode(next); setPrepared(false); setError(''); setRestoring(false); window.history.replaceState(null, '', '/'); }
+  async function submit(example = false, override?: string) {
+    const facts = (override ?? input).trim(); if (busy || restoring || (!example && (!facts || facts.length > 8000 || prepared))) return;
+    if (!example && new TextEncoder().encode(JSON.stringify({facts})).length > 15000) { setError('These facts are too long. Please shorten the text before submitting.'); return; }
+    const ticket = requests.capture(); setBusy(true); setError(''); setStatus(example ? 'Preparing the free example…' : 'Starting…');
+    if (!example) { setMsgs(current => [...current, { role: 'user', content: facts }]); setInput(''); }
+    else { selection.current++; thread.current = null; setMsgs([]); setMode('filing'); setPrepared(true); }
+    try {
+      const url = example ? '/api/examples' : mode === 'filing' ? '/api/filing-analysis' : '/api/ask';
+      const body = example ? { id: 'historical-gstr3b' } : mode === 'filing' ? { facts, threadId: thread.current } : { question: facts, threadId: thread.current };
+      await requests.request(url, 'POST', body, event => {
+        if (event.type === 'thread' && typeof event.threadId === 'string') { thread.current = event.threadId; window.history.replaceState(null, '', `/?thread=${encodeURIComponent(event.threadId)}`); }
+        if (event.type === 'status') setStatus(STEPS[String(event.name)] ?? 'Working through the details…');
+        if (event.type === 'answer') {
+          const analysis = (event.analysis ?? { inputs: event.inputs, calculation: event.calculation, coverage: event.coverage }) as Analysis;
+          setMsgs(current => [...current, { role: 'assistant', content: String(event.reply ?? ''), tier: event.tier as string, citations: event.citations as Citation[], messageId: event.messageId as string, escalated: !!event.escalated, prepared: !!event.prepared || example, kind: String(event.kind ?? event.analysisKind ?? (example ? 'filing' : mode)), analysis }]);
+          if (event.prepared) setPrepared(true);
+        }
+        if (event.type === 'error') throw new Error(typeof event.message === 'string' ? event.message : 'Analysis was not completed. Please retry.');
+      });
+      if (requests.current(ticket)) { await refreshHistory(); if (example && thread.current) await openThread(thread.current); }
+    } catch (e) { if (requests.current(ticket)) setError(e instanceof Error ? e.message : 'The request was not completed. Please retry.'); }
+    finally { if (requests.current(ticket)) { setBusy(false); setStatus(''); } }
+  }
+  async function feedback(index: number, verdict: 'up' | 'down', reason?: string) {
+    const message = msgs[index]; if (!message.messageId) return; const ticket = requests.capture(); setError('');
+    try { await requests.request('/api/feedback', 'POST', { messageId: message.messageId, verdict, reason }); if (requests.current(ticket)) setMsgs(old => old.map((m, i) => m.messageId === message.messageId ? { ...m, feedback: verdict } : m)); }
+    catch { if (requests.current(ticket)) setError('Feedback was not saved. Please retry.'); }
+  }
+  const needsProfile = !profile?.sells || !profile?.state;
+  return <main className="chat-shell"><aside className="history-panel"><div className="row spread"><h2><History size={16} />Conversations</h2><button className="btn icon" disabled={busy || restoring} aria-label="New conversation" onClick={() => newThread()}><Plus size={17} /></button></div><nav className="thread-list" aria-label="Your conversations">{threads.map(t => <button key={t.id} className={`thread ${thread.current === t.id ? 'active' : ''}`} disabled={busy} onClick={() => void openThread(t.id)}><span>{t.title || 'Untitled conversation'}</span>{t.prepared && <small>Prepared · Free</small>}</button>)}{!threads.length && <p className="muted small">Your saved conversations appear here.</p>}</nav><div className="sidebar-links"><Link href="/memory">Business memory</Link><Link href="/admin/conversations">Evidence &amp; sources</Link></div></aside>
+    <section className="chat-main"><div className="workspace-toolbar"><div className="segmented" aria-label="Analysis mode"><button className={mode === 'chat' ? 'selected' : ''} disabled={busy || restoring} onClick={() => newThread('chat')}><MessageSquare size={15} />Chat</button><button className={mode === 'filing' ? 'selected' : ''} disabled={busy || restoring} onClick={() => newThread('filing')}><Calculator size={15} />Filing analysis</button></div><button className="btn" disabled={busy || restoring} onClick={() => void submit(true)} aria-busy={busy && prepared}><Sparkles size={15} />Try with an example <span className="badge">Free</span></button></div>
+    <div className="conversation"><div className="coverage-note"><FileText size={17} /><span>Limited, dated source coverage. Check current rules with your Chartered Accountant.</span></div>
+      {error && <div className="alert danger" role="alert">{error}</div>}
+      {restoring ? <p role="status" className="muted">Opening your workspace…</p> : mode === 'chat' && profileLoaded && needsProfile && !msgs.length ? <Onboarding profile={profile} onDone={setProfile} /> : !msgs.length ? <div className="empty-state"><h1>{mode === 'filing' ? 'Check the facts behind a filing.' : 'GST questions, with sources.'}</h1><p>{mode === 'filing' ? 'Paste your filing facts to explore a January 2022 GSTR-3B late-fee illustration. Dates come from you; the tool does not establish your due date or submit a return.' : 'Ask in English or Hinglish. Inspect citations, clarify missing details and review what is remembered.'}</p>{mode === 'chat' && <div className="starter-list">{EXAMPLES.map(q => <button key={q} className="btn" onClick={() => setInput(q)}>{q}</button>)}</div>}<p className="muted small">Try the prepared historical example without a provider call.</p></div> : <div className="messages">{prepared && <div className="alert"><span className="badge">Prepared · Free</span> Historical illustration. Fixed example facts; no model request.<button className="text-link" disabled={busy} onClick={() => newThread('filing', msgs.find(m => m.role === 'user')?.content ?? '')}>Analyze your own facts</button></div>}{msgs.map((message, index) => <article key={message.id ?? `${index}-${message.role}`} className={`message ${message.role}`}><div className="row wrap">{message.role === 'assistant' && message.tier && <span className={`badge tier-${message.tier}`}>{message.tier} · {TIERS[message.tier] ?? message.tier}</span>}{message.prepared && <span className="badge">Prepared</span>}{hasHistoricalCalculation(message) && message.role === 'assistant' && <span className="badge">Historical illustration</span>}</div><div className="answer-text">{message.content}</div>{hasHistoricalCalculation(message) && message.analysis && <AnalysisDetails value={message.analysis} />}{message.citations?.length ? <div className="citations"><h3>Sources</h3>{message.citations.map(c => <details key={c.id}><summary><FileText size={14} /><span>{c.heading || c.id}</span><ChevronDown size={14} /></summary><blockquote>{c.snippet}</blockquote><CitationLink citation={c} historical={message.kind === "filing"} /></details>)}</div> : null}{(message.tier === 'T2' || message.tier === 'T3') && <a className="professional-link" href="mailto:?subject=GST%20question%20for%20a%20Chartered%20Accountant"><TriangleAlert size={15} />Discuss with your Chartered Accountant</a>}{message.messageId && message.role === 'assistant' && <div className="feedback">{message.feedback ? <span>Feedback saved. Thank you.</span> : <><span>Helpful?</span><button aria-label="Helpful answer" onClick={() => void feedback(index, 'up')}><ThumbsUp size={15} /></button><button onClick={() => void feedback(index, 'down', 'wrong')}>Incorrect</button><button onClick={() => void feedback(index, 'down', 'unclear')}>Unclear</button><button onClick={() => void feedback(index, 'down', 'didnt_answer')}>Not answered</button></>}</div>}</article>)}</div>}
+      {busy && <p className="working" role="status" aria-live="polite">{status || 'Working…'}</p>}<div ref={end} />
+    </div><form className="composer" onSubmit={event => { event.preventDefault(); void submit(); }}><label htmlFor="question">{mode === 'filing' ? 'Filing facts' : 'Your GST question'}</label><div className="row"><textarea id="question" value={input} onChange={event => setInput(event.target.value)} maxLength={8000} rows={mode === 'filing' ? 4 : 2} disabled={prepared} placeholder={mode === 'filing' ? 'January 2022 GSTR-3B; due 2022-02-20; filed 2022-02-26; non-nil; annual turnover ₹40 lakh…' : 'Apna GST sawaal likhein…'} /><button className="btn primary" disabled={busy || restoring || prepared || !input.trim() || (mode === 'chat' && needsProfile)} aria-busy={busy}><ArrowUp size={17} /><span>{mode === 'filing' ? 'Analyze filing' : 'Ask'}</span></button></div><p className="muted small">{prepared ? 'Start your own analysis to edit facts.' : mode === 'filing' ? 'Supports January 2022 GSTR-3B only. Ordinary analysis uses the configured provider; this is not a verified current liability.' : 'Information, not professional advice. Notices, penalties and disputes go to a Chartered Accountant.'}</p></form></section>
+  </main>;
+}
+function AnalysisDetails({ value }: { value: Analysis }) { const entries = Object.entries(value.inputs ?? {}); const calculation = Object.entries(value.calculation ?? {}).filter(([key, val]) => key in fieldLabels && val !== null); if (!entries.length && !calculation.length && !value.coverage?.label) return null; return <details className="analysis-details"><summary>Inputs and calculation <ChevronDown size={14} /></summary>{value.coverage?.label && <p className="muted small">{value.coverage.label}</p>}<dl>{[...entries, ...calculation].map(([key, val]) => <div key={key}><dt>{fieldLabels[key] ?? key.replace(/_/g, ' ')}</dt><dd>{typeof val === 'boolean' ? val ? 'Yes' : 'No' : String(val)}</dd></div>)}</dl></details>; }
+function Onboarding({ profile, onDone }: { profile: Profile | null; onDone: (profile: Profile) => void }) { const requests = useRequests(); const [sells, setSells] = useState(profile?.sells ?? ''); const [state, setState] = useState(profile?.state ?? ''); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); async function submit(event: React.FormEvent) { event.preventDefault(); const ticket = requests.capture(); setBusy(true); setError(''); try { const next = await requests.request<Profile>('/api/user', 'PATCH', { sells, state }); if (next) onDone(next); } catch { if (requests.current(ticket)) setError('Your details were not saved. Please retry.'); } finally { if (requests.current(ticket)) setBusy(false); } } return <section className="onboarding"><h1>Two details to get started.</h1><p className="muted">These help with context. Details that change a calculation still need your confirmation.</p><form className="stack" onSubmit={submit}><label>What do you sell?<input className="input" maxLength={200} required value={sells} onChange={e => setSells(e.target.value)} placeholder="e.g. footwear, design services" /></label><label>Which state are you based in?<input className="input" maxLength={80} required value={state} onChange={e => setState(e.target.value)} placeholder="e.g. Maharashtra" /></label>{error && <p role="alert" className="danger-text">{error}</p>}<button className="btn primary" disabled={busy || !sells.trim() || !state.trim()}>{busy ? 'Saving…' : 'Start chatting'}</button></form></section>; }
+

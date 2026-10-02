@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/APareek89/keel",
+  "commit": "38b4205bde57c8873671f48bda9fbb08dd2c6442",
+  "snapshot": "Selected source files; personal state, historical operations documents and runtime artifacts omitted.",
+  "collection_changes": "The MCP selftest now uses an isolated synthetic temporary brain and validates all eight exposed tools."
+}

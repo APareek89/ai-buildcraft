@@ -1,0 +1,930 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Deploy an Open Model with vLLM",
+    "title": "Deploy an Open Model with vLLM",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 46,
+    "thesis": "Deploy an Open Model with vLLM is practical when learners can apply it to this concrete case: A team deploys an open model for ticket summaries and must hit latency and cost limits. By the end, they should be able to build or review vLLM deployment checklist with model, batching, and rollback settings, measure p95 latency under the release target, and catch the failure where throughput looks fine in a demo but collapses under concurrent users."
+  },
+  "learnerProfile": {
+    "level": "advanced",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Deploy an Open Model with vLLM",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": false,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Deploy an Open Model with vLLM: mental map",
+    "caption": "Deploy an open model with vLLM by selecting model/hardware, launching server, smoke-testing API, load-testing, and hardening the endpoint.",
+    "oneLineThesis": "A vLLM deployment is not done until serving, streaming, metrics, load, and rollback are proven for the chosen model and traffic shape.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Choose the open model and serving target",
+        "sub": "Start with model, traffic shape, and GPU budget.",
+        "what": "Learners position vLLM accurately.",
+        "relevance": "This prevents using vLLM when a hosted API or local runner would be simpler.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Size a support-agent endpoint around GPU memory and request shape.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Budget weights, context, and KV cache before launch",
+        "sub": "Weights, context length, batch size, and cache all compete for accelerator memory.",
+        "what": "Learners understand the serving bottleneck.",
+        "relevance": "This prevents setting long contexts and high concurrency without memory math.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Estimate how long prompts and active users consume GPU memory.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Expose an OpenAI-compatible endpoint",
+        "sub": "Compatibility helps, but integration tests still matter.",
+        "what": "Learners connect runtime to application code.",
+        "relevance": "This catches mismatch between provider assumptions and self-hosted behavior.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Serve a model and call it through the same client shape.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Run the server and smoke-test streaming",
+        "sub": "The first production slice proves launch, request, stream, and metrics.",
+        "what": "Learners implement the serving slice concretely.",
+        "relevance": "This makes the deployment testable before scaling.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Start vLLM and call it through an OpenAI-compatible client.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Load-test, monitor, and protect the endpoint",
+        "sub": "Throughput is useless without reliability, budgets, and safe exposure.",
+        "what": "Learners close deployment with operations.",
+        "relevance": "This prevents an exposed GPU server from becoming a fragile product dependency.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Gate the endpoint with load, metrics, auth, and fallback checks.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "hardens"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Choose the open model and serving target",
+      "sub": "Start with model, traffic shape, and GPU budget.",
+      "summary": "A vLLM deployment begins with model choice, context budget, and traffic assumptions.",
+      "objectives": [
+        "Explain vLLM fit.",
+        "Name PagedAttention and continuous batching.",
+        "Separate production endpoint from local demo."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The product constraint is GPU memory under load",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a support-agent team wants to serve an open instruction model for many concurrent users. Hosted APIs are too costly for expected volume, and data locality matters. vLLM is a fit because it focuses on high-throughput online serving, continuous batching, OpenAI-compatible endpoints, and efficient KV-cache management."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_vllm",
+            "canon_vllm_serving"
+          ],
+          "analogy": "vLLM is an airport scheduler for token generation: it keeps many flights moving through limited gates."
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Deployment target sheet",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Model: Llama-3.1-8B-Instruct. Traffic: 20 concurrent chats, p95 prompt 2k tokens, p95 output 400 tokens. Hardware: two GPUs. Release target: OpenAI-compatible chat endpoint with streaming, health checks, metrics, and load test before production."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_vllm"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "vLLM fit",
+          "prompt": "When does vLLM become compelling?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A one-off laptop demo with no concurrency.",
+              "correct": false
+            },
+            {
+              "text": "High-throughput self-hosted serving where GPU memory, batching, and KV cache matter.",
+              "correct": true
+            },
+            {
+              "text": "Only for image generation.",
+              "correct": false
+            }
+          ],
+          "explanation": "vLLM is production-serving oriented.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_vllm"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_vllm",
+        "canon_vllm_serving"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Budget weights, context, and KV cache before launch",
+      "sub": "Weights, context length, batch size, and cache all compete for accelerator memory.",
+      "summary": "PagedAttention reduces waste but does not remove memory limits.",
+      "objectives": [
+        "Explain KV cache pressure.",
+        "Connect context length to concurrency.",
+        "Name why prefix caching helps only some workloads."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "PagedAttention manages memory; it does not make memory infinite",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "vLLM is known for PagedAttention, which manages key/value cache in blocks to reduce waste. The practical constraint remains: model weights, active prompt tokens, generated tokens, batch size, and context length compete for GPU memory. Long context serving leaves less room for concurrent users."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_vllm_paged_attention",
+            "kb_vllm"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Serving memory pressures",
+          "criteria": [
+            "Pressure",
+            "What increases it",
+            "First mitigation"
+          ],
+          "options": [
+            {
+              "name": "Weights",
+              "cells": [
+                {
+                  "criterion": "Pressure",
+                  "text": "Weights",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What increases it",
+                  "text": "larger model or precision",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First mitigation",
+                  "text": "quantization or smaller model",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Model selection.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "KV cache",
+              "cells": [
+                {
+                  "criterion": "Pressure",
+                  "text": "KV cache",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What increases it",
+                  "text": "long context and many active tokens",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First mitigation",
+                  "text": "shorter context, batching limits, more GPUs",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Concurrency tuning.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Prefill cost",
+              "cells": [
+                {
+                  "criterion": "Pressure",
+                  "text": "Prefill cost",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What increases it",
+                  "text": "long shared prompts",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First mitigation",
+                  "text": "prefix caching when prefixes match exactly",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Repeated system/context prompts.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_vllm",
+            "canon_vllm_prefix_cache"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_vllm_paged_attention",
+        "kb_vllm",
+        "canon_vllm_prefix_cache"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Expose an OpenAI-compatible endpoint",
+      "sub": "Compatibility helps, but integration tests still matter.",
+      "summary": "Apps can often use existing OpenAI clients against vLLM, with caveat tests.",
+      "objectives": [
+        "Start vLLM serving.",
+        "Call it with an OpenAI-style client.",
+        "Test unsupported parameters and chat templates."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Compatibility is an integration surface, not a guarantee",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "vLLM exposes OpenAI-compatible serving endpoints, which lets many apps point an OpenAI client at a self-hosted base URL. But provider-specific parameters, tool behavior, chat templates, and streaming details still need tests. Chat-tuned models especially need correct templates."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_vllm_serving",
+            "kb_vllm"
+          ]
+        },
+        {
+          "id": "m3_case",
+          "kind": "functionalExample",
+          "title": "Integration test plan",
+          "body": [
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "List models endpoint returns the expected model name."
+                  }
+                ],
+                [
+                  {
+                    "text": "Chat completion works with the app message format."
+                  }
+                ],
+                [
+                  {
+                    "text": "Streaming chunks parse in the UI."
+                  }
+                ],
+                [
+                  {
+                    "text": "Unsupported parameters fail clearly."
+                  }
+                ],
+                [
+                  {
+                    "text": "Tool-call or structured-output behavior is tested before release."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_vllm_serving"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_vllm_serving",
+        "kb_vllm"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Run the server and smoke-test streaming",
+      "sub": "The first production slice proves launch, request, stream, and metrics.",
+      "summary": "A minimal server command plus client call catches deployment mistakes early.",
+      "objectives": [
+        "Run a vLLM serve command.",
+        "Predict chat-template or model-name failure.",
+        "Verify generated deployment scripts."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 10,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "vLLM launch and OpenAI-compatible smoke test",
+          "language": "bash",
+          "code": "vllm serve meta-llama/Llama-3.1-8B-Instruct   --host 0.0.0.0   --port 8000   --tensor-parallel-size 2   --enable-prefix-caching\n\npython - <<'PY'\nfrom openai import OpenAI\nclient = OpenAI(base_url=\"http://localhost:8000/v1\", api_key=\"local\")\nresp = client.chat.completions.create(\n    model=\"meta-llama/Llama-3.1-8B-Instruct\",\n    messages=[{\"role\": \"user\", \"content\": \"Explain KV cache in two sentences.\"}],\n    stream=False,\n)\nprint(resp.choices[0].message.content[:200])\nPY",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is the thin slice: server starts, the model name matches, the client can call it, and the app can parse the response. Load and safety tests come after this smoke test passes."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "What likely happens if the client uses a model name different from the served model ID?",
+            "answer": "The request can fail with an unknown model or routing error. The app should assert the served model list before release."
+          },
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_vllm_serving",
+            "kb_vllm"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify AI-generated vLLM deployment scripts",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: model ID and license reviewed; tensor or pipeline parallel settings match hardware; chat template works; streaming parsed; health and metrics exposed; prefix caching only assumed for exact shared prefixes; and dev-only endpoints are not public."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_vllm",
+            "canon_vllm_serving"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_vllm_serving",
+        "kb_vllm"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Load-test, monitor, and protect the endpoint",
+      "sub": "Throughput is useless without reliability, budgets, and safe exposure.",
+      "summary": "A vLLM endpoint needs load tests, metrics, routing policy, and operational safeguards.",
+      "objectives": [
+        "Name vLLM production checks.",
+        "Plan monitoring and rollback.",
+        "Know when to put a gateway in front."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The server is not the whole serving system",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Production checks include p50/p95 latency, tokens per second, time to first token, GPU memory, active requests, queueing, error rate, cost per tenant, and quality evals. Put a gateway in front when you need tenant keys, budgets, routing, fallback to hosted models, or one logical model name across replicas."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_vllm",
+            "canon_vllm_serving"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Ship vLLM when load tests, integration tests, metrics, auth, and rollback are all in place.",
+          "useWhen": "Use it for self-hosted high-throughput open-model serving where GPU utilization matters.",
+          "avoidWhen": "Avoid exposing raw dynamic endpoints, cache reset tools, or unauthenticated model APIs in production.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_vllm"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Hardening gate",
+          "prompt": "What should pass before a vLLM endpoint serves users?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only one successful localhost response.",
+              "correct": false
+            },
+            {
+              "text": "Load tests, integration tests, monitoring, auth/routing policy, and quality checks.",
+              "correct": true
+            },
+            {
+              "text": "A screenshot of GPU utilization.",
+              "correct": false
+            }
+          ],
+          "explanation": "Production serving needs operations around the model runtime.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_vllm"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_vllm",
+        "canon_vllm_serving"
+      ]
+    }
+  ],
+  "glossary": {
+    "prototype": {
+      "id": "prototype",
+      "label": "Prototype",
+      "laymanDefinition": "A narrow runnable slice that proves one infrastructure behavior.",
+      "technicalNote": "A good prototype includes setup, smoke test, failure mode, and migration boundary.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_vllm"
+      ]
+    },
+    "retriever": {
+      "id": "retriever",
+      "label": "Retriever",
+      "laymanDefinition": "A component that fetches context or records for a request.",
+      "technicalNote": "Serving lessons track retrievers because retrieval shape affects latency, cost, and quality.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_vllm"
+      ]
+    },
+    "validator": {
+      "id": "validator",
+      "label": "Validator",
+      "laymanDefinition": "A check that enforces output, request, or deployment contracts.",
+      "technicalNote": "Validators protect schemas, health checks, citations, policy gates, and readiness criteria.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_vllm"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A structured record of one request or job through serving components.",
+      "technicalNote": "Traces reveal queue time, model call latency, token counts, errors, and release metadata.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_vllm"
+      ]
+    },
+    "deployment": {
+      "id": "deployment",
+      "label": "Deployment",
+      "laymanDefinition": "A versioned runtime configuration exposed to users or systems.",
+      "technicalNote": "A deployment includes model, serving flags, hardware, API contract, monitoring, rollback, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_vllm"
+      ]
+    },
+    "acceptance_test": {
+      "id": "acceptance_test",
+      "label": "Acceptance test",
+      "laymanDefinition": "A test that proves the build meets its release contract.",
+      "technicalNote": "Acceptance tests should cover smoke behavior, failure modes, metrics, and rollback expectations.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_vllm"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Deploy an Open Model with vLLM",
+    "themes": [
+      {
+        "name": "Deployment acceptance",
+        "questions": [
+          {
+            "q": "What evidence proves this vLLM endpoint is ready for a product traffic slice?",
+            "why": "Open-model deployment must prove model fit, GPU memory, API compatibility, latency, throughput, safety, and rollback.",
+            "opts": [
+              "Load-tested endpoint with gates",
+              "Server starts once",
+              "Model card only"
+            ],
+            "rot": "Gate deployment on smoke tests, load tests, metrics, auth, and quality checks."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: rebuild the vLLM deployment by naming chosen model, GPU memory budget, serve command, client smoke test, streaming test, metrics, load threshold, gateway/auth, and rollback plan."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "vLLM deployment path from model choice to hardened endpoint",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Choose the open model and serving target",
+          "sub": "Start with model, traffic shape, and GPU budget.",
+          "what": "Learners position vLLM accurately.",
+          "relevance": "This prevents using vLLM when a hosted API or local runner would be simpler.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Size a support-agent endpoint around GPU memory and request shape.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Budget weights, context, and KV cache before launch",
+          "sub": "Weights, context length, batch size, and cache all compete for accelerator memory.",
+          "what": "Learners understand the serving bottleneck.",
+          "relevance": "This prevents setting long contexts and high concurrency without memory math.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Estimate how long prompts and active users consume GPU memory.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Expose an OpenAI-compatible endpoint",
+          "sub": "Compatibility helps, but integration tests still matter.",
+          "what": "Learners connect runtime to application code.",
+          "relevance": "This catches mismatch between provider assumptions and self-hosted behavior.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Serve a model and call it through the same client shape.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Run the server and smoke-test streaming",
+          "sub": "The first production slice proves launch, request, stream, and metrics.",
+          "what": "Learners implement the serving slice concretely.",
+          "relevance": "This makes the deployment testable before scaling.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Start vLLM and call it through an OpenAI-compatible client.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Load-test, monitor, and protect the endpoint",
+          "sub": "Throughput is useless without reliability, budgets, and safe exposure.",
+          "what": "Learners close deployment with operations.",
+          "relevance": "This prevents an exposed GPU server from becoming a fragile product dependency.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Gate the endpoint with load, metrics, auth, and fallback checks.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "hardens"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Choose the open model and serving target",
+        "detail": "A vLLM deployment begins with model choice, context budget, and traffic assumptions."
+      },
+      {
+        "step": 2,
+        "label": "Budget weights, context, and KV cache before launch",
+        "detail": "PagedAttention reduces waste but does not remove memory limits."
+      },
+      {
+        "step": 3,
+        "label": "Expose an OpenAI-compatible endpoint",
+        "detail": "Apps can often use existing OpenAI clients against vLLM, with caveat tests."
+      },
+      {
+        "step": 4,
+        "label": "Run the server and smoke-test streaming",
+        "detail": "A minimal server command plus client call catches deployment mistakes early."
+      },
+      {
+        "step": 5,
+        "label": "Load-test, monitor, and protect the endpoint",
+        "detail": "A vLLM endpoint needs load tests, metrics, routing policy, and operational safeguards."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Choose the open model and serving target\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Run the server and smoke-test streaming\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Load-test, monitor, and protect the endpoint\" define the production or release gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Deploy an open instruction model behind vLLM for a small app. Include serve command, OpenAI-compatible client test, streaming parser, health/metrics check, load test target, gateway/auth rule, and rollback. Next rung: add autoscaling or multi-replica routing.",
+      "scopedTo": "Build Projects",
+      "checks": [
+        "Model and license reviewed.",
+        "Serve command matches hardware.",
+        "Smoke and streaming tests pass.",
+        "Load and rollback gates are documented."
+      ]
+    }
+  },
+  "citations": {
+    "kb_vllm": {
+      "id": "kb_vllm",
+      "kind": "kb",
+      "title": "KB: vLLM",
+      "url": "https://docs.vllm.ai/",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_vllm_serving": {
+      "id": "canon_vllm_serving",
+      "kind": "canonical",
+      "title": "vLLM online serving",
+      "url": "https://docs.vllm.ai/en/latest/serving/online_serving/",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_vllm_prefix_cache": {
+      "id": "canon_vllm_prefix_cache",
+      "kind": "canonical",
+      "title": "vLLM automatic prefix caching",
+      "url": "https://docs.vllm.ai/en/latest/features/automatic_prefix_caching.html",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_vllm_paged_attention": {
+      "id": "canon_vllm_paged_attention",
+      "kind": "canonical",
+      "title": "vLLM PagedAttention engineering blog",
+      "url": "https://blog.vllm.ai/2023/06/20/vllm.html",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

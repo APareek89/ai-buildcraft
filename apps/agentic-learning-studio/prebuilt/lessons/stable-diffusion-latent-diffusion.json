@@ -1,0 +1,919 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Stable Diffusion and Latent Diffusion",
+    "title": "Stable Diffusion and Latent Diffusion",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Stable Diffusion and Latent Diffusion is practical when learners can apply it to this concrete case: A product team edits background scenes quickly using latent diffusion instead of pixel-space generation. By the end, they should be able to build or review latent diffusion mental model with prompt, latent, decoder, and safety review, measure usable variations per prompt iteration, and catch the failure where latent edits preserve unwanted artifacts because the mask or prompt was underspecified."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Stable Diffusion and Latent Diffusion",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Stable Diffusion and Latent Diffusion: mental map",
+    "caption": "Stable Diffusion combines VAE latent space, text conditioning, UNet denoising, scheduler steps, and decoded-image review.",
+    "oneLineThesis": "Latent diffusion made image generation practical by denoising compressed image representations before decoding pixels.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Latent space is a compressed image workbench",
+        "sub": "The denoising happens in a smaller representation.",
+        "what": "Learners learn the defining Stable Diffusion idea.",
+        "relevance": "This prevents treating Stable Diffusion as generic pixel painting.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Compress the image problem before denoising it.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Text conditioning guides the latent denoiser",
+        "sub": "The prompt becomes vectors that influence each step.",
+        "what": "Learners connect words to component behavior.",
+        "relevance": "This helps debug missing counts, labels, and relations.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Guide the UNet with prompt vectors instead of raw words.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "UNet predicts and scheduler steps",
+        "sub": "One component estimates noise; the other updates the latent.",
+        "what": "Learners get the operational map behind code.",
+        "relevance": "This makes pipeline tuning less mysterious.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Trace latent noise through UNet predictions and scheduler updates.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code a traceable Stable Diffusion call",
+        "sub": "Record the settings that make the image reviewable.",
+        "what": "Learners connect mechanism to code.",
+        "relevance": "This prevents unrepeatable image experiments.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Generate one image with run settings visible.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Decoded images still need factual and rights review",
+        "sub": "Efficiency does not equal approval.",
+        "what": "Learners finish with deployment judgment.",
+        "relevance": "This prevents efficient generation from bypassing content review.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Review decoded media before putting it in a lesson.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "compresses"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "conditions"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "steps"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "reviews"
+      }
+    ],
+    "structureType": "dependency"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Latent space is a compressed image workbench",
+      "sub": "The denoising happens in a smaller representation.",
+      "summary": "Latent diffusion trades pixel-space cost for practical generation.",
+      "objectives": [
+        "Explain latent space.",
+        "Describe why compression helps.",
+        "Name reconstruction tradeoffs."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Denoise the blueprint before printing the poster",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a course author wants many visual drafts without huge pixel-space compute. Latent diffusion uses a VAE-like encoder/decoder so denoising happens in a compressed image space, then the final latent is decoded to pixels."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The latent diffusion paper highlights this computational advantage. Compression helps speed and memory, but the decoded image can still have artifacts or wrong details."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_latent_diffusion_paper",
+            "canon_hf_stable_diffusion",
+            "kb_multimodal_generative"
+          ],
+          "analogy": "Latent diffusion edits a compressed blueprint before printing the full poster."
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Latent purpose",
+          "prompt": "Why use latent space?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "To avoid neural networks.",
+              "correct": false
+            },
+            {
+              "text": "To reduce compute and memory while preserving useful visual structure.",
+              "correct": true
+            },
+            {
+              "text": "To guarantee exact text rendering.",
+              "correct": false
+            }
+          ],
+          "explanation": "Latent space is efficient, not perfect.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_latent_diffusion_paper"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_latent_diffusion_paper",
+        "canon_hf_stable_diffusion",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Text conditioning guides the latent denoiser",
+      "sub": "The prompt becomes vectors that influence each step.",
+      "summary": "Prompt encoding steers denoising but cannot guarantee every detail.",
+      "objectives": [
+        "Explain text encoder role.",
+        "Recognize prompt mismatch.",
+        "Name guidance tradeoffs."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Prompt text becomes conditioning",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Stable Diffusion pipelines encode prompt text into conditioning vectors. The UNet uses those vectors while predicting denoising corrections. Higher guidance can increase prompt pressure, but too much can create harsh artifacts or brittle images."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_stable_diffusion",
+            "kb_multimodal_generative"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Solar-system diagram failure",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A prompt asks for eight labeled planets. The generated image has vivid colors but six planets and unreadable labels. The model captured topic and style, not exact diagram truth; a deterministic diagram tool is safer."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_stable_diffusion",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "UNet predicts and scheduler steps",
+      "sub": "One component estimates noise; the other updates the latent.",
+      "summary": "The reverse process is an iterative component handoff.",
+      "objectives": [
+        "Separate UNet and scheduler roles.",
+        "Connect seed and steps to reproducibility.",
+        "Read Diffusers settings accurately."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Prediction and update are different jobs",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "At each timestep, the UNet predicts the noise or correction in the current latent. The scheduler uses that prediction to compute the next latent. The seed sets the initial latent noise; steps, scheduler, and guidance shape the route."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_stable_diffusion",
+            "canon_hf_schedulers"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Stable Diffusion components",
+          "criteria": [
+            "Component",
+            "Role",
+            "Failure symptom"
+          ],
+          "options": [
+            {
+              "name": "VAE",
+              "cells": [
+                {
+                  "criterion": "Component",
+                  "text": "VAE",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Role",
+                  "text": "compresses/decodes images",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure symptom",
+                  "text": "decode artifacts or washed details",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Every latent pipeline.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Text encoder",
+              "cells": [
+                {
+                  "criterion": "Component",
+                  "text": "Text encoder",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Role",
+                  "text": "creates prompt conditioning",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure symptom",
+                  "text": "concept misunderstood",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Text-conditioned runs.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "UNet",
+              "cells": [
+                {
+                  "criterion": "Component",
+                  "text": "UNet",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Role",
+                  "text": "predicts denoising correction",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure symptom",
+                  "text": "poor visual quality",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Core loop.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Scheduler",
+              "cells": [
+                {
+                  "criterion": "Component",
+                  "text": "Scheduler",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Role",
+                  "text": "steps through timesteps",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure symptom",
+                  "text": "speed-quality changes",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Inference tuning.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_stable_diffusion",
+            "canon_hf_schedulers"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_stable_diffusion",
+        "canon_hf_schedulers"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code a traceable Stable Diffusion call",
+      "sub": "Record the settings that make the image reviewable.",
+      "summary": "A minimal run should save model, scheduler, seed, steps, and prompt metadata.",
+      "objectives": [
+        "Read a Diffusers Stable Diffusion call.",
+        "Predict seed behavior.",
+        "Verify AI-generated image scripts."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Stable Diffusion run with explicit settings",
+          "language": "python",
+          "code": "import torch\nfrom diffusers import StableDiffusionPipeline, EulerDiscreteScheduler\n\nmodel_id = \"runwayml/stable-diffusion-v1-5\"\npipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16)\npipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)\npipe = pipe.to(\"cuda\")\n\ngenerator = torch.Generator(device=\"cuda\").manual_seed(42)\nimage = pipe(\n    prompt=\"clean educational illustration of a student studying a solar-system diagram\",\n    negative_prompt=\"blurry, unreadable text, distorted hands\",\n    num_inference_steps=25,\n    guidance_scale=7.5,\n    generator=generator,\n).images[0]\nimage.save(\"solar-system-study.png\")",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This requires Diffusers and suitable hardware. The lesson is to record model, scheduler, seed, steps, guidance, and prompts."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "What does changing only the seed usually affect?",
+            "answer": "It changes initial latent noise, so composition and details may change while other settings stay the same."
+          },
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_stable_diffusion",
+            "canon_hf_diffusers"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify Stable Diffusion code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: model/license reviewed; seed, scheduler, steps, and guidance recorded; dtype/device intentional; safety review path kept; and outputs inspected for artifacts and rights."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_stable_diffusion",
+            "kb_multimodal_generative"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_stable_diffusion",
+        "canon_hf_diffusers",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Decoded images still need factual and rights review",
+      "sub": "Efficiency does not equal approval.",
+      "summary": "Stable Diffusion assets need artifact, license, and factual checks.",
+      "objectives": [
+        "Name output risks.",
+        "Choose when generated images are inappropriate.",
+        "Plan review."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "A decoded image can be efficient and wrong",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Latent diffusion can be practical and still produce distorted anatomy, false diagrams, unreadable text, identity-sensitive depictions, or rights problems. The workflow needs labels, review, and replacement rules."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative",
+            "canon_hf_stable_diffusion"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Use Stable Diffusion for visual drafts; use verified tools for exact diagrams and claims.",
+          "useWhen": "Use it for concept art, mood boards, and low-risk visual exploration with review.",
+          "avoidWhen": "Avoid factual diagrams, identity-sensitive images, or licensed-brand contexts without provenance and review.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_multimodal_generative",
+        "canon_hf_stable_diffusion"
+      ]
+    }
+  ],
+  "glossary": {
+    "diffusion": {
+      "id": "diffusion",
+      "label": "Diffusion",
+      "laymanDefinition": "A generative process that learns to turn noise into structured media.",
+      "technicalNote": "Diffusion systems combine denoising steps, conditioning, schedulers, and safety controls; quality and provenance depend on the full pipeline.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "latent_space": {
+      "id": "latent_space",
+      "label": "Latent space",
+      "laymanDefinition": "A compressed representation where models manipulate meaning more efficiently than raw pixels or audio.",
+      "technicalNote": "Latent-space choices affect speed, detail, editability, artifacts, and what safety or provenance checks can inspect.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "The ordered set of model, preprocessing, generation, postprocessing, and safety steps.",
+      "technicalNote": "Media pipelines should pin model versions, prompts, parameters, assets, moderation, watermarking, and review metadata for reproducibility.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "vlm": {
+      "id": "vlm",
+      "label": "VLM",
+      "laymanDefinition": "A model that connects visual inputs with language understanding or generation.",
+      "technicalNote": "VLM workflows need image preprocessing, prompt grounding, output validation, and privacy review for uploaded visual content.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Vision-language model"
+    },
+    "asr": {
+      "id": "asr",
+      "label": "ASR",
+      "laymanDefinition": "Technology that converts spoken audio into text.",
+      "technicalNote": "ASR systems should track language, accent, noise, timestamps, confidence, privacy, and downstream correction paths.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Automatic speech recognition"
+    },
+    "provenance": {
+      "id": "provenance",
+      "label": "Provenance",
+      "laymanDefinition": "Evidence about where media came from and how it was created or edited.",
+      "technicalNote": "Provenance for generated media includes source assets, model versions, prompts, parameters, edits, disclosures, and review decisions.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Stable Diffusion and Latent Diffusion",
+    "themes": [
+      {
+        "name": "Latent tradeoff",
+        "questions": [
+          {
+            "q": "What is gained by denoising in latent space, and what still needs review?",
+            "why": "The central idea is efficient compressed-space generation plus decoded-output verification.",
+            "opts": [
+              "Efficient latent denoising with review",
+              "Pixel-perfect guarantee",
+              "Prompt-only magic"
+            ],
+            "rot": "Name VAE, latent tensor, text encoder, UNet, scheduler, decoder, and artifact review."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct Stable Diffusion by naming VAE encoder/decoder, latent noise, text encoder, UNet, scheduler, guidance, seed, and output review."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Stable Diffusion path from prompt and latent noise to decoded image",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Latent space is a compressed image workbench",
+          "sub": "The denoising happens in a smaller representation.",
+          "what": "Learners learn the defining Stable Diffusion idea.",
+          "relevance": "This prevents treating Stable Diffusion as generic pixel painting.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Compress the image problem before denoising it.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Text conditioning guides the latent denoiser",
+          "sub": "The prompt becomes vectors that influence each step.",
+          "what": "Learners connect words to component behavior.",
+          "relevance": "This helps debug missing counts, labels, and relations.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Guide the UNet with prompt vectors instead of raw words.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "UNet predicts and scheduler steps",
+          "sub": "One component estimates noise; the other updates the latent.",
+          "what": "Learners get the operational map behind code.",
+          "relevance": "This makes pipeline tuning less mysterious.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Trace latent noise through UNet predictions and scheduler updates.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code a traceable Stable Diffusion call",
+          "sub": "Record the settings that make the image reviewable.",
+          "what": "Learners connect mechanism to code.",
+          "relevance": "This prevents unrepeatable image experiments.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Generate one image with run settings visible.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Decoded images still need factual and rights review",
+          "sub": "Efficiency does not equal approval.",
+          "what": "Learners finish with deployment judgment.",
+          "relevance": "This prevents efficient generation from bypassing content review.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Review decoded media before putting it in a lesson.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "compresses"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "conditions"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "steps"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "reviews"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Latent space is a compressed image workbench",
+        "detail": "Latent diffusion trades pixel-space cost for practical generation."
+      },
+      {
+        "step": 2,
+        "label": "Text conditioning guides the latent denoiser",
+        "detail": "Prompt encoding steers denoising but cannot guarantee every detail."
+      },
+      {
+        "step": 3,
+        "label": "UNet predicts and scheduler steps",
+        "detail": "The reverse process is an iterative component handoff."
+      },
+      {
+        "step": 4,
+        "label": "Code a traceable Stable Diffusion call",
+        "detail": "A minimal run should save model, scheduler, seed, steps, and prompt metadata."
+      },
+      {
+        "step": 5,
+        "label": "Decoded images still need factual and rights review",
+        "detail": "Stable Diffusion assets need artifact, license, and factual checks."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Latent space is a compressed image workbench\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Code a traceable Stable Diffusion call\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Decoded images still need factual and rights review\" define the production or review gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Draw the Stable Diffusion pipeline for one lesson asset. Include VAE, text encoder, UNet, scheduler, seed, guidance, decode, and review. Next rung: run a Diffusers script and swap schedulers.",
+      "scopedTo": "Generative media",
+      "checks": [
+        "Latent and pixel space are distinct.",
+        "Component roles are named.",
+        "Run metadata is recorded.",
+        "Decoded output is reviewed."
+      ]
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Multimodal Generative AI",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Multimodal Generative AI",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Diffusers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-20"
+    },
+    "canon_hf_stable_diffusion": {
+      "id": "canon_hf_stable_diffusion",
+      "kind": "canonical",
+      "title": "Diffusers Stable Diffusion pipelines",
+      "url": "https://huggingface.co/docs/diffusers/en/api/pipelines/stable_diffusion/overview",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_latent_diffusion_paper": {
+      "id": "canon_latent_diffusion_paper",
+      "kind": "canonical",
+      "title": "High-Resolution Image Synthesis with Latent Diffusion Models",
+      "url": "https://arxiv.org/abs/2112.10752",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_hf_diffusers": {
+      "id": "canon_hf_diffusers",
+      "kind": "canonical",
+      "title": "Hugging Face Diffusers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_hf_schedulers": {
+      "id": "canon_hf_schedulers",
+      "kind": "canonical",
+      "title": "Diffusers schedulers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/api/schedulers/overview",
+      "asOfDate": "2026-06-23"
+    },
+    "kb_multimodal_generative": {
+      "id": "kb_multimodal_generative",
+      "kind": "kb",
+      "title": "KB: Multimodal and Generative Models",
+      "url": "https://huggingface.co/docs/diffusers/index",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

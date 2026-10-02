@@ -1,0 +1,926 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Vision-Language Models",
+    "title": "Vision-Language Models",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Vision-Language Models is practical when learners can apply it to this concrete case: A claims assistant reads receipt images and answers questions with visual evidence. By the end, they should be able to build or review VLM input-output contract with image, question, evidence, and uncertainty fields, measure visual claims grounded in visible regions, and catch the failure where the model invents text that is not present in the image."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Vision-Language Models",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Vision-Language Models: mental map",
+    "caption": "Use VLMs by aligning image and text inputs, asking visual questions, checking grounding, and routing uncertain outputs to verification.",
+    "oneLineThesis": "Vision-language models connect visual evidence to language, but their answers still need grounding, OCR, and task-specific checks.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "VLMs align visual inputs with language",
+        "sub": "Images become model-readable representations before text generation.",
+        "what": "Learners understand what capability is added to language models.",
+        "relevance": "This prevents treating screenshots as ordinary text prompts.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Turn a lesson screenshot into visual tokens plus a question.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "The prompt defines the visual task",
+        "sub": "Captioning, OCR, diagram reasoning, and UI debugging need different asks.",
+        "what": "Learners use prompts to constrain visual reasoning.",
+        "relevance": "This reduces hallucinated details and vague descriptions.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Ask the screenshot question with visible-evidence constraints.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Grounding failures hide inside fluent answers",
+        "sub": "VLMs can misread text, counts, spatial relations, and causality.",
+        "what": "Learners become cautious about fluent multimodal explanations.",
+        "relevance": "This prevents VLM answers from becoming unsupported product action.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Check whether the answer points to visible pixels, not assumptions.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code an image-text inference call",
+        "sub": "A minimal run should preserve image source and review status.",
+        "what": "Learners connect concept to code.",
+        "relevance": "This makes multimodal use auditable.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Ask a screenshot question and save the answer for review.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "VLM answers need provenance and tool backup",
+        "sub": "Use OCR, detection, or humans when exact visual facts matter.",
+        "what": "Learners close with deployment judgment.",
+        "relevance": "This prevents multimodal hallucinations from driving actions.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Route screenshot answers by confidence, evidence, and impact.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "encodes"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "prompts"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "checks"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "gates"
+      }
+    ],
+    "structureType": "dependency"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "VLMs align visual inputs with language",
+      "sub": "Images become model-readable representations before text generation.",
+      "summary": "A VLM combines image processing with language generation.",
+      "objectives": [
+        "Explain image-text-to-text.",
+        "Name common VLM tasks.",
+        "Anchor in screenshot tutoring."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The model sees an encoded image plus your question",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a learner uploads a screenshot of a broken lesson editor and asks what is wrong. A vision-language model takes an image and a text prompt, then outputs text. It may describe UI elements, answer visual questions, read some text, or reason over diagrams, depending on model and prompt."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_image_text_to_text",
+            "canon_hf_vlm_task",
+            "kb_multimodal_generative"
+          ],
+          "analogy": "A VLM is a language model with a visual notebook beside the prompt."
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Screenshot tutoring example",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Prompt: \"Describe the visible error state. Cite the exact UI region you used. Do not guess hidden settings.\" Good answer: \"The publish button is disabled; the visible warning above it says citations missing.\" Weak answer: \"Your database is broken,\" which is not visible evidence."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_image_text_to_text"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "VLM input",
+          "prompt": "What does an image-text-to-text model receive?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only a plain text transcript.",
+              "correct": false
+            },
+            {
+              "text": "An image plus a text prompt, then it generates text.",
+              "correct": true
+            },
+            {
+              "text": "Only audio waveform.",
+              "correct": false
+            }
+          ],
+          "explanation": "VLMs connect visual inputs with language outputs.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_vlm_task"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_image_text_to_text",
+        "canon_hf_vlm_task",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "The prompt defines the visual task",
+      "sub": "Captioning, OCR, diagram reasoning, and UI debugging need different asks.",
+      "summary": "VLM prompting should specify evidence, uncertainty, and output structure.",
+      "objectives": [
+        "Write visual prompts.",
+        "Ask for evidence rather than guesses.",
+        "Use output structure downstream."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Do not ask one vague question of every image",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "\"What is in this image?\" invites a broad caption. A debugging prompt should ask for visible UI state, exact readable text, likely user-facing issue, and uncertainty. A diagram prompt should ask for nodes, arrows, labels, and ambiguities."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_image_text_to_text"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "VLM prompt shapes",
+          "criteria": [
+            "Task",
+            "Prompt should request",
+            "Failure to watch"
+          ],
+          "options": [
+            {
+              "name": "Caption",
+              "cells": [
+                {
+                  "criterion": "Task",
+                  "text": "Caption",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Prompt should request",
+                  "text": "main objects and scene",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure to watch",
+                  "text": "overconfident details",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Quick summaries.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "OCR-like read",
+              "cells": [
+                {
+                  "criterion": "Task",
+                  "text": "OCR-like read",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Prompt should request",
+                  "text": "exact visible text and uncertainty",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure to watch",
+                  "text": "invented or corrected text",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Screenshots and diagrams.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "UI debugging",
+              "cells": [
+                {
+                  "criterion": "Task",
+                  "text": "UI debugging",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Prompt should request",
+                  "text": "visible state plus evidence region",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure to watch",
+                  "text": "guessing backend causes",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Product support.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_image_text_to_text"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_image_text_to_text"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Grounding failures hide inside fluent answers",
+      "sub": "VLMs can misread text, counts, spatial relations, and causality.",
+      "summary": "Verification should target the visual facts the model used.",
+      "objectives": [
+        "Name VLM failure modes.",
+        "Use evidence requests and manual checks.",
+        "Avoid high-impact automation from raw visual answers."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Fluency is not visual grounding",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "VLMs can hallucinate UI elements, misread small text, count objects incorrectly, or infer causes not visible in the image. Ask for evidence: visible text, approximate region, uncertain fields, and what cannot be determined from the image alone."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_image_text_to_text",
+            "kb_multimodal_generative"
+          ]
+        },
+        {
+          "id": "m3_case",
+          "kind": "functionalExample",
+          "title": "Diagram explanation failure",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A VLM says an arrow points from Retrieval to Answer, but the diagram arrow actually points from Retriever to Reranker. The answer sounded plausible because those concepts are related. Verification catches the visual relation."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_image_text_to_text",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code an image-text inference call",
+      "sub": "A minimal run should preserve image source and review status.",
+      "summary": "Use a VLM pipeline with prompts, but keep verification metadata.",
+      "objectives": [
+        "Read a VLM inference pattern.",
+        "Predict why evidence prompts help.",
+        "Verify generated VLM code."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Image-text-to-text inference pattern",
+          "language": "python",
+          "code": "from transformers import pipeline\n\npipe = pipeline(\"image-text-to-text\", model=\"HuggingFaceTB/SmolVLM-Instruct\")\nmessages = [{\n    \"role\": \"user\",\n    \"content\": [\n        {\"type\": \"image\", \"url\": \"lesson-editor-error.png\"},\n        {\"type\": \"text\", \"text\": \"Describe the visible error. Quote exact text if readable and say what is uncertain.\"},\n    ],\n}]\nresult = pipe(text=messages, max_new_tokens=120)\nprint(result)",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Model names and APIs can vary; the durable idea is to ask a task-specific visual question and preserve image source plus review status."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Why ask the model to say what is uncertain?",
+            "answer": "It discourages unsupported guesses and gives reviewers a list of fields that need human or tool verification."
+          },
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_image_text_to_text"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify VLM code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: image source logged; prompt asks for evidence and uncertainty; output structured if downstream code uses it; OCR/counts verified; high-impact actions gated by review."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_image_text_to_text"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_image_text_to_text"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "VLM answers need provenance and tool backup",
+      "sub": "Use OCR, detection, or humans when exact visual facts matter.",
+      "summary": "The release gate depends on stakes and verifiability.",
+      "objectives": [
+        "Decide when VLM output is enough.",
+        "Add OCR or human review.",
+        "Plan safe tutoring use."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Use the VLM as a reasoner, not final authority for exact pixels",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For low-risk tutoring summaries, a VLM answer with evidence may be enough. For exact UI text, counts, legal or medical content, or actions in tools, pair it with OCR, detectors, structured UI state, or human review. Keep the original image linked so corrections are possible."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_image_text_to_text",
+            "kb_multimodal_generative"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Let VLMs explain visual context; verify exact text, counts, identity, and actions with stronger evidence.",
+          "useWhen": "Use VLMs for screenshot help, diagram explanation, image-grounded tutoring, and visual search triage.",
+          "avoidWhen": "Avoid treating raw VLM answers as proof for high-impact decisions or exact OCR without verification.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_image_text_to_text",
+            "kb_multimodal_generative"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "VLM gate",
+          "prompt": "A VLM reads a tiny warning label in a screenshot. What should you do before using it in a support answer?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Assume the fluent answer is exact.",
+              "correct": false
+            },
+            {
+              "text": "Verify the text with OCR, zoom, UI state, or human review.",
+              "correct": true
+            },
+            {
+              "text": "Delete the original screenshot.",
+              "correct": false
+            }
+          ],
+          "explanation": "Exact visual text needs verification.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_image_text_to_text"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_image_text_to_text",
+        "kb_multimodal_generative"
+      ]
+    }
+  ],
+  "glossary": {
+    "diffusion": {
+      "id": "diffusion",
+      "label": "Diffusion",
+      "laymanDefinition": "A generative process that learns to turn noise into structured media.",
+      "technicalNote": "Diffusion systems combine denoising steps, conditioning, schedulers, and safety controls; quality and provenance depend on the full pipeline.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "latent_space": {
+      "id": "latent_space",
+      "label": "Latent space",
+      "laymanDefinition": "A compressed representation where models manipulate meaning more efficiently than raw pixels or audio.",
+      "technicalNote": "Latent-space choices affect speed, detail, editability, artifacts, and what safety or provenance checks can inspect.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "The ordered set of model, preprocessing, generation, postprocessing, and safety steps.",
+      "technicalNote": "Media pipelines should pin model versions, prompts, parameters, assets, moderation, watermarking, and review metadata for reproducibility.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "vlm": {
+      "id": "vlm",
+      "label": "VLM",
+      "laymanDefinition": "A model that connects visual inputs with language understanding or generation.",
+      "technicalNote": "VLM workflows need image preprocessing, prompt grounding, output validation, and privacy review for uploaded visual content.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Vision-language model"
+    },
+    "asr": {
+      "id": "asr",
+      "label": "ASR",
+      "laymanDefinition": "Technology that converts spoken audio into text.",
+      "technicalNote": "ASR systems should track language, accent, noise, timestamps, confidence, privacy, and downstream correction paths.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Automatic speech recognition"
+    },
+    "provenance": {
+      "id": "provenance",
+      "label": "Provenance",
+      "laymanDefinition": "Evidence about where media came from and how it was created or edited.",
+      "technicalNote": "Provenance for generated media includes source assets, model versions, prompts, parameters, edits, disclosures, and review decisions.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Vision-Language Models",
+    "themes": [
+      {
+        "name": "Visual answer trust",
+        "questions": [
+          {
+            "q": "What evidence in the image supports the model answer?",
+            "why": "VLMs can describe screenshots and diagrams fluently while hallucinating details, text, counts, or spatial relations.",
+            "opts": [
+              "Grounded visual evidence check",
+              "Answer fluency only",
+              "Use as OCR truth"
+            ],
+            "rot": "Ask for evidence, verify image regions/text, and route high-impact outputs to review."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct VLM use by naming image encoder or visual tokens, text prompt, chat formatting, visual question, grounding evidence, OCR/counting failures, code inference, and verification gate."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "VLM path from image and question to verified answer",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "VLMs align visual inputs with language",
+          "sub": "Images become model-readable representations before text generation.",
+          "what": "Learners understand what capability is added to language models.",
+          "relevance": "This prevents treating screenshots as ordinary text prompts.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Turn a lesson screenshot into visual tokens plus a question.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "The prompt defines the visual task",
+          "sub": "Captioning, OCR, diagram reasoning, and UI debugging need different asks.",
+          "what": "Learners use prompts to constrain visual reasoning.",
+          "relevance": "This reduces hallucinated details and vague descriptions.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Ask the screenshot question with visible-evidence constraints.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Grounding failures hide inside fluent answers",
+          "sub": "VLMs can misread text, counts, spatial relations, and causality.",
+          "what": "Learners become cautious about fluent multimodal explanations.",
+          "relevance": "This prevents VLM answers from becoming unsupported product action.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Check whether the answer points to visible pixels, not assumptions.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code an image-text inference call",
+          "sub": "A minimal run should preserve image source and review status.",
+          "what": "Learners connect concept to code.",
+          "relevance": "This makes multimodal use auditable.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Ask a screenshot question and save the answer for review.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "VLM answers need provenance and tool backup",
+          "sub": "Use OCR, detection, or humans when exact visual facts matter.",
+          "what": "Learners close with deployment judgment.",
+          "relevance": "This prevents multimodal hallucinations from driving actions.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Route screenshot answers by confidence, evidence, and impact.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "encodes"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "prompts"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "checks"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "VLMs align visual inputs with language",
+        "detail": "A VLM combines image processing with language generation."
+      },
+      {
+        "step": 2,
+        "label": "The prompt defines the visual task",
+        "detail": "VLM prompting should specify evidence, uncertainty, and output structure."
+      },
+      {
+        "step": 3,
+        "label": "Grounding failures hide inside fluent answers",
+        "detail": "Verification should target the visual facts the model used."
+      },
+      {
+        "step": 4,
+        "label": "Code an image-text inference call",
+        "detail": "Use a VLM pipeline with prompts, but keep verification metadata."
+      },
+      {
+        "step": 5,
+        "label": "VLM answers need provenance and tool backup",
+        "detail": "The release gate depends on stakes and verifiability."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"VLMs align visual inputs with language\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Code an image-text inference call\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"VLM answers need provenance and tool backup\" define the release or review gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Use a VLM to explain a screenshot from a lesson app. Ask for visible UI state, evidence locations, and uncertainty. Verify text, counts, and suggested actions manually before using the answer. Next rung: add bounding boxes or OCR tools.",
+      "scopedTo": "Multimodal tutoring",
+      "checks": [
+        "Prompt includes visual task.",
+        "Answer cites visible evidence.",
+        "OCR/counts verified.",
+        "High-impact actions reviewed."
+      ]
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Multimodal Generative AI",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Multimodal Generative AI",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Diffusers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-20"
+    },
+    "canon_hf_image_text_to_text": {
+      "id": "canon_hf_image_text_to_text",
+      "kind": "canonical",
+      "title": "Hugging Face image-text-to-text task",
+      "url": "https://huggingface.co/docs/transformers/en/tasks/image_text_to_text",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_hf_vlm_task": {
+      "id": "canon_hf_vlm_task",
+      "kind": "canonical",
+      "title": "Hugging Face image-text-to-text task page",
+      "url": "https://huggingface.co/tasks/image-text-to-text",
+      "asOfDate": "2026-06-23"
+    },
+    "kb_multimodal_generative": {
+      "id": "kb_multimodal_generative",
+      "kind": "kb",
+      "title": "KB: Multimodal and Generative Models",
+      "url": "https://huggingface.co/docs/diffusers/index",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

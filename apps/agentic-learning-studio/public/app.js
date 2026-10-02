@@ -1,0 +1,2563 @@
+/**
+ * # Front-end logic (vanilla JS) — Phase 1
+ *
+ *  - Click-based dropdown controls (Level multi · Depth · Examples · Text ·
+ *    Extras multi · Lesson type multi) + two open-text context fields.
+ *  - Dashboard of the user's previous lessons (30-day window) — open or download.
+ *  - Generation streams over SSE; the raw node names are hidden behind a friendly
+ *    progress line. A persistent chat lets the learner ask to modify the plan.
+ *  - Star rating saved to the server. Animated neural-network hero backdrop.
+ *  - Auth.js password sessions via a form opened from the Sign in / Sign up buttons.
+ */
+
+// ---- Elements ----
+const promptEl = document.getElementById("prompt");
+const industryEl = document.getElementById("industry");
+const buildGoalEl = document.getElementById("build-goal");
+const generateBtn = document.getElementById("generate");
+const landing = document.getElementById("landing");
+const workspace = document.getElementById("workspace");
+const chatLog = document.getElementById("chat-log");
+const viewerFrame = document.getElementById("viewer-frame");
+const viewerEmpty = document.getElementById("viewer-empty");
+const downloadBtn = document.getElementById("download");
+const openWindowBtn = document.getElementById("open-window");
+const ratingEl = document.getElementById("rating");
+const chatCompose = document.getElementById("chat-compose");
+const chatInput = document.getElementById("chat-input");
+const chatSend = document.getElementById("chat-send");
+const chatEl = document.getElementById("chat");
+const askMoreBtn = document.getElementById("ask-more");
+const chatCloseBtn = document.getElementById("chat-close");
+const genOverlay = document.getElementById("gen-overlay");
+const genLabel = document.getElementById("gen-label");
+const genStatus = document.getElementById("gen-status");
+// Overview-gate elements (human-in-the-loop: review a free overview before building).
+const genLessonBtn = document.getElementById("gen-lesson");
+const editOverviewBtn = document.getElementById("edit-overview");
+const editOverlay = document.getElementById("edit-overlay");
+const editFeedback = document.getElementById("edit-feedback");
+const editRegenBtn = document.getElementById("edit-regen");
+const editCloseBtn = document.getElementById("edit-close");
+if (genStatus) genStatus.addEventListener("click", () => switchTab("dashboard"));
+document.getElementById("new-thread").addEventListener("click", resetToLanding);
+
+// Publish the topbar's REAL height as --topbarH so .workspace fills the viewport exactly
+// (the bar's height is content-driven — hardcoding it left a page scroll under the lesson).
+const _topbar = document.querySelector(".topbar");
+function syncTopbarH() { try { document.documentElement.style.setProperty("--topbarH", (_topbar?.offsetHeight || 57) + "px"); } catch (e) {} }
+syncTopbarH();
+window.addEventListener("resize", syncTopbarH);
+// The bar GROWS after sign-in (credit pill, profile) — observe it so the var tracks reality.
+try { if (_topbar && window.ResizeObserver) new ResizeObserver(syncTopbarH).observe(_topbar); } catch (e) {}
+
+// Bar-2 Dark toggle — the lesson renders in a sandboxed iframe, so we flip the shared
+// `als-theme` and post it live to the frame (its runtime applies it without a reload).
+const viewerTheme = document.getElementById("viewer-theme");
+viewerFrame.addEventListener("load", () => {
+  let theme = document.documentElement.dataset.theme || "light";
+  try { theme = localStorage.getItem("als-theme") || theme; } catch {}
+  viewerFrame.contentWindow?.postMessage({ type: "als-theme", value: theme }, "*");
+});
+if (viewerTheme) viewerTheme.addEventListener("click", () => {
+  window.setPortfolioTheme?.(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+});
+askMoreBtn.addEventListener("click", () => toggleChat());
+chatCloseBtn.addEventListener("click", () => toggleChat(false));
+function toggleChat(force) {
+  const open = force === undefined ? !workspace.classList.contains("chat-open") : force;
+  workspace.classList.toggle("chat-open", open);
+  chatEl.hidden = !open;
+  if (open) chatInput.focus();
+}
+
+// Selections collected from the dropdowns.
+const sel = { level: null, depth: [], examples: [], density: null, extras: [], lessonType: [], framework: null, readingMode: null, objective: null };
+// Combine a multi-select axis into the backend enum (e.g. both → "conceptual_technical").
+function combineAxis(arr, a, b, both) {
+  const hasA = arr.includes(a), hasB = arr.includes(b);
+  if (hasA && hasB) return both;
+  if (hasA) return a;
+  if (hasB) return b;
+  return null;
+}
+function axisToValues(enumStr) {
+  if (!enumStr) return [];
+  if (enumStr.includes("_")) return enumStr.split("_");
+  return [enumStr];
+}
+
+let currentArtifactId = null;
+let currentThreadId = null;
+let currentViewUrl = null; // what "open in new window" points at (artifact OR library lesson)
+let currentViewModule = null; // module the reader is on in the viewer iframe (null = overview); used to
+                              // restore their place when a live-build reload re-renders the iframe.
+let basePrompt = ""; // the lesson's original ask (so "modify" keeps context)
+let activeJobId = null;
+let activeJobTimer = null;
+// Synchronous in-flight guards: activeJobId is only set AFTER the awaited /api/overview|/api/build
+// POST resolves, so a fast double-click can slip past the `if (activeJobId)` checks and start a
+// second job (orphan spinner tab / double build + double credit charge). These booleans are set
+// BEFORE any await and cleared in every exit path, closing that race.
+let startingOverview = false;
+let startingBuild = false;
+let currentCourse = null; // { courseId, lessons:[{index,title,artifactId,status}], activeIndex }
+let overviewArtifactId = null; // the free overview draft currently under review (gate)
+let lastOverviewPayload = null; // the payload used to build it (so "Edit overview" can re-run)
+let currentLessonOwned = false; // is the open Trainer lesson the user's own (eligible for progress + share)?
+let contribBuild = false; // is the active overview/build a "Build for Community" contributor course?
+let contribPublishId = null; // artifactId to auto-publish to Community once its build finishes
+let lastBuildArtifactId = null; // last lesson we tried to build (so a failed build can be retried)
+// Fix 4: the open lessons live in a DROPDOWN under the "Trainer" main tab (sub-tabs) instead of
+// a visible bar that ate horizontal space. lessonTabsEl is now that dropdown's menu container.
+const lessonTabsEl = document.getElementById("trainer-tabs-menu");
+const trainerDdEl = document.getElementById("trainer-dd");
+const trainerCaretEl = document.getElementById("trainer-caret");
+function closeTrainerMenu() { if (lessonTabsEl) lessonTabsEl.hidden = true; if (trainerCaretEl) trainerCaretEl.setAttribute("aria-expanded", "false"); if (trainerDdEl) trainerDdEl.classList.remove("open"); }
+function toggleTrainerMenu(force) {
+  if (!lessonTabsEl) return;
+  const open = force === undefined ? lessonTabsEl.hidden : force;
+  lessonTabsEl.hidden = !open;
+  if (trainerCaretEl) trainerCaretEl.setAttribute("aria-expanded", String(open));
+  if (trainerDdEl) trainerDdEl.classList.toggle("open", open);
+}
+if (trainerCaretEl) trainerCaretEl.addEventListener("click", (e) => { e.stopPropagation(); toggleTrainerMenu(); });
+// Click-away closes the open-lessons menu (mirrors the configurator dropdowns).
+document.addEventListener("click", (e) => { if (trainerDdEl && !trainerDdEl.contains(e.target)) closeTrainerMenu(); });
+
+// ---- Trainer tabs: up to 5 open lessons/overviews. One generation at a time; a
+// generating tab keeps running in the background (survives tab-close + page refresh).
+const MAX_TABS = 5;
+const TABS_KEY = "als-tabs-v1";
+let tabs = [];          // [{ id, type:'generating'|'overview'|'lesson'|'library'|'community', title, art, slug, prompt, building, percent }]
+let activeTabId = null;
+let genTabId = null;    // tab that owns the single in-flight generation (null once its tab is closed)
+let tabSeq = 1;
+const tabById = (id) => tabs.find((t) => t.id === id);
+
+// Friendly labels for the dropdown summary.
+const VALUE_LABELS = {
+  beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced",
+  conceptual: "Conceptual", technical: "Technical",
+  functional: "Functional", code: "Code",
+  low: "Low", medium: "Medium", high: "High",
+  visuals: "Visuals", syntax: "Syntax",
+  content: "Content", knowledge_check: "Knowledge check",
+  vertical: "Vertical scroll", horizontal: "Horizontal scroll",
+  learning: "Learning", learn_and_apply: "Learn & apply", build: "Build something",
+  exam_prep: "Exam prep", interview_prep: "Interview prep", other: "Other",
+};
+const DD_DEFAULTS = { level: "Any", depth: "Auto", examples: "Auto", density: "Balanced", extras: "None", lessonType: "Content", framework: "Pick one", readingMode: "Vertical scroll", objective: "Any" };
+
+// ---- Dropdown wiring (single + multi) ----
+document.querySelectorAll(".dd").forEach((dd) => {
+  const field = dd.dataset.field;
+  const multi = dd.dataset.multi === "true";
+  const btn = dd.querySelector(".dd-btn");
+  const menu = dd.querySelector(".dd-menu");
+  const valueEl = dd.querySelector(".dd-value");
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const wasOpen = dd.classList.contains("open");
+    closeAllDropdowns();
+    if (!wasOpen) { dd.classList.add("open"); menu.hidden = false; }
+  });
+
+  menu.addEventListener("click", (e) => e.stopPropagation()); // keep multi-select open
+  menu.querySelectorAll(".dd-opt").forEach((opt) => {
+    opt.addEventListener("click", () => {
+      const v = opt.dataset.value;
+      if (multi) {
+        const arr = sel[field];
+        const i = arr.indexOf(v);
+        if (i >= 0) { arr.splice(i, 1); opt.classList.remove("sel"); }
+        else { arr.push(v); opt.classList.add("sel"); }
+      } else {
+        const turningOff = sel[field] === v;
+        menu.querySelectorAll(".dd-opt").forEach((o) => o.classList.remove("sel"));
+        sel[field] = turningOff ? null : v;
+        if (!turningOff) opt.classList.add("sel");
+        dd.classList.remove("open"); menu.hidden = true;
+      }
+      renderDdValue(dd, field, multi, valueEl);
+      if (field === "examples") updateFrameworkVisibility();
+    });
+  });
+});
+
+// The code-framework dropdown is a CONTEXTUAL follow-on: by design it appears only
+// when Code examples are chosen (no point picking a language without code). It stays
+// put as long as Code is selected (selecting a framework never hides it); it's only
+// cleared when Code is deselected. We spotlight it on reveal so the appearance is
+// obvious rather than a silent layout shift.
+function updateFrameworkVisibility() {
+  const dd = document.getElementById("dd-framework");
+  if (!dd) return;
+  const show = sel.examples.includes("code");
+  const wasHidden = dd.hidden;
+  dd.hidden = !show;
+  if (show) {
+    // Briefly spotlight it the first time it appears so it's clearly tied to "Code".
+    if (wasHidden) {
+      dd.classList.remove("dd-spotlight");
+      void dd.offsetWidth; // restart the animation
+      dd.classList.add("dd-spotlight");
+    }
+  } else {
+    sel.framework = null;
+    dd.classList.remove("dd-spotlight");
+    dd.querySelectorAll(".dd-opt").forEach((o) => o.classList.remove("sel"));
+    renderDdValue(dd, "framework", false, dd.querySelector(".dd-value"));
+  }
+}
+
+function renderDdValue(dd, field, multi, valueEl) {
+  let text, set;
+  if (multi) {
+    const arr = sel[field];
+    set = arr.length > 0;
+    text = set ? arr.map((v) => VALUE_LABELS[v] || v).join(", ") : DD_DEFAULTS[field];
+  } else {
+    set = !!sel[field];
+    text = set ? VALUE_LABELS[sel[field]] : DD_DEFAULTS[field];
+  }
+  valueEl.textContent = text;
+  dd.classList.toggle("is-set", set);
+}
+function closeAllDropdowns() {
+  document.querySelectorAll(".dd.open").forEach((d) => { d.classList.remove("open"); d.querySelector(".dd-menu").hidden = true; });
+}
+document.addEventListener("click", closeAllDropdowns);
+
+// ---- Document uploads (session-scoped) ----
+const uploadedDocs = [];
+const fileInput = document.getElementById("file-input");
+const addDocsBtn = document.getElementById("add-docs");
+const chipsEl = document.getElementById("upload-chips");
+const referWrap = document.getElementById("refer-only-wrap");
+const referChk = document.getElementById("refer-only");
+const uploadHint = document.getElementById("upload-hint");
+
+// ---- Upload gating + size cap ----
+// A file/repo is parsed + chunked + embedded ON THE SERVER; the front-end only learns its
+// docId once that finishes. So while ANY upload is in flight we DISABLE "Generate Overview" —
+// otherwise a click mid-upload sends an empty uploadIds and the lesson is generated WITHOUT the
+// just-added grounding (the reported bug). 25MB hard cap, checked client- and server-side.
+const MAX_UPLOAD_MB = 25;
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
+let pendingUploads = 0;
+function setUploadPending(delta) {
+  pendingUploads = Math.max(0, pendingUploads + delta);
+  refreshUploadGate();
+}
+function refreshUploadGate() {
+  const busy = pendingUploads > 0;
+  if (generateBtn) {
+    generateBtn.disabled = busy;
+    generateBtn.classList.toggle("waiting-upload", busy);
+    generateBtn.title = busy ? "Finishing reading your file/repo…" : "";
+  }
+  if (busy) {
+    uploadHint.hidden = false;
+    uploadHint.textContent = "Reading your file/repo on the server… Generate unlocks once it's ready, so your lesson includes it.";
+  } else {
+    updateUploadUI();
+  }
+}
+
+addDocsBtn.addEventListener("click", () => fileInput.click());
+referChk.addEventListener("change", updateUploadUI);
+fileInput.addEventListener("change", async () => {
+  for (const file of Array.from(fileInput.files)) {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      const c = addChip(file.name, `✕ too large — max ${MAX_UPLOAD_MB}MB`);
+      c.classList.remove("uploading");
+      c.classList.add("failed");
+      continue;
+    }
+    const chip = addChip(file.name, "uploading…");
+    setUploadPending(1);
+    try {
+      const dataBase64 = await fileToBase64(file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ filename: file.name, dataBase64 }),
+      });
+      // Defensive: /api/upload is public now, but if it ever 401s, surface sign-in
+      // (mirrors the repo handler) instead of a dead "✕ Please sign in" on the chip.
+      if (res.status === 401) { openAuth("signin"); throw new Error("Sign in to add files."); }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "upload failed");
+      uploadedDocs.push({ docId: data.docId, title: data.title });
+      chip.dataset.docId = data.docId;
+      chip.classList.remove("uploading");
+      chip.querySelector(".chip-meta").textContent = data.chunkCount + (data.chunkCount === 1 ? " chunk" : " chunks");
+      updateUploadUI();
+    } catch (e) {
+      chip.classList.add("failed");
+      chip.querySelector(".chip-meta").textContent = "✕ " + e.message;
+    } finally {
+      setUploadPending(-1);
+    }
+  }
+  fileInput.value = "";
+});
+
+// ---- GitHub repo grounding (clone + extract on the server, same as documents) ----
+const repoUrlEl = document.getElementById("repo-url");
+const addRepoBtn = document.getElementById("add-repo");
+addRepoBtn.addEventListener("click", async () => {
+  const url = (repoUrlEl.value || "").trim();
+  if (!url) { repoUrlEl.focus(); return; }
+  const chip = addChip(url.replace(/^https?:\/\//, ""), "cloning & reading…");
+  addRepoBtn.disabled = true;
+  setUploadPending(1);
+  try {
+    const res = await fetch("/api/upload-repo", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ repoUrl: url }) });
+    if (res.status === 401) { openAuth("signin"); throw new Error("Sign in to add a repo."); }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "clone failed");
+    uploadedDocs.push({ docId: data.docId, title: data.title });
+    chip.dataset.docId = data.docId;
+    chip.classList.remove("uploading");
+    chip.querySelector(".chip-name").textContent = "📦 " + data.title;
+    chip.querySelector(".chip-meta").textContent = `${data.fileCount} files · ${data.chunkCount} chunks`;
+    repoUrlEl.value = "";
+    updateUploadUI();
+  } catch (e) {
+    chip.classList.add("failed");
+    chip.querySelector(".chip-meta").textContent = "✕ " + e.message;
+  } finally { addRepoBtn.disabled = false; setUploadPending(-1); }
+});
+repoUrlEl.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addRepoBtn.click(); } });
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",")[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+function addChip(name, meta) {
+  const el = document.createElement("div");
+  el.className = "chip uploading";
+  el.innerHTML = `<span class="chip-name"></span><span class="chip-meta"></span><button class="chip-x" type="button" aria-label="Remove">×</button>`;
+  el.querySelector(".chip-name").textContent = name;
+  el.querySelector(".chip-meta").textContent = meta;
+  el.querySelector(".chip-x").addEventListener("click", () => {
+    const id = el.dataset.docId;
+    if (id) { const i = uploadedDocs.findIndex((d) => d.docId === id); if (i >= 0) uploadedDocs.splice(i, 1); }
+    el.remove();
+    updateUploadUI();
+  });
+  chipsEl.appendChild(el);
+  return el;
+}
+function updateUploadUI() {
+  const n = uploadedDocs.length;
+  referWrap.hidden = n === 0;
+  if (pendingUploads > 0) return; // refreshUploadGate owns the hint + button while an upload is in flight
+  uploadHint.hidden = n === 0;
+  if (n) {
+    uploadHint.textContent = referChk.checked
+      ? "This lesson will use ONLY your documents — nothing from the knowledge base."
+      : "Your documents are used first; the knowledge base and general knowledge fill the rest.";
+  }
+}
+
+// ---- Build the /api/learn payload from the current selections ----
+function buildPayload(promptText, threadId) {
+  // V2 Builder: only Level + Coverage are user selections. Everything else ships fixed
+  // defaults — examples always included (functional + code), visuals on, text density
+  // derived from level SERVER-side, world reading mode, final knowledge check always.
+  const cards = {};
+  const depth = combineAxis(sel.depth, "conceptual", "technical", "conceptual_technical");
+  if (depth) cards.depth = depth;
+  cards.examples = "functional_code";
+  cards.visuals = "on";
+  // ⚡ Quick read: 4 short modules, low density — the profiler reads cards.quick.
+  const quickChk = document.getElementById("quick-read");
+  if (quickChk && quickChk.checked) cards.quick = "on";
+  return {
+    prompt: promptText,
+    cards,
+    levels: sel.level ? [sel.level] : [],
+    lessonTypes: ["content", "knowledge_check"],
+    framework: "",
+    readingMode: "world",
+    industry: industryEl ? industryEl.value.trim() : "",
+    buildGoal: buildGoalEl ? buildGoalEl.value.trim() : "",
+    objective: "",
+    uploadIds: uploadedDocs.map((d) => d.docId),
+    referOnly: referChk.checked,
+    threadId,
+  };
+}
+
+// Group-3 fix: the build runs entirely off the artifact frozen at overview time — it never re-reads
+// the card/option controls. So if a learner tweaks options AFTER generating an overview and then
+// clicks "Generate Lesson", those tweaks are silently ignored. Compare the current lesson-shaping
+// selections against the ones the active draft was built from (the option chips don't emit `change`
+// events, so we compare at click time) and warn instead of silently dropping them.
+function shapingSignature(pl) {
+  return JSON.stringify({
+    cards: pl.cards || {}, levels: pl.levels || [], lessonTypes: pl.lessonTypes || [],
+    framework: pl.framework || "", readingMode: pl.readingMode || "vertical", objective: pl.objective || "",
+    industry: pl.industry || "", buildGoal: pl.buildGoal || "", referOnly: !!pl.referOnly, uploadIds: pl.uploadIds || [],
+  });
+}
+function overviewOptionsChanged() {
+  if (!lastOverviewPayload) return false;
+  try { return shapingSignature(buildPayload(basePrompt || lastOverviewPayload.prompt || "", null)) !== shapingSignature(lastOverviewPayload); }
+  catch { return false; }
+}
+
+// ---- Submit ----
+// Preserve a signed-out visitor's typed topic across the sign-in/up redirect (incl. OAuth and
+// email-confirmation page reloads, which wipe the in-memory textarea) so they don't lose their
+// prompt. Persisted to localStorage; cleared once an overview actually starts or on "New".
+const PENDING_PROMPT_KEY = "als-pending-prompt";
+function savePendingPrompt(p) { try { if (p) localStorage.setItem(PENDING_PROMPT_KEY, p); } catch { /* ignore */ } }
+function clearPendingPrompt() { try { localStorage.removeItem(PENDING_PROMPT_KEY); } catch { /* ignore */ } }
+function restorePendingPrompt() { try { const s = localStorage.getItem(PENDING_PROMPT_KEY); if (s && promptEl && !promptEl.value.trim()) promptEl.value = s; } catch { /* ignore */ } }
+
+generateBtn.addEventListener("click", () => {
+  if (pendingUploads > 0) return; // button is disabled while uploads finish; belt-and-suspenders
+  const p = promptEl.value.trim();
+  if (!p) { promptEl.focus(); return; }
+  if (authRequiredAndOut()) { savePendingPrompt(p); openAuth("signup"); return; }
+  basePrompt = p;
+  startOverview(buildPayload(p, null));
+});
+promptEl.addEventListener("keydown", (e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") generateBtn.click(); });
+
+// "Ask more" composer — answers from RAG (short reply), with an option to expand into the lesson.
+chatCompose.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = chatInput.value.trim();
+  if (!text || !currentArtifactId) return;
+  addUserBubble(text);
+  chatInput.value = "";
+  chatInput.style.height = "auto";
+  askQuestion(text);
+});
+chatInput.addEventListener("input", () => { chatInput.style.height = "auto"; chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + "px"; });
+chatInput.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); chatCompose.requestSubmit(); } });
+
+async function askQuestion(question) {
+  const thinking = addStatus("Thinking…");
+  try {
+    const res = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ artifactId: currentArtifactId, question }),
+    });
+    if (res.status === 401) { thinking.remove(); openAuth("signin"); return; }
+    const data = await res.json();
+    thinking.remove();
+    if (!res.ok) { addAssistantBubble({ content: "⚠️ " + (data.error || "Couldn't answer that.") }); return; }
+    const bubble = addAssistantBubble({ content: data.answer });
+    const srcs = (data.sources || []).filter(Boolean);
+    if (srcs.length) { const s = document.createElement("div"); s.className = "sugg-srcs"; s.textContent = "Sources: " + srcs.slice(0, 3).join(", "); bubble.appendChild(s); }
+    // Offer to expand the answer into a full lesson section.
+    const add = document.createElement("button");
+    add.className = "add-to-lesson";
+    add.textContent = "➕ Add this to my lesson in detail";
+    add.addEventListener("click", () => expandIntoLesson(question, add));
+    bubble.appendChild(add);
+  } catch (err) {
+    thinking.remove();
+    addAssistantBubble({ content: "⚠️ " + err.message });
+  }
+}
+
+async function expandIntoLesson(question, btn) {
+  btn.disabled = true;
+  btn.textContent = "Adding to your lesson… (keep reading)";
+  try {
+    const res = await fetch("/api/ask/expand", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ artifactId: currentArtifactId, question }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "expand failed");
+    btn.textContent = "✓ Added — open it";
+    btn.disabled = false;
+    btn.onclick = () => { viewerFrame.src = "/api/artifact/" + currentArtifactId; };
+    addAssistantBubble({ content: "Added a new section to your lesson. It's in the menu on the left of the lesson — click **open it** above to jump there." });
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = "➕ Add this to my lesson in detail";
+    addAssistantBubble({ content: "⚠️ Couldn't add it: " + err.message });
+  }
+}
+
+// Friendly progress text (we hide the raw node names from the learner).
+const STAGE_TEXT = {
+  start: "Getting started…",
+  profiler: "Understanding your goal…",
+  retriever: "Gathering grounded sources…",
+  planner: "Mapping the lesson structure…",
+  architect: "Designing the lesson outline…",
+  seedFirstModule: "Writing your first building block…",
+  composer: "Assembling your interactive lesson…",
+};
+
+async function startGeneration(promptText, threadId) {
+  landing.hidden = true;
+  workspace.hidden = false;
+  toggleChat(false);
+  chatLog.innerHTML = "";
+  // Full-screen lesson view: progress shows as an overlay on the viewer, not a chat.
+  viewerFrame.hidden = true;
+  viewerEmpty.hidden = true;
+  ratingEl.hidden = true;
+  askMoreBtn.hidden = true;
+  downloadBtn.hidden = true;
+  openWindowBtn.hidden = true;
+  genOverlay.hidden = false;
+  genLabel.textContent = "Getting started…";
+
+  try {
+    const res = await fetch("/api/learn", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(buildPayload(promptText, threadId)),
+    });
+    if (res.status === 401) { genOverlay.hidden = true; openAuth("signin"); return; }
+    if (!res.ok || !res.body) throw new Error("Request failed: " + res.status);
+
+    await readSse(res.body, (event, data) => {
+      if (event === "node") genLabel.textContent = STAGE_TEXT[data.stage] || "Working…";
+      else if (event === "artifact") showArtifact(data);
+      else if (event === "error") { genOverlay.hidden = true; viewerEmpty.hidden = false; viewerEmpty.textContent = "⚠️ " + data.message; }
+      else if (event === "done") { genOverlay.hidden = true; loadDashboard(); loadSuggestions(); }
+    });
+  } catch (err) {
+    genOverlay.hidden = true;
+    viewerEmpty.hidden = false;
+    viewerEmpty.textContent = "⚠️ " + err.message;
+  }
+}
+
+// ---- SSE reader ----
+async function readSse(body, onEvent) {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let sep;
+    while ((sep = buffer.indexOf("\n\n")) !== -1) {
+      const block = buffer.slice(0, sep);
+      buffer = buffer.slice(sep + 2);
+      let event = "message"; let dataLine = "";
+      for (const line of block.split("\n")) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        else if (line.startsWith("data:")) dataLine += line.slice(5).trim();
+      }
+      if (!dataLine) continue;
+      try { onEvent(event, JSON.parse(dataLine)); } catch { /* ignore */ }
+    }
+  }
+}
+
+// ---- Viewer ----
+function showArtifact(ref) {
+  openInViewer(ref.id, ref.title || "Lesson");
+}
+// Open a saved lesson the user owns (delegates into the tab manager).
+function openInViewer(id, title) { openTab({ type: "lesson", title: title, art: id }); }
+
+// ---- Tab manager ----------------------------------------------------------
+// Free a slot when at the cap by evicting the oldest tab that isn't active and
+// isn't mid-generation. Returns false only if every tab is busy.
+function makeRoomForTab() {
+  if (tabs.length < MAX_TABS) return true;
+  const victim = tabs.find((t) => t.id !== activeTabId && t.id !== genTabId && t.type !== "generating" && !t.building);
+  if (!victim) return false;
+  // An un-built overview draft has no in-app re-entry point once evicted (My Lessons only lists
+  // built lessons), so don't drop the one the user is reviewing without asking.
+  if (victim.type === "overview" && !confirm(`Your reviewed overview "${victim.title || "draft"}" hasn't been turned into a lesson yet and will be closed to open this one. Continue?`)) return false;
+  tabs = tabs.filter((t) => t !== victim);
+  return true;
+}
+
+// Open a descriptor as a tab — focusing an equivalent already-open tab instead of duplicating.
+function openTab(desc) {
+  const same = tabs.find((t) => (desc.art && t.art === desc.art) || (desc.slug && t.slug === desc.slug && t.type === desc.type));
+  if (same) {
+    // Bug 1: if we're re-opening the SAME artifact but its kind changed from a preview
+    // overview draft → a real lesson (e.g. opened from My Lessons after Generate Lesson),
+    // the open iframe is still the preview-locked render. Force a reload so it unlocks.
+    const wasPreview = same.type === "overview" && desc.type === "lesson";
+    Object.assign(same, desc, { id: same.id });
+    switchTab("trainer"); activateTab(same.id);
+    if (wasPreview) reloadViewer();
+    return same;
+  }
+  if (!makeRoomForTab()) { alert("You can keep up to " + MAX_TABS + " lessons open — close one first."); return null; }
+  const t = Object.assign({ id: "t" + tabSeq++ }, desc);
+  tabs.push(t);
+  switchTab("trainer");
+  activateTab(t.id);
+  return t;
+}
+
+function closeTab(id) {
+  const t = tabById(id);
+  if (!t) return;
+  const idx = tabs.indexOf(t);
+  // If this tab owns the in-flight generation, DETACH it — the server job keeps running
+  // and the lesson shows up in My Lessons when done; we just stop showing it here.
+  if (genTabId === id) genTabId = null;
+  tabs = tabs.filter((x) => x.id !== id);
+  if (activeTabId === id) {
+    const next = tabs[idx] || tabs[idx - 1] || tabs[tabs.length - 1];
+    if (next) activateTab(next.id); else showNoTabs();
+  } else { renderTabBar(); }
+  persistTabs();
+}
+
+function showNoTabs() {
+  activeTabId = null;
+  currentArtifactId = null; overviewArtifactId = null; currentLessonOwned = false; currentViewUrl = null; currentViewModule = null;
+  viewerFrame.hidden = true; genOverlay.hidden = true; viewerEmpty.hidden = false;
+  downloadBtn.hidden = true; openWindowBtn.hidden = true; askMoreBtn.hidden = true; ratingEl.hidden = true; setOverviewMode(false);
+  document.getElementById("viewer-title").textContent = "Lesson";
+  renderTabBar();
+}
+
+// Point the single iframe + the viewer bar at a tab, and sync the global mirrors the
+// rest of the app reads (currentArtifactId / overviewArtifactId / currentViewUrl / …).
+function activateTab(id) {
+  const t = tabById(id);
+  if (!t) return;
+  activeTabId = id;
+  // Bug 1 hardening: any throw between here and the overlay/frame being shown used to leave the
+  // Trainer BLANK (switchTab already un-hid #tab-trainer, but frame+overlay+empty could all stay
+  // hidden). Wrap the whole reveal so a failure always falls back to a visible, recoverable state
+  // instead of a blank screen the user can only fix by refreshing.
+  try {
+    toggleChat(false); chatLog.innerHTML = "";
+    currentArtifactId = null; overviewArtifactId = null; currentLessonOwned = false; currentViewUrl = null; currentViewModule = null;
+    basePrompt = t.prompt || t.title || "";
+    document.getElementById("viewer-title").textContent = t.title || "Lesson";
+    // Bug 2: while a build hasn't finished its FIRST module, show the "building" overlay instead of
+    // the lesson — so we never land the reader on a still-empty / work-in-progress module.
+    const buildingFirst = t.type === "lesson" && t.building && !t._firstReady;
+    if (t.errored) {
+      // A generation that failed in the background: show the error + Try again, not a stuck spinner.
+      showGenError(t.error || "Generation failed — please try again.", t.retry);
+      downloadBtn.hidden = true; openWindowBtn.hidden = true; askMoreBtn.hidden = true; ratingEl.hidden = true; setOverviewMode(false);
+    } else if (t.type === "generating" || buildingFirst) {
+      viewerFrame.hidden = true; viewerEmpty.hidden = true; genOverlay.hidden = false;
+      genLabel.textContent = buildingFirst ? "Building your lesson — this takes a couple of minutes. Your first section opens as soon as it's ready…" : ((t.percent || 0) > 8 ? "Designing the lesson outline…" : "Designing your overview — usually about a minute…");
+      downloadBtn.hidden = true; openWindowBtn.hidden = true; askMoreBtn.hidden = true; ratingEl.hidden = true; setOverviewMode(false);
+    } else {
+      const url = t.art ? "/api/artifact/" + t.art : t.type === "community" ? "/api/community/lesson/" + t.slug : "/api/lesson/" + t.slug;
+      currentViewUrl = url;
+      genOverlay.hidden = true; viewerEmpty.hidden = true; viewerFrame.hidden = false;
+      // Bug 2 (the reported "open at 50% lands on the overview"): the single iframe may still hold
+      // this artifact's PRE-PROMOTION preview/overview render (t._preview) — set when the tab was an
+      // overview draft. Revealing it as a real lesson keeps the SAME /api/artifact/:id URL string, so
+      // the src-diff guard below would skip the reload and leave the stale overview on screen. Force a
+      // cache-busted refetch whenever we're revealing a lesson over a preview render. Also keep the
+      // existing cross-tab freshness bust (a build running in another tab dirties the shared iframe).
+      const revealingOverPreview = t.type === "lesson" && t._preview;
+      const needBust = revealingOverPreview || (activeJobId && t.id !== genTabId);
+      const fresh = needBust ? url + (url.indexOf("?") < 0 ? "?" : "&") + "v=" + Date.now() : url;
+      if (viewerFrame.getAttribute("src") !== fresh) viewerFrame.src = fresh;
+      if (t.type === "overview") {
+        overviewArtifactId = t.art; t._preview = true; // iframe now holds the preview-only overview render
+        downloadBtn.hidden = true; askMoreBtn.hidden = true; ratingEl.hidden = true; openWindowBtn.hidden = false; setOverviewMode(true);
+      } else if (t.type === "lesson") {
+        t._preview = false; // now showing the real (promoted) lesson render
+        currentArtifactId = t.art; currentLessonOwned = true;
+        downloadBtn.hidden = false; downloadBtn.href = "/api/artifact/" + t.art + "/full";
+        openWindowBtn.hidden = false; askMoreBtn.hidden = false; resetStars(); ratingEl.hidden = false; setOverviewMode(false);
+      } else { // library / community (public, read-only)
+        downloadBtn.hidden = true; askMoreBtn.hidden = true; ratingEl.hidden = true; openWindowBtn.hidden = false; setOverviewMode(false);
+      }
+    }
+  } catch (e) {
+    console.error("[activateTab] reveal failed — falling back to a visible state:", e);
+    try { genOverlay.hidden = true; viewerFrame.hidden = true; viewerEmpty.hidden = false; } catch (_) { /* last resort */ }
+  }
+  renderTabBar();
+  persistTabs();
+}
+
+// Force the viewer iframe to re-fetch its CURRENT artifact even though the URL path is
+// unchanged (the tab manager skips a reload when src matches). Used after "Generate Lesson"
+// promotes an overview draft → lesson for the SAME id: /api/artifact/:id then re-renders
+// WITHOUT the preview lock, so the open Trainer tab stops showing the "🔒 overview" note
+// without a manual refresh. A cache-bust query makes the iframe reload reliably.
+function reloadViewer() {
+  const t = tabById(activeTabId);
+  if (!t || !t.art) return;
+  const base = "/api/artifact/" + t.art;
+  currentViewUrl = base;
+  viewerFrame.hidden = false; viewerEmpty.hidden = true; genOverlay.hidden = true;
+  // Keep the reader on their current module across a live-build reload (Bug: finishing WIP
+  // modules used to bounce them back to the overview).
+  const mq = currentViewModule ? "&module=" + encodeURIComponent(currentViewModule) : "";
+  viewerFrame.src = base + "?v=" + Date.now() + mq;
+}
+
+// Fix 4: render the open lessons into the dropdown menu UNDER the "Trainer" tab (was a visible
+// bar). Behavior preserved: open/close/switch/active, the "+" new, and the building spinner. The
+// caret next to "Trainer" appears only when ≥1 lesson is open; selecting a lesson closes the menu.
+// Mark a generating tab as FAILED instead of silently deleting it when the failure happens while the
+// user is on another tab. The tab stays in the list with a ⚠ marker; activating it shows the error +
+// a "Try again". (Was: a background overview/build failure just vanished the tab with no feedback.)
+function markTabError(t, msg, retryFn) {
+  if (!t) return;
+  t.errored = true; t.error = msg; t.retry = retryFn || null;
+  if (t.id === activeTabId) showGenError(msg, retryFn);
+  renderTabBar(); persistTabs();
+}
+function renderTabBar() {
+  if (!lessonTabsEl) return;
+  lessonTabsEl.innerHTML = "";
+  // Caret visibility tracks whether there's anything to drop down.
+  if (trainerCaretEl) trainerCaretEl.hidden = tabs.length === 0;
+  if (tabs.length === 0) { closeTrainerMenu(); return; }
+  tabs.forEach((t) => {
+    const b = document.createElement("button");
+    b.className = "lesson-tab" + (t.id === activeTabId ? " active" : "") + (t.errored ? " errored" : "");
+    b.type = "button"; b.setAttribute("role", "menuitem");
+    const spin = t.errored ? '<span class="lt-err" title="Generation failed — click to retry">⚠</span>' : ((t.type === "generating" || t.building) ? '<span class="lt-spin"></span>' : "");
+    b.innerHTML = `${spin}<span class="lt-title">${escapeHtml(t.title || "Lesson")}</span><span class="lt-x" title="Close">×</span>`;
+    b.addEventListener("click", (e) => {
+      if (e.target.classList && e.target.classList.contains("lt-x")) { e.stopPropagation(); closeTab(t.id); return; }
+      // Picking a lesson from the dropdown must also bring the Trainer panel to the front —
+      // otherwise, when opened from another top-level tab (Library, Home, …), the lesson loads
+      // into the hidden Trainer panel and the user appears to stay put. (Matches openTab's order.)
+      switchTab("trainer"); activateTab(t.id); closeTrainerMenu();
+    });
+    lessonTabsEl.appendChild(b);
+  });
+  if (tabs.length < MAX_TABS) {
+    const add = document.createElement("button");
+    add.className = "lesson-tab lt-add"; add.type = "button"; add.title = "New lesson"; add.setAttribute("role", "menuitem"); add.textContent = "+ New lesson";
+    add.addEventListener("click", () => { switchTab("configurator"); closeTrainerMenu(); if (promptEl) promptEl.focus(); });
+    lessonTabsEl.appendChild(add);
+  }
+}
+
+// Persist non-generating tabs (stable view sources) so a refresh keeps them open.
+function persistTabs() {
+  try {
+    const save = tabs.filter((t) => t.type !== "generating" && (t.art || t.slug))
+      .map((t) => ({ type: t.type, title: t.title, art: t.art || null, slug: t.slug || null, prompt: t.prompt || null }));
+    const act = tabById(activeTabId);
+    sessionStorage.setItem(TABS_KEY, JSON.stringify({ tabs: save, active: act && act.type !== "generating" ? tabs.filter((t) => t.type !== "generating" && (t.art || t.slug)).indexOf(act) : 0 }));
+  } catch { /* ignore */ }
+}
+function restoreTabs() {
+  let data; try { data = JSON.parse(sessionStorage.getItem(TABS_KEY) || "null"); } catch { data = null; }
+  if (!data || !Array.isArray(data.tabs) || !data.tabs.length) return false;
+  tabs = data.tabs.map((d) => Object.assign({ id: "t" + tabSeq++, building: false }, d));
+  const act = tabs[Math.max(0, Math.min(tabs.length - 1, data.active | 0))];
+  renderTabBar();
+  // Set up the saved Trainer tabs, but land the user back on the top-level tab they were on
+  // (My Lessons / Library / …), NOT always Trainer. `als-toptab` is written by switchTab().
+  if (act) {
+    let top = "trainer"; try { top = sessionStorage.getItem("als-toptab") || "trainer"; } catch { /* ignore */ }
+    activateTab(act.id);
+    switchTab(top);
+  }
+  return true;
+}
+openWindowBtn.addEventListener("click", () => { const u = currentViewUrl || (currentArtifactId && "/api/artifact/" + currentArtifactId); if (u) window.open(u, "_blank"); });
+
+// ---- Rating ----
+const stars = Array.from(document.querySelectorAll(".star"));
+const rateThanks = document.getElementById("rate-thanks");
+stars.forEach((s) => s.addEventListener("click", () => submitRating(Number(s.dataset.v))));
+function paintStars(v) { stars.forEach((s) => s.classList.toggle("on", Number(s.dataset.v) <= v)); }
+function resetStars() { paintStars(0); rateThanks.hidden = true; }
+async function submitRating(v) {
+  if (!currentArtifactId) return;
+  paintStars(v);
+  try {
+    const res = await fetch("/api/rate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ artifactId: currentArtifactId, rating: v }),
+    });
+    if (res.status === 401) { openAuth("signin"); return; }
+    rateThanks.hidden = false;
+  } catch { /* ignore */ }
+}
+
+// ---- Chat rendering ----
+function addUserBubble(text) {
+  const el = document.createElement("div");
+  el.className = "msg user";
+  el.innerHTML = `<div class="who">You</div>${mdLite(text)}`;
+  chatLog.appendChild(el); scrollDown();
+}
+function addAssistantBubble({ content }) {
+  const el = document.createElement("div");
+  el.className = "msg";
+  el.innerHTML = `<div class="who">Studio</div><div class="msg-body">${mdLite(content)}</div>`;
+  chatLog.appendChild(el); scrollDown();
+  return el;
+}
+function addStatus(text) {
+  const el = document.createElement("div");
+  el.className = "status";
+  el.innerHTML = `<span class="spin"></span><span class="label">${escapeHtml(text)}</span>`;
+  chatLog.appendChild(el); scrollDown();
+  return el;
+}
+
+// "New" → go to the Configurator for a fresh lesson. The Trainer KEEPS its current
+// lesson (it only changes when you open one from My Lessons), so we don't touch the viewer.
+function resetToLanding() {
+  toggleChat(false);
+  switchTab("configurator");
+  promptEl.value = "";
+  clearPendingPrompt(); // "New" = a deliberate fresh start
+  promptEl.focus();
+  loadSuggestions();
+}
+
+// ---- Tabs (Configurator / Trainer / My Lessons / Library) ----
+const TAB_PANELS = { home: "tab-home", configurator: "tab-configurator", "llm-skills": "tab-llm-skills", trainer: "tab-trainer", library: "tab-library", pricing: "tab-pricing", community: "tab-community", "build-community": "tab-build-community", dashboard: "tab-dashboard", account: "tab-account", auth: "tab-auth" };
+document.querySelectorAll(".tab[data-tab]").forEach((t) => {
+  if (t.disabled) return;
+  t.addEventListener("click", () => { switchTab(t.dataset.tab); syncTabUrl(t.dataset.tab); });
+});
+function switchTab(name) {
+  document.querySelectorAll(".tab[data-tab]").forEach((t) => {
+    const on = t.dataset.tab === name;
+    t.classList.toggle("active", on);
+    t.setAttribute("aria-selected", String(on));
+  });
+  Object.entries(TAB_PANELS).forEach(([n, id]) => { const el = document.getElementById(id); if (el) el.hidden = n !== name; });
+  // Account is the one tab with its own URL — leaving it returns the address bar to "/".
+  if (name !== "account" && location.pathname.replace(/\/+$/, "") === "/account") {
+    try { history.replaceState({}, "", "/"); } catch { /* ignore */ }
+  }
+  // Remember where the user is across refresh — but never "account" (URL-restored) or "auth"
+  // (a transient sign-in page; a refresh shouldn't dump them back onto it).
+  try { if (name !== "account" && name !== "auth") sessionStorage.setItem("als-toptab", name); } catch { /* ignore */ }
+  if (name === "dashboard") loadDashboard();
+  if (name === "library") loadLibrary();
+  if (name === "community") loadCommunity();
+  if (name === "build-community") loadBuildCommunity();
+}
+
+// Keep the address bar in sync with the Library section so /library (and /library/<slug>) are
+// real, shareable, crawlable URLs — WITHOUT leaving the SPA. Called on USER tab clicks only
+// (never during popstate/routeFromUrl restore, so we never pushState mid history-navigation).
+// Entering Library → push /library; leaving the Library section → reset to "/". Other tabs untouched.
+function syncTabUrl(name) {
+  const path = location.pathname.replace(/\/+$/, "");
+  try {
+    if (name === "library") { if (path !== "/library") history.pushState({ tab: "library" }, "", "/library"); }
+    else if (path === "/library" || path.indexOf("/library/") === 0) history.replaceState({}, "", "/");
+  } catch (e) { /* ignore */ }
+}
+
+// ---- Home tab (Halo landing) interactions ----
+// Every "Generate / Browse / Meet" CTA just routes to an existing tab via data-goto.
+document.querySelectorAll("#tab-home [data-goto]").forEach((el) => {
+  el.addEventListener("click", () => { switchTab(el.dataset.goto); window.scrollTo(0, 0); });
+});
+// "Quick look" preview tabs: toggle the .on pane (purely illustrative, no network).
+const ptabs = document.getElementById("ptabs");
+if (ptabs) {
+  ptabs.addEventListener("click", (e) => {
+    const b = e.target.closest(".ptab");
+    if (!b) return;
+    ptabs.querySelectorAll(".ptab").forEach((x) => x.classList.toggle("on", x === b));
+    document.querySelectorAll("#tab-home .pv").forEach((p) => p.classList.toggle("on", p.dataset.p === b.dataset.p));
+  });
+}
+// Sample knowledge-check options highlight on click (demo only).
+document.querySelectorAll("#tab-home .kc .opt").forEach((o) => {
+  o.addEventListener("click", () => o.classList.toggle("correct"));
+});
+
+// ---- Dashboard tab ----
+const dashGrid = document.getElementById("dash-grid");
+const dashNote = document.getElementById("dash-note");
+const dashEmpty = document.getElementById("dash-empty");
+const dashActive = document.getElementById("dash-active");
+const tabBtnDashboard = document.getElementById("tab-btn-dashboard");
+
+let dashboardPollTimer = null;
+async function loadDashboard() {
+  // Don't fire authed fetches before the session has been restored (a boot tab-restore can
+  // call this before bootAuth/applySession resolves → 401 race). applySession re-runs the
+  // dashboard load once the session is ready, so simply skipping here is safe.
+  if (authRequiredAndOut()) return;
+  try {
+    // /api/lessons = saved lessons; /api/jobs/active = builds still running on the SERVER (so a
+    // build that's continuing after a page refresh — when the client poller is gone — still shows).
+    const [res, jobsRes] = await Promise.all([
+      fetch("/api/lessons", { headers: authHeaders() }),
+      fetch("/api/jobs/active", { headers: authHeaders() }).catch(() => null),
+    ]);
+    if (!res.ok) return;
+    const { lessons } = await res.json();
+    dashGrid.innerHTML = "";
+    if (!lessons || !lessons.length) { dashEmpty.hidden = false; dashNote.textContent = ""; return; }
+    dashEmpty.hidden = true;
+    // Building progress. The SERVER's active-jobs list is AUTHORITATIVE when available: a
+    // completed build won't appear there, so it must NOT show a stale "Building…" from a local
+    // tab whose poller stopped (multitask/refresh — the B5 bug). Only fall back to the local
+    // building tab when the server's list is unavailable.
+    const building = {}; // artifactId -> percent
+    let serverJobsOk = false;
+    try { if (jobsRes && jobsRes.ok) { serverJobsOk = true; const { jobs } = await jobsRes.json(); for (const j of (jobs || [])) if (j.artifactId) building[j.artifactId] = j.percent; } } catch { /* ignore */ }
+    if (!serverJobsOk) { const localBuild = tabs.find((t) => t.building); if (localBuild && localBuild.art) building[localBuild.art] = localBuild.percent || 0; }
+    for (const l of lessons) dashGrid.appendChild(lessonCard(l, l.id in building ? building[l.id] : null));
+    dashNote.textContent = `${lessons.length} saved · Download to keep a permanent copy`;
+    // If a build is active but there's NO client-side poller (e.g. right after a refresh),
+    // self-refresh so the badge advances + flips to done. During a live generation, pollJob
+    // already drives loadDashboard (activeJobId set) — don't stack a second timer then.
+    if (dashboardPollTimer) { clearTimeout(dashboardPollTimer); dashboardPollTimer = null; }
+    const dashOpen = !document.getElementById("tab-dashboard").hidden;
+    // Keep refreshing while ANYTHING is still building — an active server job OR a lesson whose
+    // blueprint isn't fully written yet — so the gated "Open" unlocks live even with no local
+    // poller (e.g. a page refresh mid-build). (During a client-driven build, pollJob already
+    // drives loadDashboard, so we don't stack a second timer then.)
+    const anyBuilding = Object.keys(building).length > 0 || lessons.some((l) => typeof l.buildPct === "number" && l.buildPct < 100);
+    if (anyBuilding && dashOpen && !activeJobId) dashboardPollTimer = setTimeout(loadDashboard, 4000);
+  } catch { /* ignore */ }
+}
+function lessonCard(l, buildingPct) {
+  const el = document.createElement("div");
+  el.className = "lesson-row";
+  const days = l.daysRemaining;
+  const warn = days <= 5 ? " warn" : "";
+  // Only show a countdown when expiry is actually near (≤30 days); otherwise it just reads "Saved".
+  const expiryBadge = days <= 30 ? `<span class="lc-badge${warn}">${days}d left</span>` : `<span class="lc-badge">Saved</span>`;
+  const isCourse = l.courseId && (l.courseTotal || 0) > 1;
+  const ratingHtml = l.rating ? `<span class="lc-stars">${"★".repeat(l.rating)}${"☆".repeat(5 - l.rating)}</span>` : "";
+  const industry = l.industry ? `<span>${escapeHtml(l.industry)}</span>` : "";
+  const courseBadge = isCourse ? `<span class="lc-badge">Course · ${l.courseTotal} parts</span>` : "";
+  // BUILD progress is authoritative from the server (blueprint module loadState); an active
+  // job's percent (buildingPct) is only used so the live bar doesn't lag/step backwards. This is
+  // DISTINCT from l.percent (LEARNER progress). Item (d): a lesson is "still building" whenever
+  // its blueprint isn't fully written — this survives a restart / a dropped poller, unlike the
+  // active-jobs list. "Open" stays DISABLED until ≥50% of the modules are built.
+  const activeBuild = typeof buildingPct === "number";
+  const buildPct = typeof l.buildPct === "number" ? l.buildPct : 100;
+  const fullyBuilt = buildPct >= 100;
+  const building = activeBuild || !fullyBuilt;
+  const canOpen = buildPct >= 50; // Open unlocks at 50% built
+  // While building, the bar AND the gate both read the module-based build progress, so the
+  // label ("N% built"), the tooltip and the disabled state never disagree; once built, the bar
+  // shows LEARNER progress (l.percent).
+  const pct = building ? buildPct : Math.max(0, Math.min(100, l.percent || 0));
+  const shared = isShared(l.id);
+  const buildBadge = building ? `<span class="lc-badge building"><span class="lt-spin"></span> Building…</span>` : "";
+  const progLabel = building ? `${pct}% built` : `${pct}% complete`;
+  const openLabel = isCourse ? "Open course" : "Open";
+  const openBtn = canOpen
+    ? `<button class="ghost lr-open" type="button">${openLabel}</button>`
+    : `<button class="ghost lr-open" type="button" disabled title="Still building — opens at 50% built (now ${buildPct}%)">${openLabel}</button>`;
+  el.innerHTML = `
+    <div class="lr-main">
+      <div class="lr-title">${escapeHtml(l.title)}</div>
+      <div class="lr-meta">${buildBadge}${expiryBadge}${courseBadge}${industry}${ratingHtml}</div>
+      <div class="lr-prog"><div class="lr-bar"><i style="width:${pct}%"></i></div><span class="lr-pct">${progLabel}</span></div>
+    </div>
+    <div class="lr-actions">
+      ${openBtn}
+      ${isCourse ? "" : `<a class="ghost lr-dl" href="/api/artifact/${l.id}/full" download>Download</a>`}
+      <button class="lr-share${shared ? " shared" : ""}" type="button" ${shared ? "disabled" : ""}>${shared ? "✓ Shared" : "Share with Community"}</button>
+    </div>`;
+  const openEl = el.querySelector(".lr-open");
+  if (canOpen) openEl.addEventListener("click", () => {
+    if (isCourse) { openCourseById(l.courseId, l.title); return; }
+    openLessonInWorkspace(l.id, l.title, l.prompt);
+  });
+  const share = el.querySelector(".lr-share");
+  if (share && !shared) share.addEventListener("click", () => openShareModal(l.id));
+  return el;
+}
+
+// ---- Suggested next topics (after the first lesson; from the learner's context) ----
+const suggestedEl = document.getElementById("suggested");
+const suggChips = document.getElementById("sugg-chips");
+async function loadSuggestions() {
+  try {
+    const res = await fetch("/api/suggest", { headers: authHeaders() });
+    if (!res.ok) { suggestedEl.hidden = true; return; }
+    const { topics } = await res.json();
+    if (!topics || !topics.length) { suggestedEl.hidden = true; return; }
+    suggChips.innerHTML = "";
+    topics.forEach((t) => {
+      const c = document.createElement("button");
+      c.className = "sugg-chip"; c.type = "button"; c.textContent = t;
+      c.addEventListener("click", () => { promptEl.value = t; promptEl.focus(); promptEl.scrollIntoView({ behavior: "smooth", block: "center" }); });
+      suggChips.appendChild(c);
+    });
+    suggestedEl.hidden = false;
+  } catch { suggestedEl.hidden = true; }
+}
+
+// ---- Library (public pre-built lessons) ----
+const libGrid = document.getElementById("lib-grid");
+const libCatsEl = document.getElementById("lib-cats");
+const libSearch = document.getElementById("lib-search");
+const libEmpty = document.getElementById("lib-empty");
+let libAll = [];
+let libCat = "All";
+let libLoaded = false;
+// Image-free "course tile" covers: a flat category-colored fill + a faint watermark icon.
+// Icons are inline line-SVGs (no icon-font dependency); stroke=currentColor so each picks up
+// its category's mid color. Two stops per family: light `bg` fill, dark `text` (title); the
+// `icon` mid color is the watermark, and the description blends text↔bg in CSS.
+function svgIcon(inner) {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+}
+// Per-category card covers: light tints with a faint top-right icon (category color-
+// coding, unchanged from the blue app). The app's BASE theme (chrome, buttons, links,
+// gradient, lessons) is uniformly blue; these swatches just differentiate categories.
+const CATEGORY_STYLE = {
+  "Agents":          { bg: "#EEEDFE", icon: "#7F77DD", text: "#3C3489", svg: svgIcon(`<rect x="5" y="8" width="14" height="11" rx="2"/><path d="M12 8V4.5"/><circle cx="12" cy="3.5" r="1"/><circle cx="9.5" cy="13" r="1.1"/><circle cx="14.5" cy="13" r="1.1"/><path d="M9.5 16.5h5"/>`) },
+  "RAG":             { bg: "#E1F5EE", icon: "#1D9E75", text: "#0F6E56", svg: svgIcon(`<circle cx="11" cy="11" r="6"/><path d="M20 20l-3.6-3.6"/>`) },
+  "LLMs":            { bg: "#E6F1FB", icon: "#378ADD", text: "#0C447C", svg: svgIcon(`<rect x="7" y="7" width="10" height="10" rx="1.5"/><rect x="10" y="10" width="4" height="4"/><path d="M10 7V4M14 7V4M10 20v-3M14 20v-3M7 10H4M7 14H4M20 10h-3M20 14h-3"/>`) },
+  "Frameworks":      { bg: "#EEF0FE", icon: "#6366F1", text: "#3730A3", svg: svgIcon(`<rect x="4" y="4" width="10" height="10" rx="1.5"/><rect x="10.5" y="10.5" width="9.5" height="9.5" rx="1.5"/>`) },
+  "Generative":      { bg: "#FBEAF0", icon: "#D4537E", text: "#993556", svg: svgIcon(`<path d="M12 3l1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7z"/><path d="M18 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>`) },
+  "Evaluation":      { bg: "#FAEEDA", icon: "#BA7517", text: "#633806", svg: svgIcon(`<path d="M4 20h16"/><rect x="6" y="11" width="3" height="6"/><rect x="11" y="7" width="3" height="10"/><rect x="16" y="13" width="3" height="4"/>`) },
+  "Infrastructure":  { bg: "#EEF2F6", icon: "#64748B", text: "#334155", svg: svgIcon(`<rect x="4" y="5" width="16" height="6" rx="1.5"/><rect x="4" y="13" width="16" height="6" rx="1.5"/><path d="M8 8h.01M8 16h.01"/>`) },
+  "Safety":          { bg: "#FCEBEB", icon: "#E24B4A", text: "#791F1F", svg: svgIcon(`<path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/>`) },
+  "Foundations":     { bg: "#EAF3DE", icon: "#639922", text: "#27500A", svg: svgIcon(`<path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z"/><path d="M18 16H7a2 2 0 0 0-2 2"/>`) },
+  "Build Projects":  { bg: "#FAECE7", icon: "#D85A30", text: "#712B13", svg: svgIcon(`<path d="M14.7 6.3a3.6 3.6 0 0 0-4.9 4.4l-5.6 5.6 1.5 1.5 5.6-5.6a3.6 3.6 0 0 0 4.4-4.9l-2.1 2.1-1.6-.4-.4-1.6z"/>`) },
+};
+const DEFAULT_STYLE = { bg: "#EEF2F6", icon: "#64748B", text: "#334155", svg: svgIcon(`<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>`) };
+
+// Category covers use the app CDN, with bundled images as the offline fallback.
+const CATEGORY_IMG = {
+  "Agents": "agents", "RAG": "rag", "LLMs": "llms", "Frameworks": "frameworks", "Generative": "generative",
+  "Evaluation": "evaluation", "Infrastructure": "infrastructure", "Safety": "safety", "Foundations": "foundations", "Build Projects": "build",
+};
+function setThumbBase(storageBaseUrl) {
+  for (const [cat, key] of Object.entries(CATEGORY_IMG)) if (CATEGORY_STYLE[cat]) {
+    CATEGORY_STYLE[cat].img = storageBaseUrl ? storageBaseUrl.replace(/\/$/, "") + "/" + key + ".webp" : "/home-img/cat-" + key + ".jpg";
+  }
+  if (libLoaded) renderLibrary();
+  if (commLoaded) renderCommunity();
+}
+
+function catStyle(cat) { return CATEGORY_STYLE[cat] || DEFAULT_STYLE; }
+async function loadLibrary() {
+  if (libLoaded) { renderLibrary(); return; }
+  try {
+    const res = await fetch("/api/library");
+    const { lessons } = await res.json();
+    libAll = lessons || [];
+    libLoaded = true;
+    const cats = ["All", ...Array.from(new Set(libAll.map((l) => l.category)))];
+    libCatsEl.innerHTML = "";
+    cats.forEach((c) => {
+      const b = document.createElement("button");
+      b.className = "lib-cat" + (c === libCat ? " active" : "");
+      b.textContent = c; b.type = "button";
+      b.addEventListener("click", () => { libCat = c; libCatsEl.querySelectorAll(".lib-cat").forEach((x) => x.classList.toggle("active", x.textContent === c)); renderLibrary(); });
+      libCatsEl.appendChild(b);
+    });
+    renderLibrary();
+  } catch { libEmpty.hidden = false; libEmpty.textContent = "Couldn't load the library."; }
+}
+function renderLibrary() {
+  const q = (libSearch.value || "").trim().toLowerCase();
+  const items = libAll.filter((l) =>
+    (libCat === "All" || l.category === libCat) &&
+    (!q || (l.title + " " + l.description + " " + l.category).toLowerCase().includes(q))
+  );
+  libGrid.innerHTML = "";
+  libEmpty.hidden = items.length > 0;
+  for (const l of items) {
+    const el = document.createElement("button");
+    el.className = "lib-card"; el.type = "button";
+    const s = catStyle(l.category);
+    el.style.setProperty("--cov-bg", s.bg);
+    el.style.setProperty("--cov-icon", s.icon);
+    el.style.setProperty("--cov-text", s.text);
+    if (s.img) el.style.setProperty("--cov-img", `url("${s.img}")`);
+    el.innerHTML =
+      `<div class="lib-cover">` +
+        `<span class="lib-ico" aria-hidden="true">${s.svg}</span>` +
+        `<div class="lib-cover-text">` +
+          `<span class="lib-title">${escapeHtml(l.title)}</span>` +
+          (l.description ? `<span class="lib-desc">${escapeHtml(l.description)}</span>` : "") +
+        `</div>` +
+      `</div>` +
+      `<div class="lib-foot"><span class="lib-pill">${escapeHtml(l.category)}</span><span class="lib-dot">·</span><span class="lib-lvl">${escapeHtml(l.level || "")}</span><span class="lib-dot">·</span><span>${l.estMinutes || "?"} min</span></div>`;
+    el.addEventListener("click", () => openLibraryLesson(l.slug, l.title));
+    libGrid.appendChild(el);
+  }
+}
+libSearch.addEventListener("input", () => { if (libLoaded) renderLibrary(); });
+
+function openLibraryLesson(slug, title, push) {
+  track("library_lesson_opened", slug);
+  openTab({ type: "library", title: title, slug: slug });
+  // Reflect the open lesson as /library/<slug> (shareable; reload/share serves the crawlable page)
+  // without leaving the SPA. push===false when RESTORING from the URL (popstate / routeFromUrl) so
+  // we don't stack a new history entry during back/forward.
+  if (push !== false) {
+    try { if (location.pathname.replace(/\/+$/, "") !== "/library/" + slug) history.pushState({ lib: slug }, "", "/library/" + encodeURIComponent(slug)); } catch (e) { /* ignore */ }
+  }
+}
+
+// ---- Item 4: "while you wait" — relevant free Library lessons shown during overview generation ----
+const genSuggest = document.getElementById("gen-suggest");
+const genSuggestGrid = document.getElementById("gen-suggest-grid");
+async function ensureLibForWait() {
+  if (libAll.length) return;
+  try { const r = await fetch("/api/library"); const d = await r.json(); libAll = d.lessons || []; } catch { /* ignore — just no suggestions */ }
+}
+// Rank library lessons by how many >3-char prompt words appear in title/description/category;
+// pad with other lessons so we always show up to `n` cards (relevant first, then variety).
+function relevantLibrary(promptText, n) {
+  const toks = (promptText || "").toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 3);
+  const scored = libAll.map((l) => {
+    const hay = (l.title + " " + (l.description || "") + " " + (l.category || "")).toLowerCase();
+    let score = 0; for (const t of toks) if (hay.includes(t)) score++;
+    return { l, score };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  const out = [], seen = new Set();
+  for (const x of scored) { if (out.length >= n) break; if (x.score > 0) { out.push(x.l); seen.add(x.l.slug); } }
+  for (const l of libAll) { if (out.length >= n) break; if (!seen.has(l.slug)) { out.push(l); seen.add(l.slug); } }
+  return out.slice(0, n);
+}
+async function showWhileYouWait(promptText) {
+  if (!genSuggest || !genSuggestGrid) return;
+  await ensureLibForWait();
+  const picks = relevantLibrary(promptText, 4);
+  if (!picks.length) { genSuggest.hidden = true; return; }
+  genSuggestGrid.innerHTML = "";
+  for (const l of picks) {
+    // Reuse the Library card's cover treatment: category thumbnail (--cov-img, set once
+    // setThumbBase has run) + icon watermark + title, over a level·minutes meta row. The
+    // cover height is capped in CSS (.gen-suggest-grid scope) so the overlay stack stays on-screen.
+    const s = catStyle(l.category);
+    const card = document.createElement("button");
+    card.type = "button"; card.className = "lib-card";
+    card.style.setProperty("--cov-bg", s.bg);
+    card.style.setProperty("--cov-icon", s.icon);
+    card.style.setProperty("--cov-text", s.text);
+    if (s.img) card.style.setProperty("--cov-img", `url("${s.img}")`);
+    card.innerHTML =
+      `<div class="lib-cover">` +
+        `<span class="lib-ico" aria-hidden="true">${s.svg}</span>` +
+        `<div class="lib-cover-text"><span class="lib-title">${escapeHtml(l.title)}</span></div>` +
+      `</div>` +
+      `<div class="lib-foot"><span class="lib-pill">${escapeHtml(l.category || "Lesson")}</span><span class="lib-dot">·</span><span class="lib-lvl">${escapeHtml(l.level || "")}</span><span class="lib-dot">·</span><span>${l.estMinutes || "?"} min</span></div>`;
+    card.addEventListener("click", () => openLibraryLesson(l.slug, l.title)); // opens in a NEW Trainer tab
+    genSuggestGrid.appendChild(card);
+  }
+  genSuggest.hidden = false;
+}
+function hideWhileYouWait() { if (genSuggest) genSuggest.hidden = true; }
+
+// ---- Item 3: out-of-credits "buy a plan" popup (reused by the lesson + skill 402s) ----
+const buyModal = document.getElementById("buy-modal");
+function openBuyCredits(msg) {
+  if (!buyModal) return; // pricing is hidden during the free beta — nowhere to send them
+  // Free beta: we don't charge. Reframe the out-of-credits popup as a friendly beta-limit notice;
+  // the "buy" CTA is hidden via CSS, and the caller's `msg` is charging-oriented, so we override it.
+  const t = document.getElementById("buy-modal-title");
+  const m = document.getElementById("buy-modal-msg");
+  if (t) t.textContent = "Thanks for learning with us!";
+  if (m) m.textContent = "We'll be back soon. You've used your free beta lessons — your lessons stay saved in My Lessons.";
+  buyModal.hidden = false;
+}
+function closeBuyCredits() { if (buyModal) buyModal.hidden = true; }
+if (buyModal) {
+  const go = document.getElementById("buy-modal-go"), x = document.getElementById("buy-modal-x"), later = document.getElementById("buy-modal-later");
+  if (go) go.addEventListener("click", () => { closeBuyCredits(); switchTab("pricing"); });
+  if (x) x.addEventListener("click", closeBuyCredits);
+  if (later) later.addEventListener("click", closeBuyCredits);
+  buyModal.addEventListener("click", (e) => { if (e.target === buyModal) closeBuyCredits(); });
+}
+window.openBuyCredits = openBuyCredits; // skills.js (a separate script) reuses this on a skill 402
+
+// ============================================================================
+// Community courses — learner-shared lessons (public browse), likes, and the
+// "Share with Community" flow (My Lessons + the Trainer 2-module popup). No credit reward.
+// ============================================================================
+const commSearch = document.getElementById("comm-search");
+const commFeatured = document.getElementById("comm-featured");
+const commFeatGrid = document.getElementById("comm-feat-grid");
+const commAllH = document.getElementById("comm-all-h");
+const commGrid = document.getElementById("comm-grid");
+const commEmpty = document.getElementById("comm-empty");
+let commAll = [];
+let commLoaded = false;
+
+// ---- anonymous like dedupe (per-browser) ----
+function likedSet() { try { return new Set(JSON.parse(localStorage.getItem("als-liked") || "[]")); } catch { return new Set(); } }
+function saveLiked(set) { try { localStorage.setItem("als-liked", JSON.stringify([...set])); } catch { /* ignore */ } }
+// ---- which of the user's lessons have already been shared (hide the offer) ----
+function sharedSet() { try { return new Set(JSON.parse(localStorage.getItem("als-shared") || "[]")); } catch { return new Set(); } }
+function isShared(id) { return sharedSet().has(id); }
+function markShared(id) { const s = sharedSet(); s.add(id); try { localStorage.setItem("als-shared", JSON.stringify([...s])); } catch { /* ignore */ } }
+
+async function loadCommunity() {
+  try {
+    const res = await fetch("/api/community");
+    const { lessons } = await res.json();
+    commAll = lessons || [];
+    commLoaded = true;
+    renderCommunity();
+  } catch { commGrid.innerHTML = ""; commEmpty.hidden = false; commEmpty.textContent = "Couldn't load community courses."; }
+}
+
+function communityTile(l) {
+  const s = catStyle(l.category || "Community");
+  const liked = likedSet().has(l.slug);
+  const el = document.createElement("div");
+  el.className = "lib-card comm-card";
+  el.style.setProperty("--cov-bg", s.bg);
+  el.style.setProperty("--cov-icon", s.icon);
+  el.style.setProperty("--cov-text", s.text);
+  if (s.img) el.style.setProperty("--cov-img", `url("${s.img}")`);
+  el.innerHTML =
+    `<button class="lib-open" type="button" aria-label="Open ${escapeHtml(l.title)}">` +
+      `<div class="lib-cover"><span class="lib-ico" aria-hidden="true">${s.svg}</span>` +
+        `<div class="lib-cover-text"><span class="lib-title">${escapeHtml(l.title)}</span>` +
+        (l.description ? `<span class="lib-desc">${escapeHtml(l.description)}</span>` : "") + `</div></div>` +
+    `</button>` +
+    `<div class="lib-foot">` +
+      `<span class="lib-pill">${escapeHtml(l.category || "Community")}</span>` +
+      `<span class="comm-by">by ${escapeHtml(l.submitter || "a learner")}</span>` +
+      `<button class="comm-like${liked ? " liked" : ""}" type="button" aria-pressed="${liked}" title="Like this lesson">♥ <b class="comm-likes">${l.likes || 0}</b></button>` +
+      `<button class="comm-report" type="button" title="Report this lesson">⚐</button>` +
+    `</div>`;
+  el.querySelector(".lib-open").addEventListener("click", () => openCommunityLesson(l.slug, l.title));
+  el.querySelector(".comm-like").addEventListener("click", (e) => { e.stopPropagation(); likeCommunityCard(l, el.querySelector(".comm-like")); });
+  el.querySelector(".comm-report").addEventListener("click", (e) => { e.stopPropagation(); reportCommunityCard(l, el); });
+  return el;
+}
+
+async function likeCommunityCard(l, btn) {
+  const set = likedSet();
+  if (set.has(l.slug)) return; // one like per browser
+  try {
+    const res = await fetch("/api/community/like", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: l.slug }) });
+    const data = await res.json();
+    if (!res.ok) return;
+    l.likes = data.likes;
+    set.add(l.slug); saveLiked(set);
+    btn.classList.add("liked"); btn.setAttribute("aria-pressed", "true");
+    const c = btn.querySelector(".comm-likes"); if (c) c.textContent = data.likes;
+  } catch { /* ignore */ }
+}
+
+async function reportCommunityCard(l, cardEl) {
+  if (!confirm("Report this lesson as inappropriate, inaccurate, or infringing? Our team will review it.")) return;
+  try {
+    const res = await fetch("/api/community/report", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: l.slug }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return;
+    if (data.hidden) { cardEl.remove(); } // pulled pending review
+    else { const b = cardEl.querySelector(".comm-report"); if (b) { b.textContent = "⚐ reported"; b.disabled = true; } }
+  } catch { /* ignore */ }
+}
+
+function renderCommunity() {
+  const q = (commSearch.value || "").trim().toLowerCase();
+  if (!commAll.length) {
+    commFeatured.hidden = true; commAllH.hidden = true; commGrid.innerHTML = "";
+    commEmpty.hidden = false; commEmpty.textContent = "No community courses yet — share one of yours from My Lessons!";
+    return;
+  }
+  const matches = commAll.filter((l) => !q || (l.title + " " + (l.description || "") + " " + (l.category || "") + " " + (l.submitter || "")).toLowerCase().includes(q));
+  // Featured = top 10 by likes; hidden while searching so results are unambiguous.
+  if (!q) {
+    const featured = [...commAll].sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 10);
+    commFeatGrid.innerHTML = ""; featured.forEach((l) => commFeatGrid.appendChild(communityTile(l)));
+    commFeatured.hidden = false; commAllH.hidden = false;
+  } else {
+    commFeatured.hidden = true; commAllH.hidden = true;
+  }
+  commGrid.innerHTML = "";
+  matches.forEach((l) => commGrid.appendChild(communityTile(l)));
+  commEmpty.hidden = matches.length > 0;
+  if (!matches.length) commEmpty.textContent = "No community courses match your search.";
+}
+commSearch.addEventListener("input", () => { if (commLoaded) renderCommunity(); });
+
+function openCommunityLesson(slug, title) { openTab({ type: "community", title: title, slug: slug }); }
+
+// ---- Share flow: confirm a display name → POST /api/community/share → show the code ----
+const shareOverlay = document.getElementById("share-overlay");
+const shareName = document.getElementById("share-name");
+const shareMsg = document.getElementById("share-msg");
+const shareGo = document.getElementById("share-go");
+const codeOverlay = document.getElementById("code-overlay");
+const codeSub = document.getElementById("code-sub");
+let shareLessonId = null;
+const offeredShare = {}; // per-lesson, so the Trainer popup only fires once per session
+
+function openShareModal(lessonId) {
+  if (authRequiredAndOut()) { openAuth("signin"); return; }
+  shareLessonId = lessonId;
+  shareMsg.hidden = true; shareMsg.textContent = "";
+  if (!shareName.value) shareName.value = defaultDisplayName();
+  shareOverlay.hidden = false;
+  shareName.focus();
+}
+function defaultDisplayName() { return currentUserEmail ? currentUserEmail.split("@")[0] : ""; }
+document.getElementById("share-close").addEventListener("click", () => { shareOverlay.hidden = true; });
+document.getElementById("code-close").addEventListener("click", () => { codeOverlay.hidden = true; });
+shareGo.addEventListener("click", async () => {
+  if (!shareLessonId) { shareOverlay.hidden = true; return; }
+  shareGo.disabled = true; shareGo.textContent = "Sharing…";
+  try {
+    const res = await fetch("/api/community/share", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ lessonId: shareLessonId, displayName: shareName.value.trim() }) });
+    if (res.status === 401) { shareOverlay.hidden = true; openAuth("signin"); return; }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Couldn't share this lesson.");
+    markShared(shareLessonId);
+    shareOverlay.hidden = true;
+    if (codeSub) codeSub.innerHTML = "Your lesson is now live in <strong>Community courses</strong>. Thanks for contributing! 🙌";
+    codeOverlay.hidden = false;
+    if (!document.getElementById("tab-dashboard").hidden) loadDashboard(); // refresh the row → "✓ Shared"
+  } catch (e) {
+    shareMsg.hidden = false; shareMsg.textContent = "⚠️ " + e.message;
+  } finally {
+    shareGo.disabled = false; shareGo.textContent = "Share with Community →";
+  }
+});
+document.getElementById("code-view").addEventListener("click", () => { codeOverlay.hidden = true; switchTab("community"); commLoaded = false; loadCommunity(); });
+
+// ---- Progress relay (from the artifact iframe) → server + the Trainer share popup ----
+window.addEventListener("message", (e) => {
+  // Only accept progress from the LIVE viewer iframe — not a stale/background window or an
+  // external page — so a late message from a previous lesson can't be mis-attributed to the
+  // one now on screen. (The iframe is sandboxed → e.origin may be "null"; e.source is the guard.)
+  if (e.source !== viewerFrame.contentWindow) return;
+  const d = e.data;
+  if (!d) return;
+  // The opaque lesson iframe may request only these two read/check actions.
+  // Select the active lesson here; never accept an iframe-supplied artifact/slug.
+  if (d.type === "als-api") {
+    if (typeof d.id !== "string" || d.id.length > 64 || !["/api/module", "/api/check"].includes(d.path)) return;
+    const targetWindow = e.source;
+    const activeUrl = new URL(viewerFrame.src, location.origin);
+    const b = d.body && typeof d.body === "object" ? d.body : {};
+    const payload = {};
+    if (currentLessonOwned && currentArtifactId) payload.artifactId = currentArtifactId;
+    else {
+      const match = activeUrl.pathname.match(/^\/api\/(community\/)?lesson\/([a-z0-9-]+)$/);
+      if (d.path !== "/api/check" || !match) return;
+      payload.slug = match[2]; payload.source = match[1] ? "community" : "library";
+    }
+    for (const key of ["moduleId", "blockId", "questionId", "text"]) if (typeof b[key] === "string") payload[key] = b[key].slice(0, key === "text" ? 4000 : 160);
+    if (typeof b.choiceIndex === "number") payload.choiceIndex = b.choiceIndex;
+    fetch(d.path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+      .then(async (response) => ({ status: response.status, body: await response.json() }))
+      .catch(() => ({ status: 503, body: { error: "Lesson service is temporarily unavailable." } }))
+      .then((result) => { if (e.source === viewerFrame.contentWindow) targetWindow.postMessage({ type: "als-api-result", id: d.id, ...result }, "*"); });
+    return;
+  }
+  // "⚡ Get Hands on" → open the browser-run notebook page in this tab.
+  if (d.type === "als-handson") {
+    const path = new URL(viewerFrame.src, location.origin).pathname;
+    const active = currentLessonOwned ? currentArtifactId : path.match(/^\/api\/(?:community\/)?lesson\/([a-z0-9-]+)$/)?.[1];
+    const lid = encodeURIComponent(active || "");
+    const mid = encodeURIComponent(d.moduleId || "");
+    if (lid) {
+      const href = `/hands-on?lesson=${lid}&module=${mid}`;
+      // A postMessage callback has no reliable popup permission. Some embedded
+      // browsers even return a handle for a popup they do not display.
+      window.location.assign(href);
+    }
+    return;
+  }
+  if (d.type !== "als-progress") return;
+  // Track which module the reader is on (for ALL lessons, before the owned-only guard) so a
+  // live-build reload can restore their place instead of bouncing them to the overview.
+  currentViewModule = typeof d.module === "string" ? d.module : null;
+  if (!currentLessonOwned || !currentArtifactId) return; // only the user's own lessons
+  const lessonId = currentArtifactId;
+  // Persist (authed; the host has the token, the iframe doesn't).
+  fetch("/api/progress", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ lessonId, percent: d.percent || 0, visited: d.visited || 0, total: d.total || 0 }) }).catch(() => {});
+  // Beta traction: count a completed lesson once, when the reader reaches 100%.
+  if ((d.percent || 0) >= 100 && lessonId) { window.__alsCompleted = window.__alsCompleted || new Set(); if (!window.__alsCompleted.has(lessonId)) { window.__alsCompleted.add(lessonId); track("lesson_completed", lessonId); } }
+  // After two modules, offer the share-and-save once (unless already shared).
+  if ((d.visited || 0) >= 2 && !offeredShare[lessonId] && !isShared(lessonId)) {
+    offeredShare[lessonId] = 1;
+    openShareModal(lessonId);
+  }
+});
+
+// ============================================================================
+// Community sub-tabs (Courses | Drivers) + the Community Drivers directory.
+// ============================================================================
+let driversLoaded = false;
+document.querySelectorAll(".comm-subtab").forEach((b) => b.addEventListener("click", () => setCommSub(b.dataset.comm)));
+function setCommSub(which) {
+  document.querySelectorAll(".comm-subtab").forEach((b) => b.classList.toggle("active", b.dataset.comm === which));
+  document.getElementById("comm-sub-courses").hidden = which !== "courses";
+  document.getElementById("comm-sub-drivers").hidden = which !== "drivers";
+  if (which === "courses") { if (!commLoaded) loadCommunity(); }
+  else { document.getElementById("driver-profile").hidden = true; loadDrivers(); }
+}
+
+const driversGrid = document.getElementById("drivers-grid");
+const driversEmpty = document.getElementById("drivers-empty");
+const driverProfile = document.getElementById("driver-profile");
+
+async function loadDrivers() {
+  try {
+    const res = await fetch("/api/community/drivers");
+    const { drivers } = await res.json();
+    driversLoaded = true;
+    driversGrid.innerHTML = "";
+    driversGrid.hidden = false;
+    if (!drivers || !drivers.length) { driversEmpty.hidden = false; return; }
+    driversEmpty.hidden = true;
+    drivers.forEach((d) => driversGrid.appendChild(driverCard(d)));
+  } catch { driversEmpty.hidden = false; driversEmpty.textContent = "Couldn't load contributors."; }
+}
+function initials(name) { return (name || "?").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase(); }
+function driverCard(d) {
+  const el = document.createElement("button");
+  el.className = "driver-card"; el.type = "button";
+  el.innerHTML =
+    `<div class="dc-top"><span class="dc-avatar">${escapeHtml(initials(d.name))}</span>` +
+      `<div class="dc-id"><span class="dc-name">${escapeHtml(d.name)}</span>` +
+      (d.expertise ? `<span class="dc-exp">${escapeHtml(d.expertise)}</span>` : "") + `</div></div>` +
+    (d.headline ? `<p class="dc-bio">${escapeHtml(d.headline)}</p>` : "") +
+    `<div class="dc-stats"><span>${d.courses} course${d.courses === 1 ? "" : "s"}</span><span class="lib-dot">·</span><span>♥ ${d.likes}</span></div>`;
+  el.addEventListener("click", () => openDriver(d.userId));
+  return el;
+}
+async function openDriver(userId) {
+  try {
+    const res = await fetch("/api/community/driver/" + encodeURIComponent(userId));
+    if (!res.ok) return;
+    const { profile, courses } = await res.json();
+    driversGrid.hidden = true; driversEmpty.hidden = true;
+    driverProfile.hidden = false;
+    const motiv = profile.motivation === "other" ? (profile.motivation_other || "Other") :
+      (profile.motivation ? { money: "Earning", knowledge: "Sharing knowledge", recognition: "Recognition" }[profile.motivation] || profile.motivation : "");
+    driverProfile.innerHTML =
+      `<button class="ghost dp-back" type="button">← All contributors</button>` +
+      `<div class="dp-head"><span class="dc-avatar lg">${escapeHtml(initials(profile.full_name))}</span>` +
+        `<div><h2 class="dp-name">${escapeHtml(profile.full_name)}</h2>` +
+        (profile.expertise ? `<div class="dp-exp">${escapeHtml(profile.expertise)}</div>` : "") +
+        (profile.link ? `<a class="dp-link" href="${escapeHtml(profile.link)}" target="_blank" rel="noopener">${escapeHtml(profile.link)}</a>` : "") +
+        `</div></div>` +
+      (profile.bio ? `<p class="dp-bio">${escapeHtml(profile.bio)}</p>` : "") +
+      (motiv ? `<div class="dp-motiv">Contributes for: <strong>${escapeHtml(motiv)}</strong></div>` : "") +
+      `<h3 class="comm-all-h" style="display:block">Published courses (${courses.length})</h3>` +
+      `<div class="lib-grid" id="dp-courses"></div>`;
+    driverProfile.querySelector(".dp-back").addEventListener("click", () => { driverProfile.hidden = true; driversGrid.hidden = false; });
+    const cg = driverProfile.querySelector("#dp-courses");
+    if (courses.length) courses.forEach((c) => cg.appendChild(communityTile(c)));
+    else cg.innerHTML = '<p class="lib-empty" style="display:block">No published courses yet.</p>';
+  } catch { /* ignore */ }
+}
+
+// ============================================================================
+// Build for Community — one-time contributor registration, then build a course
+// (reuses the Configurator overview→build flow with the contributor's content).
+// ============================================================================
+const bcRegister = document.getElementById("bc-register");
+const bcBuild = document.getElementById("bc-build");
+const bcSignedout = document.getElementById("bc-signedout");
+let contributorChecked = false;
+let isContributor = false;
+
+async function loadBuildCommunity() {
+  if (authRequiredAndOut()) { showBcState("signedout"); return; }
+  try {
+    const res = await fetch("/api/contributor/me", { headers: authHeaders() });
+    if (res.status === 401) { showBcState("signedout"); return; }
+    const data = await res.json();
+    isContributor = !!data.registered; contributorChecked = true;
+    showBcState(isContributor ? "build" : "register");
+  } catch { showBcState("register"); }
+}
+function showBcState(s) {
+  bcRegister.hidden = s !== "register";
+  bcBuild.hidden = s !== "build";
+  bcSignedout.hidden = s !== "signedout";
+}
+document.getElementById("bc-signin").addEventListener("click", () => openAuth("signin"));
+
+// --- registration form ---
+const bcMotivOther = document.getElementById("bc-motiv-other");
+document.getElementById("bc-motiv").addEventListener("change", (e) => {
+  if (e.target.name === "bc-motivation") bcMotivOther.hidden = e.target.value !== "other";
+});
+document.getElementById("bc-register-go").addEventListener("click", async () => {
+  const msg = document.getElementById("bc-msg");
+  const fullName = document.getElementById("bc-name").value.trim();
+  const bio = document.getElementById("bc-bio").value.trim();
+  const expertise = document.getElementById("bc-expertise").value.trim();
+  const motivationEl = document.querySelector('input[name="bc-motivation"]:checked');
+  const agreed = document.getElementById("bc-agree").checked;
+  if (!fullName || !bio || !expertise || !motivationEl || !agreed) {
+    msg.hidden = false; msg.className = "bc-msg err"; msg.textContent = "Please fill name, background, areas, a reason, and accept the guidelines.";
+    return;
+  }
+  const body = { fullName, bio, expertise, motivation: motivationEl.value, motivationOther: document.getElementById("bc-motiv-other").value.trim(), link: document.getElementById("bc-link").value.trim(), agreed: true };
+  try {
+    const res = await fetch("/api/contributor/register", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(body) });
+    if (res.status === 401) { openAuth("signin"); return; }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Registration failed.");
+    isContributor = true; showBcState("build");
+  } catch (e) { msg.hidden = false; msg.className = "bc-msg err"; msg.textContent = "⚠️ " + e.message; }
+});
+
+// --- course content uploads (own store, separate from the Configurator's) ---
+const bcDocs = [];
+const bcFileInput = document.getElementById("bc-file-input");
+const bcChips = document.getElementById("bc-chips");
+document.getElementById("bc-add-docs").addEventListener("click", () => bcFileInput.click());
+bcFileInput.addEventListener("change", async () => {
+  for (const file of Array.from(bcFileInput.files)) {
+    const chip = bcAddChip(file.name, "uploading…");
+    try {
+      const dataBase64 = await fileToBase64(file);
+      const res = await fetch("/api/upload", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ filename: file.name, dataBase64 }) });
+      if (res.status === 401) { openAuth("signin"); throw new Error("Sign in to upload."); }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "upload failed");
+      bcDocs.push({ docId: data.docId, title: data.title });
+      chip.dataset.docId = data.docId; chip.classList.remove("uploading");
+      chip.querySelector(".chip-meta").textContent = data.chunkCount + (data.chunkCount === 1 ? " chunk" : " chunks");
+    } catch (e) { chip.classList.add("failed"); chip.querySelector(".chip-meta").textContent = "✕ " + e.message; }
+  }
+  bcFileInput.value = "";
+});
+function bcAddChip(name, meta) {
+  const chip = document.createElement("span");
+  chip.className = "chip uploading";
+  chip.innerHTML = `<span class="chip-name"></span><span class="chip-meta"></span>`;
+  chip.querySelector(".chip-name").textContent = name;
+  chip.querySelector(".chip-meta").textContent = meta;
+  bcChips.appendChild(chip);
+  return chip;
+}
+
+// --- build a contributor course: reuse the overview→build flow, then auto-publish ---
+document.getElementById("bc-generate").addEventListener("click", () => {
+  const msg = document.getElementById("bc-build-msg");
+  const title = document.getElementById("bc-title").value.trim();
+  const desc = document.getElementById("bc-desc").value.trim();
+  if (!title || !desc) { msg.hidden = false; msg.className = "bc-msg err"; msg.textContent = "Please add a title and description."; return; }
+  if (!bcDocs.length) { msg.hidden = false; msg.className = "bc-msg err"; msg.textContent = "Please upload at least one document — the course is built from your content."; return; }
+  msg.hidden = true;
+  const level = document.getElementById("bc-level").value;
+  const extra = document.getElementById("bc-prompt").value.trim();
+  const prompt = `${title}. ${desc}${extra ? "\n\nAuthor guidance: " + extra : ""}`;
+  contribBuild = true; // mark this overview/build as a contributor course → auto-publish on build
+  startOverview({
+    prompt, cards: { examples: "functional_code", visuals: "on" }, levels: [level], lessonTypes: ["content", "knowledge_check"], framework: "", readingMode: "world",
+    industry: "", buildGoal: "", uploadIds: bcDocs.map((d) => d.docId), referOnly: true, threadId: null,
+  });
+});
+
+// ============================================================================
+// Background generation jobs — start, poll, show progress on the dashboard,
+// open as soon as the overview exists. Handles single lessons AND courses.
+// ============================================================================
+// ---- STAGE 1: the FREE OVERVIEW (human-in-the-loop gate) ----
+// Generate only the overview (skeleton), land on the Trainer, show progress, then
+// render the overview with two CTAs: Generate Lesson / Edit overview.
+async function startOverview(payload) {
+  // Re-entrancy guard: reject a second start until the first has claimed activeJobId (set below,
+  // after the awaited POST). `startingOverview` is cleared in every early-return so a failed first
+  // attempt can never wedge generation permanently.
+  if (activeJobId || startingOverview) { alert("One lesson generates at a time — let the current one finish, then start the next."); return; }
+  startingOverview = true;
+  if (generateBtn) generateBtn.disabled = true;
+  lastOverviewPayload = payload;
+  // Open a "generating" tab — it shows progress and can be left and returned to.
+  const title = payload && payload.prompt ? String(payload.prompt).slice(0, 48) : "New lesson…";
+  const t = openTab({ type: "generating", title, percent: 0 });
+  if (!t) { startingOverview = false; if (generateBtn) generateBtn.disabled = false; return; }
+  genTabId = t.id;
+  showWhileYouWait(payload && payload.prompt); // item 4: relevant free lessons to read while it generates
+  let jobId;
+  try {
+    const res = await fetch("/api/overview", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(payload) });
+    if (res.status === 401) { genTabId = null; closeTab(t.id); openAuth("signin"); return; }
+    const data = await res.json();
+    if (!res.ok || !data.jobId) throw new Error(data.error || "Could not start the overview.");
+    jobId = data.jobId;
+  } catch (e) {
+    genTabId = null;
+    markTabError(t, escapeHtml(e.message), () => startOverview(payload));
+    return;
+  } finally {
+    // The synchronous guard's job is done once the POST settles: either activeJobId takes over
+    // (success) or we've returned (failure). Always release it and the button here.
+    startingOverview = false;
+    if (generateBtn) generateBtn.disabled = false;
+  }
+  activeJobId = jobId;
+  if (promptEl) promptEl.value = "";
+  clearPendingPrompt(); // the topic made it into a real overview — no longer pending
+  pollOverview(jobId, t.id);
+}
+
+// Show a generation failure in the viewer with a one-click "Try again".
+function showGenError(msg, retryFn) {
+  genOverlay.hidden = true; viewerFrame.hidden = true; viewerEmpty.hidden = false;
+  viewerEmpty.innerHTML = `⚠️ ${escapeHtml(msg)} <button class="ghost" id="gen-retry" style="margin-left:8px">Try again</button>`;
+  const b = document.getElementById("gen-retry");
+  if (b && retryFn) b.addEventListener("click", retryFn);
+}
+
+// Poll an overview job; updates ITS tab (not whatever's on screen) so the user can read
+// another tab meanwhile. On done the tab becomes an overview draft with the gate CTAs.
+function pollOverview(jobId, tabId) {
+  if (activeJobTimer) clearTimeout(activeJobTimer);
+  let lost = 0; // consecutive job-fetch misses (transient network, or a 404 after a restart)
+  const tick = async () => {
+    if (activeJobId !== jobId) return;
+    let job;
+    try { const r = await fetch("/api/job/" + jobId, { headers: authHeaders() }); if (!r.ok) throw new Error("lost"); job = await r.json(); }
+    catch {
+      // Transient blips recover on retry, but a server restart drops the in-memory overview job
+      // permanently (the draft id is never sent to us, so we can't recover it). Cap the retries and
+      // surface a clean, retryable error instead of spinning the spinner forever. Overviews are free.
+      if (++lost > 10) {
+        activeJobId = null; genTabId = null;
+        const tt = tabById(tabId);
+        markTabError(tt, "The server may have restarted while preparing your overview — please try again.", () => { if (lastOverviewPayload) startOverview(lastOverviewPayload); });
+        return;
+      }
+      activeJobTimer = setTimeout(tick, 3000); return;
+    }
+    lost = 0;
+    const l = job.lessons && job.lessons[0];
+    const t = tabById(tabId); // may be null if the user closed the tab
+    if (job.status === "error") {
+      activeJobId = null; genTabId = null;
+      markTabError(t, job.error || "The AI was busy — please try again.", () => { if (lastOverviewPayload) startOverview(lastOverviewPayload); });
+      return;
+    }
+    if (job.status === "done" && l && l.artifactId) {
+      activeJobId = null; genTabId = null;
+      if (t) { t.type = "overview"; t.art = l.artifactId; t.title = l.title || t.title; if (t.id === activeTabId) activateTab(t.id); else { renderTabBar(); persistTabs(); } }
+      return;
+    }
+    if (t) { t.percent = (l && l.percent) || 8; if (t.id === activeTabId) genLabel.textContent = l && l.status === "designing" ? "Designing the lesson outline…" : "Generating your overview…"; renderTabBar(); }
+    activeJobTimer = setTimeout(tick, 2000);
+  };
+  tick();
+}
+
+// Toggle the overview-gate CTAs (Generate Lesson / Edit overview).
+function setOverviewMode(on) {
+  if (genLessonBtn) genLessonBtn.hidden = !on;
+  if (editOverviewBtn) editOverviewBtn.hidden = !on;
+}
+
+// ---- STAGE 2: approve → build the full lesson IN ITS TAB (readable as modules fill in) ----
+async function startBuild(artifactId) {
+  // Re-entrancy guard (mirrors startOverview): activeJobId is set only after the awaited POST, so
+  // without `startingBuild` a fast double-click on "Generate Lesson" fires two /api/build POSTs for
+  // the same overview → two builds → a possible double credit charge. Cleared in every exit path.
+  if (activeJobId || startingBuild) { alert("One lesson generates at a time — let the current one finish first."); return; }
+  startingBuild = true;
+  if (genLessonBtn) genLessonBtn.disabled = true;
+  let jobId;
+  try {
+    const res = await fetch("/api/build", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ artifactId }) });
+    if (res.status === 401) { openAuth("signin"); return; }
+    if (res.status === 402) { // out of credits — show the buy-a-plan popup (item 3)
+      const d = await res.json().catch(() => ({}));
+      openBuyCredits((d.error || "You're out of credits.") + " Your overview is saved — buy credits and click Generate Lesson again.");
+      return;
+    }
+    if (res.status === 409) { // already building this artifact, OR referOnly uploads expired — fail loud, no charge
+      const d = await res.json().catch(() => ({}));
+      showGenError(d.error || "Your uploaded documents are no longer available — please re-upload them in the Lesson Builder and generate the overview again.", null);
+      return;
+    }
+    const data = await res.json();
+    if (!res.ok || !data.jobId) throw new Error(data.error || "Could not start the lesson build.");
+    jobId = data.jobId;
+  } catch (e) { showGenError(escapeHtml(e.message), () => startBuild(artifactId)); return; }
+  finally { startingBuild = false; if (genLessonBtn) genLessonBtn.disabled = false; }
+  activeJobId = jobId;
+  lastBuildArtifactId = artifactId; // remember for a retry if the build fails
+  if (contribBuild) contribPublishId = artifactId; // auto-publish this one to Community when built
+  // Promote the overview tab into a (building) lesson tab and open it — readable as it builds.
+  let t = tabs.find((x) => x.art === artifactId) || tabById(activeTabId);
+  if (t) { t.type = "lesson"; t.art = artifactId; t.building = true; t._firstReady = false; t.percent = 30; t.prompt = t.prompt || basePrompt; genTabId = t.id; activateTab(t.id); }
+  else { t = openTab({ type: "lesson", title: "Building…", art: artifactId, building: true, percent: 30 }); if (t) t._firstReady = false; genTabId = t ? t.id : null; }
+  // Bug 2: do NOT reveal the lesson yet. activateTab() shows the "building" overlay until the FIRST
+  // module is ready; pollJob flips `_firstReady` + re-activates the tab, which loads the now-promoted
+  // (kind-flipped, preview-lock-dropped) lesson. (Was: an eager reloadViewer() here that dropped the
+  // reader straight onto a still-WIP module.)
+  updateGenStatus(true);
+  pollJob(jobId, genTabId);
+  // Item (d): after kicking off the build, send the learner to MY LESSONS to watch it there —
+  // NOT the Trainer. The lesson keeps building in its (now background) tab; My Lessons shows live
+  // build progress and unlocks its "Open" at ≥50% built. activateTab() above only points the
+  // hidden Trainer iframe at the lesson, so switching the top tab here doesn't disturb the build
+  // (pollJob re-activates that tab in place; it never yanks the user off My Lessons).
+  switchTab("dashboard");
+}
+
+// Auto-publish a finished contributor course to the Community (no discount popup).
+async function autoPublishContributor(lessonId) {
+  try {
+    const res = await fetch("/api/community/share", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ lessonId, contributor: true }) });
+    if (res.ok) { markShared(lessonId); commLoaded = false; driversLoaded = false; }
+  } catch { /* ignore — the lesson is still in My Lessons; they can share manually */ }
+}
+
+// CTA wiring for the overview gate.
+if (genLessonBtn) genLessonBtn.addEventListener("click", () => {
+  if (!overviewArtifactId) return;
+  // If the learner changed lesson options after this overview was generated, those changes only
+  // apply by regenerating the overview — warn rather than silently building the old selections.
+  if (overviewOptionsChanged() && !confirm(
+    "You changed lesson options since this overview was generated.\n\n" +
+    "Those changes won't apply to this build — the lesson is built from the overview you reviewed. " +
+    "To apply them, go to the Lesson Builder and Generate Overview again.\n\n" +
+    "Build the reviewed overview as-is?"
+  )) return;
+  startBuild(overviewArtifactId);
+});
+if (editOverviewBtn) editOverviewBtn.addEventListener("click", openEditOverview);
+if (editCloseBtn) editCloseBtn.addEventListener("click", () => { editOverlay.hidden = true; });
+if (editRegenBtn) editRegenBtn.addEventListener("click", () => {
+  const fb = (editFeedback.value || "").trim();
+  if (!lastOverviewPayload) { editOverlay.hidden = true; return; }
+  const payload = { ...lastOverviewPayload };
+  if (fb) payload.prompt = (basePrompt || lastOverviewPayload.prompt || "") + "\n\n[Please revise the overview based on this feedback: " + fb + "]";
+  editOverlay.hidden = true;
+  startOverview(payload);
+});
+function openEditOverview() {
+  if (editFeedback) editFeedback.value = "";
+  if (editOverlay) editOverlay.hidden = false;
+  if (editFeedback) editFeedback.focus();
+}
+
+// The "⏳ generating" pill in the Trainer's bar (links to My Lessons for progress).
+function updateGenStatus(active) { if (genStatus) genStatus.hidden = !active; }
+
+// Poll a BUILD job; updates its tab's progress + My Lessons. A closed tab (genTabId
+// cleared) keeps building server-side and just shows up in My Lessons when done.
+function pollJob(jobId, tabId) {
+  if (activeJobTimer) clearTimeout(activeJobTimer);
+  let lost = 0; // consecutive network-error misses (offline / DNS / connection refused — no response)
+  const tick = async () => {
+    if (activeJobId !== jobId) return;
+    let job;
+    try {
+      const r = await fetch("/api/job/" + jobId, { headers: authHeaders() });
+      if (!r.ok) {
+        // The in-memory job is gone (a Render redeploy/restart dropped it mid-build). Modules persist
+        // to Postgres incrementally, so DON'T revert to 0%/failed — reveal the PERSISTED lesson and
+        // let the artifact's own on-demand queue (/api/module, now durable) finish any remaining
+        // modules. (404 means "poller lost — re-read persisted state," not "failed.")
+        activeJobId = null; genTabId = null; updateGenStatus(false);
+        const tt = tabById(tabId);
+        if (tt) {
+          tt.building = false; tt._firstReady = true;       // reveal persisted state, not the building overlay
+          if (tt.id === activeTabId) activateTab(tt.id);     // loads /api/artifact/:id (built modules + self-building stubs)
+          renderTabBar(); persistTabs();
+        }
+        loadDashboard();
+        return;
+      }
+      job = await r.json();
+      lost = 0;
+    }
+    catch {
+      // A genuine network rejection (offline / DNS / connection refused — no response object, so the
+      // !r.ok recovery above is bypassed). Retry a BOUNDED number of times, then run the SAME
+      // persisted-state recovery: clear activeJobId and reveal the modules already saved to Postgres.
+      // Without the cap, activeJobId stays set forever and EVERY future Generate Overview/Lesson is
+      // rejected with the "one lesson at a time" alert until the user refreshes the page.
+      if (++lost > 10) {
+        activeJobId = null; genTabId = null; updateGenStatus(false);
+        const tt = tabById(tabId);
+        if (tt) { tt.building = false; tt._firstReady = true; if (tt.id === activeTabId) activateTab(tt.id); renderTabBar(); persistTabs(); }
+        loadDashboard();
+        return;
+      }
+      activeJobTimer = setTimeout(tick, 3000); return;
+    }
+    const l = job.lessons && job.lessons[0];
+    const t = tabById(tabId);
+    if (t) { t.percent = (l && l.percent) || t.percent; renderTabBar(); }
+    let didReload = false;
+    if (t && l && typeof l.builtModules === "number") {
+      if (t._built == null) t._built = 0;
+      // Bug 2: reveal the lesson only once the FIRST module is built (until then activateTab shows
+      // the "building" overlay). Re-activating loads the now-promoted, preview-unlocked lesson.
+      if (t.building && !t._firstReady && l.builtModules >= 1) {
+        t._firstReady = true;
+        if (t.id === activeTabId) { activateTab(t.id); didReload = true; }
+      }
+      // Live build: as each LATER module lands, refresh the open lesson — only while it's the tab on
+      // screen AND already revealed — so it grows in real time. (Server persists after every module.)
+      if (!didReload && t._firstReady && l.builtModules > t._built && t.id === activeTabId) reloadViewer();
+      t._built = l.builtModules;
+    }
+    if (!document.getElementById("tab-dashboard").hidden) loadDashboard();
+    if (job.status === "done" || job.status === "error") {
+      activeJobId = null; genTabId = null; updateGenStatus(false);
+      if (t) { t.building = false; renderTabBar(); persistTabs(); }
+      // Contributor course finished → auto-publish it to the Community (credited to them).
+      if (job.status === "done" && contribBuild && contribPublishId) {
+        const lid = contribPublishId; contribBuild = false; contribPublishId = null; autoPublishContributor(lid);
+      } else if (job.status === "error" && t) {
+        // Surface the failure whether or not this is the active tab (was: silently swallowed off-tab).
+        markTabError(t, "The build didn't finish — the AI may have been busy.", () => { if (lastBuildArtifactId) startBuild(lastBuildArtifactId); });
+      }
+      if (job.status === "done") { loadCredits(); track("lesson_generated", t && t.art); } // a completed build spent 1 credit — refresh the pill
+      loadDashboard(); loadSuggestions(); return;
+    }
+    activeJobTimer = setTimeout(tick, 2500);
+  };
+  tick();
+}
+
+// Open a lesson (own/course) into a Trainer tab.
+function openLessonInWorkspace(id, title, prompt) { openTab({ type: "lesson", title, art: id, prompt }); }
+// Courses open their first lesson as a single tab (the old course sub-strip is retired).
+function openCourse(courseId, lessons, activeIndex) {
+  const a = (lessons || [])[activeIndex || 0] || (lessons || [])[0];
+  if (a && a.artifactId) openTab({ type: "lesson", title: a.title, art: a.artifactId });
+}
+async function openCourseById(courseId, title) {
+  try {
+    const res = await fetch("/api/course/" + courseId, { headers: authHeaders() });
+    const { lessons } = await res.json();
+    if (!lessons || !lessons.length) return;
+    const a = lessons[0];
+    openTab({ type: "lesson", title: a.title || title, art: a.id });
+  } catch { /* ignore */ }
+}
+
+// ---- Tiny helpers ----
+function scrollDown() { chatLog.scrollTop = chatLog.scrollHeight; }
+function mdLite(s) { return escapeHtml(s).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>"); }
+function escapeHtml(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+// ============================================================================
+// Animated neural-network hero backdrop (canvas; respects reduced motion).
+// ============================================================================
+(function neural() {
+  const canvas = document.getElementById("neural");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let w, h, nodes, raf;
+  function resize() {
+    const r = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = canvas.width = Math.max(1, r.width * dpr);
+    h = canvas.height = Math.max(1, r.height * dpr);
+    const count = Math.min(64, Math.floor((r.width * r.height) / 14000));
+    nodes = Array.from({ length: count }, () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.18 * dpr, vy: (Math.random() - 0.5) * 0.18 * dpr,
+      r: (Math.random() * 1.6 + 1.1) * dpr,
+    }));
+  }
+  function frame() {
+    ctx.clearRect(0, 0, w, h);
+    const linkDist = 150 * (Math.min(window.devicePixelRatio || 1, 2));
+    for (let i = 0; i < nodes.length; i++) {
+      const a = nodes[i];
+      a.x += a.vx; a.y += a.vy;
+      if (a.x < 0 || a.x > w) a.vx *= -1;
+      if (a.y < 0 || a.y > h) a.vy *= -1;
+      for (let j = i + 1; j < nodes.length; j++) {
+        const b = nodes[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const d = Math.hypot(dx, dy);
+        if (d < linkDist) {
+          const o = (1 - d / linkDist) * 0.5;
+          ctx.strokeStyle = `rgba(96,165,250,${o})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+      }
+    }
+    for (const n of nodes) {
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(125,211,252,0.9)"; ctx.fill();
+    }
+    if (!reduce) raf = requestAnimationFrame(frame);
+  }
+  resize();
+  frame();
+  let t;
+  window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { cancelAnimationFrame(raf); resize(); frame(); }, 150); });
+})();
+
+// ============================================================================
+// Password sessions — form opened from Sign in / Sign up. When auth is OFF (local
+// isolated fixture entry) the app runs open and the dashboard uses a
+// local identity, so everything works locally with zero auth config.
+// ============================================================================
+
+let accessToken = null;
+let currentUserEmail = "";
+let currentUserId = "";
+let authMode = "signin";
+let authIsEnabled = false;
+const authOverlay = document.getElementById("auth-overlay");
+const authActions = document.getElementById("auth-actions");
+const authLoading = document.getElementById("auth-loading");
+const authForm = document.getElementById("auth-form");
+const authTitle = document.getElementById("auth-title");
+const authSub = document.getElementById("auth-sub");
+const authEmail = document.getElementById("auth-email");
+const authPassword = document.getElementById("auth-password");
+const authMsg = document.getElementById("auth-msg");
+const authSubmit = document.getElementById("auth-submit");
+const authSwitchText = document.getElementById("auth-switch-text");
+const authToggle = document.getElementById("auth-toggle");
+const authClose = document.getElementById("auth-close");
+const authConsentRow = document.getElementById("auth-consent-row");
+const authConsent = document.getElementById("auth-consent");
+const logoutBtn = document.getElementById("logout");
+const authWho = document.getElementById("auth-who");
+
+function authHeaders() { return {}; } // HttpOnly session cookies travel on same-origin requests.
+function authRequiredAndOut() { return authIsEnabled && !accessToken; }
+function showAuthMsg(text, kind) { authMsg.hidden = !text; authMsg.textContent = text || ""; authMsg.className = "auth-msg" + (kind ? " " + kind : ""); }
+// The overlay is an on-demand MODAL (gates generation/dashboard; browsing stays open).
+// Auth is a full PAGE now (#tab-auth), not a modal. openAuth() routes to it; every existing
+// gated-action call site (openAuth("signin"/"signup")) keeps working unchanged.
+function openAuth(mode) {
+  setAuthMode(mode || "signin");
+  if (authLoading) authLoading.hidden = true;
+  if (authForm) authForm.hidden = false;
+  switchTab("auth");
+  window.scrollTo(0, 0);
+}
+function closeAuth() { if (!document.getElementById("tab-auth").hidden) switchTab("home"); }
+function setAuthMode(mode) {
+  authMode = mode;
+  const signup = mode === "signup";
+  authTitle.textContent = signup ? "Create your account" : "Sign in";
+  authSub.textContent = signup ? "Sign up to start generating lessons." : "Welcome back.";
+  authSubmit.textContent = signup ? "Create account" : "Sign in";
+  authSwitchText.textContent = signup ? "Already have an account?" : "New here?";
+  authToggle.textContent = signup ? "Sign in" : "Create an account";
+  authPassword.autocomplete = signup ? "new-password" : "current-password";
+  authPassword.minLength = signup ? 12 : 1;
+  authPassword.placeholder = signup ? "Password (12+ characters)" : "Password";
+  // The Terms+Privacy consent checkbox is required for sign-up only.
+  if (authConsentRow) authConsentRow.hidden = !signup;
+  if (authConsent && !signup) authConsent.checked = false;
+  showAuthMsg("");
+}
+// Record the signup consent (Terms + Privacy). Best-effort; the server attaches the user id
+// when a session token exists, else logs it against the email.
+function logSignupConsent(email) {
+  fetch("/api/consent", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ consentType: "signup_terms_privacy", email }) }).catch(() => {});
+  track("signup", email); // beta traction: count of new sign-ups
+}
+function applySession(session) {
+  accessToken = session && session.user ? "session-present" : null;
+  const email = (session && session.user && session.user.email) || "";
+  currentUserEmail = email;
+  currentUserId = (session && session.user && session.user.id) || "";
+  const signedIn = !!accessToken;
+  if (logoutBtn) logoutBtn.hidden = !signedIn;
+  if (authWho) { authWho.hidden = !signedIn; authWho.textContent = email; }
+  if (tabBtnDashboard) tabBtnDashboard.hidden = !signedIn;
+  if (authActions) authActions.hidden = signedIn || !authIsEnabled;
+  if (signedIn) {
+    // If the auth gate interrupted them mid-generate, return them to the Lesson Builder with their
+    // topic restored — not the Home tab — so they can pick up right where they left off.
+    let pend = null; try { pend = localStorage.getItem(PENDING_PROMPT_KEY); } catch { /* ignore */ }
+    if (pend && promptEl) { switchTab("configurator"); if (!promptEl.value.trim()) promptEl.value = pend; try { promptEl.focus(); } catch { /* ignore */ } }
+    else { closeAuth(); }
+    loadDashboard(); loadPreferences(); loadSuggestions(); maybeOnboard(); loadCredits();
+  } else {
+    updateCreditPill(null);
+    clearCachedCredits();
+  }
+  updateProfileUI(signedIn, email);
+  routeFromUrl(); // honor a /account deep-link once auth state is known
+}
+
+document.getElementById("btn-signin").addEventListener("click", () => openAuth("signin"));
+document.getElementById("btn-signup").addEventListener("click", () => openAuth("signup"));
+
+// Auth.js uses same-origin, HttpOnly session cookies; no access token is stored in JS.
+async function authAction(action, fields = {}) {
+  const csrf = await fetch("/auth/csrf").then((r) => r.json());
+  const response = await fetch("/auth/" + action, { method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", "X-Auth-Return-Redirect": "1" },
+    body: new URLSearchParams({ csrfToken: csrf.csrfToken, callbackUrl: location.origin + "/", ...fields }),
+  });
+  const result = await response.json();
+  if (!response.ok || result.url && new URL(result.url, location.origin).searchParams.has("error")) throw new Error("Email or password is incorrect. Passwordless accounts need their private setup link.");
+  return result;
+}
+async function signOutSession() {
+  await authAction("signout");
+  resetWorkspace();
+  applySession(null);
+  switchTab("home");
+}
+async function bootAuth() {
+  let cfg;
+  try { cfg = await fetch("/api/config").then((r) => r.json()); }
+  catch { cfg = { authEnabled: true }; }
+  authIsEnabled = cfg.authEnabled !== false;
+  billingIsEnabled = !!cfg.billingEnabled;
+  setThumbBase(cfg.thumbnailBaseUrl);
+  document.querySelectorAll("#oauth-google, #oauth-apple").forEach((button) => { button.hidden = true; });
+  if (!authIsEnabled) {
+    if (tabBtnDashboard) tabBtnDashboard.hidden = false;
+    loadDashboard(); loadPreferences(); loadSuggestions(); loadCredits(); routeFromUrl(); return;
+  }
+  if (authActions) authActions.hidden = false;
+  try { applySession(await fetch("/auth/session").then((r) => r.json())); }
+  catch { applySession(null); }
+  authToggle.addEventListener("click", () => setAuthMode(authMode === "signin" ? "signup" : "signin"));
+  authForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const email = authEmail.value.trim(), password = authPassword.value;
+    if (!email || !password || (authMode === "signup" && password.length < 12)) { showAuthMsg("Use your email and password. New passwords need at least 12 characters.", "err"); return; }
+    if (authMode === "signup" && authConsent && !authConsent.checked) { showAuthMsg("Please agree to the Terms and acknowledge the Privacy Notice.", "err"); return; }
+    authSubmit.disabled = true; showAuthMsg("Signing in…");
+    try {
+      if (authMode === "signup") {
+        const response = await fetch("/api/auth/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Account creation failed.");
+      }
+      await authAction("callback/credentials", { email, password });
+      applySession(await fetch("/auth/session").then((r) => r.json()));
+      if (authMode === "signup") logSignupConsent(email);
+      if (location.pathname === "/signin") { history.replaceState({}, "", "/builder"); switchTab("configurator"); }
+    } catch (error) { showAuthMsg(error.message || "Sign-in failed.", "err"); }
+    finally { authSubmit.disabled = false; }
+  });
+  if (logoutBtn) logoutBtn.addEventListener("click", () => signOutSession().catch((e) => showAuthMsg(e.message, "err")));
+  const claimForm = document.getElementById("claim-form");
+  if (claimForm) claimForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const message = document.getElementById("claim-message"), button = claimForm.querySelector("button[type=submit]");
+    button.disabled = true;
+    try {
+      const token = document.getElementById("claim-token").value.trim(), password = document.getElementById("claim-password").value;
+      const response = await fetch("/api/auth/claim", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, password }) });
+      const result = await response.json(); if (!response.ok) throw new Error(result.error);
+      claimForm.reset(); history.replaceState({}, "", "/signin");
+      message.textContent = "Password set. Sign in with your existing email above.";
+    } catch (error) { message.textContent = error.message || "Password setup failed."; }
+    finally { button.disabled = false; }
+  });
+  if (location.pathname === "/set-password") {
+    const token = location.hash.slice(1);
+    if (/^[a-f0-9]{64}$/.test(token)) document.getElementById("claim-token").value = token;
+    history.replaceState({}, "", "/set-password");
+  }
+}
+
+// ---- Preferences: pre-fill the dropdowns + context fields from last time ----
+async function loadPreferences() {
+  try {
+    const res = await fetch("/api/preferences", { headers: authHeaders() });
+    if (!res.ok) return;
+    const { prefs } = await res.json();
+    if (!prefs) return;
+    applyPref("level", prefs.levels && prefs.levels[0], false);
+    applyPref("depth", axisToValues(prefs.depth), true);
+    applyPref("examples", axisToValues(prefs.examples), true);
+    applyPref("density", prefs.density, false);
+    if (prefs.visuals) applyPref("extras", "visuals", true, true);
+    if (prefs.syntax) applyPref("extras", "syntax", true, true);
+    applyPref("lessonType", prefs.lessonTypes, true);
+    if (prefs.readingMode) applyPref("readingMode", prefs.readingMode, false);
+    if (prefs.industry && industryEl) industryEl.value = prefs.industry;
+    if (prefs.buildGoal && buildGoalEl) buildGoalEl.value = prefs.buildGoal;
+    updateFrameworkVisibility();
+    if (prefs.framework && sel.examples.includes("code")) applyPref("framework", prefs.framework, false);
+  } catch { /* ignore */ }
+}
+function applyPref(field, value, multi, append) {
+  const dd = document.querySelector(`.dd[data-field="${field}"]`);
+  if (!dd || value == null) return;
+  const valueEl = dd.querySelector(".dd-value");
+  const values = multi ? (Array.isArray(value) ? value : [value]) : [value];
+  if (!append) { sel[field] = multi ? [] : null; dd.querySelectorAll(".dd-opt").forEach((o) => o.classList.remove("sel")); }
+  for (const v of values) {
+    if (!v) continue;
+    const opt = dd.querySelector(`.dd-opt[data-value="${v}"]`);
+    if (!opt) continue;
+    opt.classList.add("sel");
+    if (multi) { if (!sel[field].includes(v)) sel[field].push(v); } else { sel[field] = v; }
+  }
+  renderDdValue(dd, field, multi, valueEl);
+}
+
+// ---- Onboarding: one optional question at a time, after first sign-up ----
+const onboardOverlay = document.getElementById("onboard-overlay");
+const obSteps = Array.from(document.querySelectorAll(".ob-step"));
+const obNext = document.getElementById("ob-next");
+const obSkip = document.getElementById("ob-skip");
+let obStep = 0;
+function showOnboardStep(i) {
+  obSteps.forEach((s, si) => { s.hidden = si !== i; });
+  obNext.textContent = i >= obSteps.length - 1 ? "Finish" : "Next →";
+  const inp = obSteps[i].querySelector("input"); if (inp) setTimeout(() => inp.focus(), 50);
+}
+async function finishOnboarding() {
+  const payload = {
+    industry: (document.getElementById("ob-industry").value || "").trim(),
+    role: (document.getElementById("ob-role").value || "").trim(),
+    aspiringRole: (document.getElementById("ob-aspiring").value || "").trim(),
+    personalGoal: (document.getElementById("ob-goal").value || "").trim(),
+  };
+  onboardOverlay.hidden = true;
+  try { localStorage.setItem("als-onboarded", "1"); } catch (e) {}
+  try { await fetch("/api/profile", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(payload) }); } catch (e) {}
+  loadPreferences(); loadSuggestions();
+}
+obNext.addEventListener("click", () => { if (obStep >= obSteps.length - 1) finishOnboarding(); else { obStep++; showOnboardStep(obStep); } });
+obSkip.addEventListener("click", () => { try { localStorage.setItem("als-onboarded", "1"); } catch (e) {} onboardOverlay.hidden = true; });
+async function maybeOnboard() {
+  try { if (localStorage.getItem("als-onboarded")) return; } catch (e) {}
+  try {
+    const res = await fetch("/api/preferences", { headers: authHeaders() });
+    const { prefs } = await res.json();
+    const p = (prefs && prefs.profile) || {};
+    if (p.industry || p.role || p.aspiringRole || p.personalGoal) return;
+    obStep = 0; showOnboardStep(0); onboardOverlay.hidden = false;
+  } catch (e) {}
+}
+
+bootAuth();
+// Re-open any Trainer tabs the learner had before a refresh (sessionStorage).
+restoreTabs();
+// Re-fill a topic saved before a sign-in redirect (survives OAuth / email-confirmation reloads).
+restorePendingPrompt();
+
+// ============================================================================
+// Lesson credits + Pricing — the credit pill in the nav, the slider/cost on the
+// Pricing tab, and Lemon Squeezy checkout (Lemon.js overlay). The webhook is the
+// source of truth for crediting; the front-end just reflects the balance.
+// ============================================================================
+// Live pricing from Lemon Squeezy — replaces the old hardcoded USD. `pricing` is a
+// fallback until /api/pricing loads the real store currency + amounts.
+let pricing = { currency: "USD", paygUnitCents: 99, trialCents: 500, paygFormatted: "", trialFormatted: "" };
+function fmtMoney(cents) {
+  try { return new Intl.NumberFormat(undefined, { style: "currency", currency: pricing.currency, currencyDisplay: "narrowSymbol", maximumFractionDigits: 2 }).format((cents || 0) / 100); }
+  catch { return ((cents || 0) / 100).toFixed(2) + " " + pricing.currency; }
+}
+function renderPricing() {
+  const slider = document.getElementById("payg-slider");
+  const n = Number(slider && slider.value) || 1;
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  // Single-unit fields prefer LS's own formatted string (matches the dashboard exactly);
+  // totals are computed in the detected currency.
+  set("payg-cost", fmtMoney(n * pricing.paygUnitCents));
+  set("payg-each", pricing.paygFormatted || fmtMoney(pricing.paygUnitCents));
+  set("trial-cost", pricing.trialFormatted || fmtMoney(pricing.trialCents));
+  set("trial-each", fmtMoney(Math.round((pricing.trialCents || 0) / 10)));
+  set("trial-btn-cost", pricing.trialFormatted || fmtMoney(pricing.trialCents));
+}
+async function loadPricing() {
+  try {
+    const res = await fetch("/api/pricing");
+    const d = await res.json();
+    if (d && d.configured && typeof d.paygUnitCents === "number" && d.paygUnitCents > 0) {
+      pricing = { currency: d.currency || "USD", paygUnitCents: d.paygUnitCents, trialCents: d.trialCents || 0, paygFormatted: d.paygFormatted || "", trialFormatted: d.trialFormatted || "" };
+    }
+  } catch { /* keep fallback */ }
+  renderPricing();
+}
+let billingIsEnabled = false;
+const creditPill = document.getElementById("credit-pill");
+const creditCount = document.getElementById("credit-count");
+
+function updateCreditPill(balance) {
+  if (!creditPill) return;
+  if (balance == null) { creditPill.hidden = true; return; }
+  creditPill.hidden = false;
+  if (creditCount) creditCount.textContent = String(balance);
+  creditPill.classList.toggle("empty", balance <= 0);
+}
+
+// Persist the last-known balance so the pill can render INSTANTLY on the next page
+// load — otherwise it stays hidden for ~1-2s while Auth.js restores the session and
+// /api/credits round-trips (the "pill flashes away on refresh" bug).
+function cacheCredits(balance) { try { localStorage.setItem("wb-credits", String(balance)); } catch (e) {} }
+function clearCachedCredits() { try { localStorage.removeItem("wb-credits"); } catch (e) {} }
+
+async function loadCredits() {
+  if (!accessToken && authIsEnabled) { updateCreditPill(null); clearCachedCredits(); return; }
+  try {
+    const res = await fetch("/api/credits", { headers: authHeaders() });
+    if (!res.ok) { updateCreditPill(null); clearCachedCredits(); return; }
+    const d = await res.json();
+    const balance = typeof d.balance === "number" ? d.balance : 0;
+    updateCreditPill(balance);
+    cacheCredits(balance);
+    const bal = document.getElementById("pricing-balance");
+    if (bal && !bal.classList.contains("low")) {
+      bal.hidden = false;
+      bal.textContent = `You have ${balance} credit${balance === 1 ? "" : "s"}.`;
+    }
+  } catch { /* keep the optimistic cached pill on a transient error */ }
+}
+
+// Optimistic paint: if we credited this browser before, show that balance immediately
+// on load. loadCredits() reconciles a moment later (and hides on a real sign-out).
+(function showCachedPill() {
+  try { const c = localStorage.getItem("wb-credits"); if (c != null && c !== "") updateCreditPill(Number(c)); } catch (e) {}
+})();
+
+// Poll a few times after a purchase — the webhook credits asynchronously.
+function refreshCreditsRetry(tries) {
+  tries = tries || 6;
+  loadCredits();
+  if (tries > 1) setTimeout(() => refreshCreditsRetry(tries - 1), 2000);
+}
+
+// Central credit refresh: re-fetch the balance whenever the tab regains focus/visibility — covers
+// returning from a checkout opened in another tab, or being away while a webhook lands. (loadCredits
+// already no-ops + clears the pill when signed out, so this is safe to call unconditionally.)
+let _lastCreditRefresh = 0;
+function refreshCreditsOnReturn() {
+  if (authIsEnabled && !accessToken) return; // not signed in → nothing to refresh
+  const now = (window.performance && performance.now()) || 0;
+  if (now - _lastCreditRefresh < 1500) return; // debounce focus+visibilitychange double-fire
+  _lastCreditRefresh = now;
+  loadCredits();
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshCreditsOnReturn(); });
+window.addEventListener("focus", refreshCreditsOnReturn);
+
+// Pill → Pricing tab.
+if (creditPill) {
+  creditPill.addEventListener("click", () => switchTab("pricing"));
+  creditPill.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); switchTab("pricing"); } });
+}
+
+// ---- Pricing tab interactions ----
+(function initPricing() {
+  const slider = document.getElementById("payg-slider");
+  const nEls = [document.getElementById("payg-n"), document.getElementById("payg-n2"), document.getElementById("buy-payg-n")];
+  const sEl = document.getElementById("payg-s");
+  function syncSlider() {
+    const n = Number(slider.value) || 1;
+    nEls.forEach((el) => { if (el) el.textContent = String(n); });
+    if (sEl) sEl.textContent = n === 1 ? "" : "s";
+    renderPricing(); // currency-aware cost for the current N
+  }
+  if (slider) { slider.addEventListener("input", syncSlider); syncSlider(); }
+  loadPricing(); // pull live currency + amounts from Lemon Squeezy
+
+  async function buy(planId, quantity) {
+    if (authIsEnabled && !accessToken) { openAuth("signin"); return; }
+    if (!billingIsEnabled) { const s = document.getElementById("pricing-soon"); if (s) s.hidden = false; return; }
+    const btn = planId === "trial-launch" ? document.getElementById("buy-trial") : document.getElementById("buy-payg");
+    const label = btn ? btn.textContent : "";
+    if (btn) { btn.disabled = true; btn.textContent = "Starting checkout…"; }
+    try {
+      const res = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ planId, quantity }) });
+      if (res.status === 401) { openAuth("signin"); return; }
+      const d = await res.json();
+      if (!res.ok || !d.url) throw new Error(d.detail ? `${d.error || "Checkout failed"} — ${d.detail}` : (d.error || "Couldn't start checkout."));
+      // Open the Lemon.js overlay if available; otherwise fall back to a new tab.
+      if (window.LemonSqueezy && window.LemonSqueezy.Url && typeof window.LemonSqueezy.Url.Open === "function") {
+        window.LemonSqueezy.Url.Open(d.url);
+      } else {
+        window.open(d.url, "_blank");
+      }
+      // Reflect the new balance once the webhook lands.
+      refreshCreditsRetry();
+    } catch (e) {
+      const s = document.getElementById("pricing-soon");
+      if (s) { s.hidden = false; s.textContent = e.message; }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = label; }
+    }
+  }
+
+  const buyPayg = document.getElementById("buy-payg");
+  const buyTrial = document.getElementById("buy-trial");
+  if (buyPayg) buyPayg.addEventListener("click", () => buy("lessons-payg", Number(slider && slider.value) || 1));
+  if (buyTrial) buyTrial.addEventListener("click", () => buy("trial-launch", 1));
+  const signinLink = document.getElementById("pricing-signin-link");
+  if (signinLink) signinLink.addEventListener("click", (e) => { e.preventDefault(); openAuth("signin"); });
+
+  // Show the right helper line when Pricing is opened.
+  document.querySelectorAll('.tab[data-tab="pricing"], #credit-pill').forEach((el) => {
+    el.addEventListener("click", () => {
+      const needSignin = authIsEnabled && !accessToken;
+      const signinEl = document.getElementById("pricing-signin");
+      const soonEl = document.getElementById("pricing-soon");
+      if (signinEl) signinEl.hidden = !needSignin;
+      if (soonEl) soonEl.hidden = billingIsEnabled || needSignin;
+      if (!needSignin) loadCredits();
+    });
+  });
+})();
+
+// Lemon.js overlay: initialize when the deferred script is ready + refresh on success.
+function setupLemon() {
+  if (typeof window.createLemonSqueezy === "function") {
+    window.createLemonSqueezy();
+    if (window.LemonSqueezy && typeof window.LemonSqueezy.Setup === "function") {
+      window.LemonSqueezy.Setup({ eventHandler: (ev) => { if (ev && ev.event === "Checkout.Success") refreshCreditsRetry(); } });
+    }
+  }
+}
+if (document.readyState === "complete") setupLemon();
+else window.addEventListener("load", setupLemon);
+
+// Returning from a hosted checkout (?purchase=success) → land on Pricing, poll the balance, clean the URL.
+(function handlePurchaseReturn() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("purchase") === "success") {
+    switchTab("pricing");
+    refreshCreditsRetry();
+    const note = document.getElementById("pricing-balance");
+    if (note) { note.hidden = false; note.textContent = "Thanks for your purchase! Your credits will appear here in a moment."; }
+    try { window.history.replaceState({}, "", window.location.pathname); } catch (e) {}
+  }
+})();
+
+// ============================================================================
+// Profile menu — top-right avatar replaces the old email + Sign-out in the nav.
+// Click → { Account Details, Sign out }. Account Details shows name/email/credits
+// + a Top-up button. (Email + sign-out are no longer in the top bar.)
+// ============================================================================
+const profileWrap = document.getElementById("profile-wrap");
+const profileBtn = document.getElementById("profile-btn");
+const profileMenu = document.getElementById("profile-menu");
+const profileAvatar = document.getElementById("profile-avatar");
+
+function displayNameFrom(email) {
+  if (!email) return "there";
+  const local = email.split("@")[0].replace(/[._-]+/g, " ");
+  return local.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// Show/hide the avatar with the user's initial. Driven from applySession.
+function updateProfileUI(signedIn, email) {
+  if (profileWrap) profileWrap.hidden = !signedIn;
+  if (signedIn && profileAvatar) profileAvatar.textContent = (email || "U").trim().charAt(0).toUpperCase() || "U";
+  if (!signedIn) closeProfileMenu();
+}
+
+function openProfileMenu() { if (profileMenu) { profileMenu.hidden = false; profileBtn.setAttribute("aria-expanded", "true"); } }
+function closeProfileMenu() { if (profileMenu) { profileMenu.hidden = true; profileBtn && profileBtn.setAttribute("aria-expanded", "false"); } }
+
+if (profileBtn) profileBtn.addEventListener("click", (e) => { e.stopPropagation(); profileMenu.hidden ? openProfileMenu() : closeProfileMenu(); });
+document.addEventListener("click", (e) => { if (profileWrap && !profileWrap.contains(e.target)) closeProfileMenu(); });
+
+// --- Account page (/account) ---
+// Reached from the profile menu AND as a real URL, so it deep-links and survives a
+// refresh. The profile menu only shows when signed in; a direct /account hit while
+// signed out bounces to the sign-in modal (and lands here once auth completes).
+function gotoAccount(push) {
+  closeProfileMenu();
+  if (authRequiredAndOut()) { openAuth("signin"); return; }
+  switchTab("account");
+  if (push !== false) { try { history.pushState({ tab: "account" }, "", "/account"); } catch (e) {} }
+  window.scrollTo(0, 0);
+  loadAccount();
+}
+function openAccount() { gotoAccount(true); }
+// If we boot (or finish signing in) on /account, show the page without a second push.
+// Map a deep-linked / refreshed URL to its tab so /pricing, /library, etc. land on the
+// right tab (the server's SPA fallback serves the shell; this routes once auth state is known).
+const URL_TAB_MAP = { "/signin": "auth", "/set-password": "auth", "/builder": "configurator", "/library": "library", "/community": "community", "/pricing": "pricing", "/llm-skills": "llm-skills", "/build-community": "build-community", "/trainer": "trainer" };
+function routeFromUrl() {
+  const p = location.pathname.replace(/\/+$/, "");
+  if (p === "/account") { gotoAccount(false); return; }
+  const libM = p.match(/^\/library\/(.+)$/);
+  if (libM) { const s = decodeURIComponent(libM[1]); openLibraryLesson(s, s, false); return; }
+  if (URL_TAB_MAP[p]) switchTab(URL_TAB_MAP[p]);
+}
+function fmtMemberSince(iso) {
+  if (!iso) return "—";
+  try { return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }); }
+  catch (e) { return "—"; }
+}
+async function loadAccount() {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  // Paint what we already know instantly; /api/account fills usage + the live balance.
+  set("acct-name", displayNameFrom(currentUserEmail));
+  set("acct-email", currentUserEmail || "—");
+  set("acct-uuid", currentUserId || "—");
+  const cached = (() => { try { return localStorage.getItem("wb-credits"); } catch (e) { return null; } })();
+  set("acct-credits", cached != null && cached !== "" ? `${cached} lesson${cached === "1" ? "" : "s"}` : "…");
+  try {
+    const res = await fetch("/api/account", { headers: authHeaders() });
+    if (!res.ok) return;
+    const d = await res.json();
+    set("acct-name", displayNameFrom(d.email || currentUserEmail));
+    set("acct-email", d.email || currentUserEmail || "—");
+    set("acct-uuid", d.userId || currentUserId || "—");
+    set("acct-plan", d.plan || "Free");
+    set("acct-credits", `${d.balance} credit${d.balance === 1 ? "" : "s"}`);
+    set("acct-lessons", String(d.lessonsGenerated ?? 0));
+    set("acct-spent", String(d.creditsSpent ?? 0));
+    set("acct-bought", String(d.creditsPurchased ?? 0));
+    set("acct-since", fmtMemberSince(d.memberSince));
+    updateCreditPill(d.balance); cacheCredits(d.balance); // keep the nav pill in sync
+    // Admin card — shown only when the server says so (endpoints re-verify on every call).
+    const adminCard = document.getElementById("acct-admin-card");
+    if (adminCard) adminCard.hidden = !d.isAdmin;
+  } catch (e) {}
+}
+
+// ---- Admin · add credits (card is hidden unless /api/account returns isAdmin) ----
+function adminMsg(text, ok) {
+  const el = document.getElementById("admin-msg");
+  if (!el) return;
+  el.hidden = !text;
+  el.textContent = text || "";
+  el.classList.toggle("ok", !!ok);
+}
+async function adminCall(path, opts) {
+  const res = await fetch(path, opts);
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(d.error || `Request failed (${res.status}).`);
+  return d;
+}
+const adminCheckBtn = document.getElementById("admin-check");
+const adminAddBtn = document.getElementById("admin-add");
+if (adminCheckBtn) adminCheckBtn.addEventListener("click", async () => {
+  const email = (document.getElementById("admin-email")?.value || "").trim();
+  if (!email) { adminMsg("Enter the user's email first.", false); return; }
+  adminMsg("Looking up…", true);
+  try {
+    const d = await adminCall(`/api/admin/user?email=${encodeURIComponent(email)}`, { headers: authHeaders() });
+    adminMsg(d.found ? `${d.email} — current balance: ${d.balance} credit${d.balance === 1 ? "" : "s"}.` : "No signed-up user with that email.", d.found);
+  } catch (e) { adminMsg(e.message, false); }
+});
+if (adminAddBtn) adminAddBtn.addEventListener("click", async () => {
+  const email = (document.getElementById("admin-email")?.value || "").trim();
+  const credits = Number(document.getElementById("admin-credits")?.value);
+  if (!email) { adminMsg("Enter the user's email first.", false); return; }
+  if (!(credits > 0)) { adminMsg("Enter a positive credit amount.", false); return; }
+  adminAddBtn.disabled = true;
+  adminMsg(`Adding ${credits} credit${credits === 1 ? "" : "s"} to ${email}…`, true);
+  try {
+    const d = await adminCall("/api/admin/credits", {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()),
+      body: JSON.stringify({ email, credits }),
+    });
+    adminMsg(`Done — ${d.email} now has ${d.balance} credit${d.balance === 1 ? "" : "s"}.`, true);
+  } catch (e) { adminMsg(e.message, false); }
+  finally { adminAddBtn.disabled = false; }
+});
+// Back/forward between /account and the rest of the SPA.
+window.addEventListener("popstate", () => {
+  const p = location.pathname.replace(/\/+$/, "");
+  if (p === "/account") { gotoAccount(false); return; }
+  const libM = p.match(/^\/library\/(.+)$/);
+  if (libM) { const s = decodeURIComponent(libM[1]); openLibraryLesson(s, s, false); return; } // restore an open library lesson
+  if (p === "/library") { switchTab("library"); return; }                                       // restore the library grid
+  let top = "home"; try { top = sessionStorage.getItem("als-toptab") || "home"; } catch (e) {}
+  if (top === "account") top = "home";
+  switchTab(top);
+});
+
+const pmAccount = document.getElementById("pm-account");
+const pmSignout = document.getElementById("pm-signout");
+if (pmAccount) pmAccount.addEventListener("click", openAccount);
+if (pmSignout) pmSignout.addEventListener("click", async () => {
+  closeProfileMenu();
+  try { await signOutSession(); } catch (e) { window.portfolioToast?.("Sign-out failed. Please retry."); return; }
+  resetWorkspace();   // bug: the previous user's lesson stayed on screen after sign-out
+  applySession(null);
+});
+
+// Wipe the lesson workspace on sign-out so the next user lands clean on Home (not still
+// looking at the previous account's generated lesson). Clears tabs, the viewer iframe,
+// the live-lesson globals, the persisted tabs, and the in-flight poller.
+function resetWorkspace() {
+  tabs = []; activeTabId = null; genTabId = null; activeJobId = null;
+  if (activeJobTimer) { clearTimeout(activeJobTimer); activeJobTimer = null; }
+  currentArtifactId = null; overviewArtifactId = null; currentLessonOwned = false; currentViewUrl = null; currentViewModule = null;
+  try { if (viewerFrame) viewerFrame.src = "about:blank"; } catch (e) {}
+  renderTabBar();
+  try { sessionStorage.removeItem(TABS_KEY); sessionStorage.removeItem("als-toptab"); } catch (e) {}
+  switchTab("home");
+}
+const acctTopup = document.getElementById("acct-topup");
+if (acctTopup) acctTopup.addEventListener("click", () => switchTab("pricing"));
+
+// Small-screen "best on desktop" notice. The builder + interactive lessons are designed for a
+// larger screen; until the mobile layout is polished, nudge phone/narrow visitors to desktop.
+// Shown once per session (dismissible), so it never nags within a visit.
+(function mobileDesktopNotice() {
+  const el = document.getElementById("mobile-notice");
+  if (!el) return;
+  let dismissed = false;
+  try { dismissed = sessionStorage.getItem("als-mobile-notice-dismissed") === "1"; } catch { /* ignore */ }
+  if (dismissed) return;
+  if (!(window.matchMedia && window.matchMedia("(max-width: 760px)").matches)) return;
+  el.hidden = false;
+  const close = () => { el.hidden = true; try { sessionStorage.setItem("als-mobile-notice-dismissed", "1"); } catch { /* ignore */ } };
+  const btn = document.getElementById("mn-dismiss");
+  if (btn) btn.addEventListener("click", close);
+})();
+
+// ===== Beta traction: lightweight event tracking + feedback popup (additive; never blocks a flow) =====
+function track(name, ref, props) {
+  try {
+    fetch("/api/event", { method: "POST", keepalive: true, headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ name: name, ref: ref || undefined, props: props || {} }) }).catch(() => {});
+  } catch { /* analytics must never break the app */ }
+}
+window.track = track;
+
+(function feedbackPopup() {
+  const fab = document.getElementById("feedback-fab");
+  const modal = document.getElementById("feedback-modal");
+  if (!fab || !modal) return;
+  const text = document.getElementById("fb-text");
+  const sendBtn = document.getElementById("fb-send");
+  const thanks = document.getElementById("fb-thanks");
+  const open = () => { modal.hidden = false; if (thanks) thanks.hidden = true; if (text) { text.value = ""; setTimeout(() => { try { text.focus(); } catch {} }, 30); } };
+  const close = () => { modal.hidden = true; };
+  fab.addEventListener("click", open);
+  const x = document.getElementById("fb-x"); if (x) x.addEventListener("click", close);
+  const cancel = document.getElementById("fb-cancel"); if (cancel) cancel.addEventListener("click", close);
+  modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+  if (sendBtn) sendBtn.addEventListener("click", async () => {
+    const msg = ((text && text.value) || "").trim();
+    if (!msg) { if (text) text.focus(); return; }
+    sendBtn.disabled = true;
+    try { await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ message: msg }) }); } catch { /* ignore — best effort */ }
+    sendBtn.disabled = false;
+    if (text) text.value = "";
+    if (thanks) thanks.hidden = false;
+    setTimeout(close, 1200);
+  });
+})();

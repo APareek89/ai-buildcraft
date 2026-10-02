@@ -1,0 +1,1203 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Agent Memory",
+    "title": "Agent Memory",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Agent Memory is practical when learners can apply it to this concrete case: A support-refund agent must remember customer preferences without storing sensitive payment details. By the end, they should be able to build or review memory policy plus retrieval test for a billing-support agent, measure repeat-question rate, and catch the failure where private card fragments get saved as long-term memory."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Agent Memory",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Agent Memory: mental map",
+    "caption": "Separate memory types, provenance, retrieval, and correction before letting an agent remember anything durable.",
+    "oneLineThesis": "Agent memory is product state with governance; it is not a transcript dump, a context window, or a replacement for source-of-truth data.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Memory is durable product state",
+        "sub": "Remembering changes future behavior after the prompt is gone.",
+        "what": "Learners define memory as persisted state with product consequences.",
+        "relevance": "This prevents teams from treating every old message as safe future context.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Start by separating durable memory from context and transcripts.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Classify short-term, semantic, episodic, and procedural memory",
+        "sub": "Different memory types need different storage and retrieval rules.",
+        "what": "Learners use memory taxonomy to avoid one-size-fits-all storage.",
+        "relevance": "The same fact can be thread state, user preference, or canonical database data depending on ownership.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Name the type before choosing a store or embedding strategy.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Extract memories with provenance and policy",
+        "sub": "A memory extractor proposes; product policy decides.",
+        "what": "Learners design the write path as a governed pipeline.",
+        "relevance": "Extraction without policy over-remembers jokes, secrets, and temporary constraints.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Require source, confidence, scope, and consent before writing.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Retrieve narrowly into the current task",
+        "sub": "Memory recall should be scoped, ranked, and explainable.",
+        "what": "Learners design retrieval that avoids leakage and context clutter.",
+        "relevance": "Over-retrieved memory pollutes prompts and can leak across users.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Bring back only memories that help the current decision.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Let users inspect, correct, and forget",
+        "sub": "Memory needs lifecycle controls, not only embeddings.",
+        "what": "Learners add correction, deletion, expiration, and regression tests.",
+        "relevance": "Without lifecycle controls, memory becomes opaque personalization debt.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Design the review surface that keeps durable state trustworthy.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "dependency"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Memory is durable product state",
+      "sub": "Remembering changes future behavior after the prompt is gone.",
+      "summary": "An agent memory should be deliberate, scoped, and reviewable.",
+      "objectives": [
+        "Define agent memory separately from context window and RAG.",
+        "Explain why bad memories become durable bugs.",
+        "Identify the user-visible behavior memory should improve."
+      ],
+      "termIds": [
+        "agent",
+        "memory",
+        "state",
+        "tool",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Memory outlives the current turn",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a tutor remembers that a learner “hates math” after one frustrated joke. Two weeks later it avoids useful equations in every lesson. The bug is not a bad answer; it is durable state that should never have been stored as fact."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Memory is information persisted so later runs behave differently. Thread history, workflow checkpoints, RAG documents, and application database records can all inform an agent, but long-term memory needs a narrower contract."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before storing anything, finish the sentence “This memory will improve future behavior by...”"
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ],
+          "analogy": "Memory is a sticky note on the product, not a thought passing through the model."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Worked memory boundary: learner preference or temporary mood",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The learner says, “Use Python examples when possible; I am preparing for backend interviews.” That can become a procedural preference with source turn ID and confidence."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The learner also says, “I am done, this is impossible.” That should not become a durable ability label. It may influence the current support response, but it should expire with the thread."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Classify the statement as preference, fact, event, or transient mood."
+                  }
+                ],
+                [
+                  {
+                    "text": "Decide whether later sessions should use it."
+                  }
+                ],
+                [
+                  {
+                    "text": "Store source turn, timestamp, confidence, and namespace."
+                  }
+                ],
+                [
+                  {
+                    "text": "Expose it for correction or deletion."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Memory boundary",
+          "prompt": "Which item is safest to store as long-term memory?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The user makes one sarcastic comment about being bad at math.",
+              "correct": false
+            },
+            {
+              "text": "The user explicitly says they prefer Python examples for future lessons.",
+              "correct": true
+            },
+            {
+              "text": "A retrieved policy document says refunds take 30 days.",
+              "correct": false
+            }
+          ],
+          "explanation": "Long-term memory is for durable user or task continuity, not transient mood or external facts better handled by RAG.",
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Classify short-term, semantic, episodic, and procedural memory",
+      "sub": "Different memory types need different storage and retrieval rules.",
+      "summary": "Memory architecture starts with classification.",
+      "objectives": [
+        "Distinguish thread state from long-term memory.",
+        "Classify semantic, episodic, and procedural memories.",
+        "Choose RAG or database records when memory is the wrong tool."
+      ],
+      "termIds": [
+        "agent",
+        "memory",
+        "state",
+        "tool",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Not every remembered thing belongs in the same place",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Short-term thread state keeps a multi-step run coherent: messages, tool results, plan, and checkpoints. Semantic memory stores durable facts such as “the team uses Postgres.” Episodic memory records events. Procedural memory stores preferences or instructions."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use the application database for canonical records like subscription plan or lesson completion. Use RAG for source documents. Use workflow state for exact progress through side effects."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Ask “who owns the truth?” If the answer is billing, docs, or workflow engine, do not store it as free-form agent memory."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ],
+          "analogy": "A memory system is a filing cabinet with labeled drawers, not one bottomless box."
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Memory type decisions",
+          "criteria": [
+            "Type",
+            "Good for",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Thread state",
+              "cells": [
+                {
+                  "criterion": "Type",
+                  "text": "Current run messages, plan, tool results.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Good for",
+                  "text": "Resume and local coherence.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Can become bloated context if never summarized.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use during a single conversation or graph run.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Semantic memory",
+              "cells": [
+                {
+                  "criterion": "Type",
+                  "text": "Durable user or project facts.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Good for",
+                  "text": "Personalization and continuity.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "False facts bias future answers.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use when a fact should affect later sessions.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Procedural memory",
+              "cells": [
+                {
+                  "criterion": "Type",
+                  "text": "Preferences and standing instructions.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Good for",
+                  "text": "Style, examples, workflow habits.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Can conflict with current task or policy.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when user wants repeated behavior.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Memory classification",
+          "prompt": "Where should an account’s paid plan usually live?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "As an inferred long-term memory from chat text.",
+              "correct": false
+            },
+            {
+              "text": "In the application database, then be read as needed.",
+              "correct": true
+            },
+            {
+              "text": "Only inside the model context window forever.",
+              "correct": false
+            }
+          ],
+          "explanation": "Canonical business records should not be free-form memories.",
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Extract memories with provenance and policy",
+      "sub": "A memory extractor proposes; product policy decides.",
+      "summary": "The write path is where memory governance begins.",
+      "objectives": [
+        "Create candidate memories from turns or tool results.",
+        "Filter sensitive or low-confidence memories.",
+        "Store provenance for future correction."
+      ],
+      "termIds": [
+        "agent",
+        "memory",
+        "state",
+        "tool",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "The extractor is not the authority",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A model can propose candidate memories, but product code should decide whether to store them. The policy layer checks sensitivity, explicitness, namespace, confidence, retention, and whether the memory duplicates a canonical record."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Provenance matters because a user may later ask “why do you think that?” The system should point to the source turn or tool result and allow correction."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Store “who said it, when, in what context, and why we accepted it” beside the memory value."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ],
+          "analogy": "Memory extraction is intake; policy is the editor."
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Case study: extracting only durable preferences",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "After a lesson chat, the extractor proposes three candidates: prefers Python examples, currently tired, and company uses Postgres. The policy accepts Python preference because it is explicit and future-useful, rejects tired as transient, and routes company stack to project memory only if the workspace owner allows it."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Each accepted memory stores source turn ID and a status of active, so it can be corrected later."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Generate candidate memory with type and confidence."
+                  }
+                ],
+                [
+                  {
+                    "text": "Reject sensitive, transient, or unsupported items."
+                  }
+                ],
+                [
+                  {
+                    "text": "Write accepted memory under a user or project namespace."
+                  }
+                ],
+                [
+                  {
+                    "text": "Keep provenance and retention metadata."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Write policy",
+          "prompt": "Why should memory records include source metadata?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "So the model can ignore the current user request.",
+              "correct": false
+            },
+            {
+              "text": "So users and operators can inspect, correct, or delete the memory later.",
+              "correct": true
+            },
+            {
+              "text": "So all memories become public search results.",
+              "correct": false
+            }
+          ],
+          "explanation": "Provenance is the path to trust and correction.",
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Retrieve narrowly into the current task",
+      "sub": "Memory recall should be scoped, ranked, and explainable.",
+      "summary": "Memory retrieval is a precision problem.",
+      "objectives": [
+        "Use namespace isolation for memory search.",
+        "Filter active memories by task relevance.",
+        "Predict how bad retrieval changes an answer."
+      ],
+      "termIds": [
+        "agent",
+        "memory",
+        "state",
+        "tool",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Memory should enter context on purpose",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "At query time, the agent should search only the appropriate namespace, filter active memories, and retrieve items relevant to the current task. A preference about Python examples should not appear in a billing dispute unless it matters."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Memory text should be labeled as user preference, inferred fact, or prior event. The prompt should not let memory outrank current user instructions or policy."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If you cannot explain why a memory was inserted into the prompt, remove it from that run."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Tiny typed memory store with scoped retrieval",
+          "language": "python",
+          "code": "memories = [\n    {\"ns\": (\"user\", \"u1\"), \"type\": \"preference\", \"text\": \"Prefers Python examples\", \"status\": \"active\"},\n    {\"ns\": (\"user\", \"u2\"), \"type\": \"preference\", \"text\": \"Prefers TypeScript examples\", \"status\": \"active\"},\n    {\"ns\": (\"user\", \"u1\"), \"type\": \"transient\", \"text\": \"Was tired last Friday\", \"status\": \"expired\"},\n]\n\ndef recall(user_id, task):\n    task_terms = set(task.lower().split())\n    chosen = []\n    for m in memories:\n        if m[\"ns\"] != (\"user\", user_id) or m[\"status\"] != \"active\":\n            continue\n        if m[\"type\"] == \"preference\" and (\"example\" in task_terms or \"lesson\" in task_terms):\n            chosen.append(m[\"text\"])\n    return chosen\n\nprint(recall(\"u1\", \"write a lesson with examples\"))\nprint(recall(\"u2\", \"write a lesson with examples\"))",
+          "explanation": "The retrieval code isolates users, ignores expired items, and only injects preferences when the task can use them.",
+          "predictThenReveal": {
+            "prompt": "Before running it, predict which preference appears for user u1.",
+            "answer": "It prints Python for u1 and TypeScript for u2. The expired transient memory never appears, and namespaces prevent cross-user leakage."
+          },
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Recall scope",
+          "prompt": "What is the most serious bug in memory retrieval?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Using a list instead of a database in a toy example.",
+              "correct": false
+            },
+            {
+              "text": "Retrieving another user’s memory into the current prompt.",
+              "correct": true
+            },
+            {
+              "text": "Storing timestamps with memories.",
+              "correct": false
+            }
+          ],
+          "explanation": "Namespace isolation is a safety boundary, not a convenience.",
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Let users inspect, correct, and forget",
+      "sub": "Memory needs lifecycle controls, not only embeddings.",
+      "summary": "Memory is production-ready when it can be governed over time.",
+      "objectives": [
+        "Provide visibility into stored memories.",
+        "Support correction, deletion, and expiration.",
+        "Test memory write and recall failures."
+      ],
+      "termIds": [
+        "agent",
+        "memory",
+        "state",
+        "tool",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Memory governance is part of the feature",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A memory UI or API should let users see important memories, correct false ones, delete sensitive ones, and understand whether a memory was inferred or explicitly stated."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Regression tests should include over-memory, under-memory, namespace leakage, stale preference, and correction scenarios. Production traces should show which memories were retrieved and how they influenced the answer."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "A memory feature is incomplete if the only way to fix a false memory is to beg the model to forget."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output that uses memory",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review answers that include recalled memories with these checks."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The answer labels memory as preference or prior context rather than external fact."
+                  }
+                ],
+                [
+                  {
+                    "text": "The recalled memory belongs to the correct user or workspace namespace."
+                  }
+                ],
+                [
+                  {
+                    "text": "Current user instructions and safety policy override older memory."
+                  }
+                ],
+                [
+                  {
+                    "text": "The memory has provenance and can be corrected or deleted."
+                  }
+                ],
+                [
+                  {
+                    "text": "The answer still cites RAG or database sources for factual claims."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Memory lifecycle",
+          "prompt": "A user says “stop remembering that I prefer short answers.” What should the product do?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only add a new prompt saying to ignore the old memory.",
+              "correct": false
+            },
+            {
+              "text": "Update or delete the stored preference in the memory store.",
+              "correct": true
+            },
+            {
+              "text": "Tell the user memory cannot be changed.",
+              "correct": false
+            }
+          ],
+          "explanation": "Correction belongs in the memory system, not just in a one-turn prompt.",
+          "termIds": [
+            "agent",
+            "memory",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb3",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb6"
+      ]
+    }
+  ],
+  "glossary": {
+    "agent": {
+      "id": "agent",
+      "label": "Agent",
+      "laymanDefinition": "A software loop that plans, observes results, and may use tools to pursue a goal.",
+      "technicalNote": "Agent designs need explicit loop boundaries, stop conditions, permissions, state contracts, and evaluation surfaces before autonomy is useful.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "tool": {
+      "id": "tool",
+      "label": "Tool",
+      "laymanDefinition": "An external capability the model can request, such as search, code execution, retrieval, or a business API.",
+      "technicalNote": "Tools require schemas, authorization, error handling, audit logs, and tests because natural-language intent is not execution permission.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "state": {
+      "id": "state",
+      "label": "State",
+      "laymanDefinition": "The working information carried between steps of an agent workflow.",
+      "technicalNote": "State should separate durable facts, transient scratch work, approvals, tool results, and failure metadata so retries and handoffs remain understandable.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "memory": {
+      "id": "memory",
+      "label": "Memory",
+      "laymanDefinition": "Information saved across turns or sessions for future use.",
+      "technicalNote": "Agent memory needs scope, freshness, deletion, privacy controls, and evaluation so saved context helps rather than silently steering behavior.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "mcp": {
+      "id": "mcp",
+      "label": "MCP",
+      "laymanDefinition": "A protocol for exposing tools and context to models and agent clients.",
+      "technicalNote": "MCP-style integrations still need capability design, trust boundaries, lifecycle handling, and authorization around each exposed server.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Model Context Protocol"
+    },
+    "sandbox": {
+      "id": "sandbox",
+      "label": "Sandbox",
+      "laymanDefinition": "An isolated environment that limits what agent actions can reach or change.",
+      "technicalNote": "Sandboxing should constrain files, network, processes, credentials, browser sessions, time, and side effects according to the task risk.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Agent Memory",
+    "themes": [
+      {
+        "name": "Memory design gate",
+        "questions": [
+          {
+            "q": "What information should persist after this agent run, and who can inspect or correct it?",
+            "why": "A mistaken memory becomes a durable behavior bug unless it has provenance, scope, and deletion paths.",
+            "opts": [
+              "Typed long-term memory with provenance",
+              "Thread checkpoint only",
+              "Dump full transcript into vector search"
+            ],
+            "rot": "Store the smallest typed memory that improves future behavior and can be corrected later."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct agent memory by distinguishing thread state, semantic memory, episodic memory, procedural memory, provenance, retrieval, and correction."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Agent memory path from observation to governed recall",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Memory is durable product state",
+          "sub": "Remembering changes future behavior after the prompt is gone.",
+          "what": "Learners define memory as persisted state with product consequences.",
+          "relevance": "This prevents teams from treating every old message as safe future context.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Start by separating durable memory from context and transcripts.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Classify short-term, semantic, episodic, and procedural memory",
+          "sub": "Different memory types need different storage and retrieval rules.",
+          "what": "Learners use memory taxonomy to avoid one-size-fits-all storage.",
+          "relevance": "The same fact can be thread state, user preference, or canonical database data depending on ownership.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Name the type before choosing a store or embedding strategy.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Extract memories with provenance and policy",
+          "sub": "A memory extractor proposes; product policy decides.",
+          "what": "Learners design the write path as a governed pipeline.",
+          "relevance": "Extraction without policy over-remembers jokes, secrets, and temporary constraints.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Require source, confidence, scope, and consent before writing.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Retrieve narrowly into the current task",
+          "sub": "Memory recall should be scoped, ranked, and explainable.",
+          "what": "Learners design retrieval that avoids leakage and context clutter.",
+          "relevance": "Over-retrieved memory pollutes prompts and can leak across users.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Bring back only memories that help the current decision.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Let users inspect, correct, and forget",
+          "sub": "Memory needs lifecycle controls, not only embeddings.",
+          "what": "Learners add correction, deletion, expiration, and regression tests.",
+          "relevance": "Without lifecycle controls, memory becomes opaque personalization debt.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Design the review surface that keeps durable state trustworthy.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Memory is durable product state",
+        "detail": "An agent memory should be deliberate, scoped, and reviewable."
+      },
+      {
+        "step": 2,
+        "label": "Classify short-term, semantic, episodic, and procedural memory",
+        "detail": "Memory architecture starts with classification."
+      },
+      {
+        "step": 3,
+        "label": "Extract memories with provenance and policy",
+        "detail": "The write path is where memory governance begins."
+      },
+      {
+        "step": 4,
+        "label": "Retrieve narrowly into the current task",
+        "detail": "Memory retrieval is a precision problem."
+      },
+      {
+        "step": 5,
+        "label": "Let users inspect, correct, and forget",
+        "detail": "Memory is production-ready when it can be governed over time."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete problem in \"Memory is durable product state\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_boundary",
+        "label": "Did \"Extract memories with provenance and policy\" define the right boundary or decision?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Let users inspect, correct, and forget\" provide a reviewable release gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Design a memory policy for a tutoring agent: list three memories it may store, three it must not store, the namespace key, source metadata, retrieval trigger, expiration rule, and user correction UI. Next rung: implement memory in an agent build slice.",
+      "scopedTo": "Agent Memory"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Model Context Protocol docs",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-20"
+    },
+    "kb3": {
+      "id": "kb3",
+      "kind": "kb",
+      "title": "KB: Agent Memory",
+      "url": "https://docs.langchain.com/oss/python/langgraph/memory",
+      "asOfDate": "2026-06-22"
+    },
+    "kb6": {
+      "id": "kb6",
+      "kind": "kb",
+      "title": "KB: Agent Loop, ReAct, Planning, and Reflection",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

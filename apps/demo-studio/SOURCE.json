@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/APareek89/demo-studio",
+  "commit": "c4f0b4b88f5de629908e9aa97837169026b0f358",
+  "snapshot": "Tracked application source exported without Git history, operational handoffs, live state or credentials.",
+  "changes": "Direct Gemini media API migration, private-review documentation and synthetic setup. See BUILDCRAFT.md for verification and limits."
+}

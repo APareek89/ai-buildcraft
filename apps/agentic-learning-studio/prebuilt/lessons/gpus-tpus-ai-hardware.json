@@ -1,0 +1,1168 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "GPUs, TPUs, and AI Hardware",
+    "title": "GPUs, TPUs, and AI Hardware",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 42,
+    "thesis": "GPUs, TPUs, and AI Hardware is practical when learners can apply it to this concrete case: An infra team chooses hardware for batch embeddings, fine-tuning, and online inference. By the end, they should be able to build or review hardware selection worksheet for GPU, TPU, memory, and utilization needs, measure utilization and throughput per dollar, and catch the failure where the selected accelerator is fast but memory-bound for the real workload."
+  },
+  "learnerProfile": {
+    "level": "beginner",
+    "depth": "conceptual",
+    "examples": "functional",
+    "topic": "GPUs, TPUs, and AI Hardware",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "GPUs, TPUs, and AI Hardware: mental map",
+    "caption": "Compare hardware by workload, memory, data movement, scaling behavior, and cost per useful result.",
+    "oneLineThesis": "AI hardware decisions start with workload shape: memory, batch size, latency target, precision, and utilization decide whether CPU, GPU, TPU, or managed capacity fits.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Start with the workload, not the chip",
+        "sub": "Classify training, batch inference, and interactive serving before comparing hardware.",
+        "what": "Beginner hardware literacy means asking what work must finish, how fast, with how much memory, and at what cost.",
+        "relevance": "Separate training, batch inference, and interactive serving.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Classify the workload before comparing accelerator names or prices."
+      },
+      {
+        "id": "n_m2",
+        "label": "Understand memory, precision, and data movement",
+        "sub": "See why model weights, activations, KV cache, and input pipelines compete for capacity.",
+        "what": "Accelerators are fast when the model fits, data arrives on time, and precision choices preserve acceptable quality.",
+        "relevance": "Name the main memory consumers in inference and training.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Connect memory, precision, and data flow to hardware utilization."
+      },
+      {
+        "id": "n_m3",
+        "label": "Compare CPU, GPU, TPU, and managed capacity",
+        "sub": "Choose by software ecosystem, scaling behavior, availability, and operational skill.",
+        "what": "Each hardware path bundles a software stack and operating model, not just silicon.",
+        "relevance": "Compare hardware options without one-size-fits-all claims.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Compare hardware paths by ecosystem, scaling, and operating burden."
+      },
+      {
+        "id": "n_m4",
+        "label": "Estimate capacity with simple checks",
+        "sub": "Use a small capacity sketch before load tests and procurement.",
+        "what": "A practical estimate records model size, memory headroom, concurrency, batch behavior, and cost per useful task.",
+        "relevance": "Write a simple hardware planning function.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Sketch capacity assumptions before load tests or procurement decisions."
+      },
+      {
+        "id": "n_m5",
+        "label": "Make the hardware decision reviewable",
+        "sub": "Finish with a beginner-friendly checklist and a solo capacity plan.",
+        "what": "The lesson sticks when the learner can explain hardware fit as workload, memory, latency, utilization, and operations.",
+        "relevance": "Recall the hardware fit loop from memory.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Summarize hardware fit and create a reviewable capacity card."
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "comparative"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Start with the workload, not the chip",
+      "sub": "Classify training, batch inference, and interactive serving before comparing hardware.",
+      "summary": "Beginner hardware literacy means asking what work must finish, how fast, with how much memory, and at what cost.",
+      "objectives": [
+        "Separate training, batch inference, and interactive serving.",
+        "Explain why memory can matter more than raw speed.",
+        "Describe cost per useful result in plain language."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Hardware is a fit question",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a small team wants to run three AI jobs: nightly embedding of new documents, live chat over a 7B model, and occasional fine-tuning. The beginner mistake is to ask, \"Which GPU should we buy?\" The better question is, \"What job, latency, batch size, memory, and utilization are we buying for?\""
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A CPU can be enough for small classical models, light batch jobs, and orchestration. A GPU helps when large tensor operations dominate and the model fits memory. A TPU can be compelling in ecosystems designed for it, especially large training or batch workloads, but it changes the software and platform assumptions. Managed APIs can be best when the team does not want to operate hardware at all."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Product framing: choose the hardware path that meets the user promise at the lowest operational burden."
+                  }
+                ],
+                [
+                  {
+                    "text": "Engineering framing: map the workload to memory, precision, batch shape, data movement, and scaling time."
+                  }
+                ],
+                [
+                  {
+                    "text": "Finance framing: compare cost per completed useful task, not hourly instance price alone."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Worked beginner artifact: hardware fit card",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Create one card per workload. Live chat: 7B instruct model, first token under two seconds, context 8k, 20 concurrent users, streaming required, GPU memory and KV cache are the limit. Nightly embeddings: 50,000 chunks, can finish in two hours, batching matters more than first-token latency, retryable on cheaper capacity. Fine-tuning: occasional, checkpointed, can use rented accelerators and stop when metrics plateau."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The card stops magical thinking. It shows that the same team may use CPU workers for orchestration, one GPU endpoint for chat, spot or scheduled GPU jobs for embeddings, and hosted or rented capacity for rare training."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ],
+          "personalizedFor": "Hardware planning worksheet"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "First hardware question",
+          "prompt": "What should you ask before choosing GPU, TPU, or CPU?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Which accelerator has the most impressive benchmark headline?",
+              "correct": false
+            },
+            {
+              "text": "What workload shape, memory need, latency target, and utilization are required?",
+              "correct": true
+            },
+            {
+              "text": "Which option sounds most advanced?",
+              "correct": false
+            }
+          ],
+          "explanation": "Hardware is useful only in relation to a workload and a product promise.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon2",
+        "kb2"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Understand memory, precision, and data movement",
+      "sub": "See why model weights, activations, KV cache, and input pipelines compete for capacity.",
+      "summary": "Accelerators are fast when the model fits, data arrives on time, and precision choices preserve acceptable quality.",
+      "objectives": [
+        "Name the main memory consumers in inference and training.",
+        "Explain why quantization is a capacity lever.",
+        "Identify data loading as a hardware bottleneck."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The accelerator waits for the slowest dependency",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For LLM inference, memory is consumed by model weights, runtime overhead, and KV cache for active tokens. Longer context and more concurrent requests can run out of memory even when the model weights fit. For training, activations, gradients, optimizer state, and batch size add pressure beyond the raw model file."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Precision changes the tradeoff. Lower precision or quantization can reduce memory and increase feasible throughput, but it must be tested for quality and supported kernels. Data movement matters too: a powerful accelerator can sit idle if preprocessing, disk, or network cannot feed it fast enough."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "What usually limits the job",
+          "criteria": [
+            "Workload",
+            "Likely limiter",
+            "First check"
+          ],
+          "options": [
+            {
+              "name": "Interactive LLM serving",
+              "cells": [
+                {
+                  "criterion": "Workload",
+                  "text": "Streaming answers from a loaded model",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Likely limiter",
+                  "text": "GPU memory, KV cache, queue time, decode speed",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First check",
+                  "text": "time to first token, p95 latency, memory headroom",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for chat and agent endpoints.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Offline embedding",
+              "cells": [
+                {
+                  "criterion": "Workload",
+                  "text": "Batch vectors for many chunks",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Likely limiter",
+                  "text": "batch size, encoder throughput, upsert speed, queue retries",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First check",
+                  "text": "chunks per minute and failed batches",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for refresh jobs and backfills.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Training or fine-tuning",
+              "cells": [
+                {
+                  "criterion": "Workload",
+                  "text": "Repeated forward/backward passes",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Likely limiter",
+                  "text": "accelerator memory, data loader, checkpointing, interconnect",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First check",
+                  "text": "steps per second and validation metric per dollar",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for adaptation experiments.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Case study: the GPU is fast but the service is slow",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A chat service shows 35 percent GPU utilization and p95 latency above five seconds. The beginner guess is \"buy a bigger GPU.\" The trace shows the real issue: requests queue behind long document-summary jobs, and the model endpoint accepts prompts with huge context windows. Separate batch traffic, cap context for interactive routes, and measure again before changing hardware."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This reinforces module 1: hardware choice follows workload isolation. A powerful chip cannot fix a traffic policy that mixes patient batch work with impatient chat work."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Compare CPU, GPU, TPU, and managed capacity",
+      "sub": "Choose by software ecosystem, scaling behavior, availability, and operational skill.",
+      "summary": "Each hardware path bundles a software stack and operating model, not just silicon.",
+      "objectives": [
+        "Compare hardware options without one-size-fits-all claims.",
+        "Explain when managed APIs beat owning accelerators.",
+        "Describe MIG and partitioning as sharing tools, not magic capacity."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Every chip comes with a platform",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A GPU path usually fits broad PyTorch, CUDA, and serving-engine ecosystems. TPUs fit workloads and frameworks designed for them, often inside a cloud platform. CPUs are easiest to operate but can be too slow for large neural workloads. Managed model APIs shift capacity planning to a provider while reducing low-level control."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "NVIDIA MIG is useful when supported hardware can be partitioned into isolated GPU instances for smaller workloads. It improves sharing and isolation, but it does not remove memory limits or make one device equivalent to many full GPUs. TPUs similarly require platform-aware design rather than simple drop-in replacement thinking."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Hardware path comparison",
+          "criteria": [
+            "Path",
+            "Good fit",
+            "Watch out"
+          ],
+          "options": [
+            {
+              "name": "CPU",
+              "cells": [
+                {
+                  "criterion": "Path",
+                  "text": "General-purpose compute",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Good fit",
+                  "text": "Orchestration, small ML, preprocessing, light batch jobs",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Watch out",
+                  "text": "Large neural inference may miss latency or throughput goals",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Start here when the model is small or latency is loose.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "GPU",
+              "cells": [
+                {
+                  "criterion": "Path",
+                  "text": "Widely supported accelerator",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Good fit",
+                  "text": "LLM serving, embeddings, vision, fine-tuning, many PyTorch workloads",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Watch out",
+                  "text": "Memory, driver/runtime compatibility, cold starts, and idle spend",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when tensor compute and ecosystem support matter.",
+              "cost": "High",
+              "complexity": "Medium"
+            },
+            {
+              "name": "TPU or managed accelerator",
+              "cells": [
+                {
+                  "criterion": "Path",
+                  "text": "Cloud-specialized accelerator path",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Good fit",
+                  "text": "Large training or batch workloads designed for the stack",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Watch out",
+                  "text": "Framework support, data pipeline design, quota, and portability",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the platform and workload align.",
+              "cost": "High",
+              "complexity": "High"
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Prefer the hardware path your team can keep utilized, observable, and recoverable.",
+          "useWhen": "Use owned or reserved accelerators when volume, data locality, and operational skill justify them.",
+          "avoidWhen": "Avoid buying hardware to solve unclear workload shape, missing traces, or a product still changing daily.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for GPUs, TPUs, and AI Hardware: baseline, production design, or advanced optimization."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Estimate capacity with simple checks",
+      "sub": "Use a small capacity sketch before load tests and procurement.",
+      "summary": "A practical estimate records model size, memory headroom, concurrency, batch behavior, and cost per useful task.",
+      "objectives": [
+        "Write a simple hardware planning function.",
+        "Predict why max concurrency can fail before average load.",
+        "Verify AI-generated hardware advice for missing assumptions."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Toy capacity sketch for an LLM endpoint",
+          "language": "python",
+          "code": "model_gb = 14          # rough quantized weight size\ngpu_memory_gb = 24\nruntime_overhead_gb = 3\nkv_cache_per_user_gb = 0.6\n\navailable_for_cache = gpu_memory_gb - model_gb - runtime_overhead_gb\nmax_active_users = int(available_for_cache // kv_cache_per_user_gb)\n\nprint({\n    \"available_for_cache_gb\": round(available_for_cache, 1),\n    \"rough_max_active_users\": max_active_users,\n})\n\nassert max_active_users > 0, \"model fits weights but leaves no room for serving\"",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The numbers are simplified, but the lesson is real: fitting model weights is not the same as serving concurrent users. KV cache, runtime overhead, and context length consume the remaining memory."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "If the model weights fit exactly into device memory, is the endpoint ready for chat traffic?",
+            "answer": "No. Serving also needs runtime overhead and KV cache for active tokens, so exact weight fit can still fail under real requests."
+          },
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify an AI-generated hardware recommendation",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When an AI assistant recommends \"use an A100\" or \"switch to TPU,\" demand the missing assumptions. Good advice names workload, framework, model size, precision, context length, batch size, concurrency, latency target, data pipeline, autoscaling behavior, and budget."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Does the recommendation separate training, batch inference, and interactive serving?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it account for memory beyond weights, especially KV cache or optimizer state?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it include cold start, quota, driver/runtime, and observability constraints?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it compare cost per useful result rather than hourly price only?"
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Memory trap",
+          "prompt": "Why can a model that fits on a GPU still fail under chat load?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Because GPUs cannot stream text.",
+              "correct": false
+            },
+            {
+              "text": "Concurrent requests and long contexts need KV cache and runtime memory beyond the weights.",
+              "correct": true
+            },
+            {
+              "text": "Because CPU orchestration is never required.",
+              "correct": false
+            }
+          ],
+          "explanation": "Serving memory includes active token state and overhead, not just the static model file.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Make the hardware decision reviewable",
+      "sub": "Finish with a beginner-friendly checklist and a solo capacity plan.",
+      "summary": "The lesson sticks when the learner can explain hardware fit as workload, memory, latency, utilization, and operations.",
+      "objectives": [
+        "Recall the hardware fit loop from memory.",
+        "Write a retrieval prompt for future capacity planning.",
+        "Produce a small capstone hardware fit card."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "conceptual",
+          "title": "Retrieval prompt for the whole lesson",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer this without notes: \"How do I decide whether an AI workload needs CPU, GPU, TPU, or a managed API?\" A good answer starts with workload type, latency target, memory, batch behavior, data movement, software ecosystem, utilization, and cost per useful result."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: return to the first module. The question was never \"Which chip is best?\" It was \"Which workload promise must be met, and what hardware path can the team operate honestly?\""
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Buy or rent capacity only after workload evidence exists.",
+          "useWhen": "Use accelerators when traces or load tests show tensor compute and memory are the binding constraints.",
+          "avoidWhen": "Avoid procurement based on benchmark headlines, model popularity, or a single happy-path demo.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m5_capstone",
+          "kind": "functionalExample",
+          "title": "Capstone: hardware fit card for one feature",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Choose one feature, such as live lesson chat or nightly embedding refresh. Fill out: model, input size, output size, precision, latency target, concurrency, batch window, memory estimate, data source, retry plan, observability fields, and cost per useful result. Recommend CPU, GPU, TPU, or managed API and list the first load test you would run."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Next rung: connect this to cost and latency optimization, where the same hardware decision becomes part of a route, cache, and budget policy."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ],
+          "personalizedFor": "Solo hardware planning"
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for GPUs, TPUs, and AI Hardware: baseline, production design, or advanced optimization."
+    }
+  ],
+  "glossary": {
+    "gpu": {
+      "id": "gpu",
+      "label": "GPU",
+      "laymanDefinition": "A processor built to run many math operations in parallel.",
+      "technicalNote": "For learners, a GPU is useful when tensor math is the bottleneck and the model plus working memory fit the device.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Graphics processing unit"
+    },
+    "serving": {
+      "id": "serving",
+      "label": "Serving",
+      "laymanDefinition": "Keeping a model ready so users can call it.",
+      "technicalNote": "Hardware serving decisions balance warm weights, KV cache, batch size, streaming latency, and how slowly accelerators scale up.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "gateway": {
+      "id": "gateway",
+      "label": "Gateway",
+      "laymanDefinition": "The traffic controller in front of model hardware.",
+      "technicalNote": "A gateway can route light work to CPU or small GPUs, reserve larger accelerators for hard requests, and enforce budgets.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "latency": {
+      "id": "latency",
+      "label": "Latency",
+      "laymanDefinition": "How long a user waits for a result.",
+      "technicalNote": "Hardware can reduce compute time but still lose to queueing, cold starts, network transfer, or oversized context.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "throughput": {
+      "id": "throughput",
+      "label": "Throughput",
+      "laymanDefinition": "How many predictions, tokens, images, or training steps finish over time.",
+      "technicalNote": "Throughput improves when the workload batches well and keeps the accelerator fed with data.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "versioning": {
+      "id": "versioning",
+      "label": "Versioning",
+      "laymanDefinition": "Recording the hardware and runtime shape used for a result.",
+      "technicalNote": "For reproducibility, capture accelerator type, precision, quantization, driver/runtime, batch limits, and model version.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for GPUs, TPUs, and AI Hardware",
+    "themes": [
+      {
+        "name": "Release-readiness check",
+        "questions": [
+          {
+            "q": "What decision does GPUs, TPUs, and AI Hardware change for this case?",
+            "why": "A good lesson changes how the learner builds, reviews, or ships hardware selection worksheet for GPU, TPU, memory, and utilization needs.",
+            "opts": [
+              "Thin slice",
+              "Production path",
+              "Advanced optimization"
+            ],
+            "rot": "Choose the smallest option that catches: the selected accelerator is fast but memory-bound for the real workload."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct the hardware fit decision: classify the workload, estimate memory and latency constraints, compare CPU/GPU/TPU/managed paths, run a capacity check, then choose the path the team can operate."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "GPUs, TPUs, and AI Hardware operating path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Start with the workload, not the chip",
+          "sub": "Classify training, batch inference, and interactive serving before comparing hardware.",
+          "what": "Beginner hardware literacy means asking what work must finish, how fast, with how much memory, and at what cost.",
+          "relevance": "Separate training, batch inference, and interactive serving.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Classify the workload before comparing accelerator names or prices."
+        },
+        {
+          "id": "n_m2",
+          "label": "Understand memory, precision, and data movement",
+          "sub": "See why model weights, activations, KV cache, and input pipelines compete for capacity.",
+          "what": "Accelerators are fast when the model fits, data arrives on time, and precision choices preserve acceptable quality.",
+          "relevance": "Name the main memory consumers in inference and training.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Connect memory, precision, and data flow to hardware utilization."
+        },
+        {
+          "id": "n_m3",
+          "label": "Compare CPU, GPU, TPU, and managed capacity",
+          "sub": "Choose by software ecosystem, scaling behavior, availability, and operational skill.",
+          "what": "Each hardware path bundles a software stack and operating model, not just silicon.",
+          "relevance": "Compare hardware options without one-size-fits-all claims.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Compare hardware paths by ecosystem, scaling, and operating burden."
+        },
+        {
+          "id": "n_m4",
+          "label": "Estimate capacity with simple checks",
+          "sub": "Use a small capacity sketch before load tests and procurement.",
+          "what": "A practical estimate records model size, memory headroom, concurrency, batch behavior, and cost per useful task.",
+          "relevance": "Write a simple hardware planning function.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Sketch capacity assumptions before load tests or procurement decisions."
+        },
+        {
+          "id": "n_m5",
+          "label": "Make the hardware decision reviewable",
+          "sub": "Finish with a beginner-friendly checklist and a solo capacity plan.",
+          "what": "The lesson sticks when the learner can explain hardware fit as workload, memory, latency, utilization, and operations.",
+          "relevance": "Recall the hardware fit loop from memory.",
+          "moduleId": "m5",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Summarize hardware fit and create a reviewable capacity card."
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Start with the workload, not the chip",
+        "detail": "Classify training, batch inference, and interactive serving before comparing hardware."
+      },
+      {
+        "step": 2,
+        "label": "Understand memory, precision, and data movement",
+        "detail": "See why model weights, activations, KV cache, and input pipelines compete for capacity."
+      },
+      {
+        "step": 3,
+        "label": "Compare CPU, GPU, TPU, and managed capacity",
+        "detail": "Choose by software ecosystem, scaling behavior, availability, and operational skill."
+      },
+      {
+        "step": 4,
+        "label": "Estimate capacity with simple checks",
+        "detail": "Use a small capacity sketch before load tests and procurement."
+      },
+      {
+        "step": 5,
+        "label": "Make the hardware decision reviewable",
+        "detail": "Finish with a beginner-friendly checklist and a solo capacity plan."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_contract",
+        "label": "Can you classify the job as training, batch inference, interactive serving, or orchestration?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_flow",
+        "label": "Does the estimate include weights, KV cache or optimizer state, precision, and runtime overhead?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_choice",
+        "label": "Does the hardware choice match the software ecosystem and operational skill available?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_verify",
+        "label": "Can a simple capacity sketch explain concurrency, latency, and cost per useful result?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_next",
+        "label": "Is the first load test or benchmark tied to the real product promise?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a one-page release-ready plan for hardware selection worksheet for GPU, TPU, memory, and utilization needs. Include: the user problem, realistic input, mechanism, design choice, runnable or reviewable check, metric (utilization and throughput per dollar), failure case (the selected accelerator is fast but memory-bound for the real workload), owner, and the next rung after this lesson.",
+      "scopedTo": "GPUs, TPUs, and AI Hardware"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: GPU and CPU Configuration and Cost Optimization",
+      "url": "https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/",
+      "asOfDate": "2026-06-23"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB: Deployment, Scaling, KV Cache, and Semantic Caching",
+      "url": "https://github.com/open-telemetry/semantic-conventions-genai",
+      "asOfDate": "2026-06-22"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "NVIDIA Multi-Instance GPU user guide",
+      "url": "https://docs.nvidia.com/datacenter/tesla/mig-user-guide/",
+      "asOfDate": "2026-06-23"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Google Cloud TPU documentation",
+      "url": "https://cloud.google.com/tpu/docs",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

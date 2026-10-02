@@ -1,0 +1,1224 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "LangChain for Agent Apps",
+    "title": "LangChain for Agent Apps",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "LangChain for Agent Apps is practical when learners can apply it to this concrete case: A LangChain support agent combines retrieval, tools, and output validation for account questions. By the end, they should be able to build or review LangChain agent app slice with router, retriever, and validator, measure correct answer with traceable tool path, and catch the failure where the chain hides intermediate failures behind a fluent final answer."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "LangChain for Agent Apps",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "LangChain for Agent Apps: mental map",
+    "caption": "Use LangChain as a configurable integration layer for model interfaces, tools, middleware, structured output, and retrievers without hiding product logic.",
+    "oneLineThesis": "LangChain is strongest when an app needs broad LLM building blocks and middleware around a model-plus-tools loop, not when explicit graph control is the main problem.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "create_agent wraps a model-plus-tools loop",
+        "sub": "LangChain’s current agent path starts with one harness.",
+        "what": "Learners know what create_agent owns and what the app still owns.",
+        "relevance": "This prevents treating LangChain as a substitute for product policy.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Anchor LangChain in the runtime loop it provides.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Tools and structured output need tight contracts",
+        "sub": "LangChain abstractions still rely on schemas and validators.",
+        "what": "Learners design reliable LangChain tool contracts.",
+        "relevance": "Vague tools and free-form outputs make agent apps hard to test.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Define tool inputs, output shape, and error behavior explicitly.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Middleware is where production concerns enter",
+        "sub": "Summaries, retries, approvals, and PII handling wrap the loop.",
+        "what": "Learners understand LangChain middleware as product logic.",
+        "relevance": "Middleware can become hidden application behavior if unobserved.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use middleware deliberately and test interactions.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code one inspected agent run",
+        "sub": "A useful example shows tools, input, and result path.",
+        "what": "Learners connect create_agent syntax to product checks.",
+        "relevance": "Concrete code reveals where tool execution and output validation happen.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Build the smallest LangChain agent slice with visible tool behavior.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Trace representative runs before trusting abstractions",
+        "sub": "LangChain can hide provider and middleware differences.",
+        "what": "Learners finish with production checks for LangChain apps.",
+        "relevance": "A demo run does not prove long conversation, retries, or approvals behave correctly.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Use traces and eval cases to inspect model/tool behavior.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "create_agent wraps a model-plus-tools loop",
+      "sub": "LangChain’s current agent path starts with one harness.",
+      "summary": "LangChain supplies a ready agent harness around models, tools, and prompts.",
+      "objectives": [
+        "Define LangChain agent app primitives.",
+        "Separate framework loop from application authority.",
+        "Decide when a direct SDK is enough."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "LangChain is an integration harness",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a support triage app needs a model, KB search, structured triage output, and a ticket-draft tool. LangChain can connect these pieces quickly through model interfaces, tools, prompts, and middleware."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The app still owns permissions, data freshness, approvals, and evals. LangChain can call tools; it does not decide whether a refund draft should be approved."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If the app only needs one provider call and one local function, direct SDK code may be clearer."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ],
+          "analogy": "LangChain is a wiring board; you still design the circuit breaker."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Worked support triage harness",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The agent uses a KB retriever tool and a ticket-draft tool. The system prompt says to cite retrieved notes and return structured triage fields. Middleware blocks external send until approval."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is a good LangChain fit because the hard work is integration and middleware, not a custom graph topology."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Choose model interface."
+                  }
+                ],
+                [
+                  {
+                    "text": "Register narrow tools."
+                  }
+                ],
+                [
+                  {
+                    "text": "Write standing instructions."
+                  }
+                ],
+                [
+                  {
+                    "text": "Add middleware for policy and tracing."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "LangChain fit",
+          "prompt": "When might direct provider SDK code be better than LangChain?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "When you need many provider integrations.",
+              "correct": false
+            },
+            {
+              "text": "When the app is a thin one-model call and portability/middleware do not matter.",
+              "correct": true
+            },
+            {
+              "text": "When you need tool middleware and tracing.",
+              "correct": false
+            }
+          ],
+          "explanation": "Framework overhead should match product needs.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Tools and structured output need tight contracts",
+      "sub": "LangChain abstractions still rely on schemas and validators.",
+      "summary": "The tool contract is the app boundary.",
+      "objectives": [
+        "Write narrow tool descriptions.",
+        "Use structured output for downstream data.",
+        "Treat tool results as untrusted context."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "A LangChain tool is application authority",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Tools can be Python callables, LangChain tools, or dictionaries, but the runtime pattern is the same: the model requests a tool, the app validates and executes, and the result returns to context."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Structured output is useful when the final result feeds UI, workflow, or tests. Do not rely on prose when downstream code needs fields such as priority, category, citation IDs, or needs_human_review."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every tool should have an allowed-use description and a forbidden-use description."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ],
+          "analogy": "Tool schemas are the guardrails on the bridge, not the bridge itself."
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "LangChain contract choices",
+          "criteria": [
+            "Contract",
+            "Use when",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Function tool",
+              "cells": [
+                {
+                  "criterion": "Contract",
+                  "text": "Expose narrow callable with schema/docstring.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Model needs application action or lookup.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Broad tool can create excessive agency.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use for bounded operations.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Structured output",
+              "cells": [
+                {
+                  "criterion": "Contract",
+                  "text": "Return validated fields.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "UI/workflow/tests need data.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Schema support differs by provider.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for product outputs.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Free-form prose",
+              "cells": [
+                {
+                  "criterion": "Contract",
+                  "text": "Natural-language answer only.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Human-only response.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Hard to validate and route.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use for low-risk chat.",
+              "cost": "Low",
+              "complexity": "Low"
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Output contract",
+          "prompt": "Why use structured output for a triage agent?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It removes all tool security needs.",
+              "correct": false
+            },
+            {
+              "text": "Downstream UI and tests need reliable fields rather than best-effort prose.",
+              "correct": true
+            },
+            {
+              "text": "It prevents retrieval misses.",
+              "correct": false
+            }
+          ],
+          "explanation": "Structured output helps integration, not retrieval or authorization by itself.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Middleware is where production concerns enter",
+      "sub": "Summaries, retries, approvals, and PII handling wrap the loop.",
+      "summary": "Middleware is powerful because it mutates the agent loop.",
+      "objectives": [
+        "Name common middleware concerns.",
+        "Explain how middleware changes prompts, tools, or state.",
+        "Trace middleware decisions."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Middleware is not decoration",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "LangChain middleware can summarize context, retry model/tool calls, filter tools, require human review, redact PII, apply guardrails, and emit traces. These are production behaviors and should be versioned and tested."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Middleware interactions can surprise teams: a summarizer might remove a constraint; a retry wrapper might repeat a non-idempotent tool; a tool filter might hide the only valid operation."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every middleware decision should appear in traces or logs."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ],
+          "analogy": "Middleware is the backstage crew changing props between scenes."
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Case study: approval middleware around ticket updates",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A support agent may draft a ticket update automatically, but middleware interrupts before posting to the customer. The approval packet includes recipient, body, sources, and risk."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If the reviewer edits the response, the trace records the edit and the final posted text."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Choose one middleware concern."
+                  }
+                ],
+                [
+                  {
+                    "text": "Define what state it reads and writes."
+                  }
+                ],
+                [
+                  {
+                    "text": "Add trace fields for its decision."
+                  }
+                ],
+                [
+                  {
+                    "text": "Test happy path and blocked path."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Middleware risk",
+          "prompt": "What can go wrong with retry middleware around a non-idempotent tool?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It makes all outputs structured.",
+              "correct": false
+            },
+            {
+              "text": "It can duplicate an external side effect if the first call partially succeeded.",
+              "correct": true
+            },
+            {
+              "text": "It disables every model call.",
+              "correct": false
+            }
+          ],
+          "explanation": "Retries need idempotency policy.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code one inspected agent run",
+      "sub": "A useful example shows tools, input, and result path.",
+      "summary": "The first run should be traceable before it is polished.",
+      "objectives": [
+        "Write a minimal create_agent example.",
+        "Predict when the KB tool is used.",
+        "Add tests around tool selection."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Small code should expose the loop",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A LangChain example should show the model, tools, instructions, and invocation shape. For teaching, a harmless KB lookup tool is enough; production tools add policy and approvals."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from function calling, model-selected tool calls still execute in application code. The framework loop does not remove validation."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Add a no-tool question and a tool-needed question to the smoke tests."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Minimal LangChain create_agent shape",
+          "language": "python",
+          "code": "from langchain.agents import create_agent\n\ndef search_kb(query: str) -> str:\n    \"\"\"Search approved lesson notes. Use for KB-specific questions.\"\"\"\n    return \"LangGraph is useful for explicit state, checkpoints, and interrupts. Source: langgraph.md\"\n\nagent = create_agent(\n    model=\"provider:model-name\",\n    tools=[search_kb],\n    system_prompt=\"Answer as a careful tutor. Cite KB sources when using search_kb.\",\n)\n\nresult = agent.invoke({\"messages\": [{\"role\": \"user\", \"content\": \"When should I use LangGraph?\"}]})\nprint(result)\n",
+          "explanation": "The snippet shows the agent harness shape. In a real app, wrap `search_kb` with permission, tracing, and retrieval evaluation.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict which tool should be considered for the user question.",
+            "answer": "The KB search tool should be considered because the question asks for framework guidance grounded in lesson notes."
+          },
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Code path",
+          "prompt": "What should production code add around `search_kb`?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A broad write-access database token in the prompt.",
+              "correct": false
+            },
+            {
+              "text": "Retrieval evaluation, citation tracing, error handling, and permission-aware source filters.",
+              "correct": true
+            },
+            {
+              "text": "No tests because LangChain handles everything.",
+              "correct": false
+            }
+          ],
+          "explanation": "The app owns retrieval quality and safety.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Trace representative runs before trusting abstractions",
+      "sub": "LangChain can hide provider and middleware differences.",
+      "summary": "LangChain apps need the same eval discipline as any agent system.",
+      "objectives": [
+        "Create trace assertions.",
+        "Pin provider and package behavior.",
+        "Compare against direct SDK or LangGraph alternatives."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Abstractions need observability",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "LangChain smooths over providers and tools, but provider behavior differs around streaming, structured output, tool calls, and context windows. Pin versions and test the exact model/tool path you ship."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Traces should show messages, retrieved context, tool calls, middleware decisions, model outputs, costs, and errors. Regression tests should include tool-use, no-tool, approval, and failure cases."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If a middleware concern cannot be seen in traces, it will be hard to debug in production."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output from a LangChain agent app",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Read the trace with the answer."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The selected tools match the user task and allowed policy."
+                  }
+                ],
+                [
+                  {
+                    "text": "Structured outputs validate before downstream use."
+                  }
+                ],
+                [
+                  {
+                    "text": "Middleware decisions are visible and tested."
+                  }
+                ],
+                [
+                  {
+                    "text": "Retrieved sources support cited claims."
+                  }
+                ],
+                [
+                  {
+                    "text": "Provider, package, prompt, and tool versions are pinned for eval runs."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "LangChain release gate",
+          "prompt": "What should block release of a LangChain agent?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A trace that shows useful tool calls.",
+              "correct": false
+            },
+            {
+              "text": "A trace showing unsupported claims, unauthorized tool use, or hidden middleware failures.",
+              "correct": true
+            },
+            {
+              "text": "A clear system prompt.",
+              "correct": false
+            }
+          ],
+          "explanation": "Production confidence comes from observed behavior, not framework branding.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb10"
+      ]
+    }
+  ],
+  "glossary": {
+    "framework": {
+      "id": "framework",
+      "label": "Framework",
+      "laymanDefinition": "A library or platform that provides agent building blocks and conventions.",
+      "technicalNote": "Framework choice affects state handling, tools, tracing, deployment model, ecosystem fit, and how much control the application keeps.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "graph": {
+      "id": "graph",
+      "label": "Graph",
+      "laymanDefinition": "A workflow shape where nodes and edges define how work moves between steps.",
+      "technicalNote": "Graph-based agents make branching, retries, checkpoints, and human review more explicit than a single loose loop.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "checkpoint": {
+      "id": "checkpoint",
+      "label": "Checkpoint",
+      "laymanDefinition": "A saved workflow state that lets execution resume or be inspected later.",
+      "technicalNote": "Checkpoints are essential for durable agents because retries, approvals, and debugging need the exact state at a step boundary.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "handoff": {
+      "id": "handoff",
+      "label": "Handoff",
+      "laymanDefinition": "Passing work from one agent, tool, or human role to another.",
+      "technicalNote": "Handoffs need a typed payload, ownership transfer, stop condition, and audit trail so context does not vanish between actors.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "sdk": {
+      "id": "sdk",
+      "label": "SDK",
+      "laymanDefinition": "A software development kit with APIs and helpers for building applications.",
+      "technicalNote": "Agent SDKs encode assumptions about models, tools, sessions, tracing, and deployment, so evaluate those assumptions against the product architecture.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Software development kit"
+    },
+    "orchestration": {
+      "id": "orchestration",
+      "label": "Orchestration",
+      "laymanDefinition": "Coordinating steps, agents, tools, state, and decisions in a workflow.",
+      "technicalNote": "Orchestration owns sequencing, parallelism, retries, timeouts, approvals, and failure visibility across the agent system.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for LangChain for Agent Apps",
+    "themes": [
+      {
+        "name": "LangChain fit",
+        "questions": [
+          {
+            "q": "Do you need provider/tool integration breadth and middleware more than explicit graph state?",
+            "why": "LangChain speeds integration but can hide provider-specific behavior if untested.",
+            "opts": [
+              "LangChain create_agent app",
+              "Direct provider SDK",
+              "LangGraph state graph"
+            ],
+            "rot": "Use LangChain when integration breadth and middleware are the hard part; move to LangGraph when control flow becomes the product."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: rebuild LangChain agents by naming create_agent, model, tools, system prompt, structured output, middleware, runtime config, tracing, and tests."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "LangChain agent app path from tools to middleware to trace",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "create_agent wraps a model-plus-tools loop",
+          "sub": "LangChain’s current agent path starts with one harness.",
+          "what": "Learners know what create_agent owns and what the app still owns.",
+          "relevance": "This prevents treating LangChain as a substitute for product policy.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Anchor LangChain in the runtime loop it provides.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Tools and structured output need tight contracts",
+          "sub": "LangChain abstractions still rely on schemas and validators.",
+          "what": "Learners design reliable LangChain tool contracts.",
+          "relevance": "Vague tools and free-form outputs make agent apps hard to test.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Define tool inputs, output shape, and error behavior explicitly.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Middleware is where production concerns enter",
+          "sub": "Summaries, retries, approvals, and PII handling wrap the loop.",
+          "what": "Learners understand LangChain middleware as product logic.",
+          "relevance": "Middleware can become hidden application behavior if unobserved.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use middleware deliberately and test interactions.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code one inspected agent run",
+          "sub": "A useful example shows tools, input, and result path.",
+          "what": "Learners connect create_agent syntax to product checks.",
+          "relevance": "Concrete code reveals where tool execution and output validation happen.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Build the smallest LangChain agent slice with visible tool behavior.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Trace representative runs before trusting abstractions",
+          "sub": "LangChain can hide provider and middleware differences.",
+          "what": "Learners finish with production checks for LangChain apps.",
+          "relevance": "A demo run does not prove long conversation, retries, or approvals behave correctly.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Use traces and eval cases to inspect model/tool behavior.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "create_agent wraps a model-plus-tools loop",
+        "detail": "LangChain supplies a ready agent harness around models, tools, and prompts."
+      },
+      {
+        "step": 2,
+        "label": "Tools and structured output need tight contracts",
+        "detail": "The tool contract is the app boundary."
+      },
+      {
+        "step": 3,
+        "label": "Middleware is where production concerns enter",
+        "detail": "Middleware is powerful because it mutates the agent loop."
+      },
+      {
+        "step": 4,
+        "label": "Code one inspected agent run",
+        "detail": "The first run should be traceable before it is polished."
+      },
+      {
+        "step": 5,
+        "label": "Trace representative runs before trusting abstractions",
+        "detail": "LangChain apps need the same eval discipline as any agent system."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_fit",
+        "label": "Can you justify the fit described in \"create_agent wraps a model-plus-tools loop\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_impl",
+        "label": "Can you inspect the implementation surface in \"Code one inspected agent run\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Trace representative runs before trusting abstractions\" define production checks?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Design a LangChain support agent with one retriever, one safe ticket tool, structured output, middleware for approval, and three trace assertions. Next rung: LangGraph for explicit branching.",
+      "scopedTo": "LangChain for Agent Apps"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LangGraph documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "kb5": {
+      "id": "kb5",
+      "kind": "kb",
+      "title": "KB: LangChain",
+      "url": "https://docs.langchain.com/oss/python/langchain/overview",
+      "asOfDate": "2026-06-22"
+    },
+    "kb10": {
+      "id": "kb10",
+      "kind": "kb",
+      "title": "KB: Tool and Plugin Standards",
+      "url": "https://spec.openapis.org/oas/latest.html",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

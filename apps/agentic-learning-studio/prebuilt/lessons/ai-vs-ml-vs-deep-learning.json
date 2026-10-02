@@ -1,0 +1,2087 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "AI vs ML vs Deep Learning",
+    "title": "AI vs ML vs Deep Learning",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 28,
+    "thesis": "AI, machine learning, and deep learning are three nested circles — deep learning inside ML inside AI — and knowing which one you have tells you its data needs, cost, and how explainable it can be."
+  },
+  "learnerProfile": {
+    "level": "beginner",
+    "depth": "conceptual",
+    "examples": "functional",
+    "topic": "AI vs ML vs Deep Learning",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "AI vs ML vs Deep Learning: mental map",
+    "caption": "Three nested circles, not three rivals. Open each block for the detail.",
+    "oneLineThesis": "Deep learning is a kind of machine learning, and machine learning is a kind of AI — nested, not competing.",
+    "structureType": "conceptual",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "The nested picture",
+        "sub": "AI contains ML, and ML contains deep learning.",
+        "orient": "The core mental model: three nested circles, and why people confuse the terms.",
+        "what": "AI is the broad goal; ML is the data-driven subset; deep learning is the neural-network subset of ML.",
+        "relevance": "It matters because the words are used interchangeably in marketing, which hides what each one actually does.",
+        "moduleId": "m1",
+        "layer": "What",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m2",
+        "label": "How each one learns",
+        "sub": "Hand-written rules vs learned patterns vs learned features.",
+        "orient": "The mechanism: how rule-based AI, classic ML, and deep learning each produce answers.",
+        "what": "The dividing line is who writes the logic: a human, a learning algorithm over chosen features, or a deep network over raw data.",
+        "relevance": "It matters because the mechanism predicts where each approach shines and where it falls over.",
+        "moduleId": "m2",
+        "layer": "How",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m3",
+        "label": "Classic ML or deep learning?",
+        "sub": "Pick by data size, interpretability, and cost.",
+        "orient": "The real decision: when a simple model beats a neural network, and when it does not.",
+        "what": "A practical choice between a small, explainable model and a large, data-hungry deep model.",
+        "relevance": "It matters because reaching for deep learning by default wastes data, money, and debuggability.",
+        "moduleId": "m3",
+        "layer": "Decision",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m4",
+        "label": "A tiny classifier",
+        "sub": "Train a real ML model in eight lines.",
+        "orient": "A concrete artifact: the smallest runnable ML model, so the terms stop being abstract.",
+        "what": "A minimal scikit-learn classifier that turns the concept into code you can run.",
+        "relevance": "It matters because seeing one work makes the AI/ML/deep-learning boundary tangible.",
+        "moduleId": "m4",
+        "layer": "Build",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m5",
+        "label": "Where it breaks, then check",
+        "sub": "Common confusions, failure modes, and active recall.",
+        "orient": "Late module: the misreadings that bite beginners, plus a recall check to lock it in.",
+        "what": "The traps — overfitting, calling everything AI, ignoring data needs — and a self-test.",
+        "relevance": "It matters because spotting the failure first is what separates understanding from memorizing.",
+        "moduleId": "m5",
+        "layer": "Check",
+        "emphasis": "spine"
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "The nested picture: AI, ML, deep learning",
+      "sub": "Starts the spine: why these three terms exist and how they nest.",
+      "summary": "AI is the broad goal of making machines do smart things; machine learning is the subset that learns from data; deep learning is the subset of ML that uses many-layered neural networks. They are nested circles, not three competing things.",
+      "objectives": [
+        "Explain why AI, ML, and deep learning are nested rather than rival categories.",
+        "State the one defining trait of each in plain language.",
+        "Catch the most common confusion: treating 'AI' and 'deep learning' as synonyms."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "generalization"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_why",
+          "kind": "note",
+          "tone": "info",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Why this distinction exists: ",
+                  "strong": true
+                },
+                {
+                  "text": "every product now claims to use \"AI.\" That word covers everything from a hand-written if/else rule to a billion-parameter network. If you can place a system in the right circle, you instantly know what data it needs, how it can fail, and whether you can explain its answers."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: ",
+                  "strong": true
+                },
+                {
+                  "em": true,
+                  "text": "is every machine-learning system also an AI system? And is every AI system also machine learning?"
+                }
+              ]
+            }
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Three nested circles, not three rivals",
+          "analogy": "Think of Russian nesting dolls: deep learning sits inside machine learning, which sits inside AI. Opening the big doll never removes the small ones.",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The single most useful picture of "
+                },
+                {
+                  "text": "AI vs ML vs Deep Learning",
+                  "strong": true
+                },
+                {
+                  "text": " is three circles, one inside the next."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "ai",
+                    "term": "ai",
+                    "strong": true
+                  },
+                  {
+                    "text": " (the outer circle) — any technique that makes a machine do something we associate with human intelligence, including plain hand-written rules."
+                  }
+                ],
+                [
+                  {
+                    "text": "ml",
+                    "term": "ml",
+                    "strong": true
+                  },
+                  {
+                    "text": " (inside AI) — the subset where the machine learns the rules from "
+                  },
+                  {
+                    "text": "data",
+                    "em": true
+                  },
+                  {
+                    "text": " instead of being told them."
+                  }
+                ],
+                [
+                  {
+                    "text": "Deep learning",
+                    "strong": true
+                  },
+                  {
+                    "text": " (inside ML) — the subset of ML that uses many-layered neural networks to learn features straight from raw input."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "So every deep-learning system is machine learning, and every machine-learning system is AI — but not the reverse. A thermostat rule is AI but not ML; spam filtering with hand-picked features is ML but not deep learning."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_visual",
+          "kind": "interactiveSlider",
+          "title": "Zoom from the outer circle to the inner one",
+          "caption": "Slide inward to see how each circle narrows the definition — broad goal, then learning-from-data, then neural networks.",
+          "min": 1,
+          "max": 3,
+          "unit": "circle",
+          "stops": [
+            {
+              "at": 1,
+              "label": "AI (outer)",
+              "note": "Any machine behavior that looks intelligent. A chess program with hand-coded rules counts. No learning required."
+            },
+            {
+              "at": 2,
+              "label": "Machine learning (middle)",
+              "note": "Now the rules are learned from examples. You still choose which features matter — e.g. word counts for spam."
+            },
+            {
+              "at": 3,
+              "label": "Deep learning (inner)",
+              "note": "A many-layered neural network learns the features itself from raw pixels, audio, or text. Most data-hungry, least transparent."
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_walk",
+          "kind": "walkthrough",
+          "title": "Place any system in the right circle",
+          "steps": [
+            {
+              "label": "Ask: does it learn from data?",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "If a human wrote every rule by hand, it is "
+                    },
+                    {
+                      "text": "ai",
+                      "term": "ai"
+                    },
+                    {
+                      "text": " but not machine learning. If it improves from examples, it is ML."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Ask: who picked the features?",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "If you fed it hand-chosen signals (word counts, pixel averages), it is classic "
+                    },
+                    {
+                      "text": "ml",
+                      "term": "ml"
+                    },
+                    {
+                      "text": ". If a neural network learned the features from raw input, it is deep learning."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Name the circle out loud",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "\"This is AI, specifically ML, specifically deep learning\" — or stop at the first circle that fits. The narrowest true label tells you the most."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_example",
+          "kind": "functionalExample",
+          "title": "Three spam filters, three circles",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The same task — flagging spam email — can live in any of the three circles:"
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Rule-based AI:",
+                    "strong": true
+                  },
+                  {
+                    "text": " a human writes \"if subject contains 'FREE MONEY', flag it.\" No learning. AI, not ML."
+                  }
+                ],
+                [
+                  {
+                    "text": "Classic ML:",
+                    "strong": true
+                  },
+                  {
+                    "text": " you count chosen words per email and train a "
+                  },
+                  {
+                    "text": "model",
+                    "term": "model"
+                  },
+                  {
+                    "text": " to weigh them. ML, not deep learning."
+                  }
+                ],
+                [
+                  {
+                    "text": "Deep learning:",
+                    "strong": true
+                  },
+                  {
+                    "text": " a neural network reads the raw email text and learns its own signals. Most powerful, most data-hungry, hardest to explain."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Same goal, three very different answers to \"how much data, how explainable, how expensive.\""
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "ai",
+            "ml",
+            "model"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_technical",
+          "kind": "technical",
+          "title": "The precise dividing lines",
+          "visibleWhen": {
+            "depth": [
+              "technical",
+              "conceptual_technical"
+            ]
+          },
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Technically, the boundaries are about where the function comes from. Rule-based AI: a human encodes the function f(x). Classic "
+                },
+                {
+                  "text": "ml",
+                  "term": "ml"
+                },
+                {
+                  "text": ": an algorithm fits f(x) to data using human-engineered features. Deep learning: a network learns both the features and f(x) end-to-end."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "The litmus test: if removing the training data would leave the system unable to function, it is machine learning — not just rule-based AI."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "A thermostat that turns on heat when the temperature drops below a hand-set rule — which circle is it in?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Deep learning, because it reacts to its environment.",
+              "correct": false
+            },
+            {
+              "text": "AI but not machine learning, because the rule was written by a human, not learned from data.",
+              "correct": true
+            },
+            {
+              "text": "Machine learning, because it makes a decision.",
+              "correct": false
+            }
+          ],
+          "explanation": "Making a decision is not the same as learning. The thermostat follows a human-written rule, so it sits in the AI circle but outside the ML circle.",
+          "termIds": [
+            "ai",
+            "ml"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "How each one actually learns",
+      "sub": "Follows the nested picture: now open up the mechanism inside each circle.",
+      "summary": "The circles differ in who supplies the logic. Rule-based AI gets it from a human. Classic ML learns it from data using features a human chose. Deep learning learns the features and the logic together. The shared engine of both ML kinds is: minimize a loss, then check that it generalizes.",
+      "objectives": [
+        "Describe the shared ML training loop: predict, measure loss, adjust, repeat.",
+        "Explain what deep learning adds: learning features from raw data automatically.",
+        "Distinguish fitting the training data from generalizing to new data."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The training loop hiding inside ML",
+          "analogy": "Learning from data is like tuning a guitar by ear: play a note, hear how far off it is (the loss), adjust the peg, repeat until it sounds right on songs you have not played yet.",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Both classic "
+                },
+                {
+                  "text": "ml",
+                  "term": "ml"
+                },
+                {
+                  "text": " and deep learning run the same basic loop to build a "
+                },
+                {
+                  "text": "model",
+                  "term": "model"
+                },
+                {
+                  "text": ":"
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Predict on a training example with the current settings."
+                  }
+                ],
+                [
+                  {
+                    "text": "Measure how wrong it was — the "
+                  },
+                  {
+                    "text": "loss",
+                    "term": "loss"
+                  },
+                  {
+                    "text": "."
+                  }
+                ],
+                [
+                  {
+                    "text": "Adjust the settings a little to reduce that loss."
+                  }
+                ],
+                [
+                  {
+                    "text": "Repeat over many examples until the loss stops falling."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The difference is what gets adjusted. Classic ML adjusts weights over features "
+                },
+                {
+                  "text": "you",
+                  "em": true
+                },
+                {
+                  "text": " chose. Deep learning stacks many layers and adjusts them all, so the network discovers useful features from raw input by itself."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ml",
+            "model",
+            "loss"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_walk",
+          "kind": "walkthrough",
+          "title": "One training step, traced",
+          "steps": [
+            {
+              "label": "Start with a guess",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "The "
+                    },
+                    {
+                      "text": "model",
+                      "term": "model"
+                    },
+                    {
+                      "text": " begins with random settings and predicts a label for one example — usually badly."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Score the error",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "The "
+                    },
+                    {
+                      "text": "loss",
+                      "term": "loss"
+                    },
+                    {
+                      "text": " function turns 'how wrong' into a single number the algorithm can shrink."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Nudge and re-check on new data",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "After many nudges, hold out data the model never trained on and confirm it still scores well — that is "
+                    },
+                    {
+                      "text": "generalization",
+                      "term": "generalization"
+                    },
+                    {
+                      "text": ", the only success that counts."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_example",
+          "kind": "functionalExample",
+          "title": "Predicting house prices, two ways",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Goal: predict a house's price."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Classic ML:",
+                    "strong": true
+                  },
+                  {
+                    "text": " you hand it the features that matter — square footage, bedrooms, zip code — and it learns a weight for each. You can read the weights and explain the prediction."
+                  }
+                ],
+                [
+                  {
+                    "text": "Deep learning:",
+                    "strong": true
+                  },
+                  {
+                    "text": " you could feed it raw listing photos and text, and it learns its own internal features (\"granite counters,\" \"good light\"). More powerful, but you cannot easily say why it priced one house high."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Both shrink a "
+                },
+                {
+                  "text": "loss",
+                  "term": "loss"
+                },
+                {
+                  "text": "; only the deep model invents its own features."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "ml",
+            "model",
+            "loss"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_technical",
+          "kind": "technical",
+          "title": "Why depth changed everything",
+          "visibleWhen": {
+            "depth": [
+              "technical",
+              "conceptual_technical"
+            ]
+          },
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Before deep learning, the hard part of "
+                },
+                {
+                  "text": "ml",
+                  "term": "ml"
+                },
+                {
+                  "text": " was feature engineering — humans hand-crafting the inputs. Deep networks replaced that with representation learning: each layer composes the previous layer's outputs into higher-level features, so raw pixels become edges, then shapes, then objects, with no human in the loop."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "Rule of thumb: deep learning trades human feature work for far more data and compute. On small, tabular problems that trade rarely pays off."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ml",
+            "model"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "What is the main thing deep learning adds on top of classic machine learning?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It removes the need for any training data.",
+              "correct": false
+            },
+            {
+              "text": "It learns the features from raw input itself, instead of using human-chosen features.",
+              "correct": true
+            },
+            {
+              "text": "It is always more accurate than classic ML on every problem.",
+              "correct": false
+            }
+          ],
+          "explanation": "Deep learning's signature move is representation learning: the network discovers useful features from raw data, where classic ML relies on features a human selected. It still needs data, and it is not universally more accurate.",
+          "termIds": [
+            "ml",
+            "model"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Choosing: classic ML or deep learning?",
+      "sub": "Follows the mechanism: now use it to make the one choice that matters.",
+      "summary": "Knowing the circles is only useful if it changes what you build. The real decision is rarely 'AI or not' — it is 'classic ML or deep learning', and it turns on how much labeled data you have, whether you must explain the answer, and what compute you can afford. The default should be the simplest model that meets the need.",
+      "objectives": [
+        "Pick between rule-based AI, classic ML, and deep learning for a given problem.",
+        "Weigh data volume, interpretability, and cost against each other.",
+        "Justify defaulting to the simplest approach that solves the problem."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "generalization"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "The default should be the simplest thing that works",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "It is tempting to reach for deep learning because it is the most powerful circle. But power you do not need is cost you do not need: more labeled data, more compute, and far less ability to explain the answer."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Three questions settle most choices:"
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "How much labeled data do you have?",
+                    "strong": true
+                  },
+                  {
+                    "text": " Deep learning is hungry; thousands-plus examples before it earns its keep."
+                  }
+                ],
+                [
+                  {
+                    "text": "Must you explain the decision?",
+                    "strong": true
+                  },
+                  {
+                    "text": " Regulated or high-stakes calls favor an interpretable "
+                  },
+                  {
+                    "text": "model",
+                    "term": "model"
+                  },
+                  {
+                    "text": "."
+                  }
+                ],
+                [
+                  {
+                    "text": "What can you afford to run?",
+                    "strong": true
+                  },
+                  {
+                    "text": " A linear model runs on a laptop; a deep network may need GPUs."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m3_walk",
+          "kind": "walkthrough",
+          "title": "Work the choice in order",
+          "steps": [
+            {
+              "label": "Try a rule first",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "If a handful of hand-written rules solve it, you are done — that is "
+                    },
+                    {
+                      "text": "ai",
+                      "term": "ai"
+                    },
+                    {
+                      "text": " with no training data to collect and nothing to retrain."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Reach for classic ML next",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "If patterns are too messy for rules but your data is tabular and modest, a classic "
+                    },
+                    {
+                      "text": "ml",
+                      "term": "ml"
+                    },
+                    {
+                      "text": " model is usually faster to ship and easier to debug."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Escalate to deep learning only when needed",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Raw images, audio, or language at scale — and enough labeled data — is where deep learning's "
+                    },
+                    {
+                      "text": "generalization",
+                      "term": "generalization"
+                    },
+                    {
+                      "text": " advantage finally pays for its cost."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "generalization"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionMatrix",
+          "title": "Rule-based AI vs classic ML vs deep learning",
+          "criteria": [
+            "Data it needs",
+            "Interpretability",
+            "Best fit"
+          ],
+          "options": [
+            {
+              "name": "Rule-based AI",
+              "cells": [
+                {
+                  "criterion": "Data it needs",
+                  "text": "None to train — a human writes the logic.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Interpretability",
+                  "text": "Fully transparent; you can read every rule.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "Stable problems with a few clear conditions.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when a handful of rules already capture the logic.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Classic ML",
+              "cells": [
+                {
+                  "criterion": "Data it needs",
+                  "text": "Modest, often tabular, with chosen features.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Interpretability",
+                  "text": "Often readable; you can inspect feature weights.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "Messy patterns over structured data.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Use when rules fail but data is modest and you want explainability.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Deep learning",
+              "cells": [
+                {
+                  "criterion": "Data it needs",
+                  "text": "Large labeled sets, often raw and unstructured.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Interpretability",
+                  "text": "Hard to explain why it decided what it did.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "Images, audio, language at scale.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Use when input is raw perception data and you have lots of it.",
+              "cost": "High",
+              "complexity": "High"
+            }
+          ],
+          "howToRead": "Move down the list and stop at the first option that meets the requirement. Pick deep learning only when the data type and volume actually demand it.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_technical",
+          "kind": "technical",
+          "title": "The cost most beginners miss",
+          "visibleWhen": {
+            "depth": [
+              "technical",
+              "conceptual_technical"
+            ]
+          },
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Deep learning's accuracy is not free: it shifts work to data labeling, compute, and tuning, and it makes failures harder to diagnose because the learned features are opaque. A classic "
+                },
+                {
+                  "text": "ml",
+                  "term": "ml"
+                },
+                {
+                  "text": " model that is 2% less accurate but fully explainable is often the better production choice."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "Ship the simplest model that clears the bar, then escalate only when measured performance demands it."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "You have 300 rows of tabular customer data and must explain every decision to an auditor. Which approach fits best?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Deep learning, because it is the most accurate option available.",
+              "correct": false
+            },
+            {
+              "text": "Classic ML, because the data is small and tabular and the model stays explainable.",
+              "correct": true
+            },
+            {
+              "text": "Whatever has the most parameters, since bigger is always better.",
+              "correct": false
+            }
+          ],
+          "explanation": "With little data and a hard interpretability requirement, deep learning is the wrong tool. A classic ML model trains on modest tabular data and lets you show the auditor which features drove the decision.",
+          "termIds": [
+            "ai",
+            "ml"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Pick the narrowest circle that solves the problem: rule-based AI, classic ML, or deep learning."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "A tiny machine-learning model, for real",
+      "sub": "Follows the choice: make it concrete by training a real classic-ML model.",
+      "summary": "Eight lines train an actual machine-learning model: split the data, fit a classifier, and score it on data it never saw. This is classic ML — not deep learning — and it makes the training loop from module 2 something you can run.",
+      "objectives": [
+        "Read a minimal scikit-learn training script end to end.",
+        "Identify which line does the learning and which line measures generalization.",
+        "Verify an AI-generated ML snippet before you trust its score."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "generalization"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "What 'training a model' looks like in code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The training loop from module 2 is only a few lines in practice. You split your data so you can test honestly, fit a "
+                },
+                {
+                  "text": "model",
+                  "term": "model"
+                },
+                {
+                  "text": " on the training half, and then score it on the half it never saw."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "That last step is the whole point: a high score on data the model already memorized proves nothing. A high score on held-out data is "
+                },
+                {
+                  "text": "generalization",
+                  "term": "generalization"
+                },
+                {
+                  "text": "."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ml",
+            "model",
+            "generalization"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_walk",
+          "kind": "walkthrough",
+          "title": "Read the script in three moves",
+          "steps": [
+            {
+              "label": "Split",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Hold back part of the data as a test set so the score later means something."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Fit",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "The "
+                    },
+                    {
+                      "text": "model",
+                      "term": "model"
+                    },
+                    {
+                      "text": " learns weights from the training half — this single call is the learning."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Score",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Evaluate on the held-out half to estimate "
+                    },
+                    {
+                      "text": "generalization",
+                      "term": "generalization"
+                    },
+                    {
+                      "text": " to new data."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "model",
+            "generalization"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_example",
+          "kind": "functionalExample",
+          "title": "This is ML, not deep learning",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model below is logistic regression — a classic "
+                },
+                {
+                  "text": "ml",
+                  "term": "ml"
+                },
+                {
+                  "text": " algorithm with no neural-network layers. It is squarely inside the ML circle and outside the deep-learning circle."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If you swapped it for a multi-layer neural net on the same tiny dataset, you would add complexity and risk overfitting without gaining accuracy. The right circle here is the smaller one."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "ml",
+            "model"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Train and score a classic ML model in 8 lines",
+          "language": "python",
+          "code": "from sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.datasets import load_iris\nX, y = load_iris(return_X_y=True)\nXtr, Xte, ytr, yte = train_test_split(X, y, random_state=0)\nmodel = LogisticRegression(max_iter=200).fit(Xtr, ytr)\nprint(model.score(Xte, yte))  # accuracy on data it never trained on",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Three flowers, four measurements each. The model learns to map measurements to species, then reports accuracy on the held-out test set — a real, if tiny, "
+                },
+                {
+                  "text": "generalization",
+                  "term": "generalization"
+                },
+                {
+                  "text": " check."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Before reading on, predict: which single line does the actual learning, and which line would a beginner mistakenly use to judge the model?",
+            "answer": "The .fit(Xtr, ytr) call does the learning. The trap is judging the model by its score on Xtr (the training data); the honest number is model.score(Xte, yte) on held-out data."
+          },
+          "syntax": [
+            {
+              "part": "train_test_split",
+              "explains": "Holds back part of the data so the score is honest, not memorized."
+            },
+            {
+              "part": "LogisticRegression",
+              "explains": "A classic ML model — linear, no neural-network layers."
+            },
+            {
+              "part": ".fit(Xtr, ytr)",
+              "explains": "Runs the training loop: this is where learning happens."
+            },
+            {
+              "part": "model.score(Xte, yte)",
+              "explains": "Measures generalization on data the model never saw."
+            }
+          ],
+          "termIds": [
+            "ml",
+            "model",
+            "generalization"
+          ],
+          "sources": [
+            "canon1",
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "note",
+          "tone": "warn",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Verify before you trust an AI-generated ML snippet. ",
+                  "strong": true
+                },
+                {
+                  "text": "Assistants often produce code that looks right but reports a misleading score. Check these four things:"
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Is the score computed on a held-out test set, not on the training data? Scoring on Xtr inflates accuracy."
+                  }
+                ],
+                [
+                  {
+                    "text": "Is there a real train/test split before fitting? No split means no honest "
+                  },
+                  {
+                    "text": "generalization",
+                    "term": "generalization"
+                  },
+                  {
+                    "text": " number."
+                  }
+                ],
+                [
+                  {
+                    "text": "Does the model converge? A warning about max_iter means the reported accuracy may be wrong."
+                  }
+                ],
+                [
+                  {
+                    "text": "Is the chosen "
+                  },
+                  {
+                    "text": "model",
+                    "term": "model"
+                  },
+                  {
+                    "text": " appropriate for the data size — classic ML for small/tabular, not an oversized network?"
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "ml",
+            "model",
+            "generalization"
+          ],
+          "sources": [
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "In the eight-line script, which line tells you whether the model actually learned anything useful?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The import lines, because they load the algorithm.",
+              "correct": false
+            },
+            {
+              "text": "model.score(Xte, yte), because it measures accuracy on data the model never trained on.",
+              "correct": true
+            },
+            {
+              "text": "load_iris, because it provides the data.",
+              "correct": false
+            }
+          ],
+          "explanation": "Learning is only proven by performance on unseen data. The score on the held-out test set (Xte, yte) is the generalization check; everything before it just sets up the experiment.",
+          "termIds": [
+            "ml",
+            "generalization"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Where it breaks — then check yourself",
+      "sub": "Closes the spine: the traps that bite beginners, then active recall.",
+      "summary": "The most common mistakes are not technical — they are conceptual: calling everything 'AI', assuming deep learning is always best, and trusting a model that memorized its training data. Spot these, recall the core ideas from memory, and the distinction is yours.",
+      "objectives": [
+        "Name the three confusions that most often trip up beginners.",
+        "Recognize overfitting as a failure to generalize, not a bug in the code.",
+        "Recall the nested picture and the training loop without looking back."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "note",
+          "tone": "info",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Before reading on, predict from memory: ",
+                  "strong": true
+                },
+                {
+                  "em": true,
+                  "text": "back in module 2 you met the training loop. What single number does an ML model try to shrink, and what does a good score on held-out data prove?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "em": true,
+                  "text": "(The answer: it shrinks the "
+                },
+                {
+                  "text": "loss",
+                  "term": "loss"
+                },
+                {
+                  "em": true,
+                  "text": ", and a good score on unseen data proves "
+                },
+                {
+                  "text": "generalization",
+                  "term": "generalization"
+                },
+                {
+                  "em": true,
+                  "text": " — that it learned the pattern, not the examples.)"
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m5_failuremodes",
+          "kind": "conceptual",
+          "title": "How understanding breaks in practice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "These are the misreadings that cause real mistakes — in conversations, in tool choices, and in budgets."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "1. Calling everything \"AI\""
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A hand-coded rule and a billion-parameter network are both "
+                },
+                {
+                  "text": "ai",
+                  "term": "ai"
+                },
+                {
+                  "text": ", but they need wildly different data, cost, and oversight. Flattening them hides which one you actually have."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "2. Assuming deep learning is always best"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "On small, tabular, or interpretability-critical problems, a classic "
+                },
+                {
+                  "text": "ml",
+                  "term": "ml"
+                },
+                {
+                  "text": " model often wins on speed, cost, and explainability. Bigger is not automatically better."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "3. Overfitting: trusting a memorizer (non-obvious)"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A "
+                },
+                {
+                  "text": "model",
+                  "term": "model"
+                },
+                {
+                  "text": " can score nearly perfectly on its training data and still fail on new data. That is overfitting — a failure of "
+                },
+                {
+                  "text": "generalization",
+                  "term": "generalization"
+                },
+                {
+                  "text": ", not a crash. It is invisible unless you test on held-out data."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "warn",
+              "spans": [
+                {
+                  "text": "First diagnostic: if someone quotes a model's accuracy without saying it was measured on held-out data, treat the number as unproven."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "generalization"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "A teammate says their model is 99% accurate — but only on the data it was trained on. What is the most likely problem?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Nothing — high accuracy is always good news.",
+              "correct": false
+            },
+            {
+              "text": "Overfitting: the model may have memorized the training data and could fail to generalize to new data.",
+              "correct": true
+            },
+            {
+              "text": "The model is too small and needs more layers.",
+              "correct": false
+            }
+          ],
+          "explanation": "Accuracy on training data tells you almost nothing. A model can memorize its examples and still fail on anything new — that is overfitting, a failure of generalization. The honest test is held-out data.",
+          "termIds": [
+            "model",
+            "generalization"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m5_knowledgecheck",
+          "kind": "knowledgeCheck",
+          "title": "Check your understanding: the whole picture",
+          "intro": "Answer each from memory before checking. These cover the nested picture, the mechanism, and the decision.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "generalization"
+          ],
+          "questions": [
+            {
+              "id": "kc-m5-1",
+              "kind": "mcq",
+              "prompt": "Which statement about the three terms is correct?",
+              "options": [
+                {
+                  "text": "Every deep-learning system is machine learning, and every machine-learning system is AI.",
+                  "correct": true
+                },
+                {
+                  "text": "AI, ML, and deep learning are three separate, competing technologies.",
+                  "correct": false
+                },
+                {
+                  "text": "Machine learning is the broadest term and contains AI.",
+                  "correct": false
+                },
+                {
+                  "text": "Deep learning is a kind of AI but not a kind of machine learning.",
+                  "correct": false
+                }
+              ],
+              "explanation": "The circles nest: deep learning ⊂ machine learning ⊂ AI. The narrower term is always also the broader ones, but not the reverse."
+            },
+            {
+              "id": "kc-m5-2",
+              "kind": "mcq",
+              "prompt": "What distinguishes deep learning from classic machine learning?",
+              "options": [
+                {
+                  "text": "Deep learning needs no data.",
+                  "correct": false
+                },
+                {
+                  "text": "Deep learning learns its own features from raw input; classic ML uses human-chosen features.",
+                  "correct": true
+                },
+                {
+                  "text": "Classic ML is always more accurate.",
+                  "correct": false
+                },
+                {
+                  "text": "Only deep learning uses a loss function.",
+                  "correct": false
+                }
+              ],
+              "explanation": "Both shrink a loss. The signature of deep learning is representation learning — discovering useful features from raw data instead of relying on features a human selected."
+            },
+            {
+              "id": "kc-m5-3",
+              "kind": "mcq",
+              "prompt": "You have 200 rows of tabular data and must explain every prediction. Best first choice?",
+              "options": [
+                {
+                  "text": "A large deep neural network.",
+                  "correct": false
+                },
+                {
+                  "text": "A classic ML model — small data, tabular, and interpretable.",
+                  "correct": true
+                },
+                {
+                  "text": "Whatever has the most parameters.",
+                  "correct": false
+                },
+                {
+                  "text": "No model is possible with so little data.",
+                  "correct": false
+                }
+              ],
+              "explanation": "Little data plus a hard interpretability requirement points away from deep learning. A classic ML model trains on modest tabular data and stays explainable."
+            },
+            {
+              "id": "kc-m5-4",
+              "kind": "freeText",
+              "prompt": "In your own words, explain what overfitting is and why a high training-set score does not prove a model is good.",
+              "explanation": "Overfitting is a generalization failure: the model fits its training examples (even their noise) but misses the underlying pattern, so it does poorly on new data. Training-set accuracy can be near-perfect while real performance is poor.",
+              "acceptableAnswer": "Overfitting means the model has learned the training data too closely — including noise — so it scores high on that data but fails on new data. A high training-set score does not prove quality because the only meaningful test is performance on data the model never saw (generalization)."
+            },
+            {
+              "id": "kc-m5-5",
+              "kind": "freeText",
+              "prompt": "Give one example of a system that is AI but not machine learning, and say why.",
+              "explanation": "Rule-based systems qualify: they are AI (machine doing something 'smart') but not ML, because a human wrote the rules rather than the system learning them from data.",
+              "acceptableAnswer": "A thermostat or a spam filter built from hand-written if/else rules is AI but not machine learning, because the logic was written by a human and the system does not learn or improve from data."
+            }
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    }
+  ],
+  "glossary": {
+    "ai": {
+      "id": "ai",
+      "label": "AI",
+      "laymanDefinition": "Systems that perform tasks associated with human intelligence.",
+      "technicalNote": "In this lesson, AI is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Artificial intelligence"
+    },
+    "ml": {
+      "id": "ml",
+      "label": "ML",
+      "laymanDefinition": "AI systems that learn from data.",
+      "technicalNote": "In this lesson, ML is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Machine learning"
+    },
+    "model": {
+      "id": "model",
+      "label": "Model",
+      "laymanDefinition": "Model is a core building block in this lesson.",
+      "technicalNote": "In this lesson, Model is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "loss": {
+      "id": "loss",
+      "label": "Loss",
+      "laymanDefinition": "Loss is a core building block in this lesson.",
+      "technicalNote": "In this lesson, Loss is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "generalization": {
+      "id": "generalization",
+      "label": "Generalization",
+      "laymanDefinition": "Generalization is a core building block in this lesson.",
+      "technicalNote": "In this lesson, Generalization is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "Pipeline is a core building block in this lesson.",
+      "technicalNote": "In this lesson, Pipeline is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts",
+    "themes": [
+      {
+        "name": "Which circle do I actually need?",
+        "questions": [
+          {
+            "q": "For the next thing you build, does the problem really need to learn from data — or would a few hand-written rules do?",
+            "why": "Choosing the narrowest circle that solves the problem saves data, cost, and debugging effort.",
+            "opts": [
+              "Rules are enough (rule-based AI)",
+              "Learn from modest tabular data (classic ML)",
+              "Raw images/audio/text at scale (deep learning)"
+            ],
+            "rot": "Default to the simplest approach; escalate only when measured performance demands it."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Close the book and reconstruct it from memory: ",
+            "strong": true
+          },
+          {
+            "text": "Draw the three nested circles and label each one. Say what makes a system ML rather than rule-based AI, and deep learning rather than classic ML. Name the single number a model shrinks while training, and the test that proves it learned. Finally, give the one question that should make you pick a classic model over a deep one."
+          }
+        ]
+      },
+      {
+        "t": "p",
+        "spans": [
+          {
+            "em": true,
+            "text": "If any answer is fuzzy, reopen that module — that is exactly the part to revisit."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "The whole picture, in order",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "The nested picture",
+          "sub": "AI contains ML, and ML contains deep learning.",
+          "orient": "Where you start: the three nested circles.",
+          "what": "AI is the broad goal; ML learns from data; deep learning learns features too.",
+          "relevance": "Placing a system in the right circle tells you its data, cost, and explainability up front.",
+          "moduleId": "m1",
+          "layer": "What",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m2",
+          "label": "How each one learns",
+          "sub": "Rules vs learned patterns vs learned features.",
+          "orient": "The mechanism under each circle.",
+          "what": "ML shrinks a loss over chosen features; deep learning learns the features too.",
+          "relevance": "The mechanism predicts where each approach shines and fails.",
+          "moduleId": "m2",
+          "layer": "How",
+          "emphasis": "normal"
+        },
+        {
+          "id": "n_m3",
+          "label": "Classic ML or deep learning?",
+          "sub": "Pick by data, interpretability, and cost.",
+          "orient": "The decision the whole lesson builds to.",
+          "what": "Default to the simplest model that meets the need.",
+          "relevance": "Reaching for deep learning by default wastes data, money, and debuggability.",
+          "moduleId": "m3",
+          "layer": "Decision",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m4",
+          "label": "A tiny classifier",
+          "sub": "Train a real ML model in eight lines.",
+          "orient": "Make it concrete with runnable code.",
+          "what": "A minimal scikit-learn model scored on held-out data.",
+          "relevance": "Running one makes the boundary tangible and teaches the generalization check.",
+          "moduleId": "m4",
+          "layer": "Build",
+          "emphasis": "normal"
+        },
+        {
+          "id": "n_m5",
+          "label": "Where it breaks, then check",
+          "sub": "Confusions, overfitting, and recall.",
+          "orient": "Lock it in by spotting the traps.",
+          "what": "The common misreadings plus a self-test.",
+          "relevance": "Spotting the failure first is what turns recognition into understanding.",
+          "moduleId": "m5",
+          "layer": "Check",
+          "emphasis": "spine"
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Place it in a circle",
+        "detail": "Decide whether the system is rule-based AI, classic ML, or deep learning."
+      },
+      {
+        "step": 2,
+        "label": "Name the mechanism",
+        "detail": "Say where the logic comes from: a human, learned weights, or learned features."
+      },
+      {
+        "step": 3,
+        "label": "Choose the simplest approach",
+        "detail": "Weigh data volume, interpretability, and cost; default to the smaller circle."
+      },
+      {
+        "step": 4,
+        "label": "Train a thin slice",
+        "detail": "Fit a minimal model and score it on held-out data, not training data."
+      },
+      {
+        "step": 5,
+        "label": "Check for the traps",
+        "detail": "Confirm it generalizes and watch for overfitting before trusting the number."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_circle",
+        "label": "Can you place the system in the right nested circle?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_choice",
+        "label": "Did you pick the simplest approach that meets the need?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_generalize",
+        "label": "Is the score measured on held-out data, not training data?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Pick a real product you use and write a half-page: which circle does its 'AI' live in (rule-based, classic ML, or deep learning), what evidence makes you think so, and which simpler approach could have worked instead. Then build on it: take the 8-line classifier from module 4, swap in a different scikit-learn dataset, and confirm the held-out score still beats guessing.",
+      "scopedTo": "Foundations — next rung: 'How a neural network learns' to open the deep-learning circle."
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI, Machine Learning & Deep Learning - Foundations",
+      "url": "https://www.ibm.com/think/topics/ai-vs-machine-learning-vs-deep-learning-vs-neural-networks",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: AI, Machine Learning & Deep Learning - Foundations",
+      "url": "https://www.ibm.com/think/topics/ai-vs-machine-learning-vs-deep-learning-vs-neural-networks",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "scikit-learn User Guide",
+      "url": "https://scikit-learn.org/stable/user_guide.html",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://scikit-learn.org/stable/user_guide.html",
+      "asOfDate": "2026-06-20"
+    }
+  }
+}

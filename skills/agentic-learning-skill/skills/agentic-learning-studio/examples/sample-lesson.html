@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>How RAG Works: Grounding LLMs in Your Own Data</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --accent:#2563eb; --accent-2:#1d4ed8; --accent-weak:#e8efff;
+  --ink:#0f1729; --ink-soft:#27324a; --muted:#56607a; --faint:#8893ab;
+  --bg:#f5f8ff; --surface:#ffffff; --surface-2:#f9fbff;
+  --border:#e3e9f5; --border-strong:#d0d9ee;
+  --ok:#1d9e75; --ok-weak:#e6f6ef; --warn:#b9770a; --warn-weak:#fbf1de;
+  --danger:#d2433a; --danger-weak:#fcebea; --info:#2563eb; --info-weak:#e8efff;
+  --code-bg:#0b1228; --code-ink:#e7ecff;
+  --radius:14px; --radius-sm:9px; --measure:780px;
+  --font-body:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-head:"Plus Jakarta Sans",ui-sans-serif,system-ui,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --shadow:0 1px 2px rgba(15,23,41,.05),0 10px 30px rgba(37,99,235,.08);
+}
+[data-theme="dark"]{
+  --ink:#eaf0ff; --ink-soft:#c8d2ea; --muted:#9aa6c4; --faint:#76829f;
+  --bg:#0a0f1f; --surface:#121829; --surface-2:#161d31;
+  --border:#222a44; --border-strong:#313b5c; --accent-weak:#142149;
+  --code-bg:#070b18; --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.65;font-size:16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+a{color:var(--accent);text-decoration:none}
+.shell{max-width:min(1240px,94vw);margin:0 auto;padding:22px 26px 56px}
+h1,h2,h3,h4{line-height:1.25;letter-spacing:-.01em;color:var(--ink);font-family:var(--font-head)}
+.eyebrow{color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.muted{color:var(--muted)}
+code{font-family:var(--font-mono);font-size:.88em;background:var(--accent-weak);color:var(--accent-2);padding:1px 6px;border-radius:6px}
+
+.topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:1320px;margin:0 auto;padding:10px 26px;display:flex;align-items:center;gap:14px}
+.tb-left{flex:1 1 0;display:flex;justify-content:flex-start;min-width:0}
+.tb-center{flex:0 1 auto;text-align:center;min-width:0;padding:0 10px}
+.tb-right{flex:1 1 0;display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+.brand-mini{font-weight:800;font-size:17px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;max-width:100%}
+.spacer{flex:1}
+@media(max-width:820px){.brand-mini{font-size:14px}.tb-right{gap:8px}}
+.progress{height:6px;width:120px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress > i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s ease}
+.tbtn{border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;padding:5px 11px;border-radius:8px;cursor:pointer}
+
+.hero{padding:14px 0 6px}
+.hero h1{font-size:32px;font-weight:800;margin:.18em 0 .25em}
+.thesis{font-size:18px;color:var(--ink-soft);font-weight:500}
+.meta-line{margin-top:10px;color:var(--muted);font-size:13.5px;display:flex;gap:14px;flex-wrap:wrap}
+
+.map{margin:26px 0 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);padding:18px}
+.map h2{font-size:15px;margin:0 0 3px}
+.map .cap{color:var(--muted);font-size:13px;margin:0 0 14px}
+.map-layer{margin:0 0 10px}
+.map-layer-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:700;margin:0 0 6px}
+.map-row{display:flex;flex-wrap:wrap;gap:9px}
+.map-node{flex:1 1 240px;min-width:230px;text-align:left;border:1px solid var(--border-strong);background:var(--surface-2);border-radius:11px;padding:12px 14px;cursor:pointer;font:inherit;color:var(--ink);transition:border-color .12s,transform .08s,box-shadow .12s}
+.map-node:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow)}
+.map-node.spine{border-left:3px solid var(--accent)}
+.map-node .mn-title{font-weight:600;font-size:13.5px}
+.map-node .mn-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+[hidden]{display:none!important}
+
+#overview:not([hidden]){height:calc(100dvh - 54px);overflow:hidden;display:flex;flex-direction:column}
+#overview .shell{flex:1;min-height:0;width:100%;display:flex;flex-direction:column;overflow:hidden;padding:14px 26px}
+#overview .hero{flex:none;padding:2px 0 0}
+#overview .hero h1{font-size:25px;margin:.05em 0 .1em}
+#overview .thesis{font-size:14.5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#overview .meta-line{margin-top:6px;font-size:12.5px}
+#overview .ov-hint{flex:none;margin:8px 0 0}
+#overview .map{flex:1;min-height:0;display:flex;flex-direction:column;margin:12px 0 0;overflow:hidden;padding:14px 16px}
+#overview .map h2{font-size:14px}
+#overview .map .cap{margin:0 0 8px}
+#overview .map-body{flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+#overview .map-path,#overview .map-concept,#overview .map-options{
+  width:100%;max-height:100%;justify-content:center;align-content:center;align-items:center;
+}
+#overview .map .map-node{width:clamp(132px,13vw,176px)}
+@media(max-width:820px){
+  #overview:not([hidden]){height:auto;overflow:visible}
+  #overview .shell,#overview .map,#overview .map-body{overflow:visible;min-height:0}
+  #overview .map-body{align-items:flex-start}
+  #overview .map .map-node{width:clamp(128px,40vw,176px)}
+}
+
+.ov-hint{text-align:center;color:var(--muted);font-size:13.5px;margin:18px 0 0}
+.nav-back{margin-right:4px}
+#workbench{display:grid;grid-template-columns:248px 1fr;align-items:start}
+#blocknav{position:sticky;top:53px;align-self:start;max-height:calc(100vh - 53px);overflow:auto;border-right:1px solid var(--border);padding:16px 10px;display:flex;flex-direction:column;gap:3px;background:var(--surface)}
+.navitem{display:flex;align-items:center;gap:10px;text-align:left;width:100%;border:none;background:transparent;color:var(--ink-soft);font:inherit;font-size:13.5px;padding:9px 11px;border-radius:9px;cursor:pointer;line-height:1.3}
+.navitem:hover{background:var(--surface-2)}
+.navitem.active{background:var(--accent-weak);color:var(--accent-2);font-weight:600}
+.navitem .ni-num{flex:none;width:22px;height:22px;border-radius:7px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ink-soft)}
+.navitem.active .ni-num{background:var(--accent);color:#fff}
+.navitem.nav-special{color:var(--muted)}
+#blockmain{padding:26px 40px 90px;min-width:0;max-width:1000px;margin:0 auto}
+#blockmain .block p,#blockmain .block ul,#blockmain .block ol,#blockmain .module-body>p{max-width:760px}
+.panel{display:none}
+.panel.active{display:block;animation:fadein .22s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.panel h2{font-size:24px;font-weight:800;margin:.1em 0 .35em}
+
+.module-head{padding:0 0 4px}
+.panel .module-body{padding:0}
+.module-head .num{color:var(--accent);font-weight:800;font-size:13px}
+.module-head h2{font-size:22px;font-weight:800;margin:.15em 0 .1em}
+.module-head .sub{color:var(--muted);font-size:14px;margin:0}
+.module-body{padding:6px 22px 22px}
+.objectives{background:var(--accent-weak);border-radius:var(--radius-sm);padding:11px 14px;margin:14px 0;font-size:13.5px}
+.objectives b{display:block;color:var(--accent-2);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.objectives ul{margin:0;padding-left:18px}
+.decision-forces{font-size:13px;color:var(--warn);background:var(--warn-weak);border-radius:var(--radius-sm);padding:9px 13px;margin:12px 0}
+.keyterms{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+
+.block{margin:16px 0}
+.block h3{font-size:16px;margin:0 0 6px}
+.block p{margin:.5em 0;color:var(--ink-soft)}
+.block ul,.block ol{margin:.4em 0;padding-left:20px;color:var(--ink-soft)}
+.block li{margin:.25em 0}
+.callout{border-left:3px solid var(--info);background:var(--info-weak);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:11px 14px;margin:14px 0}
+.callout.good{border-color:var(--ok);background:var(--ok-weak)}
+.callout.warn{border-color:var(--warn);background:var(--warn-weak)}
+.callout.danger{border-color:var(--danger);background:var(--danger-weak)}
+
+.dcall{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin:14px 0}
+.dcall > div{background:var(--surface);padding:11px 13px;font-size:13.5px}
+.dcall .lab{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;margin-bottom:4px}
+.dcall .use .lab{color:var(--ok)} .dcall .avoid .lab{color:var(--danger)}
+.dcall .rot{grid-column:1/-1;background:var(--accent-weak);color:var(--accent-2)}
+
+.matrix{overflow-x:auto;margin:14px 0}
+table.dm{border-collapse:collapse;width:100%;font-size:13px;min-width:520px}
+table.dm th,table.dm td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+table.dm thead th{background:var(--surface-2);font-weight:700}
+table.dm td.when{background:var(--accent-weak);color:var(--accent-2);font-weight:500}
+.rate{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.rate.good{background:var(--ok)} .rate.ok{background:var(--warn)} .rate.bad{background:var(--danger)}
+.howread{font-size:12px;color:var(--muted);margin-top:6px}
+
+.ex{margin:16px 0;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+.ex-tabs{display:flex;gap:0;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.ex-tabs label{padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+.ex input[type=radio]{position:absolute;opacity:0;pointer-events:none}
+.ex-pane{display:none;padding:0}
+.ex .pane-functional{padding:14px}
+pre.code{margin:0;background:var(--code-bg);color:var(--code-ink);padding:14px 16px;overflow-x:auto;font-family:var(--font-mono);font-size:12.8px;line-height:1.6}
+pre.code .cm{color:#7f88b3}
+.code-path{font-size:11px;color:var(--faint);padding:7px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);font-family:var(--font-mono)}
+.copy{float:right;border:1px solid var(--border-strong);background:var(--surface);color:var(--muted);font:inherit;font-size:11px;padding:2px 8px;border-radius:6px;cursor:pointer}
+.ex input.t-functional:checked ~ .ex-tabs label[for$="-fn"],
+.ex input.t-code:checked ~ .ex-tabs label[for$="-code"]{color:var(--accent);border-bottom-color:var(--accent)}
+.ex input.t-functional:checked ~ .pane-functional{display:block}
+.ex input.t-code:checked ~ .pane-code{display:block}
+
+.walk{counter-reset:step;margin:14px 0}
+.walk .step{display:flex;gap:12px;padding:8px 0}
+.walk .step .n{counter-increment:step;flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.walk .step .n::before{content:counter(step)}
+.scn{border:1px dashed var(--border-strong);border-radius:var(--radius-sm);padding:12px 14px;margin:14px 0;font-size:13.5px}
+.scn .ask{font-weight:600}.scn .imp{color:var(--muted);margin-top:4px}
+.tax{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0}
+.tax .grp{border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;background:var(--surface-2)}
+.tax .grp h4{margin:0 0 6px;font-size:13px}
+.tax .grp ul{margin:0;padding-left:16px;font-size:12.5px;color:var(--ink-soft)}
+
+.quiz{border:1px solid var(--accent);border-radius:var(--radius-sm);background:var(--accent-weak);padding:14px;margin:18px 0}
+.quiz .q{font-weight:600;margin-bottom:9px}
+.quiz .opt{display:block;width:100%;text-align:left;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);font:inherit;font-size:13.5px;padding:9px 12px;border-radius:8px;margin:5px 0;cursor:pointer}
+.quiz .opt:hover{border-color:var(--accent)}
+.quiz .opt.correct{border-color:var(--ok);background:var(--ok-weak)}
+.quiz .opt.wrong{border-color:var(--danger);background:var(--danger-weak)}
+.quiz .reveal{border:none;background:var(--accent);color:#fff;font:inherit;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;margin-top:8px}
+.quiz .answer{display:none;margin-top:10px;font-size:13.5px;color:var(--ink-soft);border-top:1px solid var(--border-strong);padding-top:10px}
+.quiz.revealed .answer{display:block}
+
+.deeper-toggle{border:1px dashed var(--border-strong);background:transparent;color:var(--accent);font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;margin:10px 0;width:100%}
+.deeper{display:none}
+.module.show-deeper .deeper{display:block}
+
+.term{border:none;background:transparent;color:inherit;font:inherit;cursor:pointer;border-bottom:1.5px dotted var(--accent);padding:0;white-space:nowrap}
+.term .i{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;font-size:9px;font-weight:700;color:#fff;background:var(--accent);border-radius:50%;margin-left:3px;vertical-align:super;line-height:1}
+.term-chip{border:1px solid var(--border-strong);background:var(--surface-2);color:var(--ink-soft);font:inherit;font-size:12px;padding:3px 9px 3px 10px;border-radius:99px;cursor:pointer}
+.term-chip .i{font-size:9px;margin-left:5px}
+#popover{position:fixed;z-index:60;max-width:300px;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);box-shadow:var(--shadow);padding:12px 14px;font-size:13px;display:none}
+#popover.on{display:block}
+#popover .pt{font-weight:700;margin-bottom:3px}
+#popover .px{font-size:10.5px;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
+#popover .pn{color:var(--ink-soft)}
+#popover .ptech{margin-top:7px;padding-top:7px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
+#popover .psrc{margin-top:7px;font-size:11px;color:var(--faint)}
+
+.synth{margin:34px 0;border:1px solid var(--accent);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);padding:22px}
+.synth h2{font-size:20px;margin:0 0 8px}
+.checklist{list-style:none;padding:0;margin:12px 0}
+.checklist li{padding:7px 0;border-bottom:1px solid var(--border);font-size:14px;display:flex;gap:9px}
+.checklist li::before{content:"\2610";color:var(--accent)}
+.capstone{margin-top:14px;background:var(--accent-weak);border-radius:var(--radius-sm);padding:13px 15px;font-size:14px}
+.cites{margin-top:30px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--border);padding-top:14px}
+.cites h3{font-size:13px;color:var(--ink)}
+.cites ol{padding-left:18px}
+
+.whatsnew{border:1px solid var(--info);background:var(--info-weak);border-radius:var(--radius-sm);padding:12px 15px;margin:18px 0;font-size:13.5px}
+.whatsnew .lab{font-weight:700;color:var(--info);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+
+.map-node .mn-what{font-size:12.5px;color:var(--ink-soft);margin-top:5px;line-height:1.5}
+.map-node .mn-rel{font-size:11.5px;color:var(--muted);margin-top:7px;border-top:1px dashed var(--border-strong);padding-top:6px;line-height:1.5}
+.map-node .mn-rel-lab{display:block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);margin-bottom:2px}
+
+.toggle-group{display:flex;gap:6px;flex-wrap:wrap}
+.tbtn.toggle{font-size:12px;padding:5px 10px}
+.tbtn.toggle[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tbtn.toggle[aria-pressed="false"]{opacity:.62}
+body.hide-concept .b-concept{display:none!important}
+body.hide-funcex .b-funcex{display:none!important}
+body.hide-code .b-code{display:none!important}
+
+.syntax-panel{display:none;margin:10px 0 0;border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:var(--surface-2);padding:11px 14px}
+body.show-syntax .syntax-panel{display:block}
+.syntax-panel .sp-h{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-2);margin-bottom:7px}
+.syntax-panel dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.syntax-panel dt{margin:0}
+.syntax-panel dt code{font-size:12px;background:var(--accent-weak);color:var(--accent-2);padding:1px 6px;border-radius:6px;white-space:nowrap}
+.syntax-panel dd{margin:0;color:var(--ink-soft)}
+
+.viz{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);padding:16px;margin:16px 0}
+.viz .viz-cap{font-size:13.5px;color:var(--muted);margin:0 0 12px}
+.viz-body{min-height:36px}
+.viz-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.viz-qbtn{border:1px solid var(--border-strong);background:transparent;color:var(--accent);font:inherit;font-size:12.5px;padding:5px 11px;border-radius:8px;cursor:pointer}
+.viz-qbtn.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+.viz-scatter-grid{display:grid;grid-template-columns:1fr 200px;gap:14px;align-items:start}
+.viz svg.scatter{width:100%;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.viz-near{margin:0;padding-left:18px;font-size:13px;color:var(--ink-soft)}
+.viz-near-lab{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.viz-slider-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.viz-slider-row input[type=range]{accent-color:var(--accent);flex:1;min-width:160px}
+.viz-readout{font-size:14px}.viz-readout b{color:var(--accent-2)}
+.viz-stop-note{margin-top:10px;font-size:13.5px;color:var(--ink-soft);background:var(--accent-weak);border-radius:var(--radius-sm);padding:10px 13px}
+.viz-stop-note .vsn-label{font-weight:700;color:var(--accent-2)}
+.viz-steps-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.viz-step-btn{border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-soft);font:inherit;font-size:12.5px;padding:6px 11px;border-radius:8px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.viz-step-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.viz-step-btn .vsb-n{font-weight:700}
+.viz-step-detail{font-size:14px;color:var(--ink-soft);border-left:3px solid var(--accent);background:var(--surface-2);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:12px 15px}
+.viz-step-detail h4{margin:0 0 5px;font-size:15px;color:var(--ink)}
+@media(max-width:560px){.viz-scatter-grid{grid-template-columns:1fr}}
+
+.provenance{display:flex;gap:11px;align-items:flex-start;margin:18px 0;padding:13px 16px;border:1px solid var(--accent);background:var(--accent-weak);border-radius:var(--radius-sm);font-size:13.5px;color:var(--ink-soft)}
+.provenance .prov-star{color:var(--accent);font-size:16px;line-height:1.3;flex:none}
+.provenance strong{color:var(--accent-2)}
+.cites li.src-upload{color:var(--accent-2);font-weight:500}
+
+.building{display:flex;align-items:center;gap:9px;margin:16px 0;padding:13px 15px;border:1px dashed var(--border-strong);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--muted);font-size:13.5px}
+.bspin{flex:none;width:13px;height:13px;border-radius:50%;border:2px solid var(--border-strong);border-top-color:var(--accent);animation:bspin .8s linear infinite}
+@keyframes bspin{to{transform:rotate(360deg)}}
+
+body[data-depth="conceptual"] .needs-technical{display:none}
+body[data-depth="technical"] .needs-conceptual{display:none}
+body[data-examples="functional"] .needs-code{display:none}
+body[data-examples="code"] .needs-functional{display:none}
+body[data-level="advanced"] .lvl-beginner-only{display:none}
+body[data-level="beginner"] .lvl-advanced-only{display:none}
+
+.blk-explain{background:linear-gradient(180deg,var(--surface) 0%,var(--surface) 100%);border-left:3px solid var(--accent)}
+.blk-example{background:#fff8ec;border-left:3px solid #f0a92b}
+[data-theme="dark"] .blk-example{background:#241d0f}
+.blk-code{background:#eef4ff;border-left:3px solid var(--accent-2)}
+[data-theme="dark"] .blk-code{background:#0e1733}
+.blk-check{background:#f0fbf5;border-left:3px solid var(--ok)}
+[data-theme="dark"] .blk-check{background:#0e2419}
+.block.blk-explain,.block.blk-example,.block.blk-code,.block.blk-check{border-radius:12px;padding:14px 16px;margin:14px 0}
+
+.analogy{background:var(--accent-weak);border-radius:10px;padding:9px 12px;margin:2px 0 10px;font-size:14.5px;color:var(--ink-soft)}
+.analogy .an-lab{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-2);margin-bottom:2px}
+body[data-level="advanced"] .analogy,body[data-level="advanced"] .mn-layman{display:none}
+
+.collapse{margin:6px 0}
+.collapse-h{display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:1px dashed var(--border-strong);background:transparent;color:var(--ink-soft);font:inherit;font-size:13.5px;font-weight:600;padding:9px 12px;border-radius:9px;cursor:pointer}
+.collapse-h:hover{border-color:var(--accent);color:var(--accent-2)}
+.collapse-h .col-ico{font-family:var(--font-mono)}
+.collapse-h .col-chev{margin-left:auto;transition:transform .15s}
+.collapse.open .collapse-h .col-chev{transform:rotate(90deg)}
+.collapse-body{display:none;padding-top:10px}
+.collapse.open .collapse-body{display:block;animation:fadein .25s ease}
+
+.kc h3{margin:.1em 0 .4em}
+.kc-intro{color:var(--muted);font-size:14px;margin:0 0 12px}
+.kc-score{font-size:13px;color:var(--ok);font-weight:600;margin-bottom:10px}
+.kc-item{border-top:1px solid var(--border);padding:13px 0}
+.kc-item:first-of-type{border-top:none}
+.kc-q{font-weight:600;font-size:14.5px;margin-bottom:9px;display:flex;gap:8px}
+.kc-n{flex:none;background:var(--ok);color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:1px 7px;height:fit-content}
+.kc-opts{display:flex;flex-direction:column;gap:7px}
+.kc-opt{text-align:left;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;padding:9px 12px;border-radius:9px;cursor:pointer;transition:border-color .12s,background .12s}
+.kc-opt:hover{border-color:var(--accent)}
+.kc-opt.correct{border-color:var(--ok);background:var(--ok-weak);color:#0f6e4f}
+.kc-opt.wrong{border-color:var(--danger);background:var(--danger-weak);color:var(--danger)}
+.kc-opt[disabled]{cursor:default;opacity:.85}
+.kc-free{display:flex;flex-direction:column;gap:8px}
+.kc-input{border:1px solid var(--border-strong);border-radius:9px;font:inherit;font-size:14px;padding:9px 11px;resize:vertical;background:var(--surface);color:var(--ink)}
+.kc-input:focus{outline:none;border-color:var(--accent)}
+.kc-submit{align-self:flex-start;border:none;background:var(--accent);color:#fff;font:inherit;font-size:13px;font-weight:600;padding:7px 15px;border-radius:9px;cursor:pointer}
+.kc-submit[disabled]{opacity:.6;cursor:default}
+.kc-feedback{font-size:13.5px;font-weight:600;margin-bottom:8px;padding:8px 11px;border-radius:8px}
+.kc-feedback.ok{background:var(--ok-weak);color:#0f6e4f}
+.kc-feedback.no{background:var(--danger-weak);color:var(--danger)}
+.kc-feedback.grading{background:var(--accent-weak);color:var(--accent-2)}
+.kc-answer{font-size:13.5px;color:var(--ink-soft);margin-top:8px;padding:9px 12px;background:var(--ok-weak);border-radius:8px}
+.kc-answer strong{color:#0f6e4f}
+.kc-explain{font-size:13.5px;color:var(--muted);margin-top:9px;padding-left:11px;border-left:2px solid var(--border-strong)}
+
+.reveal{opacity:0;transform:translateY(10px);transition:opacity .45s ease,transform .45s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+.module-head{display:flex;gap:13px;align-items:flex-start}
+.module-head .m-ico{flex:none;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--accent-weak);border-radius:11px}
+.module-head .mh-text{min-width:0}
+.m-time{font-size:12px;color:var(--muted);margin-top:4px}
+
+.recap{background:var(--accent-weak);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:12px 0 0}
+.recap-h{font-weight:700;font-size:13px;color:var(--accent-2);margin-bottom:6px}
+.recap ul{margin:0;padding-left:18px;font-size:13px;color:var(--ink-soft)}
+.recap li{margin:2px 0}
+
+.map-body{margin-top:8px}
+.map .map-node{
+  position:relative;box-sizing:border-box;
+  flex:0 0 auto;width:clamp(150px,15vw,196px);min-width:0;aspect-ratio:1;
+  text-align:left;border:1px solid var(--border-strong);background:var(--surface-2);
+  border-radius:14px;padding:16px 14px 14px;cursor:pointer;font:inherit;color:var(--ink);
+  overflow:visible;transition:border-color .12s,transform .08s,box-shadow .12s;
+}
+.map .map-node:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow)}
+.map .map-node.spine{border-color:var(--accent);border-width:1.5px}
+.map .map-node.no-link{cursor:default}
+.map .map-node.no-link:hover{transform:none;box-shadow:none}
+.map .mn-body{display:flex;flex-direction:column;gap:6px;height:100%;overflow:hidden}
+.map .mn-num,.map .mn-ico{
+  position:absolute;top:0;left:0;transform:translate(-42%,-42%);
+  width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:14px;box-shadow:0 1px 3px rgba(0,0,0,.18);margin:0;z-index:1;
+}
+.map .mn-num{background:var(--accent);color:#fff}
+.map .mn-ico{background:var(--surface);border:1px solid var(--border-strong);font-size:16px}
+.map .map-node.is-start .mn-num{box-shadow:0 0 0 4px var(--accent-weak),0 1px 3px rgba(0,0,0,.18)}
+.map .mn-title{font-weight:700;font-size:14px;line-height:1.25;margin-top:2px}
+.map .mn-desc{font-size:12px;color:var(--muted);line-height:1.42;
+  display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.map .mn-go{position:absolute;right:9px;bottom:8px;font-size:10.5px;font-weight:700;color:#fff;
+  background:var(--accent);border-radius:99px;padding:2px 9px;box-shadow:0 1px 4px rgba(0,0,0,.15);
+  opacity:0;transform:translateY(3px);transition:opacity .12s,transform .12s}
+.map .map-node:hover .mn-go{opacity:1;transform:none}
+
+.map-path{margin:0;padding:16px 10px 8px;display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:8px}
+.map-path .map-node{flex:1 1 0;min-width:0;width:auto;max-width:200px}
+.map-conn{flex:none;position:relative;width:clamp(20px,3vw,34px);height:3px;border-radius:2px;
+  background:linear-gradient(90deg,var(--border-strong),var(--accent));overflow:visible}
+.map-conn::after{content:"";position:absolute;right:-1px;top:50%;transform:translateY(-50%);
+  border-left:7px solid var(--accent);border-top:4px solid transparent;border-bottom:4px solid transparent}
+.map-conn .spark{position:absolute;top:50%;margin-top:-3px;left:0;width:6px;height:6px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 8px 2px var(--accent);animation:flowx 1.8s linear infinite}
+@keyframes flowx{0%{left:-4px;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:calc(100% - 4px);opacity:0}}
+@media (prefers-reduced-motion:reduce){.map-conn .spark{animation:none;display:none}}
+
+.map-concept,.map-options{display:flex;flex-wrap:wrap;gap:16px 12px;align-items:flex-start;justify-content:center;padding:14px 10px 6px}
+
+.m-spine{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:5px}
+.m-pos{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent-2);background:var(--accent-weak);border-radius:99px;padding:2px 9px}
+.m-prev{font-size:12px;color:var(--muted)}
+.m-what{font-size:15.5px;color:var(--ink-soft);margin:12px 0 0;line-height:1.5}
+.m-rel{margin-top:10px;font-size:13.5px;color:var(--ink-soft);background:var(--surface-2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:8px 12px}
+.m-rel-lab{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-2);margin-bottom:2px}
+.next-step{margin-top:20px;border:1px solid var(--accent);background:var(--accent-weak);color:var(--accent-2);font:inherit;font-weight:700;font-size:13.5px;padding:10px 16px;border-radius:10px;cursor:pointer}
+.next-step:hover{background:var(--accent);color:#fff}
+
+.term-chip,.term{transition:background .15s,color .15s,transform .12s}
+.term-chip:hover,.term:hover{transform:translateY(-1px)}
+
+@media print{
+  .topbar,.tbtn,.copy,.deeper-toggle,.map-node .mn-go{display:none!important}
+  .deeper{display:block!important}.quiz .answer{display:block!important}
+  .syntax-panel{display:block!important}.collapse-body{display:block!important}
+  .reveal{opacity:1!important;transform:none!important}
+  .ex-pane{display:block!important}.module{break-inside:avoid;box-shadow:none}
+  #workbench{display:block!important}#blocknav{display:none!important}
+  .panel{display:block!important}
+}
+@media (max-width:560px){.dcall{grid-template-columns:1fr}.module-head h2{font-size:20px}}
+</style>
+</head>
+<body data-level="intermediate" data-depth="conceptual_technical" data-examples="functional_code" data-reading="vertical" data-theme="light">
+
+  <div class="topbar"><div class="topbar-in">
+    <div class="tb-left"><button class="tbtn nav-back" id="to-overview" hidden>← Overview</button></div>
+    <div class="tb-center"><span class="brand-mini">How RAG Works: Grounding LLMs in Your Own Data</span></div>
+    <div class="tb-right">
+      <div class="toggle-group" role="group" aria-label="Show or hide content"><button class="tbtn toggle" id="t-concept" aria-pressed="true">Concept</button><button class="tbtn toggle" id="t-funcex" aria-pressed="true">Functional</button><button class="tbtn toggle" id="t-code" aria-pressed="true">Code</button><button class="tbtn toggle" id="t-syntax" aria-pressed="false">Explain syntax</button></div>
+      <div class="progress" title="Progress"><i></i></div>
+      <button class="tbtn" id="theme">☾ Dark</button>
+    </div>
+  </div></div>
+
+  <div id="overview">
+    <main class="shell">
+      <div class="hero">
+        <div class="eyebrow">Interactive lesson</div>
+        <h1>How RAG Works: Grounding LLMs in Your Own Data</h1>
+        <p class="thesis">RAG fixes the biggest weakness of language models — confidently making things up — by retrieving real passages from your own documents and answering from them.</p>
+        <div class="meta-line"><span>intermediate</span><span>conceptual + technical</span><span>functional + code</span><span>18 min read</span><span>for customer support</span></div>
+      </div>
+      
+      
+      <div class="map"><div class="eyebrow">Your build path · start at step 1</div><h2>RAG, end to end</h2><p class="cap">Follow these steps in order — each builds on the one before.</p><div class="map-body map-procedural"><div class="map-path"><button class="map-node spine is-start" data-deepdive="m1"><span class="mn-num">1</span><span class="mn-go" aria-hidden="true">Open →</span><span class="mn-body"><span class="mn-title">Why ground an LLM?</span><span class="mn-desc">The hallucination problem RAG was built to solve.</span></span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div><button class="map-node spine" data-deepdive="m2"><span class="mn-num">2</span><span class="mn-go" aria-hidden="true">Open →</span><span class="mn-body"><span class="mn-title">The RAG pipeline</span><span class="mn-desc">Five stages from raw docs to a grounded answer.</span></span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div><button class="map-node spine" data-deepdive="m3"><span class="mn-num">3</span><span class="mn-go" aria-hidden="true">Open →</span><span class="mn-body"><span class="mn-title">Chunk &amp; embed</span><span class="mn-desc">Turn documents into searchable meaning vectors.</span></span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div><button class="map-node spine" data-deepdive="m4"><span class="mn-num">4</span><span class="mn-go" aria-hidden="true">Open →</span><span class="mn-body"><span class="mn-title">Retrieve &amp; generate</span><span class="mn-desc">Find the right passages, then answer from them.</span></span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div><button class="map-node spine" data-deepdive="m5"><span class="mn-num">5</span><span class="mn-go" aria-hidden="true">Open →</span><span class="mn-body"><span class="mn-title">Choose your stack</span><span class="mn-desc">Pick a vector store and tune retrieval.</span></span></button></div></div></div>
+      <p class="ov-hint">Pick a building block above to dive in — or use the menu that appears on the left.</p>
+    </main>
+  </div>
+
+  <div id="workbench" hidden>
+    <nav id="blocknav"><button class="navitem" data-goto="m1"><span class="ni-num">1</span><span class="ni-label">Why RAG exists</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="m2"><span class="ni-num">2</span><span class="ni-label">The RAG pipeline</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="m3"><span class="ni-num">3</span><span class="ni-label">Chunking &amp; embeddings</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="m4"><span class="ni-num">4</span><span class="ni-label">Retrieve &amp; generate</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="m5"><span class="ni-num">5</span><span class="ni-label">Choosing your stack</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem nav-special" data-goto="_synth"><span class="ni-num">✦</span><span class="ni-label">Putting it together</span></button><button class="navitem nav-special" data-goto="_sources"><span class="ni-num">⌕</span><span class="ni-label">Sources</span></button></nav>
+    <div id="blockmain"><section class="panel module" data-panel="m1" data-module="m1" id="panel-m1"><div class="module-head"><div class="m-ico">❓</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 1 of 5</span></div><h2>Why RAG exists</h2><p class="sub">Start here — the problem before the machinery.</p><div class="m-time">⏱ ~1 min read</div></div></div><div class="module-body"><p>A language model only knows what it saw in training. Ask it about your internal docs and it will often answer fluently and wrongly. RAG exists to ground answers in retrieved, real text.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>Explain why ungrounded LLMs hallucinate</li><li>Describe what 'grounding' adds</li><li>Recognize when RAG is the right tool</li></ul></div><div class="decision-forces"><strong>Decision this forces:</strong> Should this question be answered from the model's memory, or from retrieved documents?</div><div class="keyterms"><button class="term-chip" data-term="rag">RAG<span class="i">i</span></button><button class="term-chip" data-term="hallucination">Hallucination<span class="i">i</span></button><button class="term-chip" data-term="context-window">Context window<span class="i">i</span></button></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>The confidently-wrong problem</h3><div class="analogy"><span class="an-lab">In plain words</span>An ungrounded LLM is like a smart intern who never says 'I don't know' — they'll answer your billing question with total confidence, inventing the policy.</div><p>A language model predicts likely text. Ask it something outside its training and it still produces a fluent answer — that is a <button class="term" data-term="hallucination">hallucination<span class="i">i</span></button>. <button class="term" data-term="rag"><strong>Retrieval-Augmented Generation</strong><span class="i">i</span></button> fixes this by fetching real passages from your documents and instructing the model to answer only from them.</p><div class="callout warn">Before reading on, predict: if your help-center changes a refund window from 14 to 30 days, why might a plain (non-RAG) chatbot still say 14?</div><div class="keyterms"><button class="term-chip" data-term="hallucination">Hallucination<span class="i">i</span></button><button class="term-chip" data-term="rag">RAG<span class="i">i</span></button></div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">Support desk, with and without grounding</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>A customer asks: 'Can I return a sale item?'</p><ul><li><strong>Without RAG: </strong>the model guesses from generic e-commerce norms — sometimes right, sometimes inventing your policy.</li><li><strong>With RAG: </strong>it retrieves your actual 'Sale &amp; clearance returns' article and answers from that exact wording, with a citation.</li></ul></div></div><div class="keyterms"><button class="term-chip" data-term="rag">RAG<span class="i">i</span></button></div></div><div class="block reveal"><div class="callout danger"><p>How this breaks: RAG is only as fresh as its index. If you forget to re-index after a policy change, retrieval returns the OLD passage and the model grounds confidently in stale truth. Re-indexing on publish is part of the system, not an afterthought.</p></div><div class="keyterms"><button class="term-chip" data-term="rag">RAG<span class="i">i</span></button></div></div><button class="next-step" data-deepdive="m2">Next · step 2: The RAG pipeline →</button></div></section><section class="panel module" data-panel="m2" data-module="m2" id="panel-m2"><div class="module-head"><div class="m-ico">🔗</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 2 of 5</span><span class="m-prev">↳ builds on “Why RAG exists”</span></div><h2>The RAG pipeline</h2><p class="sub">Now the moving parts that turn docs into grounded answers.</p><div class="m-time">⏱ ~1 min read</div></div></div><div class="module-body"><p>RAG is a pipeline: ingest documents, split them into chunks, embed each chunk into a vector, store the vectors, then at query time retrieve the closest chunks and generate an answer from them.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>Name the five stages of a RAG pipeline</li><li>Explain what each stage produces</li><li>See where retrieval meets generation</li></ul></div><div class="keyterms"><button class="term-chip" data-term="chunking">Chunking<span class="i">i</span></button><button class="term-chip" data-term="embedding">Embedding<span class="i">i</span></button><button class="term-chip" data-term="vector-db">Vector database<span class="i">i</span></button><button class="term-chip" data-term="semantic-search">Semantic search<span class="i">i</span></button></div><div class="block reveal needs-technical blk-explain"><h3>From document to grounded answer</h3><p>Two phases share one representation. Offline (indexing): you <button class="term" data-term="chunking">chunk<span class="i">i</span></button> documents, turn each chunk into an <button class="term" data-term="embedding">embedding<span class="i">i</span></button>, and store them in a <button class="term" data-term="vector-db">vector database<span class="i">i</span></button>. Online (query time): you embed the question, run a <button class="term" data-term="semantic-search">semantic search<span class="i">i</span></button> for nearby chunks, and pass them to the model as grounding.</p><div class="keyterms"><button class="term-chip" data-term="chunking">Chunking<span class="i">i</span></button><button class="term-chip" data-term="embedding">Embedding<span class="i">i</span></button><button class="term-chip" data-term="vector-db">Vector database<span class="i">i</span></button><button class="term-chip" data-term="semantic-search">Semantic search<span class="i">i</span></button></div></div><div class="block reveal"><h3>Click through the pipeline</h3><div class="viz" data-viz="stepped"><p class="viz-cap">Each stage's output is the next stage's input.</p><div class="viz-body"></div><script type="application/json" class="viz-data">{"steps":[{"icon":"📄","label":"Ingest","detail":"Load source documents (help articles, PDFs, tickets) into a normalized text form."},{"icon":"🧩","label":"Chunk","detail":"Split each document into passages small enough to embed and retrieve precisely — often 200–500 tokens with slight overlap."},{"icon":"🔢","label":"Embed","detail":"Convert each chunk into a vector that captures its meaning, so similar passages sit close together."},{"icon":"🗄️","label":"Store","detail":"Write vectors (plus the original text + metadata) into a vector database with an index for fast nearest-neighbor search."},{"icon":"🎯","label":"Retrieve","detail":"Embed the user's question, find the top-k closest chunks."},{"icon":"✍️","label":"Generate","detail":"Put the retrieved chunks in the prompt and ask the model to answer ONLY from them, with citations."}]}</script></div></div><button class="next-step" data-deepdive="m3">Next · step 3: Chunking &amp; embeddings →</button></div></section><section class="panel module" data-panel="m3" data-module="m3" id="panel-m3"><div class="module-head"><div class="m-ico">🧩</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 3 of 5</span><span class="m-prev">↳ builds on “The RAG pipeline”</span></div><h2>Chunking &amp; embeddings</h2><p class="sub">The indexing half — make meaning searchable.</p><div class="m-time">⏱ ~1 min read</div></div></div><div class="module-body"><p>Retrieval quality is mostly decided here. Chunk too big and you retrieve noise; too small and you lose context. Embeddings place chunks in a space where 'near' means 'similar in meaning'.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>Choose a sensible chunk size</li><li>Explain what an embedding represents</li><li>Read code that builds an index</li></ul></div><div class="keyterms"><button class="term-chip" data-term="chunking">Chunking<span class="i">i</span></button><button class="term-chip" data-term="embedding">Embedding<span class="i">i</span></button><button class="term-chip" data-term="semantic-search">Semantic search<span class="i">i</span></button></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>Meaning as coordinates</h3><div class="analogy"><span class="an-lab">In plain words</span>An embedding is like placing every passage on a map where related ideas are neighbors — 'refund' sits near 'return', far from 'shipping speed'.</div><p>An <button class="term" data-term="embedding">embedding<span class="i">i</span></button> is a list of numbers positioning a chunk by meaning. <button class="term" data-term="semantic-search">Semantic search<span class="i">i</span></button> then ranks chunks by distance to the question's embedding, so it matches on meaning, not just keywords.</p><div class="keyterms"><button class="term-chip" data-term="embedding">Embedding<span class="i">i</span></button><button class="term-chip" data-term="semantic-search">Semantic search<span class="i">i</span></button><button class="term-chip" data-term="chunking">Chunking<span class="i">i</span></button></div></div><div class="block reveal"><h3>Nearest in meaning</h3><div class="viz" data-viz="scatter"><p class="viz-cap">Pick a query — its three nearest passages light up. Notice meaning, not exact words, drives closeness.</p><div class="viz-body"></div><script type="application/json" class="viz-data">{"points":[{"label":"Refund window","x":20,"y":30,"group":"returns"},{"label":"Return a gift","x":28,"y":22,"group":"returns"},{"label":"Sale items final?","x":24,"y":38,"group":"returns"},{"label":"Track my order","x":78,"y":70,"group":"shipping"},{"label":"Delivery delay","x":82,"y":64,"group":"shipping"},{"label":"Change address","x":70,"y":76,"group":"shipping"}],"queries":[{"label":"\"money back?\"","x":22,"y":28},{"label":"\"where is my parcel?\"","x":80,"y":68}]}</script></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">Build the index</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><div class="code-path">index.py · python</div><pre class="code">from my_rag import load_docs, chunk, embed, VectorStore
+
+docs = load_docs("help_center/")
+chunks = chunk(docs, size=400, overlap=50)
+
+store = VectorStore(dim=1536)
+for c in chunks:
+    store.add(vector=embed(c.text), text=c.text, meta=c.meta)
+
+store.save("help.index")</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>chunk(docs, size=400, overlap=50)</code></dt><dd>Splits documents into ~400-token passages, repeating 50 tokens between neighbors so facts on a boundary aren't lost.</dd><dt><code>embed(c.text)</code></dt><dd>Turns a chunk's text into its meaning-vector.</dd><dt><code>store.add(vector=..., text=..., meta=...)</code></dt><dd>Saves the vector alongside the original text and metadata so retrieval can return readable, citable passages.</dd></dl></div><div class="quiz"><div class="q">Predict: What breaks if you set size=4000 with no overlap?</div><button class="reveal">Reveal</button><div class="answer">Chunks get huge: each retrieved passage carries lots of irrelevant text (lower precision), and a fact split across a boundary can be missed entirely because there is no overlap to capture it.</div></div></div></div><div class="keyterms"><button class="term-chip" data-term="chunking">Chunking<span class="i">i</span></button><button class="term-chip" data-term="embedding">Embedding<span class="i">i</span></button></div></div><button class="next-step" data-deepdive="m4">Next · step 4: Retrieve &amp; generate →</button></div></section><section class="panel module" data-panel="m4" data-module="m4" id="panel-m4"><div class="module-head"><div class="m-ico">🎯</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 4 of 5</span><span class="m-prev">↳ builds on “Chunking &amp; embeddings”</span></div><h2>Retrieve &amp; generate</h2><p class="sub">The query half — answer from what you found.</p><div class="m-time">⏱ ~1 min read</div></div></div><div class="module-body"><p>At query time you embed the question, pull the top-k nearest chunks, and assemble a prompt that tells the model to answer only from those passages. Get this contract right and grounding holds.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>Assemble a grounded prompt</li><li>Choose a starting value for k</li><li>Decide when re-ranking is worth it</li></ul></div><div class="decision-forces"><strong>Decision this forces:</strong> How many chunks (k) to retrieve, and whether to re-rank them.</div><div class="keyterms"><button class="term-chip" data-term="top-k">Top-k<span class="i">i</span></button><button class="term-chip" data-term="semantic-search">Semantic search<span class="i">i</span></button><button class="term-chip" data-term="context-window">Context window<span class="i">i</span></button><button class="term-chip" data-term="reranking">Re-ranking<span class="i">i</span></button></div><div class="block reveal needs-technical blk-explain"><h3>The grounding contract</h3><p>Retrieve the <button class="term" data-term="top-k">top-k<span class="i">i</span></button> nearest chunks, paste them into the prompt, and instruct: 'Answer only from the context; if it's not there, say you don't know.' Keep k small enough to fit the <button class="term" data-term="context-window">context window<span class="i">i</span></button> with room for the answer.</p><div class="keyterms"><button class="term-chip" data-term="top-k">Top-k<span class="i">i</span></button><button class="term-chip" data-term="context-window">Context window<span class="i">i</span></button></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">Retrieve, then answer</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><div class="code-path">answer.py · python</div><pre class="code">store = VectorStore.load("help.index")
+
+def answer(question):
+    hits = store.search(embed(question), k=4)
+    context = "\n---\n".join(h.text for h in hits)
+    prompt = (
+        "Answer ONLY from the context. If absent, say you don't know.\n\n"
+        f"Context:\n{context}\n\nQuestion: {question}"
+    )
+    return llm(prompt), [h.meta for h in hits]</pre></div><div class="quiz"><div class="q">Predict: A user asks something your docs don't cover. With this prompt, what should happen?</div><button class="reveal">Reveal</button><div class="answer">Retrieval still returns the 4 closest chunks, but none contain the answer — so the instruction 'if absent, say you don't know' should make the model decline instead of inventing one. That refusal is the system working, not failing.</div></div></div></div><div class="keyterms"><button class="term-chip" data-term="top-k">Top-k<span class="i">i</span></button><button class="term-chip" data-term="semantic-search">Semantic search<span class="i">i</span></button></div></div><div class="block reveal"><div class="dcall"><div class="use"><div class="lab">Use when</div>Top-k retrieval already surfaces the right passage in the first few hits.</div><div class="avoid"><div class="lab">Avoid when</div>The right chunk often ranks 8th–15th — then add a re-ranker to reorder a larger candidate set.</div><div class="rot"><div class="lab">Rule of thumb</div>Start simple: k=4, no re-ranking. Add re-ranking only when you measure recall problems.</div></div></div><button class="next-step" data-deepdive="m5">Next · step 5: Choosing your stack →</button></div></section><section class="panel module" data-panel="m5" data-module="m5" id="panel-m5"><div class="module-head"><div class="m-ico">⚖️</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 5 of 5</span><span class="m-prev">↳ builds on “Retrieve &amp; generate”</span></div><h2>Choosing your stack</h2><p class="sub">Now decide what to actually build on.</p><div class="m-time">⏱ ~1 min read</div></div></div><div class="module-body"><p>Vector stores trade off setup, scale, and operational cost. Pick based on where you already are, not hype.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>Compare common vector stores</li><li>Match a store to your constraints</li><li>Justify a default choice</li></ul></div><div class="decision-forces"><strong>Decision this forces:</strong> Which vector store to use for the support assistant.</div><div class="keyterms"><button class="term-chip" data-term="vector-db">Vector database<span class="i">i</span></button><button class="term-chip" data-term="semantic-search">Semantic search<span class="i">i</span></button></div><div class="block reveal"><h3>Vector store, head to head</h3><div class="matrix"><table class="dm"><thead><tr><th>Option</th><th>Setup effort</th><th>Scales to millions</th><th>Hybrid keyword+vector</th><th>When to choose</th><th>Cost</th><th>Complexity</th></tr></thead><tbody><tr><td><strong>pgvector (Postgres)</strong></td><td><span class="rate good"></span>Reuse your existing Postgres</td><td><span class="rate ok"></span>Fine into low millions with an index</td><td><span class="rate good"></span>SQL + vector in one place</td><td class="when">You already run Postgres and want one fewer system.</td><td>Low (existing DB)</td><td>Low</td></tr><tr><td><strong>FAISS (library)</strong></td><td><span class="rate good"></span>Just a library, no server</td><td><span class="rate good"></span>Very fast in-memory</td><td><span class="rate bad"></span>Vector only; you bolt on keywords</td><td class="when">Prototyping or a read-mostly index you can hold in memory.</td><td>Free (self-host)</td><td>Medium</td></tr><tr><td><strong>Pinecone (managed)</strong></td><td><span class="rate good"></span>Fully managed API</td><td><span class="rate good"></span>Built for large, live indexes</td><td><span class="rate good"></span>Native hybrid search</td><td class="when">You want scale + low ops and can pay for a managed service.</td><td>$$ usage-based</td><td>Low</td></tr></tbody></table><div class="howread">Green = strength, amber = caveat, red = weak. 'When to choose' is the decisive column.</div></div></div><div class="block reveal blk-check"><div class="kc" data-block="m5-b2"><h3>🧠 Check your understanding</h3><p class="kc-intro">Four quick questions across the lesson. MCQs grade instantly; the written one reveals a model answer to compare.</p><div class="kc-score" hidden>Score: <b>0</b>/<i>3</i></div><div class="kc-item" data-qid="q1" data-kind="mcq" data-block="m5-b2"><div class="kc-feedback" hidden></div><div class="kc-q"><span class="kc-n">Q1</span>What is the main job RAG performs?</div><div class="kc-opts"><button class="kc-opt" data-qid="q1" data-choice="0" data-correct="0">Make the model train faster</button><button class="kc-opt" data-qid="q1" data-choice="1" data-correct="1">Ground answers in retrieved, real passages</button><button class="kc-opt" data-qid="q1" data-choice="2" data-correct="0">Compress documents to save tokens</button><button class="kc-opt" data-qid="q1" data-choice="3" data-correct="0">Replace the need for a language model</button></div><div class="kc-explain" hidden>RAG retrieves relevant passages and has the model answer from them, reducing hallucination.</div></div><div class="kc-item" data-qid="q2" data-kind="mcq" data-block="m5-b2"><div class="kc-feedback" hidden></div><div class="kc-q"><span class="kc-n">Q2</span>Why add overlap between chunks?</div><div class="kc-opts"><button class="kc-opt" data-qid="q2" data-choice="0" data-correct="0">To make embeddings smaller</button><button class="kc-opt" data-qid="q2" data-choice="1" data-correct="1">So a fact split across a boundary isn't lost</button><button class="kc-opt" data-qid="q2" data-choice="2" data-correct="0">To remove duplicate documents</button></div><div class="kc-explain" hidden>Overlap repeats a little text between neighboring chunks so boundary-spanning facts stay retrievable.</div></div><div class="kc-item" data-qid="q3" data-kind="mcq" data-block="m5-b2"><div class="kc-feedback" hidden></div><div class="kc-q"><span class="kc-n">Q3</span>Your index wasn't refreshed after a policy change. Most likely result?</div><div class="kc-opts"><button class="kc-opt" data-qid="q3" data-choice="0" data-correct="0">The model refuses to answer</button><button class="kc-opt" data-qid="q3" data-choice="1" data-correct="1">It grounds confidently in the stale passage</button><button class="kc-opt" data-qid="q3" data-choice="2" data-correct="0">Retrieval returns nothing at all</button></div><div class="kc-explain" hidden>Retrieval returns the old chunk, so the answer is fluent and wrong — why re-indexing on publish matters.</div></div><div class="kc-item" data-qid="q4" data-kind="freeText" data-block="m5-b2"><div class="kc-feedback" hidden></div><div class="kc-q"><span class="kc-n">Q4</span>In one sentence, when would you reach for a re-ranker?</div><div class="kc-free"><textarea class="kc-input" data-qid="q4" rows="2" placeholder="Type your answer…"></textarea><button class="kc-submit" data-qid="q4">Check</button></div><div class="kc-answer" hidden><strong>Model answer:</strong> When the correct passage frequently exists in the candidate set but ranks too low for a small top-k, so re-ordering a larger candidate list surfaces it.</div><div class="kc-explain" hidden>Re-ranking helps recall when the right chunk is retrieved but not near the top.</div></div></div></div><button class="next-step" data-goto="_synth">Finish → Putting it together</button></div></section><section class="panel" data-panel="_synth" id="panel-_synth"><div class="eyebrow">Putting it together</div><h2>Synthesis</h2><p>Before scrolling back: from memory, reconstruct the five pipeline stages in order, and say which one most determines retrieval quality.</p><h3>Suggested build order</h3><div class="walk"><div class="step"><div class="n"></div><div><strong>Decide grounding is needed</strong><div class="muted">Confirm the answers must come from your own, changing documents.</div></div></div><div class="step"><div class="n"></div><div><strong>Ingest &amp; chunk</strong><div class="muted">Normalize docs; chunk ~400 tokens with overlap.</div></div></div><div class="step"><div class="n"></div><div><strong>Embed &amp; store</strong><div class="muted">Embed chunks; write them to your chosen vector store.</div></div></div><div class="step"><div class="n"></div><div><strong>Retrieve &amp; generate</strong><div class="muted">Top-k search + an answer-only-from-context prompt.</div></div></div><div class="step"><div class="n"></div><div><strong>Measure &amp; tune</strong><div class="muted">Watch recall; adjust chunk size, k, and re-ranking.</div></div></div></div><h3>Decision checklist</h3><ul class="checklist"><li>Memory vs retrieval: is this question grounded in docs?</li><li>Chunk size &amp; overlap chosen for precision vs context</li><li>k and re-ranking decided by measured recall</li><li>Vector store matched to your constraints</li></ul><div class="capstone"><strong>Try it:</strong> Index 20 of your help-center articles, then build answer(question) with k=4 and an answer-only-from-context prompt. Ask it three real customer questions — one it can answer, one with stale info, one it shouldn't know — and verify it cites, corrects, and declines respectively.</div></section><section class="panel" data-panel="_sources" id="panel-_sources"><div class="eyebrow">Provenance</div><h2>Sources</h2><div class="cites"><ol><li>Lewis et al., Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks (2020) <span class="muted">· reference</span></li><li>Vector database &amp; embeddings — practitioner overview <span class="muted">· reference</span></li></ol></div></section></div>
+  </div>
+<div id="popover" role="dialog" aria-label="Definition"></div>
+<script type="application/json" id="glossary-data">{"rag":{"id":"rag","label":"RAG","acronymExpansion":"Retrieval-Augmented Generation","laymanDefinition":"A pattern where the system first retrieves relevant passages from your documents, then asks the model to answer using them.","technicalNote":"Decouples knowledge (the index) from reasoning (the model), so you update facts by re-indexing, not re-training."},"hallucination":{"id":"hallucination","label":"Hallucination","laymanDefinition":"When a model states something false with full confidence because it is predicting plausible text, not checking facts."},"context-window":{"id":"context-window","label":"Context window","laymanDefinition":"The maximum amount of text a model can consider at once — retrieved chunks plus the question plus the answer must fit inside it."},"embedding":{"id":"embedding","label":"Embedding","laymanDefinition":"A list of numbers that represents a piece of text by meaning, so similar texts have nearby vectors.","technicalNote":"Typically produced by an embedding model; similarity is measured by cosine distance or dot product."},"vector-db":{"id":"vector-db","label":"Vector database","laymanDefinition":"A store built to save embeddings and find the nearest ones to a query vector quickly.","technicalNote":"Uses approximate nearest-neighbor indexes (e.g., HNSW) to keep search fast at scale."},"chunking":{"id":"chunking","label":"Chunking","laymanDefinition":"Splitting documents into smaller passages so retrieval can return precise, relevant pieces."},"semantic-search":{"id":"semantic-search","label":"Semantic search","laymanDefinition":"Searching by meaning rather than exact keywords, by comparing embedding vectors."},"top-k":{"id":"top-k","label":"Top-k","laymanDefinition":"The number of nearest passages you retrieve for a query — e.g., k=4 returns the four closest chunks."},"reranking":{"id":"reranking","label":"Re-ranking","laymanDefinition":"A second pass that reorders a larger set of retrieved candidates to push the most relevant ones to the top."}}</script>
+<script>
+(function(){
+  "use strict";
+  var glossary = {};
+  try { glossary = JSON.parse(document.getElementById("glossary-data").textContent || "{}"); } catch(e){}
+  var depth = document.body.getAttribute("data-depth") || "conceptual_technical";
+  var showTech = depth.indexOf("technical") !== -1;
+  var pop = document.getElementById("popover");
+
+  function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+  function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+  function applyTheme(t){ document.body.setAttribute("data-theme", t); document.documentElement.setAttribute("data-theme", t); var b=document.getElementById("theme"); if(b) b.textContent = t==="dark" ? "☀ Light" : "☾ Dark"; }
+  applyTheme(lsGet("als-theme") || "light");
+
+  var moduleIds = Array.prototype.map.call(document.querySelectorAll(".navitem:not(.nav-special)"), function(b){ return b.getAttribute("data-goto"); });
+  var total = moduleIds.length || 1;
+  var visited = {};
+  function markVisited(id){ if(moduleIds.indexOf(id) !== -1 && !visited[id]){ visited[id]=1; setProgress(); } }
+  function setProgress(){ var n=Object.keys(visited).length; var pct=Math.round(n/total*100); var bar=document.querySelector(".progress > i"); if(bar) bar.style.width = pct+"%"; }
+
+  function enterWorkbench(id){
+    var ov=document.getElementById("overview"), wb=document.getElementById("workbench"), back=document.getElementById("to-overview");
+    if(ov) ov.hidden=true; if(wb) wb.hidden=false; if(back) back.hidden=false;
+    activatePanel(id);
+    window.scrollTo(0,0);
+  }
+  function showOverview(){
+    var ov=document.getElementById("overview"), wb=document.getElementById("workbench"), back=document.getElementById("to-overview");
+    if(ov) ov.hidden=false; if(wb) wb.hidden=true; if(back) back.hidden=true;
+    closePopover(); window.scrollTo(0,0);
+  }
+  function activatePanel(id){
+    var found=false;
+    document.querySelectorAll(".panel").forEach(function(p){ var on = p.getAttribute("data-panel")===id; p.classList.toggle("active", on); if(on) found=true; });
+    document.querySelectorAll(".navitem").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-goto")===id); });
+    if(found) markVisited(id);
+    var main=document.getElementById("blockmain"); if(main) main.scrollTop=0;
+  }
+
+  function openPopover(btn){
+    var t = glossary[btn.getAttribute("data-term")];
+    if(!t){ return; }
+    var tech = (showTech && t.technicalNote) ? '<div class="ptech">'+esc(t.technicalNote)+'</div>' : '';
+    var acr = t.acronymExpansion ? '<div class="px">'+esc(t.acronymExpansion)+'</div>' : '';
+    var src = (t.sources && t.sources.length) ? '<div class="psrc">Source: '+esc(t.sources.join(", "))+'</div>' : '';
+    pop.innerHTML = '<div class="pt">'+esc(t.label)+'</div>'+acr+'<div class="pn">'+esc(t.laymanDefinition)+'</div>'+tech+src;
+    pop.classList.add("on");
+    var r = btn.getBoundingClientRect();
+    var top = r.bottom + 8, left = Math.min(r.left, window.innerWidth - 320);
+    if(top + pop.offsetHeight > window.innerHeight) top = r.top - pop.offsetHeight - 8;
+    pop.style.top = Math.max(8, top) + "px";
+    pop.style.left = Math.max(8, left) + "px";
+  }
+  function closePopover(){ pop.classList.remove("on"); pop._for=null; }
+
+  function copyCode(btn){
+    var pre = btn.parentElement.querySelector("pre.code"); if(!pre) return;
+    var txt = pre.innerText;
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){flash(btn);}); }
+    else { var ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); flash(btn); }
+  }
+  function flash(btn){ var o=btn.textContent; btn.textContent="Copied"; setTimeout(function(){btn.textContent=o;},1200); }
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  document.addEventListener("click", function(ev){
+    var t = ev.target.closest("[data-deepdive],[data-goto],#to-overview,.term,.term-chip,.deeper-toggle,.quiz .opt,.quiz .reveal,#theme,.copy,.toggle,.collapse-h,.kc-opt,.kc-submit");
+    if(!t){ if(!ev.target.closest("#popover")) closePopover(); return; }
+
+    if(t.matches(".collapse-h")){
+      var col=t.closest(".collapse"); var open=col.classList.toggle("open"); t.setAttribute("aria-expanded", String(open)); return;
+    }
+    if(t.matches(".kc-opt")){ kcAnswerMcq(t); return; }
+    if(t.matches(".kc-submit")){ kcAnswerFree(t); return; }
+
+    if(t.matches("[data-deepdive],[data-goto]")){ ev.preventDefault(); var gid=t.getAttribute("data-deepdive")||t.getAttribute("data-goto"); enterWorkbench(gid); return; }
+    if(t.id==="to-overview"){ showOverview(); return; }
+    if(t.matches(".term,.term-chip")){ ev.preventDefault(); ev.stopPropagation(); if(pop.classList.contains("on") && pop._for===t){ closePopover(); } else { openPopover(t); pop._for=t; } return; }
+    if(t.matches(".deeper-toggle")){
+      var mod=t.closest(".panel"); mod.classList.toggle("show-deeper"); t.textContent = mod.classList.contains("show-deeper") ? "Hide advanced detail" : t.getAttribute("data-label"); return;
+    }
+    if(t.matches(".quiz .reveal")){ t.closest(".quiz").classList.add("revealed"); return; }
+    if(t.matches(".quiz .opt")){
+      var correct = t.getAttribute("data-correct")==="1";
+      t.classList.add(correct?"correct":"wrong");
+      if(!correct){ var c=t.closest(".quiz").querySelector('.opt[data-correct="1"]'); if(c) c.classList.add("correct"); }
+      t.closest(".quiz").classList.add("revealed"); return;
+    }
+    if(t.id==="theme"){ var cur=document.body.getAttribute("data-theme")==="dark"?"light":"dark"; applyTheme(cur); lsSet("als-theme",cur); return; }
+    if(t.matches(".copy")){ copyCode(t); return; }
+    if(t.classList.contains("toggle")){
+      ev.preventDefault();
+      var pressed = t.getAttribute("aria-pressed")==="true";
+      if(t.id==="t-concept"){ document.body.classList.toggle("hide-concept", pressed); t.setAttribute("aria-pressed", String(!pressed)); }
+      else if(t.id==="t-funcex"){ document.body.classList.toggle("hide-funcex", pressed); t.setAttribute("aria-pressed", String(!pressed)); }
+      else if(t.id==="t-code"){ document.body.classList.toggle("hide-code", pressed); t.setAttribute("aria-pressed", String(!pressed)); }
+      else if(t.id==="t-syntax"){ document.body.classList.toggle("show-syntax", !pressed); t.setAttribute("aria-pressed", String(!pressed)); }
+      return;
+    }
+  });
+
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ closePopover(); } });
+  window.addEventListener("resize", closePopover);
+
+  // ---- knowledge check (graded CLIENT-SIDE; the answer key is embedded) ----
+  function kcMcqTotal(kc){ return kc.querySelectorAll('.kc-item[data-kind="mcq"]').length; }
+  function kcBumpScore(kc){
+    var items=kc.querySelectorAll(".kc-item"), got=0;
+    items.forEach(function(it){ if(it.getAttribute("data-result")==="ok") got++; });
+    var sc=kc.querySelector(".kc-score"); if(sc){ sc.hidden=false; var b=sc.querySelector("b"); if(b) b.textContent=String(got); var d=sc.querySelector("i"); if(d) d.textContent=String(kcMcqTotal(kc)); }
+  }
+  function kcShow(item, ok, msg, score){
+    var fb=item.querySelector(".kc-feedback"); if(fb){ fb.hidden=false; fb.className="kc-feedback "+(ok?"ok":"no"); fb.textContent=msg||(ok?"Correct ✓":"Not quite"); }
+    var ans=item.querySelector(".kc-answer"); if(ans) ans.hidden=false;
+    var ex=item.querySelector(".kc-explain"); if(ex) ex.hidden=false;
+    if(score!==false) item.setAttribute("data-result", ok?"ok":"no");
+    kcBumpScore(item.closest(".kc"));
+  }
+  function kcAnswerMcq(btn){
+    var item=btn.closest(".kc-item"); if(item.getAttribute("data-done")) return;
+    item.setAttribute("data-done","1");
+    item.querySelectorAll(".kc-opt").forEach(function(o){ o.setAttribute("disabled","1"); });
+    var correct = btn.getAttribute("data-correct")==="1";
+    if(correct){ btn.classList.add("correct"); }
+    else { btn.classList.add("wrong"); var c=item.querySelector('.kc-opt[data-correct="1"]'); if(c) c.classList.add("correct"); }
+    kcShow(item, correct);
+  }
+  function kcAnswerFree(btn){
+    var item=btn.closest(".kc-item"), inp=item.querySelector(".kc-input"); if(!inp||!inp.value.trim()) return;
+    if(item.getAttribute("data-done")) return;
+    item.setAttribute("data-done","1");
+    btn.setAttribute("disabled","1"); inp.setAttribute("readonly","1");
+    // Self-graded: reveal the model answer + explanation so the learner can compare.
+    // Free-text is NOT auto-scored (the score line counts MCQs only).
+    kcShow(item, true, "Compare your answer with the model answer below.", false);
+  }
+
+  // ---- scroll-reveal ----
+  var revObs=null;
+  if("IntersectionObserver" in window){
+    revObs=new IntersectionObserver(function(entries){ entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); revObs.unobserve(e.target); } }); }, {rootMargin:"0px 0px -8% 0px"});
+  }
+  function observeReveals(root){
+    var els=(root||document).querySelectorAll(".reveal:not(.in)");
+    if(!revObs){ els.forEach(function(el){ el.classList.add("in"); }); return; }
+    els.forEach(function(el){ revObs.observe(el); });
+  }
+
+  // ---- hydrate interactive visual blocks (data-only -> live SVG/controls) ----
+  function vEsc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function buildScatter(body, data){
+    var pts=(data.points||[]), qs=(data.queries||[]);
+    if(pts.length<1||qs.length<1){ return; }
+    var W=460,H=300,PAD=34;
+    function sx(x){ return PAD + (Math.max(0,Math.min(100,x))/100)*(W-2*PAD); }
+    function sy(y){ return PAD + (Math.max(0,Math.min(100,y))/100)*(H-2*PAD); }
+    body.innerHTML = '<div class="viz-controls">'+qs.map(function(q,i){return '<button class="viz-qbtn'+(i===0?' sel':'')+'" data-qi="'+i+'">'+vEsc(q.label)+'</button>';}).join("")+'</div>'+
+      '<div class="viz-scatter-grid"><svg class="scatter" viewBox="0 0 '+W+' '+H+'"></svg><div><div class="viz-near-lab">Nearest matches</div><ol class="viz-near"></ol></div></div>';
+    var svg=body.querySelector("svg.scatter"), near=body.querySelector(".viz-near"), maxD=Math.hypot(100,100);
+    function draw(qi){
+      var q=qs[qi];
+      var ranked=pts.map(function(p){return {p:p,d:Math.hypot((p.x||0)-q.x,(p.y||0)-q.y)};}).sort(function(a,b){return a.d-b.d;});
+      var nearSet={}; ranked.slice(0,3).forEach(function(r){ nearSet[r.p.label]=1; });
+      var h="";
+      ranked.slice(0,3).forEach(function(r){ h+='<line x1="'+sx(q.x)+'" y1="'+sy(q.y)+'" x2="'+sx(r.p.x)+'" y2="'+sy(r.p.y)+'" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.5"/>'; });
+      pts.forEach(function(p){ var on=nearSet[p.label]; h+='<circle cx="'+sx(p.x)+'" cy="'+sy(p.y)+'" r="'+(on?7:5)+'" fill="'+(on?'var(--accent)':'var(--border-strong)')+'" stroke="var(--surface)" stroke-width="2"/><text x="'+(sx(p.x)+9)+'" y="'+(sy(p.y)+4)+'" font-size="10.5" fill="'+(on?'var(--accent-2)':'var(--muted)')+'" font-weight="'+(on?700:500)+'">'+vEsc(p.label)+'</text>'; });
+      h+='<text x="'+sx(q.x)+'" y="'+(sy(q.y)+6)+'" font-size="20" text-anchor="middle" fill="var(--accent)">★</text>';
+      svg.innerHTML=h;
+      near.innerHTML=ranked.slice(0,3).map(function(r){ return '<li>'+vEsc(r.p.label)+' <span style="color:var(--faint)">· '+Math.max(0,1-r.d/maxD).toFixed(2)+'</span></li>'; }).join("");
+    }
+    body.querySelector(".viz-controls").addEventListener("click", function(e){ var b=e.target.closest(".viz-qbtn"); if(!b)return; body.querySelectorAll(".viz-qbtn").forEach(function(x){x.classList.remove("sel");}); b.classList.add("sel"); draw(+b.getAttribute("data-qi")); });
+    draw(0);
+  }
+  function buildSlider(body, data){
+    var min=+data.min, max=+data.max, unit=data.unit||"", stops=(data.stops||[]).slice().sort(function(a,b){return a.at-b.at;});
+    if(stops.length<2||!(max>min)){ return; }
+    var step=(max-min)/100; if(!(step>0)) step=1;
+    body.innerHTML='<div class="viz-slider-row"><span class="viz-readout">'+vEsc(String(min))+'</span><input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+stops[0].at+'"><span class="viz-readout">'+vEsc(String(max))+'</span></div>'+
+      '<div class="viz-readout" style="margin-top:8px">Value: <b class="vs-val"></b> '+vEsc(unit)+'</div>'+
+      '<div class="viz-stop-note"><span class="vsn-label vs-lab"></span><span class="vs-note"></span></div>';
+    var range=body.querySelector("input"), val=body.querySelector(".vs-val"), lab=body.querySelector(".vs-lab"), note=body.querySelector(".vs-note");
+    function nearest(v){ var best=stops[0],bd=Math.abs(v-stops[0].at); for(var i=1;i<stops.length;i++){var d=Math.abs(v-stops[i].at); if(d<bd){bd=d;best=stops[i];}} return best; }
+    function upd(){ var v=+range.value; val.textContent=Math.round(v*100)/100; var s=nearest(v); lab.textContent=s.label+" — "; note.textContent=s.note; }
+    range.addEventListener("input", upd); upd();
+  }
+  function buildStepped(body, data){
+    var steps=(data.steps||[]); if(steps.length<2){ return; }
+    body.innerHTML='<div class="viz-steps-nav">'+steps.map(function(s,i){return '<button class="viz-step-btn'+(i===0?' active':'')+'" data-si="'+i+'"><span class="vsb-n">'+(i+1)+'</span>'+(s.icon?vEsc(s.icon)+' ':'')+vEsc(s.label)+'</button>';}).join("")+'</div><div class="viz-step-detail"></div>';
+    var detail=body.querySelector(".viz-step-detail");
+    function show(i){ var s=steps[i]; detail.innerHTML='<h4>'+(s.icon?vEsc(s.icon)+' ':'')+vEsc(s.label)+'</h4>'+vEsc(s.detail); body.querySelectorAll(".viz-step-btn").forEach(function(b,bi){b.classList.toggle("active", bi===i);}); }
+    body.querySelector(".viz-steps-nav").addEventListener("click", function(e){ var b=e.target.closest(".viz-step-btn"); if(!b)return; show(+b.getAttribute("data-si")); });
+    show(0);
+  }
+  function hydrateViz(viz){
+    var kind=viz.getAttribute("data-viz"), dataEl=viz.querySelector(".viz-data"), body=viz.querySelector(".viz-body");
+    if(!dataEl||!body||viz._hydrated) return;
+    viz._hydrated=true;
+    var data; try { data=JSON.parse(dataEl.textContent||"{}"); } catch(e){ return; }
+    try {
+      if(kind==="scatter") buildScatter(body,data);
+      else if(kind==="slider") buildSlider(body,data);
+      else if(kind==="stepped") buildStepped(body,data);
+    } catch(e){ /* a bad payload never breaks the page */ }
+  }
+  function hydrate(root){ Array.prototype.forEach.call((root||document).querySelectorAll(".viz"), hydrateViz); }
+
+  hydrate(document);
+  observeReveals(document);
+  setProgress();
+})();
+</script>
+</body>
+</html>

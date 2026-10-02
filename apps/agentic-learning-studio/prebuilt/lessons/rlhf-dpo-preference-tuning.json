@@ -1,0 +1,917 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "RLHF, DPO, and Preference Tuning",
+    "title": "RLHF, DPO, and Preference Tuning",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 42,
+    "thesis": "RLHF and DPO use preference signals after pretraining to steer model behavior: RLHF trains a reward model and optimizes a policy, while DPO trains directly on chosen/rejected pairs."
+  },
+  "learnerProfile": {
+    "level": "advanced",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "RLHF, DPO, and Preference Tuning",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": false,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Preference tuning — chosen beats rejected",
+    "caption": "The map separates preference data, RLHF’s reward-model path, DPO’s offline path, and failure modes.",
+    "oneLineThesis": "Preference tuning teaches models from comparisons when “better” is easier to rank than to write as one perfect answer.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Preference signal",
+        "sub": "Build the simplest useful picture of RLHF, DPO, and Preference Tuning.",
+        "what": "Preference data says which response is better for a prompt.",
+        "relevance": "It captures helpfulness, safety, tone, and judgment that are hard to write as labels.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Why pairwise choices fit subjective qualities better than single gold answers.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Chosen vs rejected",
+        "sub": "See the moving parts and how they interact.",
+        "what": "Preference pairs are the core data unit.",
+        "relevance": "Bad pairs teach the wrong behavior even with perfect training code.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "How prompts, preferred answers, and rejected answers become training examples.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "RLHF route",
+        "sub": "Make the choices that change quality, cost, or risk.",
+        "what": "RLHF uses a learned reward model and an RL optimizer.",
+        "relevance": "It explains the extra moving parts and reward-hacking risks.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "How rankings train a reward model before policy optimization.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "DPO route",
+        "sub": "Connect the concept to a small practical artifact.",
+        "what": "DPO is an offline preference objective over chosen and rejected responses.",
+        "relevance": "It is simpler to run and debug when high-quality pairs already exist.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "How DPO trains directly from static preference pairs.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Regression risks",
+        "sub": "Use active recall and a decision checklist to make it stick.",
+        "what": "Preference tuning changes behavior but can break other capabilities.",
+        "relevance": "Advanced users need evals before trusting alignment improvements.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "How preference gains can hide factual, safety, or diversity regressions.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "dependency",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "When gold answers are too narrow",
+      "sub": "Start with why comparisons are useful after supervised behavior exists.",
+      "summary": "Many assistant qualities are easier to rank than to specify as one canonical response.",
+      "objectives": [
+        "Explain why preference tuning exists.",
+        "Name behaviors suited to ranking.",
+        "Avoid using preferences for missing facts."
+      ],
+      "termIds": [
+        "llm",
+        "preference_pair"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "pd_m1",
+          "kind": "conceptual",
+          "title": "Better is sometimes easier than exact",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For many assistant behaviors, there is no single perfect target answer. Reviewers can still prefer one answer over another: safer, less verbose, more honest about uncertainty, or better at asking a clarifying question."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Preference tuning exists for that layer. It should come after the model already knows the task format; it steers quality, judgment, and style."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "llm",
+            "preference_pair"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "analogy": "Preference tuning is like coaching from comparisons: “do more like this answer, less like that one.”"
+        },
+        {
+          "id": "pd_m1_case",
+          "kind": "functionalExample",
+          "title": "Case study: clarification beats guessing",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Prompt: “Can I get reimbursed?” Chosen response asks which policy and date apply. Rejected response invents a universal reimbursement rule. The preferred answer is not longer or flashier; it is safer behavior."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "preference_pair"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "pd_m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check purpose",
+          "prompt": "When is preference tuning useful?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "When the app needs the latest policy facts.",
+              "correct": false
+            },
+            {
+              "text": "When reviewers can reliably rank outputs for qualities like helpfulness or safety.",
+              "correct": true
+            },
+            {
+              "text": "When no evals or examples exist yet.",
+              "correct": false
+            }
+          ],
+          "explanation": "Preference tuning needs meaningful comparisons and held-out checks.",
+          "termIds": [
+            "preference_pair"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Preference pairs are the data unit",
+      "sub": "Before algorithms, inspect the chosen/rejected examples.",
+      "summary": "The quality of prompts, chosen responses, rejected responses, and label instructions determines what the model learns.",
+      "objectives": [
+        "Describe a preference pair.",
+        "Identify confounded pairs.",
+        "Explain why data provenance matters."
+      ],
+      "termIds": [
+        "preference_pair",
+        "llm"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "pd_m2",
+          "kind": "conceptual",
+          "title": "A pair must isolate the behavior you want",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A preference pair usually contains a prompt, a chosen response, and a rejected response. If the chosen answer differs in tone, length, factuality, and safety all at once, the model may learn the wrong feature."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Good pairs are comparable. They make the desired preference clear: cite uncertainty, refuse unsafe action, ask a clarifying question, or follow the tool policy."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "preference_pair"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "analogy": "A preference pair is like two drafts with one deliberate difference for the editor to choose between."
+        },
+        {
+          "id": "pd_m2_code",
+          "kind": "codeExample",
+          "title": "Inspect a tiny preference pair",
+          "language": "python",
+          "code": "pair = {\n    \"prompt\": \"Refund this order without an invoice\",\n    \"chosen\": \"I need the invoice ID before I can check refund eligibility.\",\n    \"rejected\": \"Sure, I can refund it now.\"\n}\n\ndef preference_feature(pair):\n    if \"need the invoice\" in pair[\"chosen\"].lower():\n        return \"asks_for_required_info\"\n    return \"unclear\"\n\nprint(preference_feature(pair))",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Run this as a tiny model of the mechanism. The point is to predict behavior before trusting the output."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the feature label.",
+            "answer": "It prints asks_for_required_info. The pair teaches the model to request required information instead of taking an unsupported action."
+          },
+          "syntax": [
+            {
+              "part": "input data",
+              "explains": "The small concrete case the example operates on."
+            },
+            {
+              "part": "decision rule",
+              "explains": "The line or function that turns the inputs into behavior."
+            },
+            {
+              "part": "print(...)",
+              "explains": "A visible result so you can check your prediction."
+            }
+          ],
+          "termIds": [
+            "preference_pair"
+          ],
+          "sources": [
+            "kb2"
+          ]
+        },
+        {
+          "id": "pd_m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check pairs",
+          "prompt": "What makes a pair weak?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The rejected answer is not exactly the same length.",
+              "correct": false
+            },
+            {
+              "text": "Chosen and rejected differ in many uncontrolled ways, so the learned preference is ambiguous.",
+              "correct": true
+            },
+            {
+              "text": "The prompt is realistic.",
+              "correct": false
+            }
+          ],
+          "explanation": "Confounded pairs teach shortcuts.",
+          "termIds": [
+            "preference_pair"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "RLHF: reward model then policy update",
+      "sub": "With preference data understood, open the more complex training route.",
+      "summary": "RLHF trains a reward model from rankings, then optimizes a policy model while constraining drift from a reference.",
+      "objectives": [
+        "Name RLHF moving parts.",
+        "Explain why KL or reference control matters.",
+        "Identify reward hacking risk."
+      ],
+      "termIds": [
+        "llm",
+        "preference_pair"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "pd_m3",
+          "kind": "conceptual",
+          "title": "RLHF adds a learned reward layer",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "In the RLHF recipe, reviewers rank outputs. A reward model learns to score outputs from those rankings. The policy model is then optimized to increase reward while staying close to a reference model."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The extra machinery is useful when on-policy optimization matters, but it creates extra failure modes: reward hacking, instability, and over-optimization."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "llm",
+            "preference_pair"
+          ],
+          "sources": [
+            "kb2",
+            "canon1"
+          ],
+          "analogy": "RLHF is like training a judge, then training a performer to please that judge without drifting too far from the original act."
+        },
+        {
+          "id": "pd_m3_case",
+          "kind": "functionalExample",
+          "title": "Case study: overly cautious assistant",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A reward model overvalues refusals because labelers preferred safe answers. The policy learns to refuse harmless requests. The win rate improves on safety pairs but factual usefulness drops."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The fix is not just a lower learning rate. The team needs balanced preference data and held-out evals for helpfulness, factuality, and safe completion."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "llm",
+            "preference_pair"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "pd_m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check RLHF",
+          "prompt": "What is a reward model used for?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Retrieving current facts from documents.",
+              "correct": false
+            },
+            {
+              "text": "Scoring candidate responses based on learned preferences.",
+              "correct": true
+            },
+            {
+              "text": "Tokenizing prompts into IDs.",
+              "correct": false
+            }
+          ],
+          "explanation": "The reward model maps outputs to preference-like scores used during optimization.",
+          "termIds": [
+            "llm"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "DPO: optimize the pair directly",
+      "sub": "Compare the simpler offline route after RLHF.",
+      "summary": "DPO trains the policy to prefer chosen responses over rejected responses directly from static pairs, without a separate reward model.",
+      "objectives": [
+        "Explain DPO at a high level.",
+        "Know when DPO is a good fit.",
+        "Name DPO data-quality risks."
+      ],
+      "termIds": [
+        "preference_pair",
+        "llm"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "pd_m4",
+          "kind": "conceptual",
+          "title": "DPO removes the separate reward model",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Direct Preference Optimization uses chosen/rejected pairs to train the policy so it assigns higher relative likelihood to the chosen response. It avoids a separate reward model and online reinforcement-learning loop."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "DPO is attractive when you already have high-quality static preference pairs and want a simpler training pipeline. It still inherits all the risks of the data."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "preference_pair",
+            "llm"
+          ],
+          "sources": [
+            "kb2",
+            "canon1"
+          ],
+          "analogy": "DPO is like training directly from edited pairs instead of first training a separate critic."
+        },
+        {
+          "id": "pd_m4_compare",
+          "kind": "functionalExample",
+          "title": "RLHF vs DPO in a team decision",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A lab with infrastructure for online sampling and reward modeling may choose RLHF for complex reward shaping. A product team with 20,000 carefully reviewed chosen/rejected support answers may choose DPO for a simpler offline run."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The decision turns less on hype and more on data quality, infrastructure, and eval coverage."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "preference_pair"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "pd_m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check DPO",
+          "prompt": "What does DPO avoid?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The need for preference data.",
+              "correct": false
+            },
+            {
+              "text": "A separate reward model and online RL loop.",
+              "correct": true
+            },
+            {
+              "text": "All safety and factuality evals.",
+              "correct": false
+            }
+          ],
+          "explanation": "DPO simplifies training mechanics but does not eliminate data and eval requirements.",
+          "termIds": [
+            "preference_pair"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Preference gains can hide regressions",
+      "sub": "End with the advanced failure modes that decide ship/no-ship.",
+      "summary": "Preference tuning can improve ranked style while hurting factuality, tool use, diversity, or long-context behavior.",
+      "objectives": [
+        "Name preference-tuning failure modes.",
+        "Design held-out regression checks.",
+        "Choose what to monitor after tuning."
+      ],
+      "termIds": [
+        "preference_pair",
+        "llm"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "pd_m5_fail",
+          "kind": "conceptual",
+          "title": "How preference tuning breaks",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Preference data encodes labeler values and blind spots. A tuned model can become more pleasing while becoming less factual, less diverse, too cautious, or worse at tool use."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Reward hacking: outputs exploit the judge rather than improve usefulness."
+                  }
+                ],
+                [
+                  {
+                    "text": "Over-caution: the model refuses safe requests."
+                  }
+                ],
+                [
+                  {
+                    "text": "Confounded preferences: the model learns length or tone instead of correctness."
+                  }
+                ],
+                [
+                  {
+                    "text": "Distribution shift: held-out traffic differs from labeled pairs."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "preference_pair",
+            "llm"
+          ],
+          "sources": [
+            "kb2"
+          ]
+        },
+        {
+          "id": "pd_m5_verify",
+          "kind": "note",
+          "title": "Verify AI-generated preference-tuning plans",
+          "tone": "info",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When an AI proposes RLHF or DPO, demand evidence of a real training plan."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Does it define the source and audit process for preference pairs?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it compare RLHF and DPO rather than naming one by default?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it include factuality, safety, and tool-use regression evals?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it specify a reference model and rollback path?"
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "preference_pair",
+            "llm"
+          ],
+          "sources": [
+            "kb2"
+          ]
+        },
+        {
+          "id": "pd_m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check failure modes",
+          "prompt": "What is the biggest warning sign before shipping a preference-tuned model?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The dataset contains chosen and rejected answers.",
+              "correct": false
+            },
+            {
+              "text": "Preference win rate improves while factuality or safety regressions are unmeasured.",
+              "correct": true
+            },
+            {
+              "text": "The team chose DPO over RLHF.",
+              "correct": false
+            }
+          ],
+          "explanation": "Preference metrics must be paired with regression evals.",
+          "termIds": [
+            "preference_pair"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    }
+  ],
+  "glossary": {
+    "llm": {
+      "id": "llm",
+      "label": "LLM",
+      "laymanDefinition": "A language model that predicts and generates token sequences from context.",
+      "technicalNote": "LLM behavior depends on training data, tokenization, context, decoding, alignment, system instructions, and the application wrapper.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Large language model"
+    },
+    "token": {
+      "id": "token",
+      "label": "Token",
+      "laymanDefinition": "A unit of text, code, punctuation, or whitespace that the model reads and generates.",
+      "technicalNote": "Token boundaries determine context usage, cost, latency, truncation behavior, and how the model represents text internally.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "context_window": {
+      "id": "context_window",
+      "label": "Context window",
+      "laymanDefinition": "The limited set of input and generated tokens available to the model at one time.",
+      "technicalNote": "Context windows constrain what evidence, instructions, conversation state, and tool results can influence the next output.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "prompt": {
+      "id": "prompt",
+      "label": "Prompt",
+      "laymanDefinition": "The instructions, user request, examples, and context sent to the model.",
+      "technicalNote": "Prompts are release artifacts when they shape behavior, tool use, output schema, safety handling, or evaluation results.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "schema": {
+      "id": "schema",
+      "label": "Schema",
+      "laymanDefinition": "A machine-readable contract for fields, types, required values, and allowed shapes.",
+      "technicalNote": "Schemas make model outputs and tool calls checkable, but they still need validation, refusal handling, and regression tests.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "tool_call": {
+      "id": "tool_call",
+      "label": "Tool call",
+      "laymanDefinition": "A structured request from the model to use an external capability.",
+      "technicalNote": "Tool calls should be parsed, authorized, validated, traced, and executed by trusted code rather than by free-form text.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "preference_pair": {
+      "id": "preference_pair",
+      "label": "Preference pair",
+      "laymanDefinition": "A prompt with a chosen response and a rejected response for preference training.",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "fine_tuning": {
+      "id": "fine_tuning",
+      "label": "Fine-tuning",
+      "laymanDefinition": "Continuing training so repeated behavior becomes more likely in model weights.",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts",
+    "themes": [
+      {
+        "name": "Adoption check",
+        "questions": [
+          {
+            "q": "What decision does RLHF, DPO, and Preference Tuning change in your build?",
+            "why": "A lesson is useful only when it changes what you do next.",
+            "opts": [
+              "Use now",
+              "Prototype first",
+              "Defer"
+            ],
+            "rot": "Prefer the smallest testable version."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, compare RLHF and DPO: what data they need, what objective path they take, and which failures each can hide. Then name why preference tuning is not the same as supervised fine-tuning."
+          }
+        ]
+      }
+    ],
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "When gold answers are too narrow",
+        "detail": "Start with why comparisons are useful after supervised behavior exists."
+      },
+      {
+        "step": 2,
+        "label": "Preference pairs are the data unit",
+        "detail": "Before algorithms, inspect the chosen/rejected examples."
+      },
+      {
+        "step": 3,
+        "label": "RLHF: reward model then policy update",
+        "detail": "With preference data understood, open the more complex training route."
+      },
+      {
+        "step": 4,
+        "label": "DPO: optimize the pair directly",
+        "detail": "Compare the simpler offline route after RLHF."
+      },
+      {
+        "step": 5,
+        "label": "Preference gains can hide regressions",
+        "detail": "End with the advanced failure modes that decide ship/no-ship."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_1",
+        "label": "Are pairs comparable and realistic?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_2",
+        "label": "Do labelers or judges encode the right values?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_3",
+        "label": "Is RLHF complexity justified over DPO?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_4",
+        "label": "Do held-out evals cover factuality and safety?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_5",
+        "label": "What should I learn next: eval design and data governance.",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Design a preference-tuning plan for a support assistant that should ask clarifying questions instead of guessing. Write three chosen/rejected pairs, pick RLHF or DPO, and define held-out safety and factuality evals. Next rung: building golden preference datasets.",
+      "scopedTo": "RLHF, DPO, and Preference Tuning"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "Fine-tuning",
+      "url": "https://huggingface.co/docs/transformers/training",
+      "asOfDate": "2026-06-22"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "RLHF, DPO, and Preference Tuning",
+      "url": "https://huggingface.co/docs/trl/index",
+      "asOfDate": "2026-06-22"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Hugging Face TRL DPO Trainer",
+      "url": "https://huggingface.co/docs/trl/dpo_trainer",
+      "asOfDate": "2026-06-22"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "RAG Fundamentals",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

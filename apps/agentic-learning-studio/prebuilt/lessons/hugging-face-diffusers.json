@@ -1,0 +1,935 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Hugging Face Diffusers",
+    "title": "Hugging Face Diffusers",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Hugging Face Diffusers is practical when learners can apply it to this concrete case: A designer prototypes campaign images with Hugging Face Diffusers and needs reproducible settings. By the end, they should be able to build or review Diffusers experiment log with model, scheduler, seed, and prompt variants, measure reproducible image variants from saved settings, and catch the failure where a good image cannot be recreated because seed and model revision were not recorded."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Hugging Face Diffusers",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Hugging Face Diffusers: mental map",
+    "caption": "Use Diffusers by choosing a pipeline, configuring scheduler/device, adding adapters deliberately, saving metadata, and reviewing outputs.",
+    "oneLineThesis": "Diffusers is a modular diffusion toolkit; quality use means controlling components and run records, not only calling a pipeline.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "DiffusionPipeline is the component container",
+        "sub": "The high-level call hides models, schedulers, and processors.",
+        "what": "Learners place the tool accurately.",
+        "relevance": "This prevents one-cell image experiments that cannot be reproduced.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Open the pipeline box before generating lesson assets.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Schedulers and devices shape speed-quality tradeoffs",
+        "sub": "Inference settings are product decisions.",
+        "what": "Learners tune Diffusers responsibly.",
+        "relevance": "This prevents blaming every change on the prompt.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Swap one scheduler while keeping the rest fixed.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Adapters extend a stable base workflow",
+        "sub": "LoRA or control components should solve a named gap.",
+        "what": "Learners treat extensions as change-controlled components.",
+        "relevance": "This keeps customization from breaking safety or reproducibility.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Add style control only after base generation is traceable.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code a traceable Diffusers run",
+        "sub": "Save both output and metadata.",
+        "what": "Learners implement the workflow concretely.",
+        "relevance": "This makes assets auditable.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Generate one candidate and save settings beside it.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Production use needs review and fallback paths",
+        "sub": "Running the script is not the same as publishing the asset.",
+        "what": "Learners turn tool use into an operated process.",
+        "relevance": "This prevents unreviewed synthetic assets in lessons.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Gate generated media with reviewer notes and fallback choices.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "configures"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "extends"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "gates"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "DiffusionPipeline is the component container",
+      "sub": "The high-level call hides models, schedulers, and processors.",
+      "summary": "A pipeline is convenience plus a bundle of configurable components.",
+      "objectives": [
+        "Explain pipeline ownership.",
+        "List run-card fields.",
+        "Avoid untracked generation."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "A pipeline is not just generate()",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a team generated a great lesson illustration, but forgot model, scheduler, seed, safety setting, and adapter details. Diffusers makes loading and running easy; production work still needs a run card."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "DiffusionPipeline bundles components and utilities for loading, saving, and device placement. Treat it as a configurable artifact."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_diffusion_pipeline",
+            "canon_hf_diffusers"
+          ]
+        },
+        {
+          "id": "m1_card",
+          "kind": "functionalExample",
+          "title": "Run card fields",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Record pipeline class, model ID, revision, scheduler, seed, prompt, negative prompt, steps, guidance, size, dtype, device, adapter IDs, safety path, output hash, reviewer, and accept/reject reason."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_diffusion_pipeline"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Run card",
+          "prompt": "What should travel with a generated image?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only the final PNG.",
+              "correct": false
+            },
+            {
+              "text": "The run card: model, scheduler, seed, prompts, settings, adapters, and review status.",
+              "correct": true
+            },
+            {
+              "text": "Only the prompt text.",
+              "correct": false
+            }
+          ],
+          "explanation": "Generated assets need provenance.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_diffusion_pipeline"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_diffusion_pipeline",
+        "canon_hf_diffusers"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Schedulers and devices shape speed-quality tradeoffs",
+      "sub": "Inference settings are product decisions.",
+      "summary": "Scheduler, steps, dtype, and device affect latency, memory, and quality.",
+      "objectives": [
+        "Change one inference knob at a time.",
+        "Explain dtype/device choices.",
+        "Compare with fixed seed."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Controlled comparisons beat prompt folklore",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "To compare schedulers, keep prompt, seed, model, size, guidance, and steps fixed. Device and dtype decide whether the run fits memory and how quickly it finishes. A good experiment changes one thing and records the result."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_schedulers",
+            "canon_hf_diffusers"
+          ]
+        },
+        {
+          "id": "m2_protocol",
+          "kind": "functionalExample",
+          "title": "Scheduler comparison protocol",
+          "body": [
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Fix prompt, negative prompt, seed, model, size, and steps."
+                  }
+                ],
+                [
+                  {
+                    "text": "Generate with scheduler A and save metadata."
+                  }
+                ],
+                [
+                  {
+                    "text": "Swap scheduler B from config."
+                  }
+                ],
+                [
+                  {
+                    "text": "Review prompt fit, artifacts, latency, and reproducibility."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_schedulers"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_schedulers",
+        "canon_hf_diffusers"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Adapters extend a stable base workflow",
+      "sub": "LoRA or control components should solve a named gap.",
+      "summary": "Adapters are controlled changes, not cleanup for a messy base run.",
+      "objectives": [
+        "Explain adapters as modular modifications.",
+        "Define acceptance checks.",
+        "Avoid untracked stacks."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Adapters need a reason and a record",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Diffusers workflows can load adapters such as LoRA or other control modules. Use them for a defined gap, such as house illustration style or layout control. Do not stack adapters to rescue an unreviewed base prompt and scheduler setup."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_diffusers",
+            "kb_multimodal_generative"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Change-control table",
+          "criteria": [
+            "Change",
+            "Goal",
+            "Acceptance check"
+          ],
+          "options": [
+            {
+              "name": "Scheduler swap",
+              "cells": [
+                {
+                  "criterion": "Change",
+                  "text": "Scheduler swap",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Goal",
+                  "text": "speed or image character",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Acceptance check",
+                  "text": "same-seed comparison reviewed",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Inference tuning.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Adapter",
+              "cells": [
+                {
+                  "criterion": "Change",
+                  "text": "Adapter",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Goal",
+                  "text": "style or domain control",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Acceptance check",
+                  "text": "base-vs-adapter review",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Need consistent style.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Model change",
+              "cells": [
+                {
+                  "criterion": "Change",
+                  "text": "Model change",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Goal",
+                  "text": "capability or license fit",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Acceptance check",
+                  "text": "full run-card and safety review",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Base model cannot meet need.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_diffusers"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_diffusers",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code a traceable Diffusers run",
+      "sub": "Save both output and metadata.",
+      "summary": "A useful script creates an image plus a sidecar run record.",
+      "objectives": [
+        "Write a minimal script.",
+        "Predict metadata value.",
+        "Verify generated code."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Diffusers generation with metadata sidecar",
+          "language": "python",
+          "code": "import json, torch\nfrom diffusers import DiffusionPipeline, EulerDiscreteScheduler\n\nmodel_id = \"runwayml/stable-diffusion-v1-5\"\nprompt = \"clean flat illustration of a student comparing two AI diagrams\"\nseed = 123\npipe = DiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16)\npipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)\npipe = pipe.to(\"cuda\")\nimage = pipe(prompt, negative_prompt=\"blurry, unreadable text\", num_inference_steps=25,\n             generator=torch.Generator(device=\"cuda\").manual_seed(seed)).images[0]\nimage.save(\"lesson-illustration.png\")\njson.dump({\"model_id\": model_id, \"scheduler\": pipe.scheduler.__class__.__name__,\n           \"prompt\": prompt, \"seed\": seed, \"review_status\": \"needs_human_review\"},\n          open(\"lesson-illustration.metadata.json\", \"w\"), indent=2)",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The metadata sidecar turns a generated image into a reviewable artifact rather than an orphaned file."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "What is lost if metadata is omitted?",
+            "answer": "Reviewers lose reproducibility, auditability, and a clear path to compare or reject runs."
+          },
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_diffusion_pipeline",
+            "canon_hf_schedulers"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify Diffusers scripts",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: explicit model/revision; seed and scheduler recorded; dtype/device compatible; safety path intentional; adapters listed; metadata saved; output review required."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_diffusers"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_diffusion_pipeline",
+        "canon_hf_schedulers",
+        "canon_hf_diffusers"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Production use needs review and fallback paths",
+      "sub": "Running the script is not the same as publishing the asset.",
+      "summary": "Diffusers workflows need safety, rights, and replacement decisions.",
+      "objectives": [
+        "Name production failure modes.",
+        "Plan reject/regenerate/edit paths.",
+        "Connect settings to review outcomes."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The pipeline can work while the asset fails",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A run can be technically correct and still produce unreadable text, biased imagery, off-brand style, distorted anatomy, or license-incompatible output. Production use needs rejection reasons and fallback choices."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative",
+            "canon_hf_diffusers"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Ship generated media only when the run card, review, and rights check travel with it.",
+          "useWhen": "Use Diffusers for reproducible drafts and controlled customization.",
+          "avoidWhen": "Avoid unreviewed outputs, untracked adapters, or assets with unknown rights and safety status.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_multimodal_generative",
+        "canon_hf_diffusers"
+      ]
+    }
+  ],
+  "glossary": {
+    "diffusion": {
+      "id": "diffusion",
+      "label": "Diffusion",
+      "laymanDefinition": "A generative process that learns to turn noise into structured media.",
+      "technicalNote": "Diffusion systems combine denoising steps, conditioning, schedulers, and safety controls; quality and provenance depend on the full pipeline.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "latent_space": {
+      "id": "latent_space",
+      "label": "Latent space",
+      "laymanDefinition": "A compressed representation where models manipulate meaning more efficiently than raw pixels or audio.",
+      "technicalNote": "Latent-space choices affect speed, detail, editability, artifacts, and what safety or provenance checks can inspect.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "The ordered set of model, preprocessing, generation, postprocessing, and safety steps.",
+      "technicalNote": "Media pipelines should pin model versions, prompts, parameters, assets, moderation, watermarking, and review metadata for reproducibility.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "vlm": {
+      "id": "vlm",
+      "label": "VLM",
+      "laymanDefinition": "A model that connects visual inputs with language understanding or generation.",
+      "technicalNote": "VLM workflows need image preprocessing, prompt grounding, output validation, and privacy review for uploaded visual content.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Vision-language model"
+    },
+    "asr": {
+      "id": "asr",
+      "label": "ASR",
+      "laymanDefinition": "Technology that converts spoken audio into text.",
+      "technicalNote": "ASR systems should track language, accent, noise, timestamps, confidence, privacy, and downstream correction paths.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Automatic speech recognition"
+    },
+    "provenance": {
+      "id": "provenance",
+      "label": "Provenance",
+      "laymanDefinition": "Evidence about where media came from and how it was created or edited.",
+      "technicalNote": "Provenance for generated media includes source assets, model versions, prompts, parameters, edits, disclosures, and review decisions.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Hugging Face Diffusers",
+    "themes": [
+      {
+        "name": "Pipeline contract",
+        "questions": [
+          {
+            "q": "Which pipeline settings must be explicit before a generated asset is reviewable?",
+            "why": "Reproducibility depends on model IDs, scheduler, seed, dtype, device, adapters, prompts, and safety review.",
+            "opts": [
+              "Run card plus pipeline",
+              "Notebook screenshot",
+              "Prompt only"
+            ],
+            "rot": "Treat the pipeline as a component container and save the run card."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: rebuild a Diffusers workflow by naming pipeline class, model ID, scheduler, dtype/device, seed, adapters, metadata, safety review, and validation cases."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Diffusers workflow from pipeline load to reviewed artifact",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "DiffusionPipeline is the component container",
+          "sub": "The high-level call hides models, schedulers, and processors.",
+          "what": "Learners place the tool accurately.",
+          "relevance": "This prevents one-cell image experiments that cannot be reproduced.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Open the pipeline box before generating lesson assets.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Schedulers and devices shape speed-quality tradeoffs",
+          "sub": "Inference settings are product decisions.",
+          "what": "Learners tune Diffusers responsibly.",
+          "relevance": "This prevents blaming every change on the prompt.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Swap one scheduler while keeping the rest fixed.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Adapters extend a stable base workflow",
+          "sub": "LoRA or control components should solve a named gap.",
+          "what": "Learners treat extensions as change-controlled components.",
+          "relevance": "This keeps customization from breaking safety or reproducibility.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Add style control only after base generation is traceable.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code a traceable Diffusers run",
+          "sub": "Save both output and metadata.",
+          "what": "Learners implement the workflow concretely.",
+          "relevance": "This makes assets auditable.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Generate one candidate and save settings beside it.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Production use needs review and fallback paths",
+          "sub": "Running the script is not the same as publishing the asset.",
+          "what": "Learners turn tool use into an operated process.",
+          "relevance": "This prevents unreviewed synthetic assets in lessons.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Gate generated media with reviewer notes and fallback choices.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "configures"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "extends"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "DiffusionPipeline is the component container",
+        "detail": "A pipeline is convenience plus a bundle of configurable components."
+      },
+      {
+        "step": 2,
+        "label": "Schedulers and devices shape speed-quality tradeoffs",
+        "detail": "Scheduler, steps, dtype, and device affect latency, memory, and quality."
+      },
+      {
+        "step": 3,
+        "label": "Adapters extend a stable base workflow",
+        "detail": "Adapters are controlled changes, not cleanup for a messy base run."
+      },
+      {
+        "step": 4,
+        "label": "Code a traceable Diffusers run",
+        "detail": "A useful script creates an image plus a sidecar run record."
+      },
+      {
+        "step": 5,
+        "label": "Production use needs review and fallback paths",
+        "detail": "Diffusers workflows need safety, rights, and replacement decisions."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"DiffusionPipeline is the component container\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Code a traceable Diffusers run\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Production use needs review and fallback paths\" define the production or review gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a Diffusers script that generates three lesson-art candidates with fixed seed, scheduler, model ID, prompt, negative prompt, and metadata JSON. Next rung: compare two schedulers and add an adapter only after the base run is traceable.",
+      "scopedTo": "Generative tooling",
+      "checks": [
+        "Pipeline/model IDs explicit.",
+        "Scheduler and seed saved.",
+        "Hardware settings intentional.",
+        "Review metadata travels with image."
+      ]
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Multimodal Generative AI",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Multimodal Generative AI",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Diffusers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-20"
+    },
+    "canon_hf_diffusers": {
+      "id": "canon_hf_diffusers",
+      "kind": "canonical",
+      "title": "Hugging Face Diffusers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_hf_diffusion_pipeline": {
+      "id": "canon_hf_diffusion_pipeline",
+      "kind": "canonical",
+      "title": "Diffusers DiffusionPipeline",
+      "url": "https://huggingface.co/docs/diffusers/en/api/pipelines/overview",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_hf_schedulers": {
+      "id": "canon_hf_schedulers",
+      "kind": "canonical",
+      "title": "Diffusers schedulers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/api/schedulers/overview",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_hf_stable_diffusion": {
+      "id": "canon_hf_stable_diffusion",
+      "kind": "canonical",
+      "title": "Diffusers Stable Diffusion pipelines",
+      "url": "https://huggingface.co/docs/diffusers/en/api/pipelines/stable_diffusion/overview",
+      "asOfDate": "2026-06-23"
+    },
+    "kb_multimodal_generative": {
+      "id": "kb_multimodal_generative",
+      "kind": "kb",
+      "title": "KB: Multimodal and Generative Models",
+      "url": "https://huggingface.co/docs/diffusers/index",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

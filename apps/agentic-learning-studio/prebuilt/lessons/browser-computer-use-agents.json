@@ -1,0 +1,1210 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Browser and Computer-use Agents",
+    "title": "Browser and Computer-use Agents",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 34,
+    "thesis": "Browser and Computer-use Agents becomes practical when you can map it to a decision, a workflow, and a validation check."
+  },
+  "learnerProfile": {
+    "level": "advanced",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Browser and Computer-use Agents",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": false,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Browser and Computer-use Agents: mental map",
+    "caption": "Use browser and computer-use agents only when the UI is the practical interface, then constrain observation, action, credentials, and verification.",
+    "oneLineThesis": "Browser agents are last-mile UI operators; they trade API reliability for visual/DOM adaptability and therefore need stronger bounds.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "UI control is a last-mile fallback",
+        "sub": "Browser agents exist because not every system has an API.",
+        "what": "Learners decide when browser automation is justified.",
+        "relevance": "This prevents replacing reliable integrations with brittle screen control.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Start by proving the UI is the right interface.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Observation quality drives action quality",
+        "sub": "DOM, accessibility, screenshots, and OCR each have tradeoffs.",
+        "what": "Learners connect observation source to click accuracy.",
+        "relevance": "Bad observations create wrong actions even when the model plan is reasonable.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Choose the richest stable page representation available.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Constrain the action loop and credentials",
+        "sub": "Autonomy should be narrow, budgeted, and reversible by default.",
+        "what": "Learners design browser-agent policy.",
+        "relevance": "Browser sessions can expose cookies, downloads, screenshots, and real account authority.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Limit domains, actions, files, profile state, and submit authority.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Verify with traces, screenshots, and assertions",
+        "sub": "Browser tasks need evidence that the UI reached the intended state.",
+        "what": "Learners implement a verifiable UI-action loop.",
+        "relevance": "A browser agent can sound done after clicking the wrong thing.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Record action history and final proof, not only a success sentence.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Plan for UI drift and policy limits",
+        "sub": "Modals, CAPTCHAs, A/B tests, and terms can stop automation.",
+        "what": "Learners create failure handling for browser agents.",
+        "relevance": "Production UIs change and some sites restrict automation.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Treat blockers as expected states, not embarrassing surprises.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "UI control is a last-mile fallback",
+      "sub": "Browser agents exist because not every system has an API.",
+      "summary": "A browser agent should solve a bounded UI gap.",
+      "objectives": [
+        "Explain when browser agents are useful.",
+        "Compare APIs, Playwright scripts, and autonomous UI agents.",
+        "Name side effects that require approval."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Use the UI when the UI is the only practical path",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a procurement portal has no API, but a team must upload a compliance certificate once per vendor. A browser agent can help if the task is bounded, credentialed safely, and verified with screenshots."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If a stable API exists, use it. If the UI path is deterministic, a Playwright script may be safer. Use an autonomous browser loop when observations determine the next step and the workflow can tolerate review."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "State why the browser is necessary before designing the agent."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ],
+          "analogy": "A browser agent is a skilled temp at a workstation, not a replacement for a backend integration."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Case study: vendor portal upload",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The agent may navigate only the vendor domain, upload one approved PDF, and stop before final submit for human confirmation. It records screenshots before and after the upload."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This scope is useful because the portal lacks an API, but narrow enough that a wrong click is reviewable before external submission."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Confirm there is no stable API."
+                  }
+                ],
+                [
+                  {
+                    "text": "Define one task template and allowed domain."
+                  }
+                ],
+                [
+                  {
+                    "text": "Use disposable browser profile and scoped credentials."
+                  }
+                ],
+                [
+                  {
+                    "text": "Require human approval before irreversible submit."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Fit check",
+          "prompt": "When is a browser agent a poor first choice?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "When the task involves any page at all.",
+              "correct": false
+            },
+            {
+              "text": "When a stable authenticated API can perform the same action with clearer validation.",
+              "correct": true
+            },
+            {
+              "text": "When screenshots are useful for audit.",
+              "correct": false
+            }
+          ],
+          "explanation": "APIs are usually more reliable, faster, and easier to validate than UI control.",
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb4",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Observation quality drives action quality",
+      "sub": "DOM, accessibility, screenshots, and OCR each have tradeoffs.",
+      "summary": "The agent can only act on the page state it can perceive.",
+      "objectives": [
+        "Compare DOM, accessibility tree, screenshots, and OCR.",
+        "Explain why locators reduce ambiguity.",
+        "Plan fallbacks for modals and UI drift."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The page representation is the agent’s sensor",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A Playwright locator or accessibility snapshot gives named controls and structure. A screenshot gives pixels and layout but may require vision reasoning. OCR helps with rendered text but can miss semantics such as disabled state or hidden inputs."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use the most structured observation available, then attach screenshots for audit. Vision-only control should be reserved for surfaces without stable DOM or accessibility data."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If the observation cannot distinguish “Save draft” from “Submit final,” do not allow the click autonomously."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ],
+          "analogy": "Better sensors make better drivers; they do not remove traffic laws."
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Browser observation choices",
+          "criteria": [
+            "Observation",
+            "Best for",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "DOM/locator",
+              "cells": [
+                {
+                  "criterion": "Observation",
+                  "text": "Structured elements and stable selectors.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Best for",
+                  "text": "Forms, buttons, deterministic browser tasks.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Breaks when selectors or frameworks change.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the page exposes stable structure.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Accessibility tree",
+              "cells": [
+                {
+                  "criterion": "Observation",
+                  "text": "Named controls and roles.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Best for",
+                  "text": "Ambiguous buttons and form labels.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Poorly labeled apps reduce usefulness.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use with Playwright-style control.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Screenshot/OCR",
+              "cells": [
+                {
+                  "criterion": "Observation",
+                  "text": "Visual state and unstructured UI.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best for",
+                  "text": "Desktop or canvas-heavy surfaces.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "More brittle and needs review.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use when structure is unavailable.",
+              "cost": "Medium",
+              "complexity": "High"
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Observation choice",
+          "prompt": "Why prefer a named locator over raw coordinates when possible?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Coordinates automatically understand permissions.",
+              "correct": false
+            },
+            {
+              "text": "It ties the action to page semantics and survives some layout changes.",
+              "correct": true
+            },
+            {
+              "text": "Locators prevent all UI drift.",
+              "correct": false
+            }
+          ],
+          "explanation": "Locators reduce ambiguity, but still need tests and traces.",
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb4",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Constrain the action loop and credentials",
+      "sub": "Autonomy should be narrow, budgeted, and reversible by default.",
+      "summary": "The browser runtime is a security boundary.",
+      "objectives": [
+        "Define allowed actions and domains.",
+        "Scope credentials and browser profiles.",
+        "Require approvals for irreversible clicks."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "A browser profile can carry authority",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A logged-in browser contains cookies, page data, downloads, and sometimes privileged admin access. Treat it like a credential, not a neutral viewport."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Constrain allowed domains, navigation, uploads/downloads, clipboard, file mounts, and network. Give the agent read-only or draft mode by default. Stop for approval before payments, submissions, account changes, or external messages."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "A browser task should have an iteration cap, timeout, and stop condition before it starts."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ],
+          "analogy": "The browser is the agent’s hands; policy decides what those hands can touch."
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Worked policy for admin-console QA",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A QA agent can navigate staging admin pages, click filters, take screenshots, and file a report. It cannot visit production, change customer settings, download exports, or send notifications."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If it encounters a modal that would save changes, the run stops and asks a human with screenshot context."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Use a staging account or disposable credentials."
+                  }
+                ],
+                [
+                  {
+                    "text": "Allow only read/navigation/screenshot actions first."
+                  }
+                ],
+                [
+                  {
+                    "text": "Add write actions one by one with approval."
+                  }
+                ],
+                [
+                  {
+                    "text": "Record every action and page URL in the trace."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Credential scope",
+          "prompt": "What is dangerous about using a personal logged-in browser profile for an autonomous task?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It makes screenshots impossible.",
+              "correct": false
+            },
+            {
+              "text": "It exposes broad cookies, permissions, files, and account authority to the agent run.",
+              "correct": true
+            },
+            {
+              "text": "It prevents all websites from loading.",
+              "correct": false
+            }
+          ],
+          "explanation": "Use isolated profiles and scoped credentials for agent sessions.",
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb4",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Verify with traces, screenshots, and assertions",
+      "sub": "Browser tasks need evidence that the UI reached the intended state.",
+      "summary": "Verification turns UI automation into an auditable workflow.",
+      "objectives": [
+        "Capture screenshots and action traces.",
+        "Use assertions for expected page state.",
+        "Predict when human review should interrupt."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "The final answer is not proof of UI state",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A browser agent should produce evidence: URLs, locators, screenshots, downloaded file names, assertion results, and any approvals. “Done” is not enough when the task changed an external system."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from sandboxing, tool outputs are untrusted. A page message saying “success” should be verified against expected state when possible."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "The verifier should know what state proves completion before the agent starts."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Bounded browser-action loop skeleton",
+          "language": "python",
+          "code": "allowed_domains = {\"admin.example.com\"}\nallowed_actions = {\"navigate\", \"click\", \"type\", \"screenshot\"}\n\nstate = {\"url\": \"admin.example.com/vendors\", \"steps\": []}\n\ndef authorize(action):\n    if action[\"kind\"] not in allowed_actions:\n        raise PermissionError(\"action not allowed\")\n    if action.get(\"domain\") not in allowed_domains:\n        raise PermissionError(\"domain not allowed\")\n    if action.get(\"label\", \"\").lower() in {\"submit payment\", \"delete\"}:\n        return \"needs_human_approval\"\n    return \"ok\"\n\nplan = [\n    {\"kind\": \"click\", \"domain\": \"admin.example.com\", \"label\": \"Upload certificate\"},\n    {\"kind\": \"screenshot\", \"domain\": \"admin.example.com\", \"label\": \"proof after upload\"},\n]\n\nfor action in plan:\n    decision = authorize(action)\n    state[\"steps\"].append({\"action\": action, \"decision\": decision})\n\nprint(state[\"steps\"])",
+          "explanation": "The toy loop shows policy checks and trace records before any real browser call. A production loop would execute through Playwright or a browser controller after authorization.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict whether the screenshot action is allowed.",
+            "answer": "It is allowed because the domain and action kind are on the allowlists and the label is not a high-impact submit/delete action."
+          },
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Verification evidence",
+          "prompt": "What should a browser agent return after completing a UI task?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only “I completed it successfully.”",
+              "correct": false
+            },
+            {
+              "text": "A trace with actions, URLs, screenshots or assertions, and any approval records.",
+              "correct": true
+            },
+            {
+              "text": "Only the hidden model reasoning.",
+              "correct": false
+            }
+          ],
+          "explanation": "UI side effects need reviewable evidence.",
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb4",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Plan for UI drift and policy limits",
+      "sub": "Modals, CAPTCHAs, A/B tests, and terms can stop automation.",
+      "summary": "A robust browser agent knows when to stop.",
+      "objectives": [
+        "Name UI drift failure modes.",
+        "Add dry runs and idempotency.",
+        "Respect site terms and access controls."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The UI will change underneath the agent",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Buttons move, labels change, modals appear, CAPTCHAs interrupt, and pages A/B test flows. A browser agent should detect uncertainty, stop safely, and produce a review packet rather than improvising risky clicks."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Some websites prohibit automation or scraping. Do not use browser agents to bypass access controls, rate limits, or terms. For internal tools, align with owners and logs."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Add a “blocked” outcome with screenshot evidence and next-human action."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output from a browser agent",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review the run artifact with these checks."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The browser stayed within allowed domains and task template."
+                  }
+                ],
+                [
+                  {
+                    "text": "Credentials, downloads, and file mounts were scoped to the task."
+                  }
+                ],
+                [
+                  {
+                    "text": "High-impact clicks required approval with screenshot context."
+                  }
+                ],
+                [
+                  {
+                    "text": "Assertions or screenshots prove the final UI state."
+                  }
+                ],
+                [
+                  {
+                    "text": "The agent stopped on uncertainty, CAPTCHA, policy conflict, or unexpected navigation."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Drift response",
+          "prompt": "A modal appears that the agent has never seen before and includes a final submit button. What should happen?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Click the most colorful button.",
+              "correct": false
+            },
+            {
+              "text": "Stop and ask for human review with screenshot and current state.",
+              "correct": true
+            },
+            {
+              "text": "Ignore the modal and claim success.",
+              "correct": false
+            }
+          ],
+          "explanation": "Unknown high-impact UI states should interrupt autonomy.",
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb5",
+            "kb4",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb4",
+        "kb6"
+      ]
+    }
+  ],
+  "glossary": {
+    "agent": {
+      "id": "agent",
+      "label": "Agent",
+      "laymanDefinition": "A software loop that plans, observes results, and may use tools to pursue a goal.",
+      "technicalNote": "Agent designs need explicit loop boundaries, stop conditions, permissions, state contracts, and evaluation surfaces before autonomy is useful.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "tool": {
+      "id": "tool",
+      "label": "Tool",
+      "laymanDefinition": "An external capability the model can request, such as search, code execution, retrieval, or a business API.",
+      "technicalNote": "Tools require schemas, authorization, error handling, audit logs, and tests because natural-language intent is not execution permission.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "state": {
+      "id": "state",
+      "label": "State",
+      "laymanDefinition": "The working information carried between steps of an agent workflow.",
+      "technicalNote": "State should separate durable facts, transient scratch work, approvals, tool results, and failure metadata so retries and handoffs remain understandable.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "memory": {
+      "id": "memory",
+      "label": "Memory",
+      "laymanDefinition": "Information saved across turns or sessions for future use.",
+      "technicalNote": "Agent memory needs scope, freshness, deletion, privacy controls, and evaluation so saved context helps rather than silently steering behavior.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "mcp": {
+      "id": "mcp",
+      "label": "MCP",
+      "laymanDefinition": "A protocol for exposing tools and context to models and agent clients.",
+      "technicalNote": "MCP-style integrations still need capability design, trust boundaries, lifecycle handling, and authorization around each exposed server.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Model Context Protocol"
+    },
+    "sandbox": {
+      "id": "sandbox",
+      "label": "Sandbox",
+      "laymanDefinition": "An isolated environment that limits what agent actions can reach or change.",
+      "technicalNote": "Sandboxing should constrain files, network, processes, credentials, browser sessions, time, and side effects according to the task risk.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Browser and Computer-use Agents",
+    "themes": [
+      {
+        "name": "Browser-agent fit",
+        "questions": [
+          {
+            "q": "Is a bounded UI workflow safer and cheaper than building or using an API integration?",
+            "why": "Computer-use agents are brittle and side-effectful, so they should solve UI-only gaps rather than replace stable APIs.",
+            "opts": [
+              "Bounded browser agent with sandbox",
+              "Deterministic Playwright script",
+              "Direct API or MCP tool"
+            ],
+            "rot": "Prefer APIs first, deterministic scripts second, and autonomous browser control only for bounded UI-only workflows."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct browser agents by naming observation, action set, controller, policy, state, sandbox, verification, and UI drift tests."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Browser-agent loop from observation to verified action",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "UI control is a last-mile fallback",
+          "sub": "Browser agents exist because not every system has an API.",
+          "what": "Learners decide when browser automation is justified.",
+          "relevance": "This prevents replacing reliable integrations with brittle screen control.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Start by proving the UI is the right interface.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Observation quality drives action quality",
+          "sub": "DOM, accessibility, screenshots, and OCR each have tradeoffs.",
+          "what": "Learners connect observation source to click accuracy.",
+          "relevance": "Bad observations create wrong actions even when the model plan is reasonable.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Choose the richest stable page representation available.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Constrain the action loop and credentials",
+          "sub": "Autonomy should be narrow, budgeted, and reversible by default.",
+          "what": "Learners design browser-agent policy.",
+          "relevance": "Browser sessions can expose cookies, downloads, screenshots, and real account authority.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Limit domains, actions, files, profile state, and submit authority.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Verify with traces, screenshots, and assertions",
+          "sub": "Browser tasks need evidence that the UI reached the intended state.",
+          "what": "Learners implement a verifiable UI-action loop.",
+          "relevance": "A browser agent can sound done after clicking the wrong thing.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Record action history and final proof, not only a success sentence.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Plan for UI drift and policy limits",
+          "sub": "Modals, CAPTCHAs, A/B tests, and terms can stop automation.",
+          "what": "Learners create failure handling for browser agents.",
+          "relevance": "Production UIs change and some sites restrict automation.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Treat blockers as expected states, not embarrassing surprises.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "UI control is a last-mile fallback",
+        "detail": "A browser agent should solve a bounded UI gap."
+      },
+      {
+        "step": 2,
+        "label": "Observation quality drives action quality",
+        "detail": "The agent can only act on the page state it can perceive."
+      },
+      {
+        "step": 3,
+        "label": "Constrain the action loop and credentials",
+        "detail": "The browser runtime is a security boundary."
+      },
+      {
+        "step": 4,
+        "label": "Verify with traces, screenshots, and assertions",
+        "detail": "Verification turns UI automation into an auditable workflow."
+      },
+      {
+        "step": 5,
+        "label": "Plan for UI drift and policy limits",
+        "detail": "A robust browser agent knows when to stop."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete problem in \"UI control is a last-mile fallback\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_boundary",
+        "label": "Did \"Constrain the action loop and credentials\" define the right boundary or decision?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Plan for UI drift and policy limits\" provide a reviewable release gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Choose one UI-only workflow such as filling a vendor form. Specify allowed domains, observation source, allowed actions, credential scope, approval clicks, screenshot evidence, and drift tests. Next rung: combine browser control with agent safety gates.",
+      "scopedTo": "Browser and Computer-use Agents"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Model Context Protocol docs",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-20"
+    },
+    "kb5": {
+      "id": "kb5",
+      "kind": "kb",
+      "title": "KB: Browser and Computer-Use Agents",
+      "url": "https://github.com/browser-use/browser-use",
+      "asOfDate": "2026-06-22"
+    },
+    "kb4": {
+      "id": "kb4",
+      "kind": "kb",
+      "title": "KB: Agent Tool Security and Sandboxing",
+      "url": "https://genai.owasp.org/llm-top-10/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb6": {
+      "id": "kb6",
+      "kind": "kb",
+      "title": "KB: Agent Loop, ReAct, Planning, and Reflection",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

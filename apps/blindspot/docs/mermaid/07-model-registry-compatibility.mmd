@@ -1,0 +1,44 @@
+%% Blindspot — provider registry + node compatibility gate (Phase 7B; takeover reviewed 2026-07-22)
+%% files: packages/providers/src/registry.ts, packages/core/src/model-registry.ts, apps/gateway/src/manage/model-registry.ts, packages/db/src/schema.ts, apps/dashboard/app/(app)/settings/SettingsView.tsx, apps/dashboard/app/(app)/routes/[name]/RouteDetailView.tsx
+%% granularity: full
+flowchart TD
+  SYNC["Sync models<br/>USER · chooses provider"]:::ask
+  AUTH["Authenticate project<br/>FUNCTION · bs_live key hash"]:::fn
+  KEY{"Encrypted BYO provider key exists?<br/>FUNCTION"}:::dec
+  DECRYPT["Decrypt key in memory<br/>FUNCTION · AES-256-GCM"]:::fn
+  CATALOG["List account-visible models<br/>FUNCTION · provider read-only endpoint<br/>bounded timeout + 5 MB response · zero inference tokens"]:::fn
+  VALIDATE["Validate catalog with Zod<br/>FUNCTION<br/>normalize capabilities + availability + pricing"]:::fn
+  REG["Upsert account-scoped registry<br/>DATA · model_registry<br/>unseen prior rows become unavailable"]:::data
+  REQ["Strictest currently observed/supplied node requirements<br/>DATA · workflow_nodes.requirements_json<br/>unseen branches are not inferred"]:::data
+  SELECT{"Workflow selected for optimization?<br/>USER · default false"}:::ask
+  ALLOW["Prototype allowlist<br/>FUNCTION · Claude Sonnet 4.6 + Haiku 4.5"]:::fn
+  ACCESS{"Provider key + account access verified?<br/>FUNCTION"}:::dec
+  MATCH{"Modalities, tools, structured output,<br/>streaming, system messages and context fit?<br/>FUNCTION · deterministic"}:::dec
+  ELIGIBLE["Eligible model<br/>DATA · technical pass + price/capability evidence"]:::data
+  EXCLUDED["Excluded model with exact reasons<br/>DATA · needs key, needs verification or incompatible"]:::data
+  ADD["Add experiment candidate<br/>USER"]:::ask
+  GUARD["Re-run server-side compatibility gate<br/>FUNCTION · arbitrary raw refs rejected"]:::fn
+  POOL["Candidate stored; back-test not started<br/>DATA · candidates<br/>zero eval spend · live_model unchanged"]:::data
+  QUALITY["Phase 7C BUILT: estimate + exact disclosed sample + confirmation<br/>then per-example golden-set quality evidence"]:::term
+  APPROVAL["Workflow-replay Recommendation only<br/>USER approves; managed applies, observe-only awaits rollout"]:::term
+  OBSERVE["Remain observe-only<br/>DATA · no experiment or route change"]:::term
+  FAIL["Return sanitized sync error<br/>FUNCTION · no secret/provider body exposed"]:::term
+
+  SYNC --> AUTH --> KEY
+  KEY -- "no" --> FAIL
+  KEY -- "yes" --> DECRYPT --> CATALOG --> VALIDATE --> REG
+  CATALOG -.->|"timeout, HTTP, size or shape failure"| FAIL
+  REG --> ACCESS
+  REQ --> SELECT
+  SELECT -- "no" --> OBSERVE
+  SELECT -- "yes" --> ALLOW --> ACCESS
+  ACCESS -- "no" --> EXCLUDED
+  ACCESS -- "yes" --> MATCH
+  MATCH -- "no or unknown" --> EXCLUDED
+  MATCH -- "yes" --> ELIGIBLE --> ADD --> GUARD --> POOL --> QUALITY --> APPROVAL
+
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;

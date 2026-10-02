@@ -1,0 +1,485 @@
+{
+  "schemaVersion": "1.0",
+  "mode": "agent_simulation",
+  "runId": "b3ee90f3-531f-4b49-b096-2b1b9a2c0464",
+  "status": "finalized",
+  "mapFingerprint": "e729b1e90565396893c8002eb6fc6327b2a65a1d390648e922f7f496c99d7314",
+  "sourceSnapshot": [
+    {
+      "path": "workflow.py",
+      "sha256": "72e281d923f4cda2697ee7b440b8e3b41112db4ae7ec88130c72ea5fc55b8ad1"
+    }
+  ],
+  "sourceFingerprint": "e20bfbae978f7f58bc8b548b8ce026b2f28c1c988f534e8347b4aed244e45228",
+  "nodeIds": [
+    "handle",
+    "classify",
+    "policy",
+    "draft",
+    "validate",
+    "result",
+    "unavailable",
+    "accepted",
+    "rejected",
+    "approval"
+  ],
+  "scenario": {
+    "name": "Synthetic refund request at day 10 · authorized writer substitution",
+    "objective": "Draft a qualified policy-grounded reply without claiming refund issuance, then reason through the source validator while keeping staff approval pending.",
+    "flowId": "reply-workflow",
+    "input": {
+      "message": "I purchased this 10 days ago. Can I get a refund?"
+    },
+    "fixtures": {
+      "customer": "Entirely synthetic; only the message above is supplied.",
+      "policySource": "Use only retrieve_policy source literals; no external retrieval.",
+      "draftSubstitution": {
+        "authorized": true,
+        "method": "Host-native subagent reasons from SYSTEM_PROMPT and Draft contract to produce synthetic Draft output. This replaces the deliberately unimplemented draft_reply for this isolated acceptance test only.",
+        "sourceReality": "draft_reply always raises NotImplementedError; the target application is not executed and cannot reach its validator through handle."
+      },
+      "staffApproval": {
+        "status": "pending",
+        "approvalGranted": false,
+        "refundIssued": false,
+        "note": "No synthetic approval authorization or refund execution fixture is supplied."
+      }
+    },
+    "expectedBehavior": "Classify refund, select refund-30, explain that a request after 10 days may be eligible, set requires_approval=true, cite refund-30, and avoid claiming a financial action. Source validation is reasoned over the actual synthetic draft. Staff approval remains pending.",
+    "assumptions": [
+      "No application, imported target code, provider endpoint, or target tool is executed.",
+      "Every node result is host-agent reasoning, not deterministic code execution.",
+      "The writer substitution is expressly authorized for this fixture acceptance test.",
+      "Source exception is recorded as a skipped branch only because of this explicit substitution; it remains the real source behavior.",
+      "Node durations are measured coding-host task wall-clock time including dispatch and recording overhead, not application or model latency.",
+      "Only the refund-10-day scenario is run; general-category, hostile-input, missing-key and citation-failure cases remain untested."
+    ]
+  },
+  "startedAt": "2026-09-26T07:39:29.661Z",
+  "finishedAt": "2026-09-26T07:43:36.684Z",
+  "events": [
+    {
+      "eventId": "85b20ac7-3d49-4bad-85d5-760866987ec1",
+      "nodeId": "handle",
+      "input": {
+        "message": "I purchased this 10 days ago. Can I get a refund?",
+        "simulationBoundary": {
+          "authorized": true,
+          "method": "Host-native subagent reasons from SYSTEM_PROMPT and Draft contract to produce synthetic Draft output. This replaces the deliberately unimplemented draft_reply for this isolated acceptance test only.",
+          "sourceReality": "draft_reply always raises NotImplementedError; the target application is not executed and cannot reach its validator through handle."
+        },
+        "staffApproval": {
+          "status": "pending",
+          "approvalGranted": false,
+          "refundIssued": false,
+          "note": "No synthetic approval authorization or refund execution fixture is supplied."
+        }
+      },
+      "output": {
+        "message": "I purchased this 10 days ago. Can I get a refund?",
+        "nextNode": "classify"
+      },
+      "status": "simulated",
+      "notes": "Fresh synthetic entry-phase simulation only. Received the message and identified its immediate next call; no downstream reasoning or execution occurred.",
+      "assumptions": [
+        "The authorized simulation boundary remains limited to this isolated acceptance test.",
+        "The target application is not executed.",
+        "Staff approval remains pending; approvalGranted=false and refundIssued=false."
+      ],
+      "agentId": "/root/agentlane_forward_test/routing_writer",
+      "startedAt": "2026-09-26T07:39:29.720Z",
+      "finishedAt": "2026-09-26T07:39:56.383Z",
+      "durationMs": 26663.184,
+      "durationBasis": "agent_wall_clock",
+      "measured": true,
+      "evidence": [
+        "workflow.py:42-46: handle(message) immediately calls classify(message)."
+      ],
+      "startedMonotonicNs": 436459422367000,
+      "clockSource": "posix_CLOCK_MONOTONIC",
+      "clockEpoch": "{ sec = 1789971910, usec = 298365 } Mon Sep 21 11:55:10 2026"
+    },
+    {
+      "eventId": "9b059b6b-027a-4963-ad0b-5b1be788fc16",
+      "nodeId": "classify",
+      "input": {
+        "message": "I purchased this 10 days ago. Can I get a refund?",
+        "precedingOutput": {
+          "message": "I purchased this 10 days ago. Can I get a refund?",
+          "nextNode": "classify"
+        }
+      },
+      "output": "refund",
+      "status": "simulated",
+      "notes": "Source reasoning rather than code execution: the lowercased message contains \"refund\".",
+      "assumptions": [],
+      "agentId": "/root/agentlane_forward_test/validation_boundary",
+      "startedAt": "2026-09-26T07:39:56.532Z",
+      "finishedAt": "2026-09-26T07:40:16.765Z",
+      "durationMs": 20232.824,
+      "durationBasis": "agent_wall_clock",
+      "measured": true,
+      "evidence": [
+        "workflow.py:20-21"
+      ],
+      "startedMonotonicNs": 436486233916000,
+      "clockSource": "posix_CLOCK_MONOTONIC",
+      "clockEpoch": "{ sec = 1789971910, usec = 298365 } Mon Sep 21 11:55:10 2026"
+    },
+    {
+      "eventId": "a9e34bca-2293-4a5b-9864-ca44361f985a",
+      "nodeId": "policy",
+      "input": {
+        "category": "refund",
+        "precedingOutput": "refund"
+      },
+      "output": {
+        "id": "refund-30",
+        "text": "Refund requests within 30 days may be eligible. A staff member must approve and issue any refund."
+      },
+      "status": "simulated",
+      "notes": "Source-literal fixture selected by reasoning from category=\"refund\"; no retrieval API call or target execution occurred. No draft or approval decisions were made.",
+      "assumptions": [
+        "The provided category and precedingOutput are both \"refund\"."
+      ],
+      "agentId": "/root/agentlane_forward_test/routing_writer",
+      "startedAt": "2026-09-26T07:40:16.903Z",
+      "finishedAt": "2026-09-26T07:40:41.484Z",
+      "durationMs": 24580.803,
+      "durationBasis": "agent_wall_clock",
+      "measured": true,
+      "evidence": [
+        "workflow.py:24-27"
+      ],
+      "startedMonotonicNs": 436506605043000,
+      "clockSource": "posix_CLOCK_MONOTONIC",
+      "clockEpoch": "{ sec = 1789971910, usec = 298365 } Mon Sep 21 11:55:10 2026"
+    },
+    {
+      "eventId": "9e9733c2-e236-4f71-9de5-13915cc9e958",
+      "nodeId": "draft",
+      "input": {
+        "message": "I purchased this 10 days ago. Can I get a refund?",
+        "policy": {
+          "id": "refund-30",
+          "text": "Refund requests within 30 days may be eligible. A staff member must approve and issue any refund."
+        },
+        "precedingOutput": {
+          "id": "refund-30",
+          "text": "Refund requests within 30 days may be eligible. A staff member must approve and issue any refund."
+        },
+        "simulationBoundary": {
+          "authorized": true,
+          "method": "Host-native subagent reasons from SYSTEM_PROMPT and Draft contract to produce synthetic Draft output. This replaces the deliberately unimplemented draft_reply for this isolated acceptance test only.",
+          "sourceReality": "draft_reply always raises NotImplementedError; the target application is not executed and cannot reach its validator through handle."
+        },
+        "staffApproval": {
+          "status": "pending",
+          "approvalGranted": false,
+          "refundIssued": false,
+          "note": "No synthetic approval authorization or refund execution fixture is supplied."
+        }
+      },
+      "output": {
+        "reply": "Your purchase was 10 days ago, so your refund request falls within the 30-day window and may be eligible. A staff member must approve and issue any refund.",
+        "requires_approval": true,
+        "cited_policy": "refund-30"
+      },
+      "status": "simulated",
+      "notes": "Authorized synthetic substitution for the missing writer in this isolated test. The target application did not run; its actual draft_reply implementation raises NotImplementedError and stops execution. No staff approval, refund issuance, or later validation result is claimed.",
+      "assumptions": [
+        "The customer's stated purchase timing is used as supplied.",
+        "Staff approval remains pending; approvalGranted=false and refundIssued=false.",
+        "The supplied policy supports conditional eligibility, not guaranteed approval."
+      ],
+      "agentId": "/root/agentlane_forward_test/routing_writer",
+      "startedAt": "2026-09-26T07:40:41.616Z",
+      "finishedAt": "2026-09-26T07:41:12.243Z",
+      "durationMs": 30627.35,
+      "durationBasis": "agent_wall_clock",
+      "measured": true,
+      "evidence": [
+        "workflow.py:5-11 — supplied writer prompt.",
+        "workflow.py:14-17 — Draft output contract.",
+        "workflow.py:30-32 — unimplemented draft_reply raises NotImplementedError."
+      ],
+      "startedMonotonicNs": 436531318102000,
+      "clockSource": "posix_CLOCK_MONOTONIC",
+      "clockEpoch": "{ sec = 1789971910, usec = 298365 } Mon Sep 21 11:55:10 2026"
+    },
+    {
+      "eventId": "1456bb58-cfe6-4502-b174-59bc9cb9a2a9",
+      "nodeId": "validate",
+      "input": {
+        "draft": {
+          "reply": "Your purchase was 10 days ago, so your refund request falls within the 30-day window and may be eligible. A staff member must approve and issue any refund.",
+          "requires_approval": true,
+          "cited_policy": "refund-30"
+        },
+        "policy": {
+          "id": "refund-30",
+          "text": "Refund requests within 30 days may be eligible. A staff member must approve and issue any refund."
+        },
+        "precedingOutput": {
+          "reply": "Your purchase was 10 days ago, so your refund request falls within the 30-day window and may be eligible. A staff member must approve and issue any refund.",
+          "requires_approval": true,
+          "cited_policy": "refund-30"
+        },
+        "simulationBoundary": "Draft is an explicitly authorized host-agent substitution for a source stub; no target execution."
+      },
+      "output": {
+        "ok": true,
+        "draft": {
+          "reply": "Your purchase was 10 days ago, so your refund request falls within the 30-day window and may be eligible. A staff member must approve and issue any refund.",
+          "requires_approval": true,
+          "cited_policy": "refund-30"
+        },
+        "reason": "source checks passed"
+      },
+      "status": "simulated",
+      "notes": "Source reasoning only; no code execution. Neither prohibited phrase appears, and the citation equals the policy ID. These narrow checks do not prove actual approval or semantic grounding.",
+      "assumptions": [],
+      "agentId": "/root/agentlane_forward_test/validation_boundary",
+      "startedAt": "2026-09-26T07:41:12.376Z",
+      "finishedAt": "2026-09-26T07:41:58.180Z",
+      "durationMs": 45804.559,
+      "durationBasis": "agent_wall_clock",
+      "measured": true,
+      "evidence": [
+        "workflow.py:35-39"
+      ],
+      "startedMonotonicNs": 436562078029000,
+      "clockSource": "posix_CLOCK_MONOTONIC",
+      "clockEpoch": "{ sec = 1789971910, usec = 298365 } Mon Sep 21 11:55:10 2026"
+    },
+    {
+      "eventId": "9c44b057-13cb-498d-90c3-f28384c0e3cf",
+      "nodeId": "unavailable",
+      "input": {
+        "precedingOutput": {
+          "reply": "Your purchase was 10 days ago, so your refund request falls within the 30-day window and may be eligible. A staff member must approve and issue any refund.",
+          "requires_approval": true,
+          "cited_policy": "refund-30"
+        },
+        "simulationBoundary": {
+          "authorized": true,
+          "method": "Host-native subagent reasons from SYSTEM_PROMPT and Draft contract to produce synthetic Draft output. This replaces the deliberately unimplemented draft_reply for this isolated acceptance test only.",
+          "sourceReality": "draft_reply always raises NotImplementedError; the target application is not executed and cannot reach its validator through handle."
+        },
+        "sourceBehavior": "draft_reply unconditionally raises NotImplementedError; handle has no catch.",
+        "consideredBranch": "unavailable is skipped only in this explicitly substituted synthetic scenario; it is the real implementation stop."
+      },
+      "output": null,
+      "status": "skipped",
+      "notes": "The source-stop branch is skipped solely for this authorized simulation, which substitutes host-native synthetic writer output to inspect downstream states. The real target implementation would stop at the uncaught NotImplementedError in draft_reply. No actual execution, application call, or model API call occurred; the preceding draft remains unchanged.",
+      "assumptions": [
+        "Synthetic writer substitution is authorized only for this isolated test.",
+        "No real staff approval or refund issuance occurred."
+      ],
+      "agentId": "/root/agentlane_forward_test/routing_writer",
+      "startedAt": "2026-09-26T07:41:30.157Z",
+      "finishedAt": "2026-09-26T07:42:37.345Z",
+      "durationMs": 67187.951,
+      "durationBasis": "agent_wall_clock",
+      "measured": true,
+      "evidence": [
+        "workflow.py:30-32 — draft_reply always raises NotImplementedError.",
+        "workflow.py:42-46 — handle has no exception handler."
+      ],
+      "startedMonotonicNs": 436579858696000,
+      "clockSource": "posix_CLOCK_MONOTONIC",
+      "clockEpoch": "{ sec = 1789971910, usec = 298365 } Mon Sep 21 11:55:10 2026"
+    },
+    {
+      "eventId": "ecd6d129-db6d-4875-85bf-71ef7b61206e",
+      "nodeId": "result",
+      "input": {
+        "validationResult": {
+          "ok": true,
+          "draft": {
+            "reply": "Your purchase was 10 days ago, so your refund request falls within the 30-day window and may be eligible. A staff member must approve and issue any refund.",
+            "requires_approval": true,
+            "cited_policy": "refund-30"
+          },
+          "reason": "source checks passed"
+        },
+        "precedingOutput": {
+          "ok": true,
+          "draft": {
+            "reply": "Your purchase was 10 days ago, so your refund request falls within the 30-day window and may be eligible. A staff member must approve and issue any refund.",
+            "requires_approval": true,
+            "cited_policy": "refund-30"
+          },
+          "reason": "source checks passed"
+        },
+        "simulationBoundary": "Downstream return is a reasoned synthetic state reachable only under the authorized writer substitution, not observed app execution."
+      },
+      "output": {
+        "ok": true,
+        "draft": {
+          "reply": "Your purchase was 10 days ago, so your refund request falls within the 30-day window and may be eligible. A staff member must approve and issue any refund.",
+          "requires_approval": true,
+          "cited_policy": "refund-30"
+        },
+        "reason": "source checks passed"
+      },
+      "status": "simulated",
+      "notes": "Reasoned synthetic return under the authorized writer substitution, not observed app execution. The result is returned unchanged; staff approval remains pending, and no real financial action occurred.",
+      "assumptions": [],
+      "agentId": "/root/agentlane_forward_test/validation_boundary",
+      "startedAt": "2026-09-26T07:41:58.318Z",
+      "finishedAt": "2026-09-26T07:42:37.422Z",
+      "durationMs": 39103.952,
+      "durationBasis": "agent_wall_clock",
+      "measured": true,
+      "evidence": [
+        "workflow.py:46"
+      ],
+      "startedMonotonicNs": 436608019846000,
+      "clockSource": "posix_CLOCK_MONOTONIC",
+      "clockEpoch": "{ sec = 1789971910, usec = 298365 } Mon Sep 21 11:55:10 2026"
+    },
+    {
+      "eventId": "56e56149-2294-4fda-b297-1f3bf6078b41",
+      "nodeId": "validate",
+      "input": {
+        "case": "Explicitly authorized counterfactual guardrail branch; not a source retry or loop",
+        "flowId": "validator-outcomes",
+        "draft": {
+          "reply": "Your refund has been issued.",
+          "requires_approval": false,
+          "cited_policy": "refund-30"
+        },
+        "policy": {
+          "id": "refund-30",
+          "text": "Refund requests within 30 days may be eligible. A staff member must approve and issue any refund."
+        },
+        "fixtureProvenance": "Additional acceptance-test instruction explicitly supplies an adversarial synthetic Draft claiming refund has been issued. This fixture is not the output of the prior writer visit.",
+        "assumptions": [
+          "No refund was issued; the fixture deliberately asserts an unsupported action.",
+          "This is an independent validator input perturbation, not a source loop or corrected prior output.",
+          "The actual original draft and all previous recorded inputs remain unchanged.",
+          "No target code or APIs are executed."
+        ]
+      },
+      "output": {
+        "ok": false,
+        "draft": {
+          "reply": "Your refund has been issued.",
+          "requires_approval": false,
+          "cited_policy": "refund-30"
+        },
+        "reason": "unsupported action claim"
+      },
+      "status": "simulated",
+      "notes": "Independent counterfactual validation fixture asserting an unsupported action. Source reasoning only: the reply contains a prohibited phrase, so validation fails despite the matching policy ID. This is not a source retry or loop and does not change earlier results.",
+      "assumptions": [
+        "No refund was issued; the fixture deliberately asserts an unsupported action.",
+        "This is an independent validator input perturbation, not a source loop or corrected prior output.",
+        "The actual original draft and all previous recorded inputs remain unchanged.",
+        "No target code or APIs are executed."
+      ],
+      "agentId": "/root/agentlane_forward_test/validation_boundary",
+      "startedAt": "2026-09-26T07:42:37.555Z",
+      "finishedAt": "2026-09-26T07:43:06.638Z",
+      "durationMs": 29082.706,
+      "durationBasis": "agent_wall_clock",
+      "measured": true,
+      "evidence": [
+        "workflow.py:35-39"
+      ],
+      "startedMonotonicNs": 436647257014000,
+      "clockSource": "posix_CLOCK_MONOTONIC",
+      "clockEpoch": "{ sec = 1789971910, usec = 298365 } Mon Sep 21 11:55:10 2026"
+    },
+    {
+      "eventId": "5babc908-9519-44da-85da-a3b6ec048d7d",
+      "nodeId": "rejected",
+      "input": {
+        "validationResult": {
+          "ok": false,
+          "draft": {
+            "reply": "Your refund has been issued.",
+            "requires_approval": false,
+            "cited_policy": "refund-30"
+          },
+          "reason": "unsupported action claim"
+        },
+        "precedingOutput": {
+          "ok": false,
+          "draft": {
+            "reply": "Your refund has been issued.",
+            "requires_approval": false,
+            "cited_policy": "refund-30"
+          },
+          "reason": "unsupported action claim"
+        },
+        "case": "Independent counterfactual guardrail branch, not a source retry/loop",
+        "fixtureProvenance": "Exact output of the second host-subagent validator visit. Original successful path remains unchanged.",
+        "staffApproval": {
+          "approvalGranted": false,
+          "refundIssued": false
+        }
+      },
+      "output": {
+        "ok": false,
+        "draft": {
+          "reply": "Your refund has been issued.",
+          "requires_approval": false,
+          "cited_policy": "refund-30"
+        },
+        "reason": "unsupported action claim"
+      },
+      "status": "simulated",
+      "notes": "Conceptual failed-return outcome for the independently authorized counterfactual branch. The false refund claim is fixture data; no real financial action occurred. The validation result is preserved unchanged, including the invalid draft. The source provides no retry, escalation, or suppression of that draft. No target execution occurred; the original successful simulation path remains unchanged.",
+      "assumptions": [
+        "The supplied validation result is the exact preceding counterfactual output.",
+        "approvalGranted=false and refundIssued=false."
+      ],
+      "agentId": "/root/agentlane_forward_test/routing_writer",
+      "startedAt": "2026-09-26T07:43:06.769Z",
+      "finishedAt": "2026-09-26T07:43:36.609Z",
+      "durationMs": 29840.173,
+      "durationBasis": "agent_wall_clock",
+      "measured": true,
+      "evidence": [
+        "workflow.py:35-39 — returns the original draft when ok=false; the prohibited-action reason takes precedence when present."
+      ],
+      "startedMonotonicNs": 436676470786000,
+      "clockSource": "posix_CLOCK_MONOTONIC",
+      "clockEpoch": "{ sec = 1789971910, usec = 298365 } Mon Sep 21 11:55:10 2026"
+    }
+  ],
+  "durationBasis": "agent_wall_clock",
+  "notice": "Coding-agent simulation. No application/model-provider API execution is recorded here. Measured duration is host-agent wall clock, including dispatch/wait; it is not model or application latency. Agent identities are supplied by the coding host, not independently attested by this offline recorder. Source binding covers referenced files; unmapped behavior remains outside coverage.",
+  "agentIds": [
+    "/root/agentlane_forward_test/routing_writer",
+    "/root/agentlane_forward_test/validation_boundary"
+  ],
+  "coverage": {
+    "visitedNodeIds": [
+      "classify",
+      "draft",
+      "handle",
+      "policy",
+      "rejected",
+      "result",
+      "unavailable",
+      "validate"
+    ],
+    "notVisitedNodeIds": [
+      "accepted",
+      "approval"
+    ],
+    "simulatedNodeIds": [
+      "classify",
+      "draft",
+      "handle",
+      "policy",
+      "rejected",
+      "result",
+      "validate"
+    ]
+  },
+  "integrity": "1e60335998556b8f7e3bdf45cb7b1be56a95995f125efdd0c39350a55a5ee056"
+}

@@ -1,0 +1,958 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Tracing with OpenTelemetry and OpenLLMetry",
+    "title": "Tracing with OpenTelemetry and OpenLLMetry",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 38,
+    "thesis": "Tracing with OpenTelemetry and OpenLLMetry is practical when learners can apply it to this concrete case: An LLM workflow needs traces that connect web requests, model calls, retrievers, and tools. By the end, they should be able to build or review OpenTelemetry span plan for LLM and retrieval operations, measure percentage of incidents with end-to-end trace coverage, and catch the failure where model calls are visible but disconnected from the request that triggered them."
+  },
+  "learnerProfile": {
+    "level": "advanced",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Tracing with OpenTelemetry and OpenLLMetry",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": false,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Tracing with OpenTelemetry and OpenLLMetry: mental map",
+    "caption": "Trace LLM applications with portable spans, propagated context, GenAI attributes, OpenLLMetry instrumentation, and governed export.",
+    "oneLineThesis": "OpenTelemetry and OpenLLMetry make LLM traces portable when the team models span context and semantic attributes deliberately.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Telemetry standards give model calls portable shape",
+        "sub": "Start with why a GenAI trace should not be trapped in one vendor.",
+        "what": "Learners understand the reason for OTel before adding instrumentation.",
+        "relevance": "This avoids integrations that cannot migrate or compare across tools.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Introduce portable GenAI spans and the limits of evolving conventions.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Context propagation keeps agent steps in one story",
+        "sub": "Parent-child span relationships are the backbone of trace meaning.",
+        "what": "Learners treat trace context as application state that must be passed deliberately.",
+        "relevance": "This prevents model calls and tool calls from appearing as unrelated events.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Follow one trace context across retrieval, model, and tool boundaries.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "OpenLLMetry maps LLM frameworks into spans",
+        "sub": "Auto-instrumentation accelerates tracing but does not define your product contract.",
+        "what": "Learners understand OpenLLMetry as instrumentation help, not the entire observability design.",
+        "relevance": "This prevents blind spots around app-specific retrieval, policy, and eval state.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use auto-instrumentation for common spans and manual fields for product meaning.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Semantic attributes make traces queryable",
+        "sub": "Consistent names turn spans into release evidence.",
+        "what": "Learners code a concrete attribute verifier.",
+        "relevance": "This catches traces that exist but cannot answer product questions.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Check the required GenAI and product attributes on each span.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Export boundaries protect secrets and budgets",
+        "sub": "Collectors, sampling, and redaction decide what leaves the app.",
+        "what": "Learners close the tracing design with production controls.",
+        "relevance": "This prevents portable telemetry from becoming portable sensitive data.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Govern the exporter so traces remain useful without leaking private content.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "needs"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "enables"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "names"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "protects"
+      }
+    ],
+    "structureType": "dependency"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Telemetry standards give model calls portable shape",
+      "sub": "Start with why a GenAI trace should not be trapped in one vendor.",
+      "summary": "OpenTelemetry provides a shared language for spans and metrics.",
+      "objectives": [
+        "Explain why LLM-specific traces need standard attributes.",
+        "Identify version-sensitive GenAI semantic conventions.",
+        "Separate vendor-neutral telemetry from product-specific metadata."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "A standard span is a migration strategy",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: an enterprise support agent starts in Langfuse, adds Phoenix for experiments, and still needs infrastructure traces in its existing APM. If each tool names model calls, token counts, and retrieval steps differently, release analysis becomes translation work."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "OpenTelemetry gives the application a common trace model: spans, attributes, metrics, context propagation, and export. The GenAI semantic conventions add LLM-specific names for operations such as chat, embeddings, retrieval, tools, agents, and token usage. The KB notes that these conventions are still development-oriented, so version pinning and local documentation matter as of 2026-06-22."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_otel_genai",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Case study: backend migration without losing eval history",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A team keeps span names like gen_ai.chat and app.retrieval.search stable while exporting to a new backend. Their dashboards survive because model, provider, prompt version, token counts, source IDs, and release SHA are attributes rather than hidden in vendor-specific event text."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_otel_genai",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Standardization reason",
+          "prompt": "Why use OpenTelemetry-style GenAI attributes for LLM calls?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "To avoid recording any model metadata.",
+              "correct": false
+            },
+            {
+              "text": "To make traces queryable and portable across telemetry backends.",
+              "correct": true
+            },
+            {
+              "text": "To replace all product evals with infrastructure metrics.",
+              "correct": false
+            }
+          ],
+          "explanation": "Standards help preserve meaning across tools, but they do not choose your product thresholds.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_otel_genai"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_otel_genai",
+        "kb_observability"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Context propagation keeps agent steps in one story",
+      "sub": "Parent-child span relationships are the backbone of trace meaning.",
+      "summary": "Trace context connects retrieval, tool calls, and model calls into one run.",
+      "objectives": [
+        "Explain trace ID, span ID, and parent span in an LLM workflow.",
+        "Spot orphan spans that break root-cause analysis.",
+        "Design context propagation through async tools and workers."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "No parent context, no agent story",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "An agent run crosses function calls, async jobs, external APIs, and maybe a human approval queue. The trace ID says these spans belong to the same user request. Parent span IDs say which operation caused which child operation."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For a support refund agent, answer_request is the parent. retrieve_policy and account_lookup are children. draft_answer depends on both. validate_policy_citation and score_groundedness are children of the draft. If account_lookup is orphaned, the trace cannot prove which user answer used that tool result."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_otel_genai",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m2_worked",
+          "kind": "functionalExample",
+          "title": "Trace tree for a refund agent",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "answer_request -> classify_intent -> retrieve_policy -> account_lookup -> draft_answer -> validate_citation -> score_groundedness. That order is not just decoration. It encodes causality: retrieval and account lookup supply evidence; drafting consumes it; validation and scoring judge the result."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Spaced recall: compare this to the Langfuse span tree. The tool changes; the causal trace idea stays the same."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_observability"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_otel_genai",
+        "kb_observability"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "OpenLLMetry maps LLM frameworks into spans",
+      "sub": "Auto-instrumentation accelerates tracing but does not define your product contract.",
+      "summary": "OpenLLMetry can collect common LLM spans while you fill product-specific gaps.",
+      "objectives": [
+        "Describe what auto-instrumentation is useful for.",
+        "Name fields that often need manual enrichment.",
+        "Avoid assuming generated traces prove product quality."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Auto spans need product annotations",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "OpenLLMetry is useful because it can instrument popular LLM libraries and export spans through OpenTelemetry. That reduces the toil of wrapping every model call by hand. But auto-instrumentation cannot know your refund policy source IDs, approval rule, customer tier, or eval rubric unless your app adds them."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The design rule is simple: let auto-instrumentation capture common model and framework details; add manual spans or attributes for product decisions."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_openllmetry",
+            "canon_otel_genai",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Auto vs manual tracing responsibilities",
+          "criteria": [
+            "Responsibility",
+            "Auto-instrumentation can help",
+            "App must still decide"
+          ],
+          "options": [
+            {
+              "name": "Model call",
+              "cells": [
+                {
+                  "criterion": "Responsibility",
+                  "text": "provider, model call timing, token metrics when supported",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Auto-instrumentation can help",
+                  "text": "prompt version, route, risk class",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "App must still decide",
+                  "text": "Model call",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the model call row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Retrieval",
+              "cells": [
+                {
+                  "criterion": "Responsibility",
+                  "text": "framework call boundaries in supported stacks",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Auto-instrumentation can help",
+                  "text": "source IDs, permissions, expected evidence",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "App must still decide",
+                  "text": "Retrieval",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the retrieval row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Tools",
+              "cells": [
+                {
+                  "criterion": "Responsibility",
+                  "text": "HTTP or library spans",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Auto-instrumentation can help",
+                  "text": "validated argument shape and approval outcome",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "App must still decide",
+                  "text": "Tools",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the tools row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Evaluation",
+              "cells": [
+                {
+                  "criterion": "Responsibility",
+                  "text": "exporting score spans if wired",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Auto-instrumentation can help",
+                  "text": "rubric, threshold, promotion policy",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "App must still decide",
+                  "text": "Evaluation",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the evaluation row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_openllmetry",
+            "canon_otel_genai"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_openllmetry",
+        "canon_otel_genai",
+        "kb_observability"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Semantic attributes make traces queryable",
+      "sub": "Consistent names turn spans into release evidence.",
+      "summary": "The value of OTel traces depends on fields that dashboards can filter and compare.",
+      "objectives": [
+        "Write a small contract check for GenAI span attributes.",
+        "Predict which missing field breaks release analysis.",
+        "Choose low-cardinality names for model and tool spans."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Contract check for OpenTelemetry-style GenAI spans",
+          "language": "python",
+          "code": "spans = [\n    {\"name\": \"gen_ai.chat\", \"attrs\": {\"gen_ai.operation.name\": \"chat\", \"gen_ai.request.model\": \"gpt-5.5\", \"gen_ai.response.model\": \"gpt-5.5\", \"gen_ai.usage.input_tokens\": 742, \"app.prompt_version\": \"refund-v7\"}},\n    {\"name\": \"app.retrieval\", \"attrs\": {\"app.source_ids\": [\"refunds#45\"], \"app.top_k\": 5, \"app.reranker\": \"rrf-v2\"}},\n    {\"name\": \"app.tool.account_lookup\", \"attrs\": {\"app.tool.name\": \"account_lookup\", \"app.tool.status\": \"ok\"}},\n]\n\nrequired_by_name = {\n    \"gen_ai.chat\": [\"gen_ai.operation.name\", \"gen_ai.request.model\", \"gen_ai.usage.input_tokens\", \"app.prompt_version\"],\n    \"app.retrieval\": [\"app.source_ids\", \"app.top_k\"],\n    \"app.tool.account_lookup\": [\"app.tool.name\", \"app.tool.status\"],\n}\n\nmissing = []\nfor span in spans:\n    for attr in required_by_name.get(span[\"name\"], []):\n        if attr not in span[\"attrs\"]:\n            missing.append((span[\"name\"], attr))\n\nprint(\"otel contract ok\" if not missing else missing)",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is a lightweight contract test around the telemetry your app exports. It uses OpenTelemetry-style naming plus app-specific attributes for retrieval and prompt version."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict what happens if app.prompt_version is removed from the gen_ai.chat span.",
+            "answer": "The check reports missing app.prompt_version on gen_ai.chat. The model call still has token data, but release comparison cannot group the run by prompt version."
+          },
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_otel_genai",
+            "kb_observability"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_otel_genai",
+        "kb_observability"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Export boundaries protect secrets and budgets",
+      "sub": "Collectors, sampling, and redaction decide what leaves the app.",
+      "summary": "Advanced tracing requires governance at the telemetry export boundary.",
+      "objectives": [
+        "Explain why raw prompts and tool outputs need redaction.",
+        "Set sampling rules that preserve rare failures.",
+        "Avoid high-cardinality attributes that ruin dashboards."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The exporter is a policy boundary",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "OpenTelemetry makes it easy to send traces to many backends. That flexibility increases the need for controls. Redact raw prompts when possible, store source IDs instead of full private documents, sample successful low-risk runs, preserve severe failures, and document which attributes are allowed to leave the app."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Privacy failure: exporting raw tool output with customer account details."
+                  }
+                ],
+                [
+                  {
+                    "text": "Cost failure: tracing every token-heavy success path without sampling."
+                  }
+                ],
+                [
+                  {
+                    "text": "Dashboard failure: adding user IDs or query text to span names."
+                  }
+                ],
+                [
+                  {
+                    "text": "Reliability failure: changing convention versions without a migration note."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_otel_genai",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Export standardized metadata broadly; export sensitive content narrowly or not at all.",
+          "useWhen": "You need cross-backend tracing, release comparison, or framework-agnostic telemetry. The team can maintain attribute conventions and redaction rules. OpenLLMetry covers common spans and manual annotations fill product gaps.",
+          "avoidWhen": "The workflow contains highly sensitive data and no collector policy exists. A single product-specific observability platform already satisfies the near-term need. The team cannot version or test the exported span contract.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_otel_genai",
+            "canon_openllmetry"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Export policy",
+          "prompt": "What is the safest default for retrieved private document text in exported traces?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Put the full document text in every span name.",
+              "correct": false
+            },
+            {
+              "text": "Store stable source IDs and redacted snippets unless raw content is explicitly allowed.",
+              "correct": true
+            },
+            {
+              "text": "Drop all metadata, including model and prompt version.",
+              "correct": false
+            }
+          ],
+          "explanation": "Useful tracing preserves meaning while respecting data boundaries.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_observability"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_otel_genai",
+        "kb_observability",
+        "canon_openllmetry"
+      ]
+    }
+  ],
+  "glossary": {
+    "eval": {
+      "id": "eval",
+      "label": "Eval",
+      "laymanDefinition": "A repeatable test of model or system behavior against expected criteria.",
+      "technicalNote": "In these lessons, evals are release evidence: they combine cases, assertions, scores, and review rules.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_otel_genai"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A structured record of one run, including spans, inputs, outputs, metadata, and scores.",
+      "technicalNote": "Traces make failures diagnosable by showing which retrieval, model, tool, or scoring step produced the result.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_otel_genai"
+      ]
+    },
+    "dataset": {
+      "id": "dataset",
+      "label": "Dataset",
+      "laymanDefinition": "A curated set of examples used for evaluation, debugging, or regression checks.",
+      "technicalNote": "A useful eval dataset stores inputs, expected behavior, metadata slices, and source or rubric references.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_otel_genai"
+      ]
+    },
+    "judge": {
+      "id": "judge",
+      "label": "LLM-as-judge",
+      "laymanDefinition": "An LLM used to grade or compare outputs with a rubric.",
+      "technicalNote": "LLM judges are semantic scorers, not final authority; their prompts, model, thresholds, and spot checks must be versioned.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_otel_genai"
+      ],
+      "acronymExpansion": "Large language model as judge"
+    },
+    "regression": {
+      "id": "regression",
+      "label": "Regression",
+      "laymanDefinition": "A previously working behavior that breaks after a prompt, model, data, or code change.",
+      "technicalNote": "Regression testing protects known capabilities and safety boundaries while allowing harmless wording variation.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_otel_genai"
+      ]
+    },
+    "rubric": {
+      "id": "rubric",
+      "label": "Rubric",
+      "laymanDefinition": "A scoring guide that states what a good answer or run must demonstrate.",
+      "technicalNote": "Rubrics make qualitative judgment reviewable by naming criteria, severity, examples, and thresholds.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_otel_genai"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for OpenTelemetry and OpenLLMetry tracing",
+    "themes": [
+      {
+        "name": "Portability check",
+        "questions": [
+          {
+            "q": "Which fields must survive if this app moves from one LLM observability backend to another?",
+            "why": "Vendor-neutral traces are useful only if span names, parent context, model metadata, token metrics, and tool attributes remain queryable.",
+            "opts": [
+              "Standard span contract",
+              "Backend-only screenshots",
+              "Raw prompts everywhere"
+            ],
+            "rot": "Use standard semantic attributes where possible, and document every product-specific extension."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: explain OTel/OpenLLMetry tracing by reconstructing trace context, span parentage, GenAI semantic attributes, auto-instrumentation limits, export pipeline, and privacy controls."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Portable GenAI tracing dependency chain",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Telemetry standards give model calls portable shape",
+          "sub": "Start with why a GenAI trace should not be trapped in one vendor.",
+          "what": "Learners understand the reason for OTel before adding instrumentation.",
+          "relevance": "This avoids integrations that cannot migrate or compare across tools.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Introduce portable GenAI spans and the limits of evolving conventions.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Context propagation keeps agent steps in one story",
+          "sub": "Parent-child span relationships are the backbone of trace meaning.",
+          "what": "Learners treat trace context as application state that must be passed deliberately.",
+          "relevance": "This prevents model calls and tool calls from appearing as unrelated events.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Follow one trace context across retrieval, model, and tool boundaries.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "OpenLLMetry maps LLM frameworks into spans",
+          "sub": "Auto-instrumentation accelerates tracing but does not define your product contract.",
+          "what": "Learners understand OpenLLMetry as instrumentation help, not the entire observability design.",
+          "relevance": "This prevents blind spots around app-specific retrieval, policy, and eval state.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use auto-instrumentation for common spans and manual fields for product meaning.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Semantic attributes make traces queryable",
+          "sub": "Consistent names turn spans into release evidence.",
+          "what": "Learners code a concrete attribute verifier.",
+          "relevance": "This catches traces that exist but cannot answer product questions.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Check the required GenAI and product attributes on each span.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Export boundaries protect secrets and budgets",
+          "sub": "Collectors, sampling, and redaction decide what leaves the app.",
+          "what": "Learners close the tracing design with production controls.",
+          "relevance": "This prevents portable telemetry from becoming portable sensitive data.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Govern the exporter so traces remain useful without leaking private content.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "requires context"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "is collected by"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "is queried through"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "is governed by"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Telemetry standards give model calls portable shape",
+        "detail": "OpenTelemetry provides a shared language for spans and metrics."
+      },
+      {
+        "step": 2,
+        "label": "Context propagation keeps agent steps in one story",
+        "detail": "Trace context connects retrieval, tool calls, and model calls into one run."
+      },
+      {
+        "step": 3,
+        "label": "OpenLLMetry maps LLM frameworks into spans",
+        "detail": "OpenLLMetry can collect common LLM spans while you fill product-specific gaps."
+      },
+      {
+        "step": 4,
+        "label": "Semantic attributes make traces queryable",
+        "detail": "The value of OTel traces depends on fields that dashboards can filter and compare."
+      },
+      {
+        "step": 5,
+        "label": "Export boundaries protect secrets and budgets",
+        "detail": "Advanced tracing requires governance at the telemetry export boundary."
+      }
+    ],
+    "capstone": {
+      "prompt": "Trace a small RAG agent with OpenTelemetry-style spans. Include parent context, retrieval, model, tool, and score spans; add GenAI attributes; run a contract check; export only redacted fields. Next rung: compare the same trace in Langfuse, Phoenix, or a generic APM backend.",
+      "scopedTo": "Advanced LLM telemetry",
+      "checks": [
+        "Trace IDs connect model and tool spans.",
+        "GenAI attributes include operation, model, provider, and token fields.",
+        "Auto-instrumentation gaps are filled manually.",
+        "Collector or exporter removes sensitive content."
+      ]
+    },
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Telemetry standards give model calls portable shape\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Semantic attributes make traces queryable\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Export boundaries protect secrets and budgets\" define the release or production gate?",
+        "fromModuleId": "m5"
+      }
+    ]
+  },
+  "citations": {
+    "kb_observability": {
+      "id": "kb_observability",
+      "kind": "kb",
+      "title": "KB: Tracing and Observability",
+      "url": "https://langfuse.com/docs/tracing",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_otel_genai": {
+      "id": "canon_otel_genai",
+      "kind": "canonical",
+      "title": "OpenTelemetry GenAI semantic conventions",
+      "url": "https://github.com/open-telemetry/semantic-conventions-genai",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_openllmetry": {
+      "id": "canon_openllmetry",
+      "kind": "canonical",
+      "title": "OpenLLMetry introduction",
+      "url": "https://www.traceloop.com/docs/openllmetry/introduction",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

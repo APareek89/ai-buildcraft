@@ -1,0 +1,15 @@
+Post-Training Lab
+Copyright 2026 Anand Pareek. Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Meridian Motors, its products, prices and policies are fictional. Any resemblance to a real
+company or product is coincidental.
+
+This repository does not include model weights. The notebooks download these third-party models,
+each under its own licence:
+
+- Qwen/Qwen2.5-0.5B-Instruct   Apache-2.0   https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct
+- BAAI/bge-small-en-v1.5       MIT          https://huggingface.co/BAAI/bge-small-en-v1.5
+- BAAI/bge-reranker-base       MIT          https://huggingface.co/BAAI/bge-reranker-base
+
+The synthetic training data in data/generated/ was written with an AI coding assistant and expanded
+deterministically from data/raw/facts.json by the scripts in scripts/.

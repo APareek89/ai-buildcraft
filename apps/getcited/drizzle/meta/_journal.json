@@ -1,0 +1,55 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1784204664036,
+      "tag": "0000_init_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784204671205,
+      "tag": "0001_rls_and_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784204883096,
+      "tag": "0002_namespace_auth_trigger",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784207154664,
+      "tag": "0003_configs_version_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784212390388,
+      "tag": "0004_mcp_oauth",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784214168839,
+      "tag": "0005_threads_memories",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784273746335,
+      "tag": "0006_tracker_items",
+      "breakpoints": true
+    }
+  ]
+}

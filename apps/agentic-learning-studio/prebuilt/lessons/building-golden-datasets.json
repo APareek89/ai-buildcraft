@@ -1,0 +1,1225 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Building Golden Datasets",
+    "title": "Building Golden Datasets",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Building Golden Datasets is practical when learners can apply it to this concrete case: A support bot needs a trusted set of examples that catches policy and citation mistakes. By the end, they should be able to build or review golden dataset card with inputs, expected outputs, and rubrics, measure coverage of top user intents and edge cases, and catch the failure where the dataset mirrors yesterday's easy demos and misses current failures."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Building Golden Datasets",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Building Golden Datasets: mental map",
+    "caption": "Build golden datasets from real workflows, expected evidence, slices, and failure labels rather than generic examples.",
+    "oneLineThesis": "A golden dataset is a living release contract: it preserves the behaviors and failures the product must remember.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Golden cases preserve product expectations",
+        "sub": "They turn “do not break this” into data.",
+        "what": "Learners define goldens as release gates.",
+        "relevance": "This prevents eval suites from becoming abstract trivia.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Anchor each case in a real workflow or known failure.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Metadata turns examples into slices",
+        "sub": "Pass rates need categories and severity.",
+        "what": "Learners design dataset metadata.",
+        "relevance": "This catches regressions hidden by aggregate scores.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Tag cases by topic, learner, risk, and tool path.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Pair deterministic checks with judges",
+        "sub": "Goldens often need exact and semantic scoring.",
+        "what": "Learners separate hard gates from rubrics.",
+        "relevance": "This avoids noisy judges for exact requirements and brittle exact checks for semantics.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use the cheapest reliable scorer for each requirement.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "A runner makes the dataset operational",
+        "sub": "Cases need to run against the real or faithful app path.",
+        "what": "Learners implement the core eval loop.",
+        "relevance": "This turns a spreadsheet into release tooling.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Compute per-case and per-slice failures in code.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Keep goldens alive without overfitting",
+        "sub": "Datasets rot when products and policies change.",
+        "what": "Learners plan dataset lifecycle.",
+        "relevance": "This prevents evals from becoming stale bureaucracy.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Review stale cases, incidents, and coverage gaps deliberately.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Golden cases preserve product expectations",
+      "sub": "They turn “do not break this” into data.",
+      "summary": "Golden datasets encode product memory.",
+      "objectives": [
+        "Define a golden case.",
+        "Record expected behavior and failure label.",
+        "Use cases as release gates."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Goldens are not random examples",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a lesson generator once produced valid JSON with thin content and fake citations. A golden case captures the request, expected grounding, richness rubric, and failure label so the bug cannot quietly return."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A useful case includes input, setup fixtures, expected behavior, source evidence, severity, owner, and update notes."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every golden case should say what regression it catches."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ],
+          "analogy": "A golden case is a smoke alarm installed where a previous fire happened."
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Worked golden case: citation drift",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Input: “Build a beginner lesson on RAG faithfulness.” Expected: source-backed explanation, big worked example, citation support, and beginner-level language. Failure label: unsupported citation."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The case is high severity because fake grounding damages trust."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Capture production failure or representative job."
+                  }
+                ],
+                [
+                  {
+                    "text": "Record input, fixtures, expected behavior, and severity."
+                  }
+                ],
+                [
+                  {
+                    "text": "Attach source/evidence requirements."
+                  }
+                ],
+                [
+                  {
+                    "text": "Choose deterministic and semantic scorers."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Golden purpose",
+          "prompt": "What makes a case golden?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It is always randomly generated.",
+              "correct": false
+            },
+            {
+              "text": "It protects a specific product expectation or known failure from regression.",
+              "correct": true
+            },
+            {
+              "text": "It has no expected behavior.",
+              "correct": false
+            }
+          ],
+          "explanation": "Goldens are reusable release criteria.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "kb5"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Metadata turns examples into slices",
+      "sub": "Pass rates need categories and severity.",
+      "summary": "Slices make eval reports diagnostic.",
+      "objectives": [
+        "Choose slice metadata.",
+        "Explain severity and owner fields.",
+        "Interpret pass rate by subgroup."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Averages hide where the product broke",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A 90% pass rate can hide that every advanced safety lesson fails or every beginner code example is too abstract. Slice metadata turns aggregate results into actionable insight."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Useful fields include topic, learner level, risk tier, tool path, retrieval mode, language, expected source, severity, owner, and last-reviewed date."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If someone cares about a subgroup, tag it."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ],
+          "analogy": "Metadata is the label that lets you sort the evidence cabinet."
+        },
+        {
+          "id": "m2_artifact",
+          "kind": "decisionMatrix",
+          "title": "Golden dataset fields",
+          "criteria": [
+            "Field",
+            "Why it matters",
+            "Failure if absent"
+          ],
+          "options": [
+            {
+              "name": "Expected evidence",
+              "cells": [
+                {
+                  "criterion": "Field",
+                  "text": "Source IDs or facts that must support output.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Why it matters",
+                  "text": "Grounding can be checked.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Failure if absent",
+                  "text": "Judges may bless hallucinations.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "RAG and lesson generation",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Slice metadata",
+              "cells": [
+                {
+                  "criterion": "Field",
+                  "text": "Topic, level, language, risk.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Why it matters",
+                  "text": "Finds hidden regressions.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Failure if absent",
+                  "text": "Averages hide failures.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "All cases",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Owner/staleness note",
+              "cells": [
+                {
+                  "criterion": "Field",
+                  "text": "Who updates the case and why.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Why it matters",
+                  "text": "Prevents stale goldens.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Failure if absent",
+                  "text": "Teams lower thresholds instead of fixing data.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Long-lived suites",
+              "cost": "Low",
+              "complexity": "Low"
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Slice value",
+          "prompt": "Why tag cases by learner level or risk tier?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "So the model sees private metadata by default.",
+              "correct": false
+            },
+            {
+              "text": "So aggregate pass rates cannot hide failures in important subgroups.",
+              "correct": true
+            },
+            {
+              "text": "So every case has the same expected answer.",
+              "correct": false
+            }
+          ],
+          "explanation": "Slice analysis makes evals diagnostic.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "kb5"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Pair deterministic checks with judges",
+      "sub": "Goldens often need exact and semantic scoring.",
+      "summary": "Scoring should match the requirement.",
+      "objectives": [
+        "Choose deterministic checks.",
+        "Use judge rubrics narrowly.",
+        "Calibrate semantic labels."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Do not ask a judge to count brackets",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use deterministic checks for schema, required fields, citation count, forbidden tools, and exact labels. Use an LLM judge for semantic criteria such as pedagogical fit, answer completeness, or richness."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A judge without evidence may approve a plausible hallucination, so pass retrieved sources or reference facts when judging groundedness."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "One judge should answer one narrow question."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ],
+          "analogy": "Use a ruler for length and a reviewer for taste."
+        },
+        {
+          "id": "m3_artifact",
+          "kind": "functionalExample",
+          "title": "Case study: rich lesson scoring",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The harness checks JSON schema deterministically, then uses a calibrated rubric judge for richness and learner fit, passing source notes as evidence."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Failures are bucketed separately: schema, citation support, thin example, level mismatch."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "List exact requirements."
+                  }
+                ],
+                [
+                  {
+                    "text": "Write deterministic assertions first."
+                  }
+                ],
+                [
+                  {
+                    "text": "Add narrow judge rubrics for semantic requirements."
+                  }
+                ],
+                [
+                  {
+                    "text": "Sample judge decisions for human calibration."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Scorer choice",
+          "prompt": "What should validate required JSON fields?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only a broad “is this good?” judge.",
+              "correct": false
+            },
+            {
+              "text": "A deterministic schema or field assertion.",
+              "correct": true
+            },
+            {
+              "text": "A public benchmark score.",
+              "correct": false
+            }
+          ],
+          "explanation": "Use exact checks where exact checks apply.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "kb5"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "A runner makes the dataset operational",
+      "sub": "Cases need to run against the real or faithful app path.",
+      "summary": "A golden dataset becomes useful when rerunnable.",
+      "objectives": [
+        "Run cases through a task function.",
+        "Summarize failures by slice.",
+        "Store trace IDs for debugging."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Rerunnable beats impressive",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A runner executes the app path, applies scorers, stores trace IDs, and reports by slice. Even a tiny runner should separate case metadata from output scores."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use the full production path when possible. If the suite uses fixtures or mocks, label them and keep contract tests for real integrations."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "The report should show which case failed, why, and who owns it."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ],
+          "analogy": "A dataset without a runner is a recipe nobody cooks."
+        },
+        {
+          "id": "m4_artifact",
+          "kind": "codeExample",
+          "title": "Tiny golden dataset slice report",
+          "language": "python",
+          "code": "cases = [\n    {\"id\": \"rag_beginner\", \"slice\": \"beginner\", \"must\": \"worked example\", \"output\": \"has worked example\"},\n    {\"id\": \"safety_adv\", \"slice\": \"advanced\", \"must\": \"approval gate\", \"output\": \"mentions sandbox only\"},\n]\nreport = {}\nfor c in cases:\n    passed = c[\"must\"] in c[\"output\"]\n    bucket = \"pass\" if passed else \"fail\"\n    report.setdefault(c[\"slice\"], {\"pass\": 0, \"fail\": 0})[bucket] += 1\n    print(c[\"id\"], bucket.upper())\nprint(report)",
+          "explanation": "The runner reports both individual failures and slice totals.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict which case fails.",
+            "answer": "safety_adv fails because the output does not include the required approval gate."
+          },
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Runner output",
+          "prompt": "What should a golden dataset runner report besides overall pass rate?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only the prettiest generated answer.",
+              "correct": false
+            },
+            {
+              "text": "Failures by slice, severity, scorer, and trace/case ID.",
+              "correct": true
+            },
+            {
+              "text": "Only token count with no case IDs.",
+              "correct": false
+            }
+          ],
+          "explanation": "Diagnostics need grouping and evidence.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "kb5"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Keep goldens alive without overfitting",
+      "sub": "Datasets rot when products and policies change.",
+      "summary": "Goldens require governance.",
+      "objectives": [
+        "Update stale cases with rationale.",
+        "Add incident-derived cases.",
+        "Avoid overfitting to the suite."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "A stale golden can be worse than no golden",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When source content changes, expected answers may become stale. Update the dataset with a dated rationale, not by quietly lowering thresholds."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When production incidents occur, add minimal cases that would have caught them. Avoid overfitting by holding out cases, sampling human review, and checking real user outcomes."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every case needs an owner and a reason to exist."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ],
+          "analogy": "A golden dataset is a garden, not a monument."
+        },
+        {
+          "id": "m5_artifact",
+          "kind": "functionalExample",
+          "title": "Verify a golden dataset before release",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review the dataset as a product artifact."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Cases come from representative workflows, known failures, or named coverage gaps."
+                  }
+                ],
+                [
+                  {
+                    "text": "Each case has expected behavior, evidence, severity, owner, and slice metadata."
+                  }
+                ],
+                [
+                  {
+                    "text": "Scorers match requirements and semantic judges are calibrated."
+                  }
+                ],
+                [
+                  {
+                    "text": "Stale cases are updated with dated rationale."
+                  }
+                ],
+                [
+                  {
+                    "text": "Production incidents feed new minimal regression cases."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Dataset lifecycle",
+          "prompt": "What should happen when a golden answer becomes stale because the product changed?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Delete the whole suite silently.",
+              "correct": false
+            },
+            {
+              "text": "Update the case with a dated rationale and rerun baselines.",
+              "correct": true
+            },
+            {
+              "text": "Lower the pass threshold without notes.",
+              "correct": false
+            }
+          ],
+          "explanation": "Goldens are living release artifacts.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "kb5"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "kb5"
+      ]
+    }
+  ],
+  "glossary": {
+    "eval": {
+      "id": "eval",
+      "label": "Eval",
+      "laymanDefinition": "A repeatable test of model or system behavior against expected criteria.",
+      "technicalNote": "In these lessons, evals are release evidence: they combine cases, assertions, scores, and review rules.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb3"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A structured record of one run, including spans, inputs, outputs, metadata, and scores.",
+      "technicalNote": "Traces make failures diagnosable by showing which retrieval, model, tool, or scoring step produced the result.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb3"
+      ]
+    },
+    "dataset": {
+      "id": "dataset",
+      "label": "Dataset",
+      "laymanDefinition": "A curated set of examples used for evaluation, debugging, or regression checks.",
+      "technicalNote": "A useful eval dataset stores inputs, expected behavior, metadata slices, and source or rubric references.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb3"
+      ]
+    },
+    "judge": {
+      "id": "judge",
+      "label": "LLM-as-judge",
+      "laymanDefinition": "An LLM used to grade or compare outputs with a rubric.",
+      "technicalNote": "LLM judges are semantic scorers, not final authority; their prompts, model, thresholds, and spot checks must be versioned.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb3"
+      ],
+      "acronymExpansion": "Large language model as judge"
+    },
+    "regression": {
+      "id": "regression",
+      "label": "Regression",
+      "laymanDefinition": "A previously working behavior that breaks after a prompt, model, data, or code change.",
+      "technicalNote": "Regression testing protects known capabilities and safety boundaries while allowing harmless wording variation.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb3"
+      ]
+    },
+    "rubric": {
+      "id": "rubric",
+      "label": "Rubric",
+      "laymanDefinition": "A scoring guide that states what a good answer or run must demonstrate.",
+      "technicalNote": "Rubrics make qualitative judgment reviewable by naming criteria, severity, examples, and thresholds.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb3"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Building Golden Datasets",
+    "themes": [
+      {
+        "name": "Golden dataset design",
+        "questions": [
+          {
+            "q": "Which real cases and failures must be preserved as release gates?",
+            "why": "The dataset shapes what changes are allowed to ship.",
+            "opts": [
+              "Representative production-derived cases",
+              "Only happy-path demos",
+              "Random synthetic questions only"
+            ],
+            "rot": "Start with real workflows and known failures; add synthetic cases only to cover named gaps."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct a golden dataset by naming input, fixtures, expected behavior, evidence, slice metadata, scorer, owner, and stale-case review."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Golden dataset path from failure to release gate",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Golden cases preserve product expectations",
+          "sub": "They turn “do not break this” into data.",
+          "what": "Learners define goldens as release gates.",
+          "relevance": "This prevents eval suites from becoming abstract trivia.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Anchor each case in a real workflow or known failure.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Metadata turns examples into slices",
+          "sub": "Pass rates need categories and severity.",
+          "what": "Learners design dataset metadata.",
+          "relevance": "This catches regressions hidden by aggregate scores.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Tag cases by topic, learner, risk, and tool path.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Pair deterministic checks with judges",
+          "sub": "Goldens often need exact and semantic scoring.",
+          "what": "Learners separate hard gates from rubrics.",
+          "relevance": "This avoids noisy judges for exact requirements and brittle exact checks for semantics.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use the cheapest reliable scorer for each requirement.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "A runner makes the dataset operational",
+          "sub": "Cases need to run against the real or faithful app path.",
+          "what": "Learners implement the core eval loop.",
+          "relevance": "This turns a spreadsheet into release tooling.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Compute per-case and per-slice failures in code.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Keep goldens alive without overfitting",
+          "sub": "Datasets rot when products and policies change.",
+          "what": "Learners plan dataset lifecycle.",
+          "relevance": "This prevents evals from becoming stale bureaucracy.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Review stale cases, incidents, and coverage gaps deliberately.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "frames"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Golden cases preserve product expectations",
+        "detail": "Golden datasets encode product memory."
+      },
+      {
+        "step": 2,
+        "label": "Metadata turns examples into slices",
+        "detail": "Slices make eval reports diagnostic."
+      },
+      {
+        "step": 3,
+        "label": "Pair deterministic checks with judges",
+        "detail": "Scoring should match the requirement."
+      },
+      {
+        "step": 4,
+        "label": "A runner makes the dataset operational",
+        "detail": "A golden dataset becomes useful when rerunnable."
+      },
+      {
+        "step": 5,
+        "label": "Keep goldens alive without overfitting",
+        "detail": "Goldens require governance."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_case",
+        "label": "Can you explain the concrete case in \"Golden cases preserve product expectations\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_artifact",
+        "label": "Does \"A runner makes the dataset operational\" produce a reviewable artifact?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Keep goldens alive without overfitting\" define a release gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a 12-case golden dataset for lesson generation: four normal cases, four known failures, two safety/refusal cases, and two edge learner profiles, each with expected evidence and scorer. Next rung: run it in promptfoo.",
+      "scopedTo": "Building Golden Datasets"
+    }
+  },
+  "citations": {
+    "kb3": {
+      "id": "kb3",
+      "kind": "kb",
+      "title": "KB: LLM Evaluation",
+      "url": "https://platform.openai.com/docs/guides/evals",
+      "asOfDate": "2026-06-22"
+    },
+    "kb4": {
+      "id": "kb4",
+      "kind": "kb",
+      "title": "KB: LLM-as-Judge",
+      "url": "https://www.braintrust.dev/docs/evaluate/write-scorers",
+      "asOfDate": "2026-06-22"
+    },
+    "kb5": {
+      "id": "kb5",
+      "kind": "kb",
+      "title": "KB: Regression Testing for Agentic Systems",
+      "url": "https://www.promptfoo.dev/docs/intro/",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

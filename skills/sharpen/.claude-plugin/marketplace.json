@@ -1,0 +1,11 @@
+{
+  "name": "sharpen",
+  "owner": { "name": "Anand Pareek", "url": "https://github.com/APareek89" },
+  "plugins": [
+    {
+      "name": "sharpen",
+      "source": "./",
+      "description": "Invisible expert-persona review: pick or build a demanding reviewer (8 pre-built personas distilled from 20 interrogation frameworks, or synthesize your boss/client from their documents); every output gets interrogated and revised before you see it, with an honest 2-3 line note on what the review caught."
+    }
+  ]
+}

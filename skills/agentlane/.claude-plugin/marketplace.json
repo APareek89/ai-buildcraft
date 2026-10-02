@@ -1,0 +1,13 @@
+{
+  "name": "agentlane-local",
+  "owner": {
+    "name": "Anand Pareek"
+  },
+  "plugins": [
+    {
+      "name": "agentlane",
+      "source": "./plugins/agentlane",
+      "description": "Readable agent workflow diagrams, actual prompt/code inspection, and optional multi-agent simulation."
+    }
+  ]
+}

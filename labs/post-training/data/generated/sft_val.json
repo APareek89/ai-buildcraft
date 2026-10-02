@@ -1,0 +1,2625 @@
+[
+  {
+    "id": "sft-session-0190",
+    "question": "When listing the Meridian Pulse 125's performance, which top speed should I use?",
+    "answer": "The Meridian Pulse 125 has a top-speed specification of 88 km/h.",
+    "topic": "top_speed_kmph",
+    "kind": "single_fact",
+    "family_id": "single/125_top_speed_kmph",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_top_speed_kmph"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_top_speed_kmph",
+        "statement": "The Meridian Pulse 125 has a top-speed specification of 88 km/h."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0527",
+    "question": "For launch year, what does each of the Meridian Arc 110 and Meridian Pulse 125 offer?",
+    "answer": "The Meridian Arc 110's listed launch year is 2024. The Meridian Pulse 125 was launched in 2025.",
+    "topic": "launch_year",
+    "kind": "comparison",
+    "family_id": "comparison/0/launch_year",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_launch_year",
+      "125_launch_year"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_launch_year",
+        "statement": "The Meridian Arc 110's listed launch year is 2024."
+      },
+      {
+        "fact_id": "125_launch_year",
+        "statement": "The Meridian Pulse 125 was launched in 2025."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0535",
+    "question": "Compare the Meridian Arc 110 and Meridian Volt X on top speed.",
+    "answer": "The Meridian Arc 110's listed top speed is 72 km/h. The Meridian Volt X has a top-speed specification of 104 km/h.",
+    "topic": "top_speed_kmph",
+    "kind": "comparison",
+    "family_id": "comparison/1/top_speed_kmph",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_top_speed_kmph",
+      "x_top_speed_kmph"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_top_speed_kmph",
+        "statement": "The Meridian Arc 110's listed top speed is 72 km/h."
+      },
+      {
+        "fact_id": "x_top_speed_kmph",
+        "statement": "The Meridian Volt X has a top-speed specification of 104 km/h."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0751",
+    "question": "Is 107,400 INR the on-road price in Bengaluru for the Meridian Pulse 125?",
+    "answer": "No. The Meridian Pulse 125's indicative on-road price in Bengaluru is Rs 136,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_bengaluru_inr",
+    "kind": "premise_correction",
+    "family_id": "correction/1/price_bengaluru_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_price_bengaluru_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_price_bengaluru_inr",
+        "statement": "The Meridian Pulse 125's indicative on-road price in Bengaluru is Rs 136,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0250",
+    "question": "Which time period applies to the Meridian Pulse 125's vehicle warranty rather than its battery distance limit?",
+    "answer": "The Meridian Pulse 125 has a 3-year vehicle warranty starting on the delivery date.",
+    "topic": "warranty_years",
+    "kind": "single_fact",
+    "family_id": "single/125_warranty_years",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_warranty_years"
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_warranty_years",
+        "statement": "The Meridian Pulse 125 has a 3-year vehicle warranty starting on the delivery date."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0400",
+    "question": "Which capacity does the Meridian Volt X document assign to its under-seat compartment?",
+    "answer": "The Meridian Volt X's under-seat storage capacity is 24 litres.",
+    "topic": "boot_litres",
+    "kind": "single_fact",
+    "family_id": "single/x_boot_litres",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_boot_litres"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_boot_litres",
+        "statement": "The Meridian Volt X's under-seat storage capacity is 24 litres."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0549",
+    "question": "I am comparing Meridian Arc 110 with Meridian Volt X; give me each model's kerb weight.",
+    "answer": "The Meridian Arc 110's kerb weight is 108 kg. The Meridian Volt X has a listed kerb weight of 131 kg.",
+    "topic": "kerb_weight_kg",
+    "kind": "comparison",
+    "family_id": "comparison/1/kerb_weight_kg",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_kerb_weight_kg",
+      "x_kerb_weight_kg"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_kerb_weight_kg",
+        "statement": "The Meridian Arc 110's kerb weight is 108 kg."
+      },
+      {
+        "fact_id": "x_kerb_weight_kg",
+        "statement": "The Meridian Volt X has a listed kerb weight of 131 kg."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0934",
+    "question": "Can you provide a documented windscreen fitment recommendation for the Volt X?",
+    "answer": "I don't have documented accessory windscreen fitments or mounting kits for the Volt X. Please ask a Meridian dealer to confirm compatibility.",
+    "topic": "Accessory windscreen compatibility",
+    "kind": "refusal",
+    "family_id": "refusal_windscreen_fitment",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0883",
+    "question": "Can you tell me the space needed for a full turn on the Volt X?",
+    "answer": "I don't have a documented turning-radius or turning-circle measurement for the Volt X. Please check with a Meridian dealer.",
+    "topic": "Turning circle or radius",
+    "kind": "refusal",
+    "family_id": "refusal_turning_radius",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0826",
+    "question": "What's the response policy when a customer asks for an undocumented detail?",
+    "answer": "The brand guide calls for a clear acknowledgement of the information gap and an offer of dealer help, rather than an invented answer.",
+    "topic": "Acknowledge information gaps and direct to dealer",
+    "kind": "policy",
+    "family_id": "policy_information_gap",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0420",
+    "question": "When checking the Meridian Volt X's battery coverage, what distance limit and expiry rule should I read together?",
+    "answer": "A battery warranty distance limit of 80,000 km applies to the Meridian Volt X. The battery warranty expires at the stated distance or at the end of the vehicle warranty period, whichever comes first.",
+    "topic": "battery_warranty_km",
+    "kind": "single_fact",
+    "family_id": "single/x_battery_warranty_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_battery_warranty_km"
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_battery_warranty_km",
+        "statement": "A battery warranty distance limit of 80,000 km applies to the Meridian Volt X."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0616",
+    "question": "Compare the Meridian Pulse 125 and Meridian Volt X on on-road price in Delhi.",
+    "answer": "The Meridian Pulse 125's indicative on-road price in Delhi is Rs 133,900. The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_delhi_inr",
+    "kind": "comparison",
+    "family_id": "comparison/2/price_delhi_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_price_delhi_inr",
+      "x_price_delhi_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_price_delhi_inr",
+        "statement": "The Meridian Pulse 125's indicative on-road price in Delhi is Rs 133,900."
+      },
+      {
+        "fact_id": "x_price_delhi_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0020",
+    "question": "Looking only at certified range, what figure does the Meridian Arc 110 specification report?",
+    "answer": "The Meridian Arc 110's certified full-charge range is 96 km.",
+    "topic": "range_km",
+    "kind": "single_fact",
+    "family_id": "single/110_range_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_range_km",
+        "statement": "The Meridian Arc 110's certified full-charge range is 96 km."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0640",
+    "question": "For the Meridian Arc 110, I need the documented kerb weight and under-seat storage together.",
+    "answer": "The Meridian Arc 110 has a listed kerb weight of 108 kg. The Meridian Arc 110 has 22 litres of under-seat storage.",
+    "topic": "body",
+    "kind": "multi_fact",
+    "family_id": "multi/0/body",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_kerb_weight_kg",
+      "110_boot_litres"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_kerb_weight_kg",
+        "statement": "The Meridian Arc 110 has a listed kerb weight of 108 kg."
+      },
+      {
+        "fact_id": "110_boot_litres",
+        "statement": "The Meridian Arc 110 has 22 litres of under-seat storage."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1103",
+    "question": "What's the Volt X top speed, and how quickly does it accelerate?",
+    "answer": "The Meridian Volt X has a listed top speed of 104 km/h. The documents don't provide an acceleration time; please check that detail with a Meridian dealer.",
+    "topic": "Known top speed, unspecified acceleration time",
+    "kind": "mixed",
+    "family_id": "mixed_volt_speed_acceleration",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_top_speed_kmph"
+    ],
+    "source_docs": [
+      "brand_guide.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0639",
+    "question": "I'm checking the Meridian Arc 110; please summarise its kerb weight and under-seat storage.",
+    "answer": "The Meridian Arc 110's kerb weight is 108 kg. The Meridian Arc 110's under-seat storage capacity is 22 litres.",
+    "topic": "body",
+    "kind": "multi_fact",
+    "family_id": "multi/0/body",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_kerb_weight_kg",
+      "110_boot_litres"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_kerb_weight_kg",
+        "statement": "The Meridian Arc 110's kerb weight is 108 kg."
+      },
+      {
+        "fact_id": "110_boot_litres",
+        "statement": "The Meridian Arc 110's under-seat storage capacity is 22 litres."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0150",
+    "question": "Reading the Meridian Arc 110 specification, what is its complete set of listed colours?",
+    "answer": "The listed colours for the Meridian Arc 110 are Slate Grey, Ivory, Cobalt.",
+    "topic": "colours",
+    "kind": "single_fact",
+    "family_id": "single/110_colours",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_colours"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_colours",
+        "statement": "The listed colours for the Meridian Arc 110 are Slate Grey, Ivory, Cobalt."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0882",
+    "question": "I have a narrow driveway; is the Volt X turning-circle measurement available?",
+    "answer": "I don't have a documented turning-radius or turning-circle measurement for the Volt X. Please check with a Meridian dealer.",
+    "topic": "Turning circle or radius",
+    "kind": "refusal",
+    "family_id": "refusal_turning_radius",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0927",
+    "question": "Which accessory windscreens fit the Volt X?",
+    "answer": "I don't have documented accessory windscreen fitments or mounting kits for the Volt X. Please ask a Meridian dealer to confirm compatibility.",
+    "topic": "Accessory windscreen compatibility",
+    "kind": "refusal",
+    "family_id": "refusal_windscreen_fitment",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0180",
+    "question": "Looking only at certified range, what figure does the Meridian Pulse 125 specification report?",
+    "answer": "The Meridian Pulse 125's certified full-charge range is 118 km.",
+    "topic": "range_km",
+    "kind": "single_fact",
+    "family_id": "single/125_range_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_range_km",
+        "statement": "The Meridian Pulse 125's certified full-charge range is 118 km."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0340",
+    "question": "Looking only at certified range, what figure does the Meridian Volt X specification report?",
+    "answer": "The Meridian Volt X's certified full-charge range is 152 km.",
+    "topic": "range_km",
+    "kind": "single_fact",
+    "family_id": "single/x_range_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_range_km",
+        "statement": "The Meridian Volt X's certified full-charge range is 152 km."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0724",
+    "question": "Is 118 km the certified range on a full charge for the Meridian Arc 110?",
+    "answer": "No. The Meridian Arc 110 has a certified range of 96 km on a full charge.",
+    "topic": "range_km",
+    "kind": "premise_correction",
+    "family_id": "correction/0/range_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_range_km",
+        "statement": "The Meridian Arc 110 has a certified range of 96 km on a full charge."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0300",
+    "question": "In the city-specific price entries for the Meridian Pulse 125, what amount belongs to Delhi?",
+    "answer": "The Meridian Pulse 125's indicative on-road price in Delhi is Rs 133,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_delhi_inr",
+    "kind": "single_fact",
+    "family_id": "single/125_price_delhi_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_price_delhi_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_price_delhi_inr",
+        "statement": "The Meridian Pulse 125's indicative on-road price in Delhi is Rs 133,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0526",
+    "question": "Compare the Meridian Arc 110 and Meridian Pulse 125 on launch year.",
+    "answer": "The Meridian Arc 110 was launched in 2024. The Meridian Pulse 125's listed launch year is 2025.",
+    "topic": "launch_year",
+    "kind": "comparison",
+    "family_id": "comparison/0/launch_year",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_launch_year",
+      "125_launch_year"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_launch_year",
+        "statement": "The Meridian Arc 110 was launched in 2024."
+      },
+      {
+        "fact_id": "125_launch_year",
+        "statement": "The Meridian Pulse 125's listed launch year is 2025."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1068",
+    "question": "Are breakdown-recovery arrangements specified for the Volt X?",
+    "answer": "I don't have documented roadside-assistance or breakdown-recovery terms. Please ask a Meridian dealer whether such a service is available.",
+    "topic": "Roadside-assistance availability",
+    "kind": "refusal",
+    "family_id": "refusal_roadside_assistance",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0330",
+    "question": "In the Meridian Volt X specification, which capacity is assigned to the battery?",
+    "answer": "The Meridian Volt X's battery capacity is 4.6 kWh.",
+    "topic": "battery_kwh",
+    "kind": "single_fact",
+    "family_id": "single/x_battery_kwh",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_battery_kwh"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_battery_kwh",
+        "statement": "The Meridian Volt X's battery capacity is 4.6 kWh."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0450",
+    "question": "In the city-specific price entries for the Meridian Volt X, what amount belongs to Bengaluru?",
+    "answer": "The Meridian Volt X's indicative on-road price in Bengaluru is Rs 181,400. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_bengaluru_inr",
+    "kind": "single_fact",
+    "family_id": "single/x_price_bengaluru_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_price_bengaluru_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_price_bengaluru_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Bengaluru is Rs 181,400."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0260",
+    "question": "When checking the Meridian Pulse 125's battery coverage, what distance limit and expiry rule should I read together?",
+    "answer": "A battery warranty distance limit of 60,000 km applies to the Meridian Pulse 125. The battery warranty expires at the stated distance or at the end of the vehicle warranty period, whichever comes first.",
+    "topic": "battery_warranty_km",
+    "kind": "single_fact",
+    "family_id": "single/125_battery_warranty_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_battery_warranty_km"
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_battery_warranty_km",
+        "statement": "A battery warranty distance limit of 60,000 km applies to the Meridian Pulse 125."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0040",
+    "question": "Using the standard charging specification, what duration corresponds to a full charge of the Meridian Arc 110?",
+    "answer": "A full charge of the Meridian Arc 110 takes 4.5 hours using the standard charger.",
+    "topic": "charge_time_hours",
+    "kind": "single_fact",
+    "family_id": "single/110_charge_time_hours",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_charge_time_hours"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_charge_time_hours",
+        "statement": "A full charge of the Meridian Arc 110 takes 4.5 hours using the standard charger."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0010",
+    "question": "In the Meridian Arc 110 specification, which capacity is assigned to the battery?",
+    "answer": "The Meridian Arc 110's battery capacity is 2.9 kWh.",
+    "topic": "battery_kwh",
+    "kind": "single_fact",
+    "family_id": "single/110_battery_kwh",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_battery_kwh"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_battery_kwh",
+        "statement": "The Meridian Arc 110's battery capacity is 2.9 kWh."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0547",
+    "question": "Compare the Meridian Arc 110 and Meridian Volt X on kerb weight.",
+    "answer": "The Meridian Arc 110's kerb weight is 108 kg. The Meridian Volt X has a listed kerb weight of 131 kg.",
+    "topic": "kerb_weight_kg",
+    "kind": "comparison",
+    "family_id": "comparison/1/kerb_weight_kg",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_kerb_weight_kg",
+      "x_kerb_weight_kg"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_kerb_weight_kg",
+        "statement": "The Meridian Arc 110's kerb weight is 108 kg."
+      },
+      {
+        "fact_id": "x_kerb_weight_kg",
+        "statement": "The Meridian Volt X has a listed kerb weight of 131 kg."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0931",
+    "question": "What windscreen brackets are compatible with the Volt X?",
+    "answer": "I don't have documented accessory windscreen fitments or mounting kits for the Volt X. Please ask a Meridian dealer to confirm compatibility.",
+    "topic": "Accessory windscreen compatibility",
+    "kind": "refusal",
+    "family_id": "refusal_windscreen_fitment",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0290",
+    "question": "In the city-specific price entries for the Meridian Pulse 125, what amount belongs to Bengaluru?",
+    "answer": "The Meridian Pulse 125's indicative on-road price in Bengaluru is Rs 136,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_bengaluru_inr",
+    "kind": "single_fact",
+    "family_id": "single/125_price_bengaluru_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_price_bengaluru_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_price_bengaluru_inr",
+        "statement": "The Meridian Pulse 125's indicative on-road price in Bengaluru is Rs 136,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1057",
+    "question": "Do the documents state the deposit refund policy?",
+    "answer": "I don't have a booking-deposit cancellation or refund policy in the supplied documents. Please confirm those terms with a Meridian dealer.",
+    "topic": "Booking-deposit cancellation and refund policy",
+    "kind": "refusal",
+    "family_id": "refusal_deposit_refund",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0881",
+    "question": "Does Meridian publish the Volt X's minimum turning radius?",
+    "answer": "I don't have a documented turning-radius or turning-circle measurement for the Volt X. Please check with a Meridian dealer.",
+    "topic": "Turning circle or radius",
+    "kind": "refusal",
+    "family_id": "refusal_turning_radius",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0825",
+    "question": "How should the assistant handle something the company documents don't cover?",
+    "answer": "I should state directly that the documents don't contain that information and suggest checking with a Meridian dealer. I should not guess.",
+    "topic": "Acknowledge information gaps and direct to dealer",
+    "kind": "policy",
+    "family_id": "policy_information_gap",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0528",
+    "question": "I am comparing Meridian Arc 110 with Meridian Pulse 125; give me each model's launch year.",
+    "answer": "The Meridian Arc 110 was launched in 2024. The Meridian Pulse 125's listed launch year is 2025.",
+    "topic": "launch_year",
+    "kind": "comparison",
+    "family_id": "comparison/0/launch_year",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_launch_year",
+      "125_launch_year"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_launch_year",
+        "statement": "The Meridian Arc 110 was launched in 2024."
+      },
+      {
+        "fact_id": "125_launch_year",
+        "statement": "The Meridian Pulse 125's listed launch year is 2025."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1104",
+    "question": "Can you give me the Volt X maximum speed and a documented acceleration time?",
+    "answer": "The Meridian Volt X has a listed top speed of 104 km/h. The documents don't provide an acceleration time; please check that detail with a Meridian dealer.",
+    "topic": "Known top speed, unspecified acceleration time",
+    "kind": "mixed",
+    "family_id": "mixed_volt_speed_acceleration",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_top_speed_kmph"
+    ],
+    "source_docs": [
+      "brand_guide.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-1056",
+    "question": "What happens to a booking deposit if I cancel an Arc 110 order?",
+    "answer": "I don't have a booking-deposit cancellation or refund policy in the supplied documents. Please confirm those terms with a Meridian dealer.",
+    "topic": "Booking-deposit cancellation and refund policy",
+    "kind": "refusal",
+    "family_id": "refusal_deposit_refund",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0932",
+    "question": "I want to check windscreen compatibility for a Volt X; is it documented?",
+    "answer": "I don't have documented accessory windscreen fitments or mounting kits for the Volt X. Please ask a Meridian dealer to confirm compatibility.",
+    "topic": "Accessory windscreen compatibility",
+    "kind": "refusal",
+    "family_id": "refusal_windscreen_fitment",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0796",
+    "question": "What happens to warranty cover after a scheduled service is missed?",
+    "answer": "The policy does not cancel the whole warranty merely because a service was missed. It excludes damage attributable to the missed service.",
+    "topic": "Missed service does not void all cover; attributable damage excluded",
+    "kind": "policy",
+    "family_id": "policy_missed_service",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0930",
+    "question": "Are approved windscreen fitments listed for the Meridian Volt X?",
+    "answer": "I don't have documented accessory windscreen fitments or mounting kits for the Volt X. Please ask a Meridian dealer to confirm compatibility.",
+    "topic": "Accessory windscreen compatibility",
+    "kind": "refusal",
+    "family_id": "refusal_windscreen_fitment",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0060",
+    "question": "Which peak power value is attached to the motor in the Meridian Arc 110 specification?",
+    "answer": "The Meridian Arc 110 has a peak motor-power rating of 2.7 kW.",
+    "topic": "motor_kw",
+    "kind": "single_fact",
+    "family_id": "single/110_motor_kw",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_motor_kw"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_motor_kw",
+        "statement": "The Meridian Arc 110 has a peak motor-power rating of 2.7 kW."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0823",
+    "question": "What should you do if Meridian's documents don't answer my question?",
+    "answer": "I should state directly that the documents don't contain that information and suggest checking with a Meridian dealer. I should not guess.",
+    "topic": "Acknowledge information gaps and direct to dealer",
+    "kind": "policy",
+    "family_id": "policy_information_gap",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0270",
+    "question": "Which distance-based maintenance interval does Meridian specify for the Meridian Pulse 125?",
+    "answer": "The Meridian Pulse 125 is scheduled for service every 6,000 km. Servicing must be carried out at an authorised Meridian service centre.",
+    "topic": "service_interval_km",
+    "kind": "single_fact",
+    "family_id": "single/125_service_interval_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_service_interval_km"
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_service_interval_km",
+        "statement": "The Meridian Pulse 125 is scheduled for service every 6,000 km."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0310",
+    "question": "Reading the Meridian Pulse 125 specification, what is its complete set of listed colours?",
+    "answer": "The listed colours for the Meridian Pulse 125 are Midnight Blue, Ember Red, Ivory.",
+    "topic": "colours",
+    "kind": "single_fact",
+    "family_id": "single/125_colours",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_colours"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_colours",
+        "statement": "The listed colours for the Meridian Pulse 125 are Midnight Blue, Ember Red, Ivory."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1061",
+    "question": "Where can I check the conditions for getting a booking deposit back?",
+    "answer": "I don't have a booking-deposit cancellation or refund policy in the supplied documents. Please confirm those terms with a Meridian dealer.",
+    "topic": "Booking-deposit cancellation and refund policy",
+    "kind": "refusal",
+    "family_id": "refusal_deposit_refund",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0280",
+    "question": "In the city-specific price entries for the Meridian Pulse 125, what amount belongs to Mumbai?",
+    "answer": "The Meridian Pulse 125's indicative on-road price in Mumbai is Rs 139,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_mumbai_inr",
+    "kind": "single_fact",
+    "family_id": "single/125_price_mumbai_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_price_mumbai_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_price_mumbai_inr",
+        "statement": "The Meridian Pulse 125's indicative on-road price in Mumbai is Rs 139,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0460",
+    "question": "In the city-specific price entries for the Meridian Volt X, what amount belongs to Delhi?",
+    "answer": "The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_delhi_inr",
+    "kind": "single_fact",
+    "family_id": "single/x_price_delhi_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_price_delhi_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_price_delhi_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0618",
+    "question": "I am comparing Meridian Pulse 125 with Meridian Volt X; give me each model's on-road price in Delhi.",
+    "answer": "The Meridian Pulse 125's indicative on-road price in Delhi is Rs 133,900. The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_delhi_inr",
+    "kind": "comparison",
+    "family_id": "comparison/2/price_delhi_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_price_delhi_inr",
+      "x_price_delhi_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_price_delhi_inr",
+        "statement": "The Meridian Pulse 125's indicative on-road price in Delhi is Rs 133,900."
+      },
+      {
+        "fact_id": "x_price_delhi_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0617",
+    "question": "For on-road price in Delhi, what does each of the Meridian Pulse 125 and Meridian Volt X offer?",
+    "answer": "The Meridian Pulse 125's indicative on-road price in Delhi is Rs 133,900. The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_delhi_inr",
+    "kind": "comparison",
+    "family_id": "comparison/2/price_delhi_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_price_delhi_inr",
+      "x_price_delhi_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_price_delhi_inr",
+        "statement": "The Meridian Pulse 125's indicative on-road price in Delhi is Rs 133,900."
+      },
+      {
+        "fact_id": "x_price_delhi_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0879",
+    "question": "What is the Volt X turning radius?",
+    "answer": "I don't have a documented turning-radius or turning-circle measurement for the Volt X. Please check with a Meridian dealer.",
+    "topic": "Turning circle or radius",
+    "kind": "refusal",
+    "family_id": "refusal_turning_radius",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0320",
+    "question": "In the product history for the Meridian Pulse 125, which launch year is actually documented?",
+    "answer": "The Meridian Pulse 125's listed launch year is 2025.",
+    "topic": "launch_year",
+    "kind": "single_fact",
+    "family_id": "single/125_launch_year",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_launch_year"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_launch_year",
+        "statement": "The Meridian Pulse 125's listed launch year is 2025."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1067",
+    "question": "Is roadside support an included service for the Meridian Volt X?",
+    "answer": "I don't have documented roadside-assistance or breakdown-recovery terms. Please ask a Meridian dealer whether such a service is available.",
+    "topic": "Roadside-assistance availability",
+    "kind": "refusal",
+    "family_id": "refusal_roadside_assistance",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0714",
+    "question": "Can you cover both on-road prices in Mumbai and Delhi for the Meridian Volt X?",
+    "answer": "The Meridian Volt X's indicative on-road price in Mumbai is Rs 184,900. The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "two_city_prices",
+    "kind": "multi_fact",
+    "family_id": "multi/2/two_city_prices",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_price_mumbai_inr",
+      "x_price_delhi_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_price_mumbai_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Mumbai is Rs 184,900."
+      },
+      {
+        "fact_id": "x_price_delhi_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0658",
+    "question": "Can you cover both battery capacity and certified range for the Meridian Pulse 125?",
+    "answer": "The Meridian Pulse 125's battery capacity is 3.4 kWh. The Meridian Pulse 125 has a certified range of 118 km on a full charge.",
+    "topic": "capacity_range",
+    "kind": "multi_fact",
+    "family_id": "multi/1/capacity_range",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_battery_kwh",
+      "125_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_battery_kwh",
+        "statement": "The Meridian Pulse 125's battery capacity is 3.4 kWh."
+      },
+      {
+        "fact_id": "125_range_km",
+        "statement": "The Meridian Pulse 125 has a certified range of 118 km on a full charge."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0726",
+    "question": "Someone told me the Meridian Arc 110's certified range on a full charge is 118 km; is that what the document says?",
+    "answer": "No. The Meridian Arc 110 has a certified range of 96 km on a full charge.",
+    "topic": "range_km",
+    "kind": "premise_correction",
+    "family_id": "correction/0/range_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_range_km",
+        "statement": "The Meridian Arc 110 has a certified range of 96 km on a full charge."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0050",
+    "question": "Checking the Meridian Arc 110's fast-charging entry, what support or timing does the document state?",
+    "answer": "The Meridian Arc 110 does not support fast charging.",
+    "topic": "fast_charge_minutes",
+    "kind": "single_fact",
+    "family_id": "single/110_fast_charge_minutes",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_fast_charge_minutes"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_fast_charge_minutes",
+        "statement": "The Meridian Arc 110 does not support fast charging."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0390",
+    "question": "When recording the Meridian Volt X's body specifications, which kerb weight should I enter?",
+    "answer": "The Meridian Volt X has a listed kerb weight of 131 kg.",
+    "topic": "kerb_weight_kg",
+    "kind": "single_fact",
+    "family_id": "single/x_kerb_weight_kg",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_kerb_weight_kg"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_kerb_weight_kg",
+        "statement": "The Meridian Volt X has a listed kerb weight of 131 kg."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0440",
+    "question": "In the city-specific price entries for the Meridian Volt X, what amount belongs to Mumbai?",
+    "answer": "The Meridian Volt X's indicative on-road price in Mumbai is Rs 184,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_mumbai_inr",
+    "kind": "single_fact",
+    "family_id": "single/x_price_mumbai_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_price_mumbai_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_price_mumbai_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Mumbai is Rs 184,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0120",
+    "question": "In the city-specific price entries for the Meridian Arc 110, what amount belongs to Mumbai?",
+    "answer": "The Meridian Arc 110's indicative on-road price in Mumbai is Rs 109,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_mumbai_inr",
+    "kind": "single_fact",
+    "family_id": "single/110_price_mumbai_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_price_mumbai_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_price_mumbai_inr",
+        "statement": "The Meridian Arc 110's indicative on-road price in Mumbai is Rs 109,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0470",
+    "question": "Reading the Meridian Volt X specification, what is its complete set of listed colours?",
+    "answer": "The listed colours for the Meridian Volt X are Graphite, Pearl White, Signal Orange.",
+    "topic": "colours",
+    "kind": "single_fact",
+    "family_id": "single/x_colours",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_colours"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_colours",
+        "statement": "The listed colours for the Meridian Volt X are Graphite, Pearl White, Signal Orange."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0760",
+    "question": "Is 96 km the certified range on a full charge for the Meridian Volt X?",
+    "answer": "No. The Meridian Volt X has a certified range of 152 km on a full charge.",
+    "topic": "range_km",
+    "kind": "premise_correction",
+    "family_id": "correction/2/range_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_range_km",
+        "statement": "The Meridian Volt X has a certified range of 152 km on a full charge."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0824",
+    "question": "If the answer is absent from the supplied information, are you supposed to guess?",
+    "answer": "The brand guide calls for a clear acknowledgement of the information gap and an offer of dealer help, rather than an invented answer.",
+    "topic": "Acknowledge information gaps and direct to dealer",
+    "kind": "policy",
+    "family_id": "policy_information_gap",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0795",
+    "question": "If I miss a service, is the entire warranty automatically void?",
+    "answer": "A missed service does not void the warranty. However, any damage attributable to that missed service is excluded.",
+    "topic": "Missed service does not void all cover; attributable damage excluded",
+    "kind": "policy",
+    "family_id": "policy_missed_service",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0410",
+    "question": "Which time period applies to the Meridian Volt X's vehicle warranty rather than its battery distance limit?",
+    "answer": "The Meridian Volt X has a 5-year vehicle warranty starting on the delivery date.",
+    "topic": "warranty_years",
+    "kind": "single_fact",
+    "family_id": "single/x_warranty_years",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_warranty_years"
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_warranty_years",
+        "statement": "The Meridian Volt X has a 5-year vehicle warranty starting on the delivery date."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0110",
+    "question": "Which distance-based maintenance interval does Meridian specify for the Meridian Arc 110?",
+    "answer": "The Meridian Arc 110 is scheduled for service every 5,000 km. Servicing must be carried out at an authorised Meridian service centre.",
+    "topic": "service_interval_km",
+    "kind": "single_fact",
+    "family_id": "single/110_service_interval_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_service_interval_km"
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_service_interval_km",
+        "statement": "The Meridian Arc 110 is scheduled for service every 5,000 km."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1055",
+    "question": "Is a Meridian scooter booking deposit refundable?",
+    "answer": "I don't have a booking-deposit cancellation or refund policy in the supplied documents. Please confirm those terms with a Meridian dealer.",
+    "topic": "Booking-deposit cancellation and refund policy",
+    "kind": "refusal",
+    "family_id": "refusal_deposit_refund",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0752",
+    "question": "I have 107,400 INR written down as the Meridian Pulse 125's on-road price in Bengaluru. Can you check that?",
+    "answer": "No. The Meridian Pulse 125's indicative on-road price in Bengaluru is Rs 136,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_bengaluru_inr",
+    "kind": "premise_correction",
+    "family_id": "correction/1/price_bengaluru_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_price_bengaluru_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_price_bengaluru_inr",
+        "statement": "The Meridian Pulse 125's indicative on-road price in Bengaluru is Rs 136,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0537",
+    "question": "I am comparing Meridian Arc 110 with Meridian Volt X; give me each model's top speed.",
+    "answer": "The Meridian Arc 110's listed top speed is 72 km/h. The Meridian Volt X has a top-speed specification of 104 km/h.",
+    "topic": "top_speed_kmph",
+    "kind": "comparison",
+    "family_id": "comparison/1/top_speed_kmph",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_top_speed_kmph",
+      "x_top_speed_kmph"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_top_speed_kmph",
+        "statement": "The Meridian Arc 110's listed top speed is 72 km/h."
+      },
+      {
+        "fact_id": "x_top_speed_kmph",
+        "statement": "The Meridian Volt X has a top-speed specification of 104 km/h."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0638",
+    "question": "Can you cover both kerb weight and under-seat storage for the Meridian Arc 110?",
+    "answer": "The Meridian Arc 110 has a listed kerb weight of 108 kg. The Meridian Arc 110 has 22 litres of under-seat storage.",
+    "topic": "body",
+    "kind": "multi_fact",
+    "family_id": "multi/0/body",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_kerb_weight_kg",
+      "110_boot_litres"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_kerb_weight_kg",
+        "statement": "The Meridian Arc 110 has a listed kerb weight of 108 kg."
+      },
+      {
+        "fact_id": "110_boot_litres",
+        "statement": "The Meridian Arc 110 has 22 litres of under-seat storage."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0659",
+    "question": "I'm checking the Meridian Pulse 125; please summarise its battery capacity and certified range.",
+    "answer": "The Meridian Pulse 125 has a battery capacity of 3.4 kWh. The Meridian Pulse 125's certified full-charge range is 118 km.",
+    "topic": "capacity_range",
+    "kind": "multi_fact",
+    "family_id": "multi/1/capacity_range",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_battery_kwh",
+      "125_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_battery_kwh",
+        "statement": "The Meridian Pulse 125 has a battery capacity of 3.4 kWh."
+      },
+      {
+        "fact_id": "125_range_km",
+        "statement": "The Meridian Pulse 125's certified full-charge range is 118 km."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0430",
+    "question": "Which distance-based maintenance interval does Meridian specify for the Meridian Volt X?",
+    "answer": "The Meridian Volt X is scheduled for service every 6,000 km. Servicing must be carried out at an authorised Meridian service centre.",
+    "topic": "service_interval_km",
+    "kind": "single_fact",
+    "family_id": "single/x_service_interval_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_service_interval_km"
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_service_interval_km",
+        "statement": "The Meridian Volt X is scheduled for service every 6,000 km."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1065",
+    "question": "Can you confirm roadside-assistance coverage for a Volt X owner?",
+    "answer": "I don't have documented roadside-assistance or breakdown-recovery terms. Please ask a Meridian dealer whether such a service is available.",
+    "topic": "Roadside-assistance availability",
+    "kind": "refusal",
+    "family_id": "refusal_roadside_assistance",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0884",
+    "question": "Where is the Volt X steering turning-radius specification?",
+    "answer": "I don't have a documented turning-radius or turning-circle measurement for the Volt X. Please check with a Meridian dealer.",
+    "topic": "Turning circle or radius",
+    "kind": "refusal",
+    "family_id": "refusal_turning_radius",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0753",
+    "question": "Someone told me the Meridian Pulse 125's on-road price in Bengaluru is 107,400 INR; is that what the document says?",
+    "answer": "No. The Meridian Pulse 125's indicative on-road price in Bengaluru is Rs 136,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_bengaluru_inr",
+    "kind": "premise_correction",
+    "family_id": "correction/1/price_bengaluru_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_price_bengaluru_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_price_bengaluru_inr",
+        "statement": "The Meridian Pulse 125's indicative on-road price in Bengaluru is Rs 136,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0762",
+    "question": "Someone told me the Meridian Volt X's certified range on a full charge is 96 km; is that what the document says?",
+    "answer": "No. The Meridian Volt X has a certified range of 152 km on a full charge.",
+    "topic": "range_km",
+    "kind": "premise_correction",
+    "family_id": "correction/2/range_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_range_km",
+        "statement": "The Meridian Volt X has a certified range of 152 km on a full charge."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0928",
+    "question": "Does Meridian specify a windscreen mounting kit for the Volt X?",
+    "answer": "I don't have documented accessory windscreen fitments or mounting kits for the Volt X. Please ask a Meridian dealer to confirm compatibility.",
+    "topic": "Accessory windscreen compatibility",
+    "kind": "refusal",
+    "family_id": "refusal_windscreen_fitment",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0637",
+    "question": "Give me the Meridian Arc 110's kerb weight and under-seat storage.",
+    "answer": "The Meridian Arc 110's kerb weight is 108 kg. The Meridian Arc 110's under-seat storage capacity is 22 litres.",
+    "topic": "body",
+    "kind": "multi_fact",
+    "family_id": "multi/0/body",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_kerb_weight_kg",
+      "110_boot_litres"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_kerb_weight_kg",
+        "statement": "The Meridian Arc 110's kerb weight is 108 kg."
+      },
+      {
+        "fact_id": "110_boot_litres",
+        "statement": "The Meridian Arc 110's under-seat storage capacity is 22 litres."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1106",
+    "question": "Are both top speed and acceleration timing specified for the Volt X?",
+    "answer": "The Meridian Volt X has a listed top speed of 104 km/h. The documents don't provide an acceleration time; please check that detail with a Meridian dealer.",
+    "topic": "Known top speed, unspecified acceleration time",
+    "kind": "mixed",
+    "family_id": "mixed_volt_speed_acceleration",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_top_speed_kmph"
+    ],
+    "source_docs": [
+      "brand_guide.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0360",
+    "question": "Using the standard charging specification, what duration corresponds to a full charge of the Meridian Volt X?",
+    "answer": "A full charge of the Meridian Volt X takes 3.0 hours using the standard charger.",
+    "topic": "charge_time_hours",
+    "kind": "single_fact",
+    "family_id": "single/x_charge_time_hours",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_charge_time_hours"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_charge_time_hours",
+        "statement": "A full charge of the Meridian Volt X takes 3.0 hours using the standard charger."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0380",
+    "question": "Which peak power value is attached to the motor in the Meridian Volt X specification?",
+    "answer": "The Meridian Volt X has a peak motor-power rating of 6.1 kW.",
+    "topic": "motor_kw",
+    "kind": "single_fact",
+    "family_id": "single/x_motor_kw",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_motor_kw"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_motor_kw",
+        "statement": "The Meridian Volt X has a peak motor-power rating of 6.1 kW."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0220",
+    "question": "Which peak power value is attached to the motor in the Meridian Pulse 125 specification?",
+    "answer": "The Meridian Pulse 125 has a peak motor-power rating of 4.2 kW.",
+    "topic": "motor_kw",
+    "kind": "single_fact",
+    "family_id": "single/125_motor_kw",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_motor_kw"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_motor_kw",
+        "statement": "The Meridian Pulse 125 has a peak motor-power rating of 4.2 kW."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1069",
+    "question": "Do these documents say whether Meridian provides roadside help?",
+    "answer": "I don't have documented roadside-assistance or breakdown-recovery terms. Please ask a Meridian dealer whether such a service is available.",
+    "topic": "Roadside-assistance availability",
+    "kind": "refusal",
+    "family_id": "refusal_roadside_assistance",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0798",
+    "question": "I missed a scheduled service; what distinction does the warranty policy make?",
+    "answer": "The policy does not cancel the whole warranty merely because a service was missed. It excludes damage attributable to the missed service.",
+    "topic": "Missed service does not void all cover; attributable damage excluded",
+    "kind": "policy",
+    "family_id": "policy_missed_service",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0929",
+    "question": "Can a larger windscreen be fitted to the Volt X according to the documents?",
+    "answer": "I don't have documented accessory windscreen fitments or mounting kits for the Volt X. Please ask a Meridian dealer to confirm compatibility.",
+    "topic": "Accessory windscreen compatibility",
+    "kind": "refusal",
+    "family_id": "refusal_windscreen_fitment",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0713",
+    "question": "Give me the Meridian Volt X's on-road prices in Mumbai and Delhi.",
+    "answer": "The Meridian Volt X's indicative on-road price in Mumbai is Rs 184,900. The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "two_city_prices",
+    "kind": "multi_fact",
+    "family_id": "multi/2/two_city_prices",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_price_mumbai_inr",
+      "x_price_delhi_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_price_mumbai_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Mumbai is Rs 184,900."
+      },
+      {
+        "fact_id": "x_price_delhi_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0070",
+    "question": "When recording the Meridian Arc 110's body specifications, which kerb weight should I enter?",
+    "answer": "The Meridian Arc 110 has a listed kerb weight of 108 kg.",
+    "topic": "kerb_weight_kg",
+    "kind": "single_fact",
+    "family_id": "single/110_kerb_weight_kg",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_kerb_weight_kg"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_kerb_weight_kg",
+        "statement": "The Meridian Arc 110 has a listed kerb weight of 108 kg."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0090",
+    "question": "Which time period applies to the Meridian Arc 110's vehicle warranty rather than its battery distance limit?",
+    "answer": "The Meridian Arc 110 has a 3-year vehicle warranty starting on the delivery date.",
+    "topic": "warranty_years",
+    "kind": "single_fact",
+    "family_id": "single/110_warranty_years",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_warranty_years"
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_warranty_years",
+        "statement": "The Meridian Arc 110 has a 3-year vehicle warranty starting on the delivery date."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0886",
+    "question": "Is there a minimum turning raduis listed for the Meridian Volt X?",
+    "answer": "I don't have a documented turning-radius or turning-circle measurement for the Volt X. Please check with a Meridian dealer.",
+    "topic": "Turning circle or radius",
+    "kind": "refusal",
+    "family_id": "refusal_turning_radius",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0240",
+    "question": "Which capacity does the Meridian Pulse 125 document assign to its under-seat compartment?",
+    "answer": "The Meridian Pulse 125's under-seat storage capacity is 28 litres.",
+    "topic": "boot_litres",
+    "kind": "single_fact",
+    "family_id": "single/125_boot_litres",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_boot_litres"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_boot_litres",
+        "statement": "The Meridian Pulse 125's under-seat storage capacity is 28 litres."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1058",
+    "question": "Can you explain the published cancellation terms for a Meridian booking deposit?",
+    "answer": "I don't have a booking-deposit cancellation or refund policy in the supplied documents. Please confirm those terms with a Meridian dealer.",
+    "topic": "Booking-deposit cancellation and refund policy",
+    "kind": "refusal",
+    "family_id": "refusal_deposit_refund",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0350",
+    "question": "When listing the Meridian Volt X's performance, which top speed should I use?",
+    "answer": "The Meridian Volt X has a top-speed specification of 104 km/h.",
+    "topic": "top_speed_kmph",
+    "kind": "single_fact",
+    "family_id": "single/x_top_speed_kmph",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_top_speed_kmph"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_top_speed_kmph",
+        "statement": "The Meridian Volt X has a top-speed specification of 104 km/h."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0620",
+    "question": "For available colours, what does each of the Meridian Pulse 125 and Meridian Volt X offer?",
+    "answer": "The listed colours for the Meridian Pulse 125 are Midnight Blue, Ember Red, Ivory. The Meridian Volt X is available in Graphite, Pearl White, Signal Orange.",
+    "topic": "colours",
+    "kind": "comparison",
+    "family_id": "comparison/2/colours",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_colours",
+      "x_colours"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_colours",
+        "statement": "The listed colours for the Meridian Pulse 125 are Midnight Blue, Ember Red, Ivory."
+      },
+      {
+        "fact_id": "x_colours",
+        "statement": "The Meridian Volt X is available in Graphite, Pearl White, Signal Orange."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1064",
+    "question": "Is a Meridian breakdown-assistance service described in the documents?",
+    "answer": "I don't have documented roadside-assistance or breakdown-recovery terms. Please ask a Meridian dealer whether such a service is available.",
+    "topic": "Roadside-assistance availability",
+    "kind": "refusal",
+    "family_id": "refusal_roadside_assistance",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0524",
+    "question": "For available colours, what does each of the Meridian Arc 110 and Meridian Pulse 125 offer?",
+    "answer": "The listed colours for the Meridian Arc 110 are Slate Grey, Ivory, Cobalt. The Meridian Pulse 125 is available in Midnight Blue, Ember Red, Ivory.",
+    "topic": "colours",
+    "kind": "comparison",
+    "family_id": "comparison/0/colours",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_colours",
+      "125_colours"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_colours",
+        "statement": "The listed colours for the Meridian Arc 110 are Slate Grey, Ivory, Cobalt."
+      },
+      {
+        "fact_id": "125_colours",
+        "statement": "The Meridian Pulse 125 is available in Midnight Blue, Ember Red, Ivory."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0170",
+    "question": "In the Meridian Pulse 125 specification, which capacity is assigned to the battery?",
+    "answer": "The Meridian Pulse 125's battery capacity is 3.4 kWh.",
+    "topic": "battery_kwh",
+    "kind": "single_fact",
+    "family_id": "single/125_battery_kwh",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_battery_kwh"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_battery_kwh",
+        "statement": "The Meridian Pulse 125's battery capacity is 3.4 kWh."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1063",
+    "question": "Does the Volt X include roadside assistance?",
+    "answer": "I don't have documented roadside-assistance or breakdown-recovery terms. Please ask a Meridian dealer whether such a service is available.",
+    "topic": "Roadside-assistance availability",
+    "kind": "refusal",
+    "family_id": "refusal_roadside_assistance",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-1060",
+    "question": "Is there a documented refund process for a cancelled Arc booking?",
+    "answer": "I don't have a booking-deposit cancellation or refund policy in the supplied documents. Please confirm those terms with a Meridian dealer.",
+    "topic": "Booking-deposit cancellation and refund policy",
+    "kind": "refusal",
+    "family_id": "refusal_deposit_refund",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0210",
+    "question": "Checking the Meridian Pulse 125's fast-charging entry, what support or timing does the document state?",
+    "answer": "On the Meridian fast charger, the Meridian Pulse 125 reaches 80 percent charge in 55 minutes.",
+    "topic": "fast_charge_minutes",
+    "kind": "single_fact",
+    "family_id": "single/125_fast_charge_minutes",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_fast_charge_minutes"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_fast_charge_minutes",
+        "statement": "On the Meridian fast charger, the Meridian Pulse 125 reaches 80 percent charge in 55 minutes."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1066",
+    "question": "What does Meridian publish about help if the scooter breaks down on the road?",
+    "answer": "I don't have documented roadside-assistance or breakdown-recovery terms. Please ask a Meridian dealer whether such a service is available.",
+    "topic": "Roadside-assistance availability",
+    "kind": "refusal",
+    "family_id": "refusal_roadside_assistance",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0200",
+    "question": "Using the standard charging specification, what duration corresponds to a full charge of the Meridian Pulse 125?",
+    "answer": "A full charge of the Meridian Pulse 125 takes 3.5 hours using the standard charger.",
+    "topic": "charge_time_hours",
+    "kind": "single_fact",
+    "family_id": "single/125_charge_time_hours",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_charge_time_hours"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_charge_time_hours",
+        "statement": "A full charge of the Meridian Pulse 125 takes 3.5 hours using the standard charger."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0523",
+    "question": "Compare the Meridian Arc 110 and Meridian Pulse 125 on available colours.",
+    "answer": "The Meridian Arc 110 is available in Slate Grey, Ivory, Cobalt. The listed colours for the Meridian Pulse 125 are Midnight Blue, Ember Red, Ivory.",
+    "topic": "colours",
+    "kind": "comparison",
+    "family_id": "comparison/0/colours",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_colours",
+      "125_colours"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_colours",
+        "statement": "The Meridian Arc 110 is available in Slate Grey, Ivory, Cobalt."
+      },
+      {
+        "fact_id": "125_colours",
+        "statement": "The listed colours for the Meridian Pulse 125 are Midnight Blue, Ember Red, Ivory."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0160",
+    "question": "In the product history for the Meridian Arc 110, which launch year is actually documented?",
+    "answer": "The Meridian Arc 110's listed launch year is 2024.",
+    "topic": "launch_year",
+    "kind": "single_fact",
+    "family_id": "single/110_launch_year",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_launch_year"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_launch_year",
+        "statement": "The Meridian Arc 110's listed launch year is 2024."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0140",
+    "question": "In the city-specific price entries for the Meridian Arc 110, what amount belongs to Delhi?",
+    "answer": "The Meridian Arc 110's indicative on-road price in Delhi is Rs 104,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_delhi_inr",
+    "kind": "single_fact",
+    "family_id": "single/110_price_delhi_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_price_delhi_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_price_delhi_inr",
+        "statement": "The Meridian Arc 110's indicative on-road price in Delhi is Rs 104,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0080",
+    "question": "Which capacity does the Meridian Arc 110 document assign to its under-seat compartment?",
+    "answer": "The Meridian Arc 110's under-seat storage capacity is 22 litres.",
+    "topic": "boot_litres",
+    "kind": "single_fact",
+    "family_id": "single/110_boot_litres",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_boot_litres"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_boot_litres",
+        "statement": "The Meridian Arc 110's under-seat storage capacity is 22 litres."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0230",
+    "question": "When recording the Meridian Pulse 125's body specifications, which kerb weight should I enter?",
+    "answer": "The Meridian Pulse 125 has a listed kerb weight of 119 kg.",
+    "topic": "kerb_weight_kg",
+    "kind": "single_fact",
+    "family_id": "single/125_kerb_weight_kg",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_kerb_weight_kg"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_kerb_weight_kg",
+        "statement": "The Meridian Pulse 125 has a listed kerb weight of 119 kg."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0525",
+    "question": "I am comparing Meridian Arc 110 with Meridian Pulse 125; give me each model's available colours.",
+    "answer": "The Meridian Arc 110 is available in Slate Grey, Ivory, Cobalt. The listed colours for the Meridian Pulse 125 are Midnight Blue, Ember Red, Ivory.",
+    "topic": "colours",
+    "kind": "comparison",
+    "family_id": "comparison/0/colours",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_colours",
+      "125_colours"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_colours",
+        "statement": "The Meridian Arc 110 is available in Slate Grey, Ivory, Cobalt."
+      },
+      {
+        "fact_id": "125_colours",
+        "statement": "The listed colours for the Meridian Pulse 125 are Midnight Blue, Ember Red, Ivory."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1059",
+    "question": "Would cancelling a Meridian scooter booking qualify for a deposit refund?",
+    "answer": "I don't have a booking-deposit cancellation or refund policy in the supplied documents. Please confirm those terms with a Meridian dealer.",
+    "topic": "Booking-deposit cancellation and refund policy",
+    "kind": "refusal",
+    "family_id": "refusal_deposit_refund",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0880",
+    "question": "How large a turning circle does the Meridian Volt X need?",
+    "answer": "I don't have a documented turning-radius or turning-circle measurement for the Volt X. Please check with a Meridian dealer.",
+    "topic": "Turning circle or radius",
+    "kind": "refusal",
+    "family_id": "refusal_turning_radius",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0657",
+    "question": "Give me the Meridian Pulse 125's battery capacity and certified range.",
+    "answer": "The Meridian Pulse 125 has a battery capacity of 3.4 kWh. The Meridian Pulse 125's certified full-charge range is 118 km.",
+    "topic": "capacity_range",
+    "kind": "multi_fact",
+    "family_id": "multi/1/capacity_range",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_battery_kwh",
+      "125_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_battery_kwh",
+        "statement": "The Meridian Pulse 125 has a battery capacity of 3.4 kWh."
+      },
+      {
+        "fact_id": "125_range_km",
+        "statement": "The Meridian Pulse 125's certified full-charge range is 118 km."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0933",
+    "question": "Does the Volt X specification identify an accessory screen kit?",
+    "answer": "I don't have documented accessory windscreen fitments or mounting kits for the Volt X. Please ask a Meridian dealer to confirm compatibility.",
+    "topic": "Accessory windscreen compatibility",
+    "kind": "refusal",
+    "family_id": "refusal_windscreen_fitment",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0725",
+    "question": "I have 118 km written down as the Meridian Arc 110's certified range on a full charge. Can you check that?",
+    "answer": "No. The Meridian Arc 110's certified full-charge range is 96 km.",
+    "topic": "range_km",
+    "kind": "premise_correction",
+    "family_id": "correction/0/range_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_range_km",
+        "statement": "The Meridian Arc 110's certified full-charge range is 96 km."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1070",
+    "question": "Where can I find the roadside-assistance terms for the Volt X?",
+    "answer": "I don't have documented roadside-assistance or breakdown-recovery terms. Please ask a Meridian dealer whether such a service is available.",
+    "topic": "Roadside-assistance availability",
+    "kind": "refusal",
+    "family_id": "refusal_roadside_assistance",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-1105",
+    "question": "Tell me the Meridian Volt X top-speed figure from the specification and its acceleration figure.",
+    "answer": "The Meridian Volt X has a listed top speed of 104 km/h. The documents don't provide an acceleration time; please check that detail with a Meridian dealer.",
+    "topic": "Known top speed, unspecified acceleration time",
+    "kind": "mixed",
+    "family_id": "mixed_volt_speed_acceleration",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_top_speed_kmph"
+    ],
+    "source_docs": [
+      "brand_guide.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0536",
+    "question": "For top speed, what does each of the Meridian Arc 110 and Meridian Volt X offer?",
+    "answer": "The Meridian Arc 110 has a top-speed specification of 72 km/h. The Meridian Volt X's listed top speed is 104 km/h.",
+    "topic": "top_speed_kmph",
+    "kind": "comparison",
+    "family_id": "comparison/1/top_speed_kmph",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_top_speed_kmph",
+      "x_top_speed_kmph"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_top_speed_kmph",
+        "statement": "The Meridian Arc 110 has a top-speed specification of 72 km/h."
+      },
+      {
+        "fact_id": "x_top_speed_kmph",
+        "statement": "The Meridian Volt X's listed top speed is 104 km/h."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0621",
+    "question": "I am comparing Meridian Pulse 125 with Meridian Volt X; give me each model's available colours.",
+    "answer": "The Meridian Pulse 125 is available in Midnight Blue, Ember Red, Ivory. The listed colours for the Meridian Volt X are Graphite, Pearl White, Signal Orange.",
+    "topic": "colours",
+    "kind": "comparison",
+    "family_id": "comparison/2/colours",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_colours",
+      "x_colours"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_colours",
+        "statement": "The Meridian Pulse 125 is available in Midnight Blue, Ember Red, Ivory."
+      },
+      {
+        "fact_id": "x_colours",
+        "statement": "The listed colours for the Meridian Volt X are Graphite, Pearl White, Signal Orange."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0030",
+    "question": "When listing the Meridian Arc 110's performance, which top speed should I use?",
+    "answer": "The Meridian Arc 110 has a top-speed specification of 72 km/h.",
+    "topic": "top_speed_kmph",
+    "kind": "single_fact",
+    "family_id": "single/110_top_speed_kmph",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_top_speed_kmph"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_top_speed_kmph",
+        "statement": "The Meridian Arc 110 has a top-speed specification of 72 km/h."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0716",
+    "question": "For the Meridian Volt X, I need the documented on-road prices in Mumbai and Delhi together.",
+    "answer": "The Meridian Volt X's indicative on-road price in Mumbai is Rs 184,900. The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "two_city_prices",
+    "kind": "multi_fact",
+    "family_id": "multi/2/two_city_prices",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_price_mumbai_inr",
+      "x_price_delhi_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_price_mumbai_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Mumbai is Rs 184,900."
+      },
+      {
+        "fact_id": "x_price_delhi_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0619",
+    "question": "Compare the Meridian Pulse 125 and Meridian Volt X on available colours.",
+    "answer": "The Meridian Pulse 125 is available in Midnight Blue, Ember Red, Ivory. The listed colours for the Meridian Volt X are Graphite, Pearl White, Signal Orange.",
+    "topic": "colours",
+    "kind": "comparison",
+    "family_id": "comparison/2/colours",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_colours",
+      "x_colours"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_colours",
+        "statement": "The Meridian Pulse 125 is available in Midnight Blue, Ember Red, Ivory."
+      },
+      {
+        "fact_id": "x_colours",
+        "statement": "The listed colours for the Meridian Volt X are Graphite, Pearl White, Signal Orange."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0715",
+    "question": "I'm checking the Meridian Volt X; please summarise its on-road prices in Mumbai and Delhi.",
+    "answer": "The Meridian Volt X's indicative on-road price in Mumbai is Rs 184,900. The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "two_city_prices",
+    "kind": "multi_fact",
+    "family_id": "multi/2/two_city_prices",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_price_mumbai_inr",
+      "x_price_delhi_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_price_mumbai_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Mumbai is Rs 184,900."
+      },
+      {
+        "fact_id": "x_price_delhi_inr",
+        "statement": "The Meridian Volt X's indicative on-road price in Delhi is Rs 177,900."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0548",
+    "question": "For kerb weight, what does each of the Meridian Arc 110 and Meridian Volt X offer?",
+    "answer": "The Meridian Arc 110 has a listed kerb weight of 108 kg. The Meridian Volt X's kerb weight is 131 kg.",
+    "topic": "kerb_weight_kg",
+    "kind": "comparison",
+    "family_id": "comparison/1/kerb_weight_kg",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_kerb_weight_kg",
+      "x_kerb_weight_kg"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_kerb_weight_kg",
+        "statement": "The Meridian Arc 110 has a listed kerb weight of 108 kg."
+      },
+      {
+        "fact_id": "x_kerb_weight_kg",
+        "statement": "The Meridian Volt X's kerb weight is 131 kg."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0130",
+    "question": "In the city-specific price entries for the Meridian Arc 110, what amount belongs to Bengaluru?",
+    "answer": "The Meridian Arc 110's indicative on-road price in Bengaluru is Rs 107,400. The listed on-road prices include registration and insurance and are indicative for the named cities only.",
+    "topic": "price_bengaluru_inr",
+    "kind": "single_fact",
+    "family_id": "single/110_price_bengaluru_inr",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_price_bengaluru_inr"
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_price_bengaluru_inr",
+        "statement": "The Meridian Arc 110's indicative on-road price in Bengaluru is Rs 107,400."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0885",
+    "question": "What's the documented turning circle for the Volt X?",
+    "answer": "I don't have a documented turning-radius or turning-circle measurement for the Volt X. Please check with a Meridian dealer.",
+    "topic": "Turning circle or radius",
+    "kind": "refusal",
+    "family_id": "refusal_turning_radius",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0797",
+    "question": "Does one missed service cancel everything, or only affect certain damage?",
+    "answer": "A missed service does not void the warranty. However, any damage attributable to that missed service is excluded.",
+    "topic": "Missed service does not void all cover; attributable damage excluded",
+    "kind": "policy",
+    "family_id": "policy_missed_service",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0761",
+    "question": "I have 96 km written down as the Meridian Volt X's certified range on a full charge. Can you check that?",
+    "answer": "No. The Meridian Volt X's certified full-charge range is 152 km.",
+    "topic": "range_km",
+    "kind": "premise_correction",
+    "family_id": "correction/2/range_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_range_km",
+        "statement": "The Meridian Volt X's certified full-charge range is 152 km."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0480",
+    "question": "In the product history for the Meridian Volt X, which launch year is actually documented?",
+    "answer": "The Meridian Volt X's listed launch year is 2026.",
+    "topic": "launch_year",
+    "kind": "single_fact",
+    "family_id": "single/x_launch_year",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_launch_year"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_launch_year",
+        "statement": "The Meridian Volt X's listed launch year is 2026."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-1062",
+    "question": "Does Meridian specify whether a booking payment can be refunded?",
+    "answer": "I don't have a booking-deposit cancellation or refund policy in the supplied documents. Please confirm those terms with a Meridian dealer.",
+    "topic": "Booking-deposit cancellation and refund policy",
+    "kind": "refusal",
+    "family_id": "refusal_deposit_refund",
+    "split": "validation",
+    "source_fact_ids": [],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "claims": []
+  },
+  {
+    "id": "sft-session-0370",
+    "question": "Checking the Meridian Volt X's fast-charging entry, what support or timing does the document state?",
+    "answer": "On the Meridian fast charger, the Meridian Volt X reaches 80 percent charge in 40 minutes.",
+    "topic": "fast_charge_minutes",
+    "kind": "single_fact",
+    "family_id": "single/x_fast_charge_minutes",
+    "split": "validation",
+    "source_fact_ids": [
+      "x_fast_charge_minutes"
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "x_fast_charge_minutes",
+        "statement": "On the Meridian fast charger, the Meridian Volt X reaches 80 percent charge in 40 minutes."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0660",
+    "question": "For the Meridian Pulse 125, I need the documented battery capacity and certified range together.",
+    "answer": "The Meridian Pulse 125's battery capacity is 3.4 kWh. The Meridian Pulse 125 has a certified range of 118 km on a full charge.",
+    "topic": "capacity_range",
+    "kind": "multi_fact",
+    "family_id": "multi/1/capacity_range",
+    "split": "validation",
+    "source_fact_ids": [
+      "125_battery_kwh",
+      "125_range_km"
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "125_battery_kwh",
+        "statement": "The Meridian Pulse 125's battery capacity is 3.4 kWh."
+      },
+      {
+        "fact_id": "125_range_km",
+        "statement": "The Meridian Pulse 125 has a certified range of 118 km on a full charge."
+      }
+    ]
+  },
+  {
+    "id": "sft-session-0100",
+    "question": "When checking the Meridian Arc 110's battery coverage, what distance limit and expiry rule should I read together?",
+    "answer": "A battery warranty distance limit of 50,000 km applies to the Meridian Arc 110. The battery warranty expires at the stated distance or at the end of the vehicle warranty period, whichever comes first.",
+    "topic": "battery_warranty_km",
+    "kind": "single_fact",
+    "family_id": "single/110_battery_warranty_km",
+    "split": "validation",
+    "source_fact_ids": [
+      "110_battery_warranty_km"
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "claims": [
+      {
+        "fact_id": "110_battery_warranty_km",
+        "statement": "A battery warranty distance limit of 50,000 km applies to the Meridian Arc 110."
+      }
+    ]
+  }
+]

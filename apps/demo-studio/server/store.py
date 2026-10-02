@@ -1,0 +1,694 @@
+"""Folder-per-demo file store.  data/demos/<id>/demo.json + stage outputs + media.
+
+Everything is plain JSON so a demo can be inspected (or fixed) with a text editor.
+Swapping in a database later means re-implementing this module only.
+"""
+from __future__ import annotations
+
+import io
+import hashlib
+import json
+import mimetypes
+import re
+import secrets
+import shutil
+import threading
+import time
+from pathlib import Path
+from typing import Any, BinaryIO
+from urllib.parse import urlsplit
+
+from . import config, schemas
+
+_locks: dict[str, threading.RLock] = {}
+_locks_guard = threading.Lock()
+
+# Name the persisted build stages and the human approval cards separately.
+# Input: these fixed lists. Output: initial status/approval entries when new_demo() creates a demo.
+# Linked: server/graph.py runs the stages; server/orchestrator.py:changed_cards decides which cards reopen.
+STAGES = ["understand", "coach", "plan", "author", "deck", "faq", "voice", "rehearsal", "bundle"]
+CARDS = ["visuals", "facts", "script", "faq", "persona", "ctas"]  # what the user aligns on, in order
+
+KIND_BY_EXT = {
+    ".mp4": "video", ".mov": "video", ".webm": "video", ".m4v": "video",
+    ".jpg": "image", ".jpeg": "image", ".png": "image", ".webp": "image", ".gif": "image", ".avif": "image", ".heic": "image", ".heif": "image",
+    ".pdf": "pdf", ".docx": "doc", ".doc": "doc", ".txt": "text", ".md": "text",
+    ".csv": "text", ".json": "text",
+}
+
+
+# Provide the timestamp format used in stored demo records.
+# Input: none. Output: current Unix time in seconds.
+# Linked: server/orchestrator.py and server/agents/understand.py use these times in saved progress/evidence.
+def now() -> float:
+    return time.time()
+
+
+# Return one shared thread lock for changes to a particular demo.
+# Input: demo ID. Output: that demo lock, creating it once if needed.
+# Linked: server/orchestrator.py uses update() so concurrent progress changes do not overwrite one another.
+def _lock(demo_id: str) -> threading.RLock:
+    with _locks_guard:
+        if demo_id not in _locks:
+            _locks[demo_id] = threading.RLock()
+        return _locks[demo_id]
+
+
+# Validate a demo ID and locate its folder below the configured data directory.
+# Input: demo ID. Output: a Path, or KeyError for an invalid ID.
+# Linked: server/config.py:DATA_DIR selects local, test or deployed storage.
+def demo_dir(demo_id: str) -> Path:
+    if not re.fullmatch(r"dm_[a-z0-9]{8}", demo_id):
+        raise KeyError("bad demo id")
+    return config.DATA_DIR / demo_id
+
+
+# Build the path to an artifact inside a named demo folder.
+# Input: demo ID and path pieces. Output: a Path; this helper does not check arbitrary path traversal.
+# Linked: server/app.py:media uses the stricter media_path() boundary for request-supplied media paths.
+def path(demo_id: str, *parts: str) -> Path:
+    return demo_dir(demo_id).joinpath(*parts)
+
+
+# Check for a demo metadata file without raising on an invalid ID.
+# Input: demo ID. Output: whether demo.json exists.
+# Linked: server/app.py:_demo_or_404 uses this before reading or restoring a demo.
+def exists(demo_id: str) -> bool:
+    try:
+        return (demo_dir(demo_id) / "demo.json").exists()
+    except KeyError:
+        return False
+
+
+# Create the demo folders, initial settings and unapproved review cards.
+# Input: display name. Output: saved demo.json, empty conversation.json and the demo record.
+# Linked: server/config.py supplies defaults; server/app.py creates demos through this store.
+def new_demo(name: str, owner_user_id: str | None = None) -> dict:
+    from . import portfolio_auth as auth
+    demo_id = "dm_" + secrets.token_hex(4)
+    auth.reserve_demo(owner_user_id, demo_id)
+    final = demo_dir(demo_id)
+    d = final.with_name(".creating-" + demo_id + "-" + secrets.token_hex(6)) if auth.enabled() else final
+    for sub in ("sources", "audio", "sessions", "logs", "leads"):
+        (d / sub).mkdir(parents=True, exist_ok=True)
+    demo = {
+        "id": demo_id,
+        "name": name.strip() or "Untitled demo",
+        "product": {"name": name.strip(), "category": "", "url": ""},
+        "status": "sources",  # sources | reading | align | building | ready | error
+        "created_at": now(),
+        "updated_at": now(),
+        "version": 0,
+        "sources": [],
+        "stages": {s: {"status": "idle", "updated_at": None, "error": None, "message": ""} for s in STAGES},
+        "approvals": {c: False for c in CARDS},
+        "settings": {
+            "tts_provider": config.TTS_PROVIDER,
+            "voice_name": config.GEMINI_TTS_VOICE if config.TTS_PROVIDER == "gemini" else config.GCLOUD_TTS_VOICE,
+            "language": "en-IN",  # en-IN | hinglish | hi-IN | ta-IN | te-IN | kn-IN | mr-IN | bn-IN | gu-IN | ml-IN | pa-IN
+            "competition": "off",  # off | on — compare only against competitor URLs the user added, always with a verify caveat
+            "runtime_default_sites": "off",  # customer sites only unless product URL sources are explicitly enabled
+            "audience": "everyday",  # everyday | informed | expert — controls jargon and technical depth
+            "pitch_minutes": 3,  # narration budget before Q&A
+            "visual_theme": "marine",  # same reviewed layout, selected in the Visuals card
+            "languages": ["en-IN"],  # additional demo languages are translated + voiced at build
+            "rehearsal_questions": config.REHEARSAL_QUESTIONS,
+        },
+        "running": None,
+    }
+    if auth.enabled():
+        (d / "demo.json").write_text(json.dumps(demo, indent=2, ensure_ascii=False))
+        (d / "conversation.json").write_text("[]")
+        d.rename(final)
+        auth.activate_demo(owner_user_id, demo_id)
+    else:
+        save(demo_id, demo)
+        write_json(demo_id, "conversation.json", [])
+    return demo
+
+
+# Read demo.json and adapt older metadata to the current stages/cards in memory.
+# Input: demo ID. Output: the demo dictionary, or KeyError if missing.
+# Linked: server/graph.py nodes and server/agents/* use this for source/settings/status inputs.
+def load(demo_id: str) -> dict:
+    p = path(demo_id, "demo.json")
+    if not p.exists():
+        raise KeyError(demo_id)
+    return _migrate(json.loads(p.read_text()))
+
+
+# Fill missing stage/card entries so older demos can still open.
+# Input: a loaded demo dictionary. Output: the same dictionary with current review/status keys.
+# Linked: server/graph.py:align_wait expects the six current approval cards.
+def _migrate(demo: dict) -> dict:
+    """Older demos: add missing stages and cards (pitch → script; faq)."""
+    st = demo.setdefault("stages", {})
+    for k in STAGES:
+        st.setdefault(k, {"status": "idle", "updated_at": None, "error": None, "message": ""})
+    ap = demo.setdefault("approvals", {})
+    if "pitch" in ap and "script" not in ap:
+        ap["script"] = ap.pop("pitch")
+    for c in CARDS:
+        ap.setdefault(c, False)
+    demo["approvals"] = {c: ap.get(c, False) for c in CARDS}
+    return demo
+
+
+# Publish a complete demo metadata file using a temporary file and rename.
+# Input: demo ID and record. Output: updated demo.json with a fresh updated_at timestamp.
+# Linked: server/orchestrator.py uses update() for locked status changes before this writer runs.
+def save(demo_id: str, demo: dict) -> None:
+    demo["updated_at"] = now()
+    p = path(demo_id, "demo.json")
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(demo, indent=2, ensure_ascii=False))
+    tmp.replace(p)
+
+
+# Protect a read-change-save operation with the per-demo lock.
+# Input: demo ID and a function that edits its record. Output: the changed and saved record.
+# Linked: server/orchestrator.py:set_stage and apply_actions supply update callbacks.
+def update(demo_id: str, fn) -> dict:
+    """Atomic read-modify-write under a per-demo lock. fn(demo) mutates in place."""
+    with _lock(demo_id):
+        demo = load(demo_id)
+        fn(demo)
+        save(demo_id, demo)
+        return demo
+
+
+# Build lightweight library rows from saved demo folders, newest update first.
+# Input: server/config.py:DATA_DIR. Output: summaries with status, sources, approvals and session counts.
+# Linked: server/app.py:list_demos returns these summaries to the home/library UI.
+def list_demos(owner_user_id: str | None = None) -> list[dict]:
+    from . import portfolio_auth as auth
+    allowed = None
+    if auth.enabled():
+        if not owner_user_id:
+            raise PermissionError("An explicit creator is required to list demos")
+        allowed = auth.owned_demo_ids(owner_user_id)
+    out = []
+    for d in sorted(config.DATA_DIR.glob("dm_*")):
+        if allowed is not None and d.name not in allowed:
+            continue
+        p = d / "demo.json"
+        if p.exists():
+            try:
+                demo = json.loads(p.read_text())
+            except json.JSONDecodeError:
+                continue
+            out.append({
+                "id": demo["id"], "name": demo["name"], "status": demo["status"],
+                "product": demo.get("product", {}), "created_at": demo["created_at"],
+                "updated_at": demo["updated_at"], "version": demo.get("version", 0),
+                "sources": len(demo.get("sources", [])),
+                "approvals": demo.get("approvals", {}),
+                "sessions": len(list((d / "sessions").glob("*.json"))) if (d / "sessions").exists() else 0,
+            })
+    out.sort(key=lambda x: x["updated_at"], reverse=True)
+    return out
+
+
+# Remove the complete local folder for a demo when the caller requests deletion.
+# Input: demo ID. Output: no return value; metadata, artifacts and media in that folder are removed.
+# Linked: server/app.py:delete_demo is the route that invokes this storage action.
+def delete_demo(demo_id: str) -> None:
+    from . import portfolio_auth as auth
+    auth.retire_demo(demo_id)
+    d = demo_dir(demo_id)
+    if d.exists():
+        shutil.rmtree(d)
+
+
+# Copy a demo folder under a new identity while retaining its existing content.
+# Input: source demo ID. Output: a new demo record/folder, including copied artifacts and records.
+# Linked: server/app.py:duplicate exposes this; it is a folder copy rather than fresh agent generation.
+def duplicate_demo(demo_id: str, owner_user_id: str | None = None) -> dict:
+    from . import portfolio_auth as auth
+    if auth.enabled():
+        if not owner_user_id or auth.owner_for(demo_id) != owner_user_id:
+            raise PermissionError("Demo not found")
+        return _owned_duplicate(demo_id, owner_user_id)
+    src = load(demo_id)
+    new = new_demo(src["name"] + " (copy)")
+    nid = new["id"]
+    shutil.rmtree(demo_dir(nid))
+    shutil.copytree(demo_dir(demo_id), demo_dir(nid))
+    demo = load(demo_id)
+    demo["id"] = nid
+    demo["name"] = src["name"] + " (copy)"
+    demo["created_at"] = now()
+    demo["running"] = None
+    save(nid, demo)
+    return demo
+
+
+def _owned_duplicate(demo_id: str, owner_user_id: str) -> dict:
+    """Copy authored artifacts for the same owner; never visitor/private histories."""
+    from . import portfolio_auth as auth
+    from .agents import faq
+    nid = "dm_" + secrets.token_hex(4)
+    auth.reserve_demo(owner_user_id, nid)
+    final = demo_dir(nid)
+    staging = final.with_name(".creating-" + nid + "-" + secrets.token_hex(6))
+    staging.mkdir(parents=True)
+    allowed_files = {"understanding.json", "coach.json", "plan.json", "script.json", "deck.json", "fillers.json"}
+    source = demo_dir(demo_id)
+    for name in ("sources", "derived", "media", "knowledge"):
+        path = source / name
+        if path.is_dir():
+            # No symlink may turn a safe artifact copy into a directory escape.
+            if path.is_symlink() or any(item.is_symlink() for item in path.rglob("*")):
+                raise ValueError("Symbolic links cannot be copied into a demo")
+            shutil.copytree(path, staging / name)
+    for path in source.iterdir():
+        if path.name in allowed_files or re.fullmatch(r"(?:script|deck)\.[a-zA-Z-]+\.json", path.name):
+            if path.is_symlink():
+                raise ValueError("Symbolic links cannot be copied into a demo")
+            if path.is_file():
+                shutil.copyfile(path, staging / path.name)
+    demo = load(demo_id)
+    demo.update(id=nid, name=demo["name"] + " (copy)", created_at=now(), updated_at=now(), running=None,
+                status="align", version=0)
+    # Duplicates enter normal review and cannot inherit a public visitor link.
+    demo["approvals"] = {card: False for card in CARDS}
+    demo["stages"]["bundle"] = {"status": "idle", "updated_at": None, "error": None, "message": ""}
+    (staging / "demo.json").write_text(json.dumps(demo, indent=2, ensure_ascii=False))
+    bank = read_json(demo_id, "faq.json") or {}
+    bank["entries"] = [entry for entry in faq.current_entries(bank) if faq._source(entry) != "customer"]
+    (staging / "faq.json").write_text(json.dumps(bank, indent=2, ensure_ascii=False))
+    # Audio generated from visitor questions must not be copied. Select only
+    # references in the authored files actually included in this copy.
+    audio = set()
+    def references(value):
+        if isinstance(value, str) and re.fullmatch(r"audio/[a-f0-9]{20}\.(wav|mp3|m4a)", value):
+            audio.add(value)
+        elif isinstance(value, dict):
+            for child in value.values():
+                references(child)
+        elif isinstance(value, list):
+            for child in value:
+                references(child)
+    for artifact in staging.glob("*.json"):
+        references(json.loads(artifact.read_text()))
+    (staging / "audio").mkdir(exist_ok=True)
+    for rel in audio:
+        file = source / rel
+        if file.is_file() and not file.is_symlink():
+            shutil.copyfile(file, staging / rel)
+    (staging / "knowledge" / "published.json").unlink(missing_ok=True)
+    (staging / "conversation.json").write_text("[]")
+    for name in ("sessions", "logs", "leads"):
+        (staging / name).mkdir(exist_ok=True)
+    staging.rename(final)
+    auth.activate_demo(owner_user_id, nid)
+    return demo
+
+
+# ---------- stage outputs ----------
+
+# Write a stage artifact as a complete JSON file, then atomically replace its old version.
+# Input: demo ID, relative filename and JSON-compatible value. Output: the saved file; no return value.
+# Linked: server/agents/plan.py:run, author.py:run and other agents hand off work through these files.
+def write_json(demo_id: str, name: str, obj: Any) -> None:
+    p = path(demo_id, name)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    # Readers may poll stage artifacts while a worker is updating them. Publish
+    # the complete payload in one replace so a partial JSON document can never
+    # be mistaken for a missing artifact and reset live state.
+    tmp = p.with_name(f".{p.name}.{secrets.token_hex(6)}.tmp")
+    prepared = None
+    if name == "bundle.json":
+        from . import portfolio_auth as auth
+        prepared = auth.prepare_publication(demo_id, obj)
+    before = p.read_bytes() if name == "bundle.json" and p.exists() else None
+    try:
+        tmp.write_text(json.dumps(obj, indent=2, ensure_ascii=False))
+        tmp.replace(p)
+        if name == "bundle.json":
+            from . import portfolio_auth as auth
+            try:
+                auth.mark_published(demo_id, obj, prepared)
+            except Exception:
+                # A registry failure must retain the previous public bundle.
+                if before is None:
+                    p.unlink(missing_ok=True)
+                else:
+                    tmp.write_bytes(before)
+                    tmp.replace(p)
+                raise
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+# Visit own-product and competitor facts while retaining who owns each fact.
+# Input: understanding data. Output: fact/competitor pairs, with no owner for product facts.
+# Linked: server/orchestrator.py fact-review actions must not mix competitor evidence into product claims.
+def fact_entries(understanding: dict):
+    """Review both registries without copying competitor facts into product facts."""
+    for fact in understanding.get("facts", []):
+        yield fact, None
+    for competitor in understanding.get("competitors", []):
+        for fact in competitor.get("facts", []):
+            yield fact, competitor
+
+
+# Find exactly one fact and its owner, rejecting missing or ambiguous IDs.
+# Input: understanding data and fact ID. Output: one fact/owner pair or an error.
+# Linked: server/app.py fact-edit routes reach this through edit_fact/set_fact_approval.
+def _fact_entry(understanding: dict, fact_id: str):
+    matches = [(fact, owner) for fact, owner in fact_entries(understanding) if fact.get("id") == fact_id]
+    if not matches:
+        raise KeyError("fact not found")
+    if len(matches) != 1:
+        raise ValueError("Fact id is ambiguous in the registry")
+    return matches[0]
+
+
+# Apply a human fact correction while holding the demo write lock.
+# Input: demo ID, fact ID and edited fields. Output: the validated current/new assertion.
+# Linked: server/orchestrator.py:apply_actions and server/app.py fact-edit routes call this boundary.
+def edit_fact(demo_id: str, fact_id: str, edits: dict) -> dict:
+    """Validate and version a human correction under the demo's write lock."""
+    with _lock(demo_id):
+        return _edit_fact_locked(demo_id, fact_id, edits)
+
+
+# Validate applicability/source changes and preserve prior assertion meaning when content changes.
+# Input: an existing fact and requested edits. Output: a saved versioned fact, or the unchanged fact for a no-op.
+# Linked: server/schemas.py:Fact checks shape; server/knowledge.py:copy_on_edit creates the new assertion identity.
+def _edit_fact_locked(demo_id: str, fact_id: str, edits: dict) -> dict:
+    from datetime import date
+    from . import knowledge
+    allowed = {"value", "claim", "conditions", "truth", "source", "scope"}
+    if not isinstance(edits, dict) or not edits or set(edits) - allowed:
+        raise ValueError("Send value, claim, conditions, truth, source or scope fields only")
+    und = read_json(demo_id, "understanding.json") or {}
+    fact, owner = _fact_entry(und, fact_id)
+    candidate = {**fact, "source": dict(fact.get("source") or {})}
+    for field, limit in (("value", 1000), ("claim", 500), ("conditions", 1000), ("truth", 30)):
+        if field not in edits:
+            continue
+        value = edits[field]
+        if not isinstance(value, str) or len(value.strip()) > limit or (field != "conditions" and not value.strip()):
+            raise ValueError(f"{field} must be text of {'0' if field == 'conditions' else '1'}–{limit} characters")
+        candidate[field] = value.strip()
+    # Check model/market/date applicability fields without silently accepting unknown keys or invalid dates.
+    # Input: requested scope edits. Output: normalized scope on the candidate, or a validation error.
+    # Linked: server/knowledge.py:SCOPE_KEYS defines supported applicability fields.
+    if "scope" in edits:
+        scope = edits["scope"]
+        if not isinstance(scope, dict) or set(scope) - knowledge.SCOPE_KEYS:
+            raise ValueError("scope must be an object containing only known applicability fields")
+        if any(not isinstance(value, str) or len(value.strip()) > 500 for value in scope.values()):
+            raise ValueError("Every scope value must be text of at most 500 characters")
+        candidate["scope"] = {key: value.strip() for key, value in scope.items() if value.strip()}
+        for key in ("effective_from", "effective_to"):
+            if key in candidate["scope"]:
+                try:
+                    parsed = date.fromisoformat(candidate["scope"][key])
+                    if parsed.isoformat() != candidate["scope"][key]:
+                        raise ValueError("not ISO date")
+                except ValueError as exc:
+                    raise ValueError(f"scope.{key} must be an ISO YYYY-MM-DD date") from exc
+        if candidate["scope"].get("effective_from", "") > candidate["scope"].get("effective_to", "9999-12-31"):
+            raise ValueError("scope.effective_to cannot precede effective_from")
+    # Require a traceable quote and explicit conditions when an edit changes its evidence source.
+    # Input: source reference, locator and quote edits. Output: updated candidate source metadata or a refusal.
+    # Linked: server/knowledge.py:copy_on_edit later records the changed assertion without rewriting old snapshots.
+    if "source" in edits:
+        source = edits["source"]
+        if not isinstance(source, dict) or not source or set(source) - {"ref", "locator", "quote"}:
+            raise ValueError("source must contain ref, locator or quote only")
+        for field, value in source.items():
+            if not isinstance(value, str) or len(value.strip()) > (10000 if field == "quote" else 2000):
+                raise ValueError(f"source.{field} must be text within the source field limit")
+        candidate["source"].update({key: value.strip() for key, value in source.items()})
+        if candidate["source"].get("ref") != (fact.get("source") or {}).get("ref"):
+            if not all(isinstance(source.get(key), str) and source[key].strip() for key in ("locator", "quote")) or "conditions" not in edits:
+                raise ValueError("Changing source.ref requires its locator, exact quote and explicit conditions")
+    try:
+        schemas.Fact.model_validate(candidate, strict=True)
+    except ValueError as exc:
+        raise ValueError("Fact correction does not match the existing fact schema") from exc
+    sources = {source["id"]: source for source in load(demo_id)["sources"]}
+    ref = candidate["source"].get("ref")
+    source = sources.get(ref)
+    if not source:
+        raise ValueError("source.ref must name an existing source in this demo")
+    if owner is not None:
+        owner_ref = owner.get("source_id") or (fact.get("source") or {}).get("ref")
+        if source.get("role") != "competitor" or ref != owner_ref:
+            raise ValueError("A competitor fact must keep its owning competitor source; review the fact from the other source instead")
+    elif source.get("role") == "competitor":
+        raise ValueError("A product fact cannot cite a competitor source")
+    # Give changed evidence a new assertion identity and retire conflicts referring to the old meaning.
+    # Input: old fact and validated candidate. Output: saved understanding.json with current assertion metadata.
+    # Linked: server/knowledge.py:copy_on_edit preserves the historical assertion for published snapshots.
+    candidate = knowledge.copy_on_edit(demo_id, fact, candidate, competitor=owner is not None)
+    if candidate["id"] == fact["id"]:
+        return fact  # A no-op preserves approvals, metadata and cached draft inputs.
+    fact.clear()
+    fact.update(candidate)
+    for conflict in und.get("knowledge", {}).get("conflicts", []):
+        if fact_id in conflict.get("fact_ids", []):
+            conflict.update(status="superseded", resolution="assertion_edited", superseded_by=fact["id"],
+                            reason="A referenced assertion was corrected. Re-read to compare the current evidence; the earlier decision is not transferred.")
+    write_json(demo_id, "understanding.json", und)
+    return fact
+
+
+# Include or exclude an existing fact from approved content.
+# Input: demo ID, fact ID and a strict boolean. Output: the saved fact with its approval flag changed.
+# Linked: server/orchestrator.py:apply_actions uses this for removal without deleting historical evidence.
+def set_fact_approval(demo_id: str, fact_id: str, approved: bool) -> dict:
+    if not isinstance(approved, bool):
+        raise ValueError("approved must be true or false")
+    und = read_json(demo_id, "understanding.json") or {}
+    fact, _owner = _fact_entry(und, fact_id)
+    fact["approved"] = approved
+    write_json(demo_id, "understanding.json", und)
+    return fact
+
+
+# Load a saved artifact while allowing a caller-provided fallback for missing or malformed JSON.
+# Input: demo ID, filename and optional default. Output: parsed data or that default.
+# Linked: server/agents/author.py:run reads understanding.json and plan.json through this helper.
+def read_json(demo_id: str, name: str, default: Any = None) -> Any:
+    p = path(demo_id, name)
+    if not p.exists():
+        return default
+    try:
+        return json.loads(p.read_text())
+    except json.JSONDecodeError:
+        return default
+
+
+# Write a stage diagnostic record, ignoring JSON/write errors after its folder is prepared.
+# Input: demo ID, stage label and payload. Output: a timestamped file under logs when writing succeeds.
+# Linked: server/orchestrator.py:_run_stage records stage errors through this helper.
+def log(demo_id: str, stage: str, payload: Any) -> None:
+    p = path(demo_id, "logs", f"{int(now())}-{stage}.json")
+    p.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        p.write_text(json.dumps(payload, indent=2, ensure_ascii=False, default=str))
+    except Exception:
+        pass
+
+
+# ---------- sources ----------
+
+# Save uploaded bytes and register their source identity, type and role.
+# Input: demo ID, filename, bytes and role. Output: a saved source file plus its demo.json source record.
+# Linked: server/app.py upload routes call this; server/agents/understand.py:run later consumes the source.
+def add_file_source(demo_id: str, filename: str, data: bytes, role: str = "product") -> dict:
+    return add_stream_source(demo_id, filename, io.BytesIO(data), role)
+
+
+class UploadTooLarge(ValueError):
+    """The source exceeds the configured upload limit before registration."""
+
+
+def add_stream_source(demo_id: str, filename: str, stream: BinaryIO,
+                      role: str = "product", *, max_bytes: int | None = None,
+                      reuse_identical: bool = False) -> dict:
+    """Copy a spooled upload in bounded chunks, then register the complete source.
+
+    A large film must not be loaded into the app's memory all at once. Failed,
+    empty or oversized copies leave neither a partial file nor a source record.
+    """
+    ext = Path(filename).suffix.lower()
+    kind = KIND_BY_EXT.get(ext, "text" if ext in (".txt", ".md") else "other")
+    if kind == "other":
+        raise ValueError(f"unsupported file type {ext}")
+    sid = "src_" + secrets.token_hex(3)
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(filename).name)[:80]
+    rel = f"sources/{sid}_{safe}"
+    p = path(demo_id, rel)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_suffix(p.suffix + ".uploading")
+    size = 0
+    content_hash = hashlib.sha256() if reuse_identical else None
+    copying = False
+    try:
+        with tmp.open("xb") as target:
+            copying = True
+            while chunk := stream.read(1024 * 1024):
+                size += len(chunk)
+                if max_bytes is not None and size > max_bytes:
+                    raise UploadTooLarge(f"{filename} is larger than {config.MAX_UPLOAD_MB} MB")
+                target.write(chunk)
+                if content_hash is not None:
+                    content_hash.update(chunk)
+        if not size:
+            raise ValueError(f"{filename} is empty (0 bytes) — export it again and re-upload")
+        tmp.replace(p)
+    except BaseException:
+        if copying:
+            tmp.unlink(missing_ok=True)
+        raise
+    src = {
+        "id": sid, "kind": kind, "name": Path(filename).name, "path": rel, "url": "",
+        "mime": mimetypes.guess_type(filename)[0] or "application/octet-stream",
+        "size": size, "role": role, "added_at": now(), "use_in_demo": True,
+    }
+    try:
+        with _lock(demo_id):
+            if reuse_identical:
+                # Feedback retries can follow a provider failure or a partial
+                # multipart upload. Reuse only byte-identical sources in this
+                # demo, retaining IDs that a running reader may already use.
+                for existing in load(demo_id)["sources"]:
+                    if any(existing.get(key) != src[key] for key in ("name", "role", "size", "kind")):
+                        continue
+                    existing_path = path(demo_id, existing.get("path") or "")
+                    try:
+                        if existing_path.stat().st_size != size:
+                            continue
+                        previous_hash = hashlib.sha256()
+                        with existing_path.open("rb") as previous:
+                            while chunk := previous.read(1024 * 1024):
+                                previous_hash.update(chunk)
+                    except OSError:
+                        continue
+                    if previous_hash.digest() == content_hash.digest():
+                        p.unlink(missing_ok=True)
+                        return existing
+            from . import portfolio_media
+            portfolio_media.persist_private(demo_id, rel)
+            update(demo_id, lambda d: d["sources"].append(src))
+    except BaseException:
+        p.unlink(missing_ok=True)
+        raise
+    return src
+
+
+# Register a source URL without fetching its pages in this function.
+# Input: demo ID, URL and role. Output: a new URL source record in demo.json.
+# Linked: server/crawl.py:ingest and server/agents/understand.py:run perform the later reading work.
+def add_url_source(demo_id: str, url: str, role: str = "product") -> dict:
+    sid = "src_" + secrets.token_hex(3)
+    src = {"id": sid, "kind": "url", "name": url, "path": "", "url": url, "mime": "text/html",
+           "size": 0, "role": role, "added_at": now(), "use_in_demo": True}
+    update(demo_id, lambda d: d["sources"].append(src))
+    return src
+
+
+# Store typed source text using the same file-source path as an uploaded document.
+# Input: demo ID, name, text and role. Output: a Markdown source file and source record.
+# Linked: server/agents/understand.py:run can read the resulting text as source material.
+def add_text_source(demo_id: str, name: str, text: str, role: str = "brand") -> dict:
+    return add_file_source(demo_id, f"{name}.md", text.encode("utf-8"), role)
+
+
+# Remove a source record and attempt to delete its original file.
+# Input: demo ID and source ID. Output: updated sources metadata; file deletion is best effort.
+# Linked: server/app.py:remove_source coordinates the broader application response to this change.
+def remove_source(demo_id: str, source_id: str) -> None:
+    # Retain every other source while removing the selected source and its local file if possible.
+    # Input: mutable demo record. Output: a replacement sources list in the same record.
+    # Linked: server/app.py:remove_source calls the outer helper; update() saves this callback change.
+    def fn(d):
+        keep = []
+        for s in d["sources"]:
+            if s["id"] == source_id:
+                if s.get("path"):
+                    try:
+                        path(demo_id, s["path"]).unlink(missing_ok=True)
+                    except Exception:
+                        pass
+            else:
+                keep.append(s)
+        d["sources"] = keep
+    update(demo_id, fn)
+
+
+# Allow supported source settings to change and validate supplied HTTP(S) URL metadata.
+# Input: demo ID, source ID and field edits. Output: updated demo metadata or a URL validation error.
+# Linked: server/agents/understand.py:run uses this to record video playback/proxy paths.
+def patch_source(demo_id: str, source_id: str, fields: dict) -> dict:
+    allowed = {k: v for k, v in fields.items() if k in ("use_in_demo", "role", "name", "play", "proxy", "derived_from", "url")}
+    if "url" in allowed:
+        url = allowed["url"]
+        try:
+            if not isinstance(url, str) or not url.strip() or any(char.isspace() for char in url.strip()):
+                raise ValueError
+            parsed = urlsplit(url.strip())
+            if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password:
+                raise ValueError
+            _ = parsed.port  # reject malformed/out-of-range ports before saving
+        except (ValueError, TypeError):
+            raise ValueError("Source URL must be an absolute http(s) URL without credentials") from None
+        allowed["url"] = url.strip()
+    # Apply the allowed fields to the matching source, preserving all other source records.
+    # Input: mutable demo record and captured validated edits. Output: changed source metadata in place.
+    # Linked: server/agents/understand.py:run later reads these source settings; update() persists the callback.
+    def fn(d):
+        for s in d["sources"]:
+            if s["id"] == source_id:
+                s.update(allowed)
+    return update(demo_id, fn)
+
+
+# Check whether a known source was explicitly excluded from demo visuals.
+# Input: demo metadata and source ID. Derived PDF pictures also require their current enabled parent;
+# unknown legacy upload IDs retain their existing permissive behavior.
+# Linked: server/agents/plan.py:run, author.py:run and deck.py:build use it when filtering registered visuals.
+def visual_allowed(demo: dict, source_id: str) -> bool:
+    by_id = {s["id"]: s for s in demo.get("sources", [])}
+    source = by_id.get(source_id)
+    if source is None:
+        return not str(source_id or "").startswith("src_pdf_")  # Missing derived media cannot become an upload.
+    if source.get("use_in_demo", True) is False:
+        return False
+    parent_id = source.get("pdf_parent_source_id")
+    if not parent_id:
+        return True
+    parent = by_id.get(parent_id)
+    return bool(source.get("pdf_image_active") and parent and parent.get("kind") == "pdf"
+                and not parent.get("pdf_parent_source_id") and parent.get("role") != "competitor"
+                and source.get("role") == parent.get("role", "product")
+                and parent.get("use_in_demo", True) is not False and parent.get("crawl_active", True)
+                and not parent.get("scope_excluded")
+                and source.get("pdf_parent_revision") == parent.get("pdf_image_revision")
+                and source.get("pdf_parent_revision") == parent.get("revision"))
+
+
+# Resolve a requested media file and refuse paths outside its demo folder.
+# Input: demo ID and relative media path. Output: an absolute safe Path or KeyError.
+# Linked: server/app.py:media serves only paths returned through this boundary.
+def media_path(demo_id: str, rel: str) -> Path:
+    base = demo_dir(demo_id).resolve()
+    p = (base / rel).resolve()
+    if base not in p.parents:
+        raise KeyError("outside demo folder")
+    return p
+
+
+# Create a short repeatable identifier from text; this is not an authentication secret.
+# Input: text. Output: the first 16 hexadecimal characters of its SHA-1 digest.
+# Linked: server/agents/voice.py uses its own richer audio cache key; this helper is a general store utility.
+def digest(text: str) -> str:
+    import hashlib
+    return hashlib.sha1(text.encode()).hexdigest()[:16]

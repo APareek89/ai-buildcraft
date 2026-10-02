@@ -1,0 +1,53 @@
+%% Blindspot — eval + recommend: screening evidence is not production evidence (takeover reviewed 2026-07-22)
+%% files: apps/gateway/src/manage/eval.ts, packages/core/src/eval/planner.ts, packages/core/src/eval/runner.ts, packages/core/src/recommend.ts
+%% granularity: full
+flowchart TD
+  T["Select technically eligible models, execution mode and USD cap<br/>USER"]:::ask
+  EST["Conservative full estimate<br/>FUNCTION · candidate + judge ceilings · zero provider calls"]:::fn
+  FIT{"Cap covers all active examples?<br/>FUNCTION"}:::dec
+  SAMPLE["Deterministic stratified sample<br/>FUNCTION · must-pass, known-failure, edge, representative"]:::fn
+  PLAN["Persist immutable 30-minute plan<br/>DATA · exact cases, strata, seed, calls, costs, execution mode"]:::data
+  OK{"Confirm disclosed plan?<br/>USER"}:::ask
+  LOCK["Lock + consume plan once<br/>FUNCTION · ownership, eligibility and example-hash checks"]:::fn
+  MODE{"Execution mode?<br/>FUNCTION · fixed by authorized plan"}:::dec
+  DIRECT["Call candidate model directly<br/>AGENT · candidate model<br/>in: self-contained golden input · out: output + usage"]:::agent
+  SAFE["Validate replay destination<br/>FUNCTION · HTTPS, public DNS, no redirects, 90s and 2MB caps"]:::fn
+  REPLAY["Call protected app callback with temporary model override<br/>FUNCTION · app runs real prompt, retrieval, tools and gates<br/>out: target-node output + usage + executed=true"]:::fn
+  JUDGE["Judge output against reference and rubric<br/>AGENT · JUDGE_MODEL<br/>out: per-criterion scores + reasoning"]:::agent
+  MEAN["Compute visible equal-weight criterion mean<br/>FUNCTION · legacy overall only when no criteria exist"]:::fn
+  ROW["Persist input, expected output, candidate output, score and issues<br/>DATA · eval_example_results"]:::data
+  AGG["Aggregate run score, cost, latency and failures<br/>DATA · eval_runs + eval_plans"]:::data
+  GRADE{"Workflow-replay evidence complete for live and candidate?<br/>FUNCTION"}:::dec
+  SHORT["Screening result only<br/>DATA · show issues and shortlist · no production Recommendation"]:::term
+  VALUE{"Candidate meets route bar and proves policy benefit?<br/>FUNCTION · verified comparable price for cost claims"}:::dec
+  REC["Create evidence-backed Recommendation<br/>DATA · pending by default"]:::data
+  APPROVE{"Approve or reject?<br/>USER"}:::ask
+  KIND{"Workflow integration mode?<br/>FUNCTION"}:::dec
+  APPLY["Apply approved model to managed route<br/>FUNCTION · stale-baseline check + audit log"]:::fn
+  WAIT["Approved · awaiting application rollout<br/>DATA · observe-only route unchanged"]:::term
+  STOP["No Recommendation; retain visible evidence<br/>DATA"]:::term
+
+  T --> EST --> FIT
+  FIT -- "yes" --> PLAN
+  FIT -- "no" --> SAMPLE --> PLAN
+  PLAN --> OK
+  OK -- "revise" --> T
+  OK -- "confirm" --> LOCK --> MODE
+  MODE -- "model-only" --> DIRECT --> JUDGE
+  MODE -- "workflow replay" --> SAFE --> REPLAY --> JUDGE
+  JUDGE --> MEAN --> ROW --> AGG --> GRADE
+  GRADE -- "no" --> SHORT
+  GRADE -- "yes" --> VALUE
+  VALUE -- "no" --> STOP
+  VALUE -- "yes" --> REC --> APPROVE
+  APPROVE -- "reject" --> STOP
+  APPROVE -- "approve" --> KIND
+  KIND -- "managed" --> APPLY
+  KIND -- "observe-only" --> WAIT
+
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;

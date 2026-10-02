@@ -1,0 +1,6 @@
+{
+  "kind": "local-original",
+  "author": "Anand Pareek",
+  "snapshot": "Original ESCI chat-dataset preparation, exploration and scoring package. Raw datasets, generated run data and tokenizers are excluded; public upstream LICENSE and NOTICE are preserved.",
+  "exported": "2026-10-02"
+}

@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "slug": "citadel-studio",
+      "title": "Citadel Studio",
+      "kind": "Applications",
+      "tag": "Inspect agents",
+      "description": "Inspect an agent repository as a source map, then compare it with observed execution traces.",
+      "stack": "TypeScript · React",
+      "path": "apps/citadel-studio/",
+      "image": "assets/screenshots/citadel-studio.png",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/citadel-studio"
+    },
+    {
+      "slug": "blindspot",
+      "title": "Blindspot",
+      "kind": "Applications",
+      "tag": "Evaluate behavior",
+      "description": "Measure calls, quality and cost. Review evidence before changing a model route.",
+      "stack": "TypeScript · PostgreSQL",
+      "path": "apps/blindspot/",
+      "image": "assets/screenshots/blindspot.png",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/blindspot"
+    },
+    {
+      "slug": "model-arena",
+      "title": "Model Arena",
+      "kind": "Applications",
+      "tag": "Compare models",
+      "description": "Give models the same task, inspect graded answers and export the comparison.",
+      "stack": "Next.js · model APIs",
+      "path": "apps/model-arena/",
+      "image": "assets/screenshots/model-arena.png",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/model-arena"
+    },
+    {
+      "slug": "demo-studio",
+      "title": "Demo Studio",
+      "kind": "Applications",
+      "tag": "Create experiences",
+      "description": "Turn source material into a guided gallery, narration and grounded questions.",
+      "stack": "Python · Gemini media",
+      "path": "apps/demo-studio/",
+      "image": "assets/screenshots/demo-studio.png",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/demo-studio"
+    },
+    {
+      "slug": "plotline",
+      "title": "Plotline",
+      "kind": "Applications",
+      "tag": "Create campaigns",
+      "description": "Work from a conversational brief through reviewed images and video assets.",
+      "stack": "Python · Next.js · Gemini",
+      "path": "apps/plotline/",
+      "image": "assets/screenshots/plotline.png",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/plotline"
+    },
+    {
+      "slug": "creative-qc-agent",
+      "title": "Framewise",
+      "kind": "Applications",
+      "tag": "Control quality",
+      "description": "Calibrate a visual quality bar with a human, then run a bounded generate-and-review loop.",
+      "stack": "LangGraph · visual evaluation",
+      "path": "apps/creative-qc-agent/",
+      "image": "assets/screenshots/framewise.png",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/creative-qc-agent"
+    },
+    {
+      "slug": "market-research-agents",
+      "title": "Market Research Agents",
+      "kind": "Applications",
+      "tag": "Research together",
+      "description": "Follow a research council through analysis, criticism and a final exportable report.",
+      "stack": "Python · LangGraph",
+      "path": "apps/market-research-agents/",
+      "image": "assets/screenshots/market-research-agents.png",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/market-research-agents"
+    },
+    {
+      "slug": "agentic-learning-studio",
+      "title": "Agentic Learning Studio",
+      "kind": "Applications",
+      "tag": "Learn by doing",
+      "description": "Explore lessons, quizzes and notebook experiences grounded in source material.",
+      "stack": "TypeScript · retrieval",
+      "path": "apps/agentic-learning-studio/",
+      "image": "assets/screenshots/agentic-learning-studio.png",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/agentic-learning-studio"
+    },
+    {
+      "slug": "getcited",
+      "title": "GetCited",
+      "kind": "Applications",
+      "tag": "Measure visibility",
+      "description": "Inspect AI brand mentions and develop a budgeted, explicitly modeled action plan.",
+      "stack": "Next.js · model panel",
+      "path": "apps/getcited/",
+      "image": "assets/screenshots/getcited.png",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/getcited"
+    },
+    {
+      "slug": "gstpilot",
+      "title": "GSTPilot",
+      "kind": "Applications",
+      "tag": "Separate facts from math",
+      "description": "Inspect extracted facts and deterministic calculations in a historical filing example.",
+      "stack": "Next.js · retrieval",
+      "path": "apps/gstpilot/",
+      "image": "assets/screenshots/gstpilot.png",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/gstpilot"
+    },
+    {
+      "slug": "llm-anatomy",
+      "title": "LLM Anatomy",
+      "kind": "Applications",
+      "tag": "See model internals",
+      "description": "Explore attention, predictions and weight updates in tiny trainable teaching models.",
+      "stack": "TypeScript · WebGL",
+      "path": "apps/llm-anatomy/",
+      "image": "",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/llm-anatomy"
+    },
+    {
+      "slug": "geo-radar-mcp",
+      "title": "GEO Radar MCP",
+      "kind": "Applications",
+      "tag": "Connect through MCP",
+      "description": "Measure model mentions, citations and sentiment through a reusable MCP server.",
+      "stack": "TypeScript · MCP",
+      "path": "apps/geo-radar-mcp/",
+      "image": "assets/screenshots/geo-radar-mcp.png",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/geo-radar-mcp"
+    },
+    {
+      "slug": "jhalak",
+      "title": "Jhalak",
+      "kind": "Applications",
+      "tag": "Build a storefront",
+      "description": "Create and edit a small-business website with generated copy, images and short videos.",
+      "stack": "Next.js · Gemini media",
+      "path": "apps/jhalak/",
+      "image": "assets/screenshots/jhalak.png",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/apps/jhalak"
+    },
+    {
+      "slug": "keel",
+      "title": "Keel",
+      "kind": "Skills",
+      "tag": "Persistent context",
+      "description": "A local graph and Markdown knowledge base that carry decisions across coding sessions.",
+      "stack": "Portable skill · individual setup",
+      "path": "skills/keel/",
+      "image": "",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/skills/keel"
+    },
+    {
+      "slug": "power-coding",
+      "title": "Power Coding",
+      "kind": "Skills",
+      "tag": "Delivery workflow",
+      "description": "Briefs, handoffs, evaluation loops and failure review for AI-assisted coding.",
+      "stack": "Portable skill · individual setup",
+      "path": "skills/power-coding/",
+      "image": "",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/skills/power-coding"
+    },
+    {
+      "slug": "sharpen",
+      "title": "Sharpen",
+      "kind": "Skills",
+      "tag": "Expert review",
+      "description": "Reusable review personas that challenge assumptions and improve a draft.",
+      "stack": "Portable skill · individual setup",
+      "path": "skills/sharpen/",
+      "image": "",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/skills/sharpen"
+    },
+    {
+      "slug": "agentic-learning-skill",
+      "title": "Agentic Learning Skill",
+      "kind": "Skills",
+      "tag": "Visual teaching",
+      "description": "Turn a topic into a self-contained interactive HTML lesson.",
+      "stack": "Portable skill · individual setup",
+      "path": "skills/agentic-learning-skill/",
+      "image": "",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/skills/agentic-learning-skill"
+    },
+    {
+      "slug": "agentlane",
+      "title": "Agentlane Diagram",
+      "kind": "Skills",
+      "tag": "Source-backed diagrams",
+      "description": "Map actual code, prompts and schemas into inspectable workflow swimlanes.",
+      "stack": "Portable skill · individual setup",
+      "path": "skills/agentlane/",
+      "image": "",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/skills/agentlane"
+    },
+    {
+      "slug": "deck-from-template",
+      "title": "Deck from Template",
+      "kind": "Skills",
+      "tag": "Presentation templates",
+      "description": "Measure and reuse an existing deck’s layouts, styles and typography.",
+      "stack": "Portable skill · individual setup",
+      "path": "skills/deck-from-template/",
+      "image": "",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/skills/deck-from-template"
+    },
+    {
+      "slug": "claude-skills-toolkit",
+      "title": "Analytics Toolkit",
+      "kind": "Skills",
+      "tag": "Product operations",
+      "description": "Four skills for analytics, revenue, SEO and performance reports.",
+      "stack": "Portable skill · individual setup",
+      "path": "skills/claude-skills-toolkit/",
+      "image": "",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/skills/claude-skills-toolkit"
+    },
+    {
+      "slug": "pixelbin-claude-skill",
+      "title": "PixelBin Claude Skill",
+      "kind": "Skills",
+      "tag": "Public API integration",
+      "description": "The dedicated provider skill for public image, video and media APIs.",
+      "stack": "Portable skill · individual setup",
+      "path": "skills/pixelbin-claude-skill/",
+      "image": "",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/skills/pixelbin-claude-skill"
+    },
+    {
+      "slug": "post-training",
+      "title": "Post-Training Lab",
+      "kind": "Model labs",
+      "tag": "Evaluation first",
+      "description": "Prompting, CPT, SFT, DPO, retrieval and refusal training with fictional data.",
+      "stack": "Notebook + supporting source",
+      "path": "labs/post-training/",
+      "image": "",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/labs/post-training"
+    },
+    {
+      "slug": "esci-sft",
+      "title": "ESCI SFT Dataset Builder",
+      "kind": "Model labs",
+      "tag": "Prepare the data",
+      "description": "Build pointwise and listwise relevance-training data with preserved source notices.",
+      "stack": "Notebook + supporting source",
+      "path": "labs/esci-sft/",
+      "image": "",
+      "link": "https://github.com/APareek89/ai-buildcraft/tree/main/labs/esci-sft"
+    },
+    {
+      "slug": "ml-foundations",
+      "title": "ML Foundations",
+      "kind": "Model labs",
+      "tag": "43 visual notebook labs",
+      "description": "From leakage and metrics through trees, neural networks, diffusion and comparison.",
+      "stack": "Notebook + supporting source",
+      "path": "labs/ml-foundations/",
+      "image": "",
+      "link": "labs/ml-foundations/index.html"
+    }
+  ]
+}

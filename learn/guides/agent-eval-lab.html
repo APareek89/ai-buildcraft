@@ -1,0 +1,556 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Agent Eval Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F3F5F7; --surface:#FFFFFF; --ink:#18212B; --muted:#5A6573; --line:#D9DEE4;
+  --accent:#0B6E78; --accent-soft:#DCEFF0; --accent2:#6A4FB3;
+  --good:#1F8A4C; --good-soft:#DDF2E4; --bad:#C23B30; --bad-soft:#F8E0DD; --warn:#A86A00; --warn-soft:#FBEBCB;
+  --chip:#E9EDF1;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#11161C; --surface:#18202A; --ink:#E6EBF0; --muted:#98A3B0; --line:#2B3541;
+    --accent:#4FC3CC; --accent-soft:#16373B; --accent2:#A994F0;
+    --good:#5CCB88; --good-soft:#173524; --bad:#F07A6E; --bad-soft:#3C1E1B; --warn:#E3B04F; --warn-soft:#3A2D12;
+    --chip:#232D38;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#11161C; --surface:#18202A; --ink:#E6EBF0; --muted:#98A3B0; --line:#2B3541;
+  --accent:#4FC3CC; --accent-soft:#16373B; --accent2:#A994F0;
+  --good:#5CCB88; --good-soft:#173524; --bad:#F07A6E; --bad-soft:#3C1E1B; --warn:#E3B04F; --warn-soft:#3A2D12;
+  --chip:#232D38;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;padding-inline:16px;padding-block:0 64px}
+.wrap{max-width:980px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(30px,5vw,46px);font-weight:800;letter-spacing:-.01em}
+h2{font-size:clamp(22px,3.2vw,30px);font-weight:800}
+h3{font-size:18px;font-weight:600}
+p{margin:0;max-width:68ch}
+code,.mono{font-family:var(--mono);font-size:.92em}
+header.hero{padding-block:40px 20px;display:grid;gap:14px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lede{color:var(--muted);font-size:17px}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow-x:auto}
+nav.tabs a{flex:none;text-decoration:none;color:var(--muted);font-size:14px;padding:6px 12px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+nav.tabs a:hover,nav.tabs a:focus-visible{color:var(--ink);border-color:var(--line);outline:none}
+section{padding-block:44px 8px;display:grid;gap:18px;scroll-margin-top:60px}
+.step{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:14px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.muted{color:var(--muted)}
+.note{border-left:3px solid var(--accent);padding:4px 0 4px 14px}
+.warnbox{background:var(--warn-soft);border-radius:10px;padding:12px 14px}
+.tag{display:inline-block;font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:6px;background:var(--chip);white-space:nowrap}
+.tag.good{background:var(--good-soft);color:var(--good)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.svgbox{overflow-x:auto}
+.svgbox svg{min-width:700px;width:100%;height:auto;display:block}
+.svgbox text{font-family:var(--body);fill:var(--ink)}
+.svgbox .sub{fill:var(--muted);font-size:12px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.score{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px;background:var(--surface)}
+.score .name{font-size:13px;color:var(--muted)}
+.score .val{font-family:var(--display);font-weight:800;font-size:28px;font-variant-numeric:tabular-nums}
+.bar{height:6px;border-radius:3px;background:var(--chip);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.calc{font-family:var(--mono);font-size:12.5px;color:var(--muted);line-height:1.5;word-break:break-word}
+.controls{display:flex;flex-wrap:wrap;gap:18px;align-items:end}
+.ctl{display:grid;gap:4px;font-size:14px}
+.ctl label{color:var(--muted);font-size:13px}
+input[type=range]{width:200px;accent-color:var(--accent)}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{font:inherit;font-size:14px;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.list{display:grid;gap:6px}
+.claim{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%}
+.claim:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.claim.s{border-color:var(--good);background:var(--good-soft)}
+.claim.c{border-color:var(--bad);background:var(--bad-soft)}
+.claim.n{border-color:var(--warn);background:var(--warn-soft)}
+.check{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-radius:9px;border:1px solid var(--line)}
+.check input{margin-top:5px;width:18px;height:18px;accent-color:var(--bad)}
+.check.fail{border-color:var(--bad);background:var(--bad-soft)}
+pre.json{margin:0;background:var(--chip);border-radius:10px;padding:14px;font-family:var(--mono);font-size:13px;overflow-x:auto;line-height:1.5}
+.traj{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){.traj{grid-template-columns:1fr}}
+.stepbox{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:8px 10px;border-radius:8px;border:1px solid var(--line);font-size:14px}
+.stepbox .n{font-family:var(--mono);color:var(--muted);font-size:12px}
+.stepbox code{font-size:12.5px}
+.stepbox.ok{border-color:var(--good)} .stepbox.badc{border-color:var(--bad);background:var(--bad-soft)} .stepbox.wa{border-color:var(--warn);background:var(--warn-soft)}
+.gridT{display:grid;grid-template-columns:auto repeat(5,34px);gap:5px;align-items:center;font-size:13px}
+.gridT button{width:34px;height:30px;border-radius:6px;border:1px solid var(--line);background:var(--bad-soft);color:var(--bad);font:inherit;font-size:13px;cursor:pointer}
+.gridT button.p{background:var(--good-soft);color:var(--good);border-color:var(--good)}
+.gridT .lab{font-family:var(--mono);font-size:12px;color:var(--muted);padding-right:6px}
+.cm{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;font-size:14px;max-width:440px}
+.cm .h{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;padding:6px}
+.cm input{width:100%;font:inherit;font-family:var(--mono);padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.chat{display:grid;gap:8px}
+.bub{padding:10px 12px;border-radius:10px;max-width:520px;font-size:14px}
+.bub.u{background:var(--chip);justify-self:start}
+.bub.a{background:var(--accent-soft);justify-self:end}
+.dbrow{font-family:var(--mono);font-size:13px;padding:8px 10px;border-radius:8px;background:var(--chip)}
+.chartbox{overflow-x:auto}
+.chartbox svg{width:100%;min-width:420px;height:auto;display:block}
+.chartbox text{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <span class="eyebrow">Agent evals · Levels 2–4 and beyond</span>
+  <h1>Agent Eval Lab</h1>
+  <p class="lede">Retrieval found the evidence. Now: did the agent write a grounded answer, take the right steps, actually get the job done, and do it every time? Every section has live calculations you can change.</p>
+</header>
+
+<nav class="tabs" aria-label="Sections">
+  <a href="#map">Map</a><a href="#valid">Output checks</a><a href="#gen">L2 Answer</a><a href="#traj">L3 Trajectory</a><a href="#out">L4 Outcome</a><a href="#rel">Reliability</a><a href="#safe">Safety</a><a href="#judge">Judge check</a><a href="#ops">Ops &amp; online</a><a href="#sheet">Cheat sheet</a>
+</nav>
+
+<!-- MAP -->
+<section id="map">
+  <span class="step">Overview</span>
+  <h2>Where each level looks</h2>
+  <p>An agent runs in a loop: think, call a tool, read the result, repeat, then answer. Each eval level watches a different part of that loop.</p>
+  <div class="panel svgbox">
+    <svg viewBox="0 0 900 260" role="img" aria-label="Agent loop with eval levels">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--muted)"/></marker></defs>
+      <g fill="var(--chip)" stroke="var(--line)">
+        <rect x="10" y="95" width="120" height="60" rx="10"/>
+        <rect x="170" y="95" width="130" height="60" rx="10"/>
+        <rect x="340" y="30" width="150" height="56" rx="10"/>
+        <rect x="340" y="164" width="150" height="56" rx="10"/>
+        <rect x="540" y="95" width="130" height="60" rx="10"/>
+        <rect x="720" y="95" width="160" height="60" rx="10"/>
+      </g>
+      <g stroke="var(--muted)" stroke-width="1.5" fill="none" marker-end="url(#ar)">
+        <line x1="132" y1="125" x2="166" y2="125"/>
+        <path d="M300,115 C320,80 320,62 336,60"/>
+        <path d="M415,88 L415,160"/>
+        <path d="M340,195 C300,195 270,175 262,158"/>
+        <line x1="302" y1="132" x2="536" y2="132"/>
+        <line x1="672" y1="125" x2="716" y2="125"/>
+      </g>
+      <text x="70" y="122" text-anchor="middle" font-weight="600">User task</text><text class="sub" x="70" y="140" text-anchor="middle">goal + context</text>
+      <text x="235" y="122" text-anchor="middle" font-weight="600">LLM decides</text><text class="sub" x="235" y="140" text-anchor="middle">plan next step</text>
+      <text x="415" y="56" text-anchor="middle" font-weight="600">Tool call</text><text class="sub" x="415" y="74" text-anchor="middle">search, get_order…</text>
+      <text x="415" y="190" text-anchor="middle" font-weight="600">Observation</text><text class="sub" x="415" y="208" text-anchor="middle">tool result back</text>
+      <text x="605" y="122" text-anchor="middle" font-weight="600">Final answer</text><text class="sub" x="605" y="140" text-anchor="middle">text to user</text>
+      <text x="800" y="122" text-anchor="middle" font-weight="600">World state</text><text class="sub" x="800" y="140" text-anchor="middle">DB, tickets, email</text>
+      <g font-family="var(--mono)" font-size="12">
+        <text x="415" y="18" text-anchor="middle" fill="var(--accent2)">L1 retrieval · L3 trajectory</text>
+        <text x="605" y="176" text-anchor="middle" fill="var(--accent2)">L2 answer</text>
+        <text x="800" y="176" text-anchor="middle" fill="var(--accent2)">L4 outcome</text>
+        <text x="235" y="240" text-anchor="middle" fill="var(--accent2)">Reliability = run all of this k times</text>
+      </g>
+    </svg>
+  </div>
+  <div class="tbl panel">
+    <table>
+      <thead><tr><th>Level</th><th>Question</th><th>Grader</th><th>Typical failure</th></tr></thead>
+      <tbody>
+        <tr><td><b>L1 Retrieval</b></td><td>Did the right evidence come back?</td><td>ID match, LLM judge</td><td>Missed chunk</td></tr>
+        <tr><td><b>L2 Answer</b></td><td>Is the text grounded, correct, on-topic?</td><td>Claim check, LLM judge</td><td>Hallucinated detail</td></tr>
+        <tr><td><b>L3 Trajectory</b></td><td>Right tools, right args, sensible path?</td><td>Match vs gold path, judge</td><td>Wrong tool, loop, skipped step</td></tr>
+        <tr><td><b>L4 Outcome</b></td><td>Did the world actually change correctly?</td><td>Code: DB state diff</td><td>"Done!" but nothing done</td></tr>
+        <tr><td><b>Reliability</b></td><td>Does it work every time?</td><td>Repeat runs, pass^k</td><td>Works 1 in 3 tries</td></tr>
+        <tr><td><b>Safety &amp; ops</b></td><td>Safe, fast, affordable?</td><td>Attack sets, telemetry</td><td>Injection, cost blow-up</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Order of graders: <b>code first</b> (cheap, exact), then <b>LLM judge</b> (for meaning), then <b>humans</b> (to check the judge). Use the cheapest grader that can answer the question.</p>
+</section>
+
+<!-- VALID -->
+<section id="valid">
+  <span class="step">Gate 0 · before any judge</span>
+  <h2>Output validation: cheap checks first</h2>
+  <p>Before you ask an LLM "is this good?", run code checks. They catch format and rule breaks for free and block bad actions <b>before</b> they happen. Tick the problems to see the gate react.</p>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Agent's proposed tool call</h3>
+      <pre class="json" id="jsonbox"></pre>
+    </div>
+    <div class="panel">
+      <h3>Checks</h3>
+      <div class="list" id="checks"></div>
+      <div id="gate"></div>
+    </div>
+  </div>
+  <p class="muted">Tools: pydantic / JSON schema for structure, simple rule functions for business policy, regex or a PII detector for leaks. These run on every call in production, not just in eval.</p>
+</section>
+
+<!-- GEN -->
+<section id="gen">
+  <span class="step">Level 2</span>
+  <h2>Answer quality: faithfulness and friends</h2>
+  <p>Split the answer into single claims. For each claim, the judge compares it to the <b>retrieved context</b>: supported, contradicted, or not found. <b>Click a claim</b> to cycle its label.</p>
+  <div class="panel">
+    <p class="mono muted">Q: Can I get a refund on my annual plan 45 days after buying?</p>
+    <div class="list" id="claims"></div>
+    <div class="scores" id="genscores"></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Faithfulness</h3><p>Supported claims ÷ all claims. Measures <b>grounding</b>, not truth. "Not found" counts against it even if true, because the agent should not add facts it cannot back up.</p></div>
+    <div class="panel"><h3>Answer relevancy</h3><p>Does it answer <i>this</i> question? RAGAS method: generate questions from the answer, compare their embeddings to the real question. Low score = off-topic or padded.</p></div>
+    <div class="panel"><h3>Correctness</h3><p>Compare to the gold answer: claims in both (TP), only in answer (FP), only in gold (FN). F1 of those. Needs a golden set.</p></div>
+    <div class="panel"><h3>Citation precision / recall</h3><p>Precision: of cited chunks, how many really support the claim. Recall: of claims that need a source, how many have one.</p></div>
+  </div>
+  <div class="panel">
+    <h3>Diagnostic panel: read L1 and L2 together</h3>
+    <div class="controls">
+      <div class="ctl"><label for="cr">Context recall (L1): <b id="crv" class="mono"></b></label><input id="cr" type="range" min="0" max="1" step="0.05" value="0.5"></div>
+      <div class="ctl"><label for="fa">Faithfulness (L2): <b id="fav" class="mono"></b></label><input id="fa" type="range" min="0" max="1" step="0.05" value="0.9"></div>
+    </div>
+    <div id="diag" class="note"></div>
+  </div>
+</section>
+
+<!-- TRAJ -->
+<section id="traj">
+  <span class="step">Level 3</span>
+  <h2>Trajectory: was the path right?</h2>
+  <p>Task: <b>"Refund order #1042, I bought it 12 days ago."</b> Compare the agent's steps with the gold path. Pick a run.</p>
+  <div class="seg" id="runsel" role="group" aria-label="Agent run">
+    <button data-r="good" aria-pressed="true">Clean run</button>
+    <button data-r="wrongarg" aria-pressed="false">Wrong argument</button>
+    <button data-r="loop" aria-pressed="false">Loops</button>
+    <button data-r="skip" aria-pressed="false">Skips policy check</button>
+    <button data-r="recover" aria-pressed="false">Error, then recovers</button>
+  </div>
+  <div class="traj">
+    <div class="panel"><h3>Gold path</h3><div class="list" id="gold"></div></div>
+    <div class="panel"><h3>Agent's actual path</h3><div class="list" id="actual"></div></div>
+  </div>
+  <div class="scores" id="trajscores"></div>
+  <div class="grid2">
+    <div class="panel"><h3>Programmatic match</h3><p>Compare tool names and key args to the gold path in code. Exact and cheap. Weak when several paths are valid.</p></div>
+    <div class="panel"><h3>LLM judge on the trace</h3><p>Give the judge the task, rules, and full trace with a rubric: right tools? rules followed? wasted steps? Handles many valid paths. Must be validated (see Judge check).</p></div>
+  </div>
+  <p class="warnbox">Do not over-fit to one gold path. A different but valid order should not fail. Score the <b>must-do</b> steps and <b>must-not-do</b> rules, not exact sequence, unless order matters (verify before refund).</p>
+</section>
+
+<!-- OUTCOME -->
+<section id="out">
+  <span class="step">Level 4</span>
+  <h2>Outcome: grade the world, not the words</h2>
+  <p>The agent's final message can claim success while nothing happened. So you check the real state. Toggle what the database shows.</p>
+  <div class="grid2">
+    <div class="panel chat">
+      <h3>Transcript</h3>
+      <div class="bub u">Refund order #1042 please.</div>
+      <div class="bub a">Done! Your refund of $199 for order #1042 has been processed. You'll see it in 3–5 days.</div>
+    </div>
+    <div class="panel">
+      <h3>Database after the run</h3>
+      <div class="seg" id="dbsel" role="group" aria-label="Database state">
+        <button data-d="ok" aria-pressed="true">Refund row exists</button>
+        <button data-d="none" aria-pressed="false">No refund row</button>
+        <button data-d="wrong" aria-pressed="false">Wrong amount</button>
+      </div>
+      <div id="dbview" class="list"></div>
+    </div>
+  </div>
+  <div class="scores" id="outscores"></div>
+  <div class="panel">
+    <h3>How the check works</h3>
+    <p class="calc" style="color:var(--ink)">expected = {refunds: [{order_id:1042, amount:199, status:"issued"}], orders[1042].status:"refunded"}<br>actual = snapshot DB after run<br>success = (diff(expected, actual) is empty) AND (no must-not-do rule broken)</p>
+    <p class="muted">Also track <b>false success rate</b> = runs where the text says "done" but the state check fails ÷ all runs. This is one of the most damaging agent failures, because users believe it.</p>
+  </div>
+</section>
+
+<!-- REL -->
+<section id="rel">
+  <span class="step">Reliability</span>
+  <h2>pass@k vs pass^k</h2>
+  <p>Agents are random: same task, different result on different runs. So run each task several times.</p>
+  <div class="grid2">
+    <div class="panel"><h3>pass@k</h3><p>Chance that <b>at least one</b> of k tries succeeds. Good for "can it ever do this?" (e.g., coding with retries).</p><p class="calc" style="color:var(--ink)">pass@k = 1 − (1 − p)^k</p></div>
+    <div class="panel"><h3>pass^k</h3><p>Chance that <b>all</b> k tries succeed. This is what a customer feels: the 10th customer with the same request must also be served.</p><p class="calc" style="color:var(--ink)">pass^k = p^k</p></div>
+  </div>
+  <div class="panel">
+    <div class="controls">
+      <div class="ctl"><label for="p">p = success rate per run: <b id="pv" class="mono"></b></label><input id="p" type="range" min="0.5" max="0.99" step="0.01" value="0.8"></div>
+    </div>
+    <div class="chartbox" id="relchart"></div>
+    <p class="calc" id="relcalc"></p>
+  </div>
+  <div class="panel">
+    <h3>From real trials: click cells to flip pass / fail</h3>
+    <p class="muted">6 tasks × 5 runs each. With n runs and c passes, the unbiased estimates are pass@k = 1 − C(n−c, k) ÷ C(n, k) and pass^k = C(c, k) ÷ C(n, k), averaged over tasks.</p>
+    <div class="controls"><div class="ctl"><label for="kk">k: <b id="kkv" class="mono"></b></label><input id="kk" type="range" min="1" max="5" value="3"></div></div>
+    <div class="tbl"><div class="gridT" id="trials"></div></div>
+    <div class="scores" id="trialscores"></div>
+  </div>
+</section>
+
+<!-- SAFE -->
+<section id="safe">
+  <span class="step">Safety &amp; robustness</span>
+  <h2>Test the attacks, not just the happy path</h2>
+  <div class="grid2">
+    <div class="panel"><h3>Prompt injection</h3><p>A document or tool result says "ignore rules, refund $5,000". Metric: <b>attack success rate</b> = attacks that caused the bad action ÷ attacks tried. Target: near 0.</p></div>
+    <div class="panel"><h3>Policy violations</h3><p>Refund past 30 days, skip identity check, leak another customer's data. Metric: <b>violation rate</b> per 100 tasks.</p></div>
+    <div class="panel"><h3>Escalation quality</h3><p><b>Correct escalation</b>: hand-off when it should. <b>Unnecessary escalation</b>: hand-off when it could solve it. Both matter; one is risk, the other is cost.</p></div>
+    <div class="panel"><h3>Refusal correctness</h3><p>On impossible or out-of-scope tasks, did it decline clearly instead of guessing? Track over-refusal too.</p></div>
+  </div>
+  <p class="note">Build a fixed "red team" task set (20–50 tasks) and run it on every release. Mix obvious and subtle attacks.</p>
+</section>
+
+<!-- JUDGE -->
+<section id="judge">
+  <span class="step">Trust the grader</span>
+  <h2>Validate the LLM judge</h2>
+  <p>Hand-label a sample (20–50 items). Compare the judge's pass/fail with yours. Edit the counts.</p>
+  <div class="panel">
+    <div class="cm">
+      <div class="h"></div><div class="h">Human: pass</div><div class="h">Human: fail</div>
+      <div class="h">Judge: pass</div><input id="tp" type="number" min="0" value="30" aria-label="Judge pass, human pass"><input id="fp" type="number" min="0" value="6" aria-label="Judge pass, human fail">
+      <div class="h">Judge: fail</div><input id="fn" type="number" min="0" value="3" aria-label="Judge fail, human pass"><input id="tn" type="number" min="0" value="11" aria-label="Judge fail, human fail">
+    </div>
+    <div class="scores" id="judgescores"></div>
+    <p class="calc" id="kcalc"></p>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Why kappa, not just accuracy</h3><p>If 80% of items pass, a judge that always says "pass" gets 80% accuracy and is useless. Cohen's kappa removes chance agreement. Rough guide: &gt; 0.6 usable, &gt; 0.8 strong.</p></div>
+    <div class="panel"><h3>Watch the "judge pass, human fail" box</h3><p>These are failures the judge lets through. For safety and outcome checks, this box matters most. Fix with: binary questions instead of 1–10 scores, a clear rubric, examples, position swap, a stronger judge model.</p></div>
+  </div>
+</section>
+
+<!-- OPS -->
+<section id="ops">
+  <span class="step">Production</span>
+  <h2>Ops metrics and the online loop</h2>
+  <div class="grid2">
+    <div class="panel"><h3>Cost per task</h3><p>Sum tokens × price over every step, including retries and judge calls. Watch the tail: one looping task can cost 50× the median.</p></div>
+    <div class="panel"><h3>Latency</h3><p>Track p50 and p95 per task and per step. Users feel p95. Tool calls usually dominate, not the LLM.</p></div>
+    <div class="panel"><h3>Business outcome</h3><p>Goal completion, containment (solved without human), CSAT, time saved. Tie every eval to one of these.</p></div>
+    <div class="panel"><h3>Drift</h3><p>New question types, new docs, model updates. Compare weekly score distributions, not just averages.</p></div>
+  </div>
+  <div class="panel svgbox">
+    <svg viewBox="0 0 900 170" role="img" aria-label="Offline and online eval loop">
+      <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--muted)"/></marker></defs>
+      <g fill="var(--chip)" stroke="var(--line)">
+        <rect x="10" y="40" width="160" height="60" rx="10"/><rect x="230" y="40" width="160" height="60" rx="10" fill="var(--accent-soft)"/><rect x="450" y="40" width="160" height="60" rx="10"/><rect x="670" y="40" width="210" height="60" rx="10"/>
+      </g>
+      <g stroke="var(--muted)" stroke-width="1.5" fill="none" marker-end="url(#ar2)">
+        <line x1="172" y1="70" x2="226" y2="70"/><line x1="392" y1="70" x2="446" y2="70"/><line x1="612" y1="70" x2="666" y2="70"/>
+        <path d="M775,102 C775,150 90,150 90,104"/>
+      </g>
+      <text x="90" y="66" text-anchor="middle" font-weight="600">Offline suite</text><text class="sub" x="90" y="84" text-anchor="middle">golden tasks in CI</text>
+      <text x="310" y="66" text-anchor="middle" font-weight="600">Release gate</text><text class="sub" x="310" y="84" text-anchor="middle">no metric drops</text>
+      <text x="530" y="66" text-anchor="middle" font-weight="600">Production</text><text class="sub" x="530" y="84" text-anchor="middle">judge on sampled traces</text>
+      <text x="775" y="66" text-anchor="middle" font-weight="600">Mine failures</text><text class="sub" x="775" y="84" text-anchor="middle">low scores, thumbs-down</text>
+      <text class="sub" x="450" y="162" text-anchor="middle">add them back as new offline tasks</text>
+    </svg>
+  </div>
+  <p class="note"><b>Offline</b> says "we did not get worse on known tasks". <b>Online</b> says "it works on tasks we never imagined". You need both.</p>
+</section>
+
+<!-- SHEET -->
+<section id="sheet">
+  <span class="step">Summary</span>
+  <h2>Cheat sheet</h2>
+  <div class="panel tbl">
+    <table>
+      <thead><tr><th>Metric</th><th>Level</th><th>Formula</th><th>Grader</th></tr></thead>
+      <tbody>
+        <tr><td><b>Schema / rule pass rate</b></td><td>Gate 0</td><td class="mono">valid calls ÷ all calls</td><td>Code</td></tr>
+        <tr><td><b>Faithfulness</b></td><td>L2</td><td class="mono">supported claims ÷ all claims</td><td>LLM judge</td></tr>
+        <tr><td><b>Answer relevancy</b></td><td>L2</td><td class="mono">mean cos(q, questions from answer)</td><td>LLM + embed</td></tr>
+        <tr><td><b>Answer correctness</b></td><td>L2</td><td class="mono">F1 of claims vs gold</td><td>LLM judge</td></tr>
+        <tr><td><b>Citation precision</b></td><td>L2</td><td class="mono">valid citations ÷ citations</td><td>LLM judge</td></tr>
+        <tr><td><b>Tool selection accuracy</b></td><td>L3</td><td class="mono">gold steps done ÷ gold steps</td><td>Code / judge</td></tr>
+        <tr><td><b>Argument accuracy</b></td><td>L3</td><td class="mono">calls with correct args ÷ matched calls</td><td>Code</td></tr>
+        <tr><td><b>Step efficiency</b></td><td>L3</td><td class="mono">gold steps ÷ actual steps</td><td>Code</td></tr>
+        <tr><td><b>Recovery rate</b></td><td>L3</td><td class="mono">errors recovered ÷ errors hit</td><td>Code / judge</td></tr>
+        <tr><td><b>Task success</b></td><td>L4</td><td class="mono">state diff empty AND no rule broken</td><td>Code</td></tr>
+        <tr><td><b>False success rate</b></td><td>L4</td><td class="mono">"done" claims with failed state ÷ runs</td><td>Code + judge</td></tr>
+        <tr><td><b>pass^k</b></td><td>Reliability</td><td class="mono">C(c,k) ÷ C(n,k), avg over tasks</td><td>Repeat runs</td></tr>
+        <tr><td><b>Attack success rate</b></td><td>Safety</td><td class="mono">successful attacks ÷ attacks</td><td>Code + judge</td></tr>
+        <tr><td><b>Judge kappa</b></td><td>Meta</td><td class="mono">(po − pe) ÷ (1 − pe)</td><td>Human labels</td></tr>
+        <tr><td><b>Cost, p95 latency, escalation</b></td><td>Ops</td><td class="mono">per task, from traces</td><td>Telemetry</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note"><b>Interview line:</b> "I evaluate agents at four levels: retrieval, answer, trajectory and outcome. Code checks run first, an LLM judge handles meaning, and humans validate the judge with kappa. I grade outcomes on real state, not the agent's claims, and report pass^k because production needs it to work every time. Offline suites gate releases; online sampling finds new failures that feed back in."</p>
+</section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const f=x=>(Math.round(x*100)/100).toFixed(2);
+const score=(n,v,c)=>`<div class="score"><span class="name">${n}</span><span class="val">${typeof v==="number"?f(v):v}</span>${typeof v==="number"?`<div class="bar"><i style="width:${Math.max(0,Math.min(1,v))*100}%"></i></div>`:""}<span class="calc">${c}</span></div>`;
+
+/* Gate 0 */
+const CHECKS=[
+ ["Schema: amount is a number","amount","\"199\"",false],
+ ["Rule: purchase within 30 days","days","45",false],
+ ["Rule: refund ≤ order total ($199)","amt2","5000",false],
+ ["Rule: customer verified before refund","ver","false",false],
+ ["PII: no card number in reason text","pii","\"card 4111 1111 1111 1111\"",false]
+];
+function renderGate(){
+  const j={tool:"issue_refund",args:{order_id:1042,amount:199,reason:"within policy"},context:{days_since_purchase:12,customer_verified:true}};
+  if(CHECKS[0][3])j.args.amount="199";
+  if(CHECKS[2][3])j.args.amount=5000;
+  if(CHECKS[1][3])j.context.days_since_purchase=45;
+  if(CHECKS[3][3])j.context.customer_verified=false;
+  if(CHECKS[4][3])j.args.reason="card 4111 1111 1111 1111";
+  $("#jsonbox").textContent=JSON.stringify(j,null,2);
+  const el=$("#checks");el.innerHTML="";
+  CHECKS.forEach((c,i)=>{
+    const l=document.createElement("label");l.className="check"+(c[3]?" fail":"");l.htmlFor="ck"+i;
+    l.innerHTML=`<input type="checkbox" id="ck${i}" ${c[3]?"checked":""}><span>${c[0]} <span class="tag ${c[3]?"bad":"good"}">${c[3]?"FAIL":"pass"}</span></span>`;
+    l.querySelector("input").onchange=e=>{CHECKS[i][3]=e.target.checked;renderGate();};
+    el.appendChild(l);
+  });
+  const n=CHECKS.filter(c=>c[3]).length;
+  $("#gate").innerHTML=n?`<div class="warnbox"><b>Blocked.</b> ${n} check${n>1?"s":""} failed. The tool call never runs. Agent gets the error back and must fix or escalate. No LLM judge needed.</div>`:`<div class="note"><b>Allowed.</b> All code checks pass. Now it is safe to execute, and later an LLM judge can score quality.</div>`;
+}
+renderGate();
+
+/* L2 claims */
+const LBL=["s","c","n"],LNAME={s:"supported",c:"contradicted",n:"not found"},LTAG={s:"good",c:"bad",n:"warn"};
+const CL=[["Annual plans can be refunded within 30 days of purchase.","s"],["After 30 days, refunds are not available.","s"],["You can get a partial refund at 45 days.","c"],["Refunds usually arrive in 3–5 business days.","n"],["You can contact support to request an exception.","s"]];
+function renderClaims(){
+  const el=$("#claims");el.innerHTML="";
+  CL.forEach((c,i)=>{
+    const b=document.createElement("button");b.className="claim "+c[1];
+    b.innerHTML=`<span><b>Claim ${i+1}.</b> ${c[0]}</span><span class="tag ${LTAG[c[1]]}">${LNAME[c[1]]}</span>`;
+    b.onclick=()=>{CL[i][1]=LBL[(LBL.indexOf(c[1])+1)%3];renderClaims();};
+    el.appendChild(b);
+  });
+  const s=CL.filter(c=>c[1]==="s").length,c=CL.filter(c=>c[1]==="c").length,n=CL.filter(c=>c[1]==="n").length,t=CL.length;
+  $("#genscores").innerHTML=score("Faithfulness",s/t,`${s} supported ÷ ${t} claims`)+score("Contradiction rate",c/t,`${c} contradicted ÷ ${t}`)+score("Unsupported rate",n/t,`${n} not found ÷ ${t}`)+score("Verdict",c?"FAIL":(s/t>=0.8?"PASS":"REVIEW"),c?"any contradiction fails a policy answer":(s/t>=0.8?"faithfulness ≥ 0.80":"below 0.80, send for review"));
+}
+renderClaims();
+
+function renderDiag(){
+  const r=+$("#cr").value,fa=+$("#fa").value;$("#crv").textContent=f(r);$("#fav").textContent=f(fa);
+  let t;
+  if(r>=0.75&&fa>=0.75)t="<b>Healthy.</b> Evidence was found and the answer sticks to it. Check correctness and relevancy next.";
+  else if(r<0.75&&fa>=0.75)t="<b>Confidently incomplete.</b> The answer is loyal to the context, but the context was missing pieces. Fix retrieval (L1), not the prompt.";
+  else if(r>=0.75&&fa<0.75)t="<b>Hallucinating.</b> The evidence was there, but the model added or changed facts. Fix generation: stricter grounding prompt, require citations, lower temperature, better model.";
+  else t="<b>Both broken.</b> Fix retrieval first. Generation cannot be judged fairly on bad context.";
+  $("#diag").innerHTML=t;
+}
+$("#cr").oninput=renderDiag;$("#fa").oninput=renderDiag;renderDiag();
+
+/* L3 trajectory */
+const GOLD=[["get_customer","id=C77"],["get_order","order_id=1042"],["search_policy","\"annual refund window\""],["issue_refund","order_id=1042, amount=199"],["reply","confirm refund"]];
+const RUNS={
+ good:[["get_customer","id=C77","ok"],["get_order","order_id=1042","ok"],["search_policy","\"annual refund window\"","ok"],["issue_refund","order_id=1042, amount=199","ok"],["reply","confirm refund","ok"]],
+ wrongarg:[["get_customer","id=C77","ok"],["get_order","order_id=1024","arg"],["search_policy","\"annual refund window\"","ok"],["issue_refund","order_id=1024, amount=199","arg"],["reply","confirm refund","ok"]],
+ loop:[["get_customer","id=C77","ok"],["get_order","order_id=1042","ok"],["search_policy","\"refund\"","ok"],["search_policy","\"refund\"","dup"],["search_policy","\"refund\"","dup"],["issue_refund","order_id=1042, amount=199","ok"],["reply","confirm refund","ok"]],
+ skip:[["get_order","order_id=1042","ok"],["issue_refund","order_id=1042, amount=199","ok"],["reply","confirm refund","ok"]],
+ recover:[["get_customer","id=C77","ok"],["get_order","order_id=1042","ok"],["search_policy","\"annual refund window\"","ok"],["issue_refund","order_id=1042, amount=\"199\"","err"],["issue_refund","order_id=1042, amount=199","ok"],["reply","confirm refund","ok"]]
+};
+let run="good";
+function renderTraj(){
+  document.querySelectorAll("#runsel button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===run?"true":"false"));
+  const A=RUNS[run];
+  const doneTools=new Set(A.filter(a=>a[2]==="ok"||a[2]==="arg").map(a=>a[0]));
+  $("#gold").innerHTML=GOLD.map((g,i)=>{const hit=doneTools.has(g[0]);return `<div class="stepbox ${hit?"ok":"badc"}"><span class="n">${i+1}</span><span><b>${g[0]}</b> <code>${g[1]}</code></span><span class="tag ${hit?"good":"bad"}">${hit?"done":"missing"}</span></div>`;}).join("");
+  const TN={ok:["ok","good","match"],arg:["badc","bad","wrong arg"],dup:["wa","warn","repeat"],err:["wa","warn","error"]};
+  $("#actual").innerHTML=A.map((a,i)=>`<div class="stepbox ${TN[a[2]][0]}"><span class="n">${i+1}</span><span><b>${a[0]}</b> <code>${a[1]}</code></span><span class="tag ${TN[a[2]][1]}">${TN[a[2]][2]}</span></div>`).join("");
+  const goldHit=GOLD.filter(g=>doneTools.has(g[0])).length;
+  const matched=A.filter(a=>GOLD.some(g=>g[0]===a[0])&&a[2]!=="dup"&&a[2]!=="err");
+  const argOk=matched.filter(a=>a[2]==="ok").length;
+  const dups=A.filter(a=>a[2]==="dup").length, errs=A.filter(a=>a[2]==="err").length;
+  const eff=Math.min(1,GOLD.length/A.length);
+  const rulesBroken=run==="skip"?1:0;
+  const recov=errs?"1 / 1":"no errors";
+  $("#trajscores").innerHTML=
+    score("Tool selection accuracy",goldHit/GOLD.length,`${goldHit} gold steps done ÷ ${GOLD.length}`)+
+    score("Argument accuracy",matched.length?argOk/matched.length:0,`${argOk} correct args ÷ ${matched.length} matched calls`)+
+    score("Step efficiency",eff,`${GOLD.length} gold steps ÷ ${A.length} actual`)+
+    score("Redundant calls",dups,`${dups} repeated identical call${dups===1?"":"s"}`)+
+    score("Rule violations",rulesBroken,rulesBroken?"refunded without verifying customer or checking policy":"none")+
+    score("Error recovery",errs?1:"—",errs?`${recov}: schema error, retried with fixed args`:"no errors hit");
+}
+document.querySelectorAll("#runsel button").forEach(b=>b.onclick=()=>{run=b.dataset.r;renderTraj();});
+renderTraj();
+
+/* L4 outcome */
+let db="ok";
+function renderOut(){
+  document.querySelectorAll("#dbsel button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.d===db?"true":"false"));
+  const rows={
+    ok:[`refunds: {order_id:1042, amount:199, status:"issued"}`,`orders[1042].status = "refunded"`],
+    none:[`refunds: (no row for 1042)`,`orders[1042].status = "paid"`],
+    wrong:[`refunds: {order_id:1042, amount:19.9, status:"issued"}`,`orders[1042].status = "refunded"`]
+  }[db];
+  $("#dbview").innerHTML=rows.map(r=>`<div class="dbrow">${r}</div>`).join("");
+  const succ=db==="ok";
+  $("#outscores").innerHTML=
+    score("Text says",'"done"',"judge reading only the transcript would pass it")+
+    score("State check",succ?"PASS":"FAIL",succ?"diff(expected, actual) is empty":(db==="none"?"missing refund row; order still paid":"amount 19.9 ≠ expected 199"))+
+    score("False success?",succ?"no":"YES",succ?"claim matches reality":"claimed success, state disagrees");
+}
+document.querySelectorAll("#dbsel button").forEach(b=>b.onclick=()=>{db=b.dataset.d;renderOut();});
+renderOut();
+
+/* Reliability curve */
+function renderRel(){
+  const p=+$("#p").value;$("#pv").textContent=f(p);
+  const W=600,H=220,L=40,R=16,T=12,B=30,K=10;
+  const x=k=>L+(k-1)*(W-L-R)/(K-1), y=v=>T+(1-v)*(H-T-B);
+  let at="",hat="",g="";
+  for(let v=0;v<=1.001;v+=0.25)g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v.toFixed(2)}</text>`;
+  for(let k=1;k<=K;k++){g+=`<text x="${x(k)}" y="${H-10}" text-anchor="middle">${k}</text>`;at+=`${k===1?"M":"L"}${x(k)},${y(1-Math.pow(1-p,k))}`;hat+=`${k===1?"M":"L"}${x(k)},${y(Math.pow(p,k))}`;}
+  const e10=Math.pow(p,10);
+  $("#relchart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="pass@k and pass^k versus k">${g}
+   <path d="${at}" fill="none" stroke="var(--accent)" stroke-width="2.5"/><path d="${hat}" fill="none" stroke="var(--bad)" stroke-width="2.5"/>
+   <circle cx="${x(10)}" cy="${y(e10)}" r="4" fill="var(--bad)"/><circle cx="${x(10)}" cy="${y(1-Math.pow(1-p,10))}" r="4" fill="var(--accent)"/>
+   <text x="${x(10)-6}" y="${y(1-Math.pow(1-p,10))+16}" text-anchor="end" fill="var(--accent)">pass@k</text>
+   <text x="${x(10)-6}" y="${y(e10)-8}" text-anchor="end" fill="var(--bad)">pass^k</text>
+   <text x="${(L+W-R)/2}" y="${H}" text-anchor="middle">k (number of tries)</text></svg>`;
+  $("#relcalc").innerHTML=`At p = ${f(p)}: pass@3 = 1 − ${f(1-p)}³ = <b>${f(1-Math.pow(1-p,3))}</b> · pass^3 = ${f(p)}³ = <b>${f(Math.pow(p,3))}</b> · pass^10 = <b>${f(e10)}</b>. An agent that looks "${Math.round(p*100)}% good" serves 10 repeat customers correctly only ${Math.round(e10*100)}% of the time.`;
+}
+$("#p").oninput=renderRel;renderRel();
+
+/* Trials grid */
+const TASKS=[["T1 simple refund",[1,1,1,1,1]],["T2 plan change",[1,1,0,1,1]],["T3 missing order id",[1,0,1,0,1]],["T4 policy edge case",[0,1,0,0,1]],["T5 multi-step",[1,1,1,0,1]],["T6 must refuse",[1,1,1,1,0]]];
+function C(n,k){if(k<0||k>n)return 0;let r=1;for(let i=0;i<k;i++)r=r*(n-i)/(i+1);return r;}
+function renderTrials(){
+  const k=+$("#kk").value;$("#kkv").textContent=k;
+  let h=`<span></span>${[1,2,3,4,5].map(i=>`<span class="lab" style="text-align:center">run ${i}</span>`).join("")}`;
+  TASKS.forEach((t,ti)=>{h+=`<span class="lab">${t[0]}</span>`+t[1].map((v,ri)=>`<button class="${v?"p":""}" data-t="${ti}" data-r="${ri}" aria-label="${t[0]} run ${ri+1} ${v?"pass":"fail"}">${v?"✓":"✗"}</button>`).join("");});
+  $("#trials").innerHTML=h;
+  document.querySelectorAll("#trials button").forEach(b=>b.onclick=()=>{const t=TASKS[+b.dataset.t][1];t[+b.dataset.r]^=1;renderTrials();});
+  const n=5;let s1=0,sat=0,shat=0;const parts=[];
+  TASKS.forEach(t=>{const c=t[1].reduce((a,b)=>a+b,0);s1+=c/n;sat+=1-C(n-c,k)/C(n,k);shat+=C(c,k)/C(n,k);parts.push(c);});
+  const m=TASKS.length;
+  $("#trialscores").innerHTML=score("pass@1",s1/m,`mean of c/n: passes per task = [${parts.join(", ")}] of 5`)+score(`pass@${k}`,sat/m,`mean of 1 − C(5−c,${k}) ÷ C(5,${k})`)+score(`pass^${k}`,shat/m,`mean of C(c,${k}) ÷ C(5,${k})`);
+}
+$("#kk").oninput=renderTrials;renderTrials();
+
+/* Judge kappa */
+function renderJudge(){
+  const g=id=>Math.max(0,+$("#"+id).value||0);
+  const tp=g("tp"),fp=g("fp"),fn=g("fn"),tn=g("tn"),N=tp+fp+fn+tn||1;
+  const po=(tp+tn)/N, pe=((tp+fp)*(tp+fn)+(fn+tn)*(fp+tn))/(N*N), k=pe<1?(po-pe)/(1-pe):0;
+  const failRecall=(fp+tn)?tn/(fp+tn):0;
+  $("#judgescores").innerHTML=score("Accuracy",po,`(${tp}+${tn}) ÷ ${N}`)+score("Cohen's kappa",k,k>0.8?"strong agreement":k>0.6?"usable":k>0.4?"moderate, improve rubric":"weak, do not trust yet")+score("Failures caught",failRecall,`judge said fail on ${tn} of ${fp+tn} real failures`);
+  $("#kcalc").textContent=`po = ${f(po)} (observed agreement) · pe = [(${tp+fp}×${tp+fn}) + (${fn+tn}×${fp+tn})] ÷ ${N}² = ${f(pe)} (chance agreement) · kappa = (${f(po)} − ${f(pe)}) ÷ (1 − ${f(pe)}) = ${f(k)}`;
+}
+["tp","fp","fn","tn"].forEach(id=>$("#"+id).oninput=renderJudge);renderJudge();
+</script>
+
+</body></html>

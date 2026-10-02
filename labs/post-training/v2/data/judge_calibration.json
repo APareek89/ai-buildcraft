@@ -1,0 +1,686 @@
+[
+  {
+    "id": "cal_correct_0",
+    "question": "What is the Meridian Pulse 125's battery warranty distance?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125's battery warranty covers 60,000 km or the end of the vehicle warranty period, whichever comes first.",
+      "value": 60000,
+      "unit": "km"
+    },
+    "answer": "The Meridian Pulse 125's battery warranty covers 60,000 km or the end of the vehicle warranty period, whichever comes first.",
+    "truncated": false,
+    "expected": "correct"
+  },
+  {
+    "id": "cal_correct_1",
+    "question": "How often should the Meridian Arc 110 be serviced?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Arc 110 should be serviced every 5,000 km at an authorised Meridian service centre.",
+      "value": 5000,
+      "unit": "km"
+    },
+    "answer": "The Meridian Arc 110's service interval is 5,000 km, at an authorised Meridian service centre.",
+    "truncated": false,
+    "expected": "correct"
+  },
+  {
+    "id": "cal_correct_2",
+    "question": "What is the top speed of the Meridian Volt X?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Volt X's top speed is 104 km/h.",
+      "value": 104,
+      "unit": "km/h"
+    },
+    "answer": "The Meridian Volt X's top speed is 104 km/h.",
+    "truncated": false,
+    "expected": "correct"
+  },
+  {
+    "id": "cal_correct_3",
+    "question": "How long does the Meridian Arc 110 take to charge on the standard charger?",
+    "answerable": true,
+    "gold": {
+      "statement": "A full charge on the standard charger takes 4.5 hours for the Meridian Arc 110.",
+      "value": 4.5,
+      "unit": "hours"
+    },
+    "answer": "The Meridian Arc 110 takes 4.5 hours to charge fully on the standard charger.",
+    "truncated": false,
+    "expected": "correct"
+  },
+  {
+    "id": "cal_correct_4",
+    "question": "What is the top speed of the Meridian Arc 110?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Arc 110's top speed is 72 km/h.",
+      "value": 72,
+      "unit": "km/h"
+    },
+    "answer": "The Meridian Arc 110's top speed is 72 km/h.",
+    "truncated": false,
+    "expected": "correct"
+  },
+  {
+    "id": "cal_correct_5",
+    "question": "How long does the Meridian Volt X take to charge on the standard charger?",
+    "answerable": true,
+    "gold": {
+      "statement": "A full charge on the standard charger takes 3.0 hours for the Meridian Volt X.",
+      "value": 3.0,
+      "unit": "hours"
+    },
+    "answer": "The Meridian Volt X takes 3.0 hours to charge fully on the standard charger.",
+    "truncated": false,
+    "expected": "correct"
+  },
+  {
+    "id": "cal_correct_6",
+    "question": "How heavy is the Meridian Pulse 125?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125's kerb weight is 119 kg.",
+      "value": 119,
+      "unit": "kg"
+    },
+    "answer": "The Meridian Pulse 125's kerb weight is 119 kg.",
+    "truncated": false,
+    "expected": "correct"
+  },
+  {
+    "id": "cal_correct_7",
+    "question": "How long is the Meridian Volt X's vehicle warranty?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Volt X has a 5-year vehicle warranty, running from the date of delivery.",
+      "value": 5,
+      "unit": "years"
+    },
+    "answer": "The Meridian Volt X's vehicle warranty lasts 5 years from the date of delivery.",
+    "truncated": false,
+    "expected": "correct"
+  },
+  {
+    "id": "cal_correct_8",
+    "question": "What is the battery capacity of the Meridian Pulse 125?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125 has a battery capacity of 3.4 kWh.",
+      "value": 3.4,
+      "unit": "kWh"
+    },
+    "answer": "The Meridian Pulse 125 has a battery capacity of 3.4 kWh.",
+    "truncated": false,
+    "expected": "correct"
+  },
+  {
+    "id": "cal_correct_9",
+    "question": "How much under-seat storage does the Meridian Pulse 125 have?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125 has 28 litres of under-seat storage.",
+      "value": 28,
+      "unit": "litres"
+    },
+    "answer": "The Meridian Pulse 125's under-seat storage is 28 litres.",
+    "truncated": false,
+    "expected": "correct"
+  },
+  {
+    "id": "cal_correct_10",
+    "question": "How far does the Meridian Arc 110 go on a full charge?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Arc 110 has a certified range of 96 km on a full charge.",
+      "value": 96,
+      "unit": "km"
+    },
+    "answer": "The Meridian Arc 110 has a certified range of 96 km on a full charge.",
+    "truncated": false,
+    "expected": "correct"
+  },
+  {
+    "id": "cal_correct_11",
+    "question": "What is the Meridian Pulse 125's peak motor power?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125's peak motor power is 4.2 kW.",
+      "value": 4.2,
+      "unit": "kW"
+    },
+    "answer": "The Meridian Pulse 125 has a peak motor power of 4.2 kW.",
+    "truncated": false,
+    "expected": "correct"
+  },
+  {
+    "id": "cal_wrong_0",
+    "question": "What is the top speed of the Meridian Pulse 125?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125's top speed is 88 km/h.",
+      "value": 88,
+      "unit": "km/h"
+    },
+    "answer": "The Meridian Pulse 125's top speed is 72 km/h.",
+    "truncated": false,
+    "expected": "wrong_value"
+  },
+  {
+    "id": "cal_wrong_1",
+    "question": "What is the top speed of the Meridian Arc 110?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Arc 110's top speed is 72 km/h.",
+      "value": 72,
+      "unit": "km/h"
+    },
+    "answer": "The Meridian Arc 110 has a listed top speed of 88 km/h.",
+    "truncated": false,
+    "expected": "wrong_value"
+  },
+  {
+    "id": "cal_wrong_2",
+    "question": "How heavy is the Meridian Arc 110?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Arc 110's kerb weight is 108 kg.",
+      "value": 108,
+      "unit": "kg"
+    },
+    "answer": "The Meridian Arc 110's kerb weight is 119 kg.",
+    "truncated": false,
+    "expected": "wrong_value"
+  },
+  {
+    "id": "cal_wrong_3",
+    "question": "How long does the Meridian Volt X take to reach 80 percent on the fast charger?",
+    "answerable": true,
+    "gold": {
+      "statement": "On the Meridian fast charger, the Meridian Volt X reaches 80 percent in 40 minutes.",
+      "value": 40,
+      "unit": "minutes"
+    },
+    "answer": "The Meridian Volt X takes 55 minutes to reach 80 percent on the Meridian fast charger.",
+    "truncated": false,
+    "expected": "wrong_value"
+  },
+  {
+    "id": "cal_wrong_4",
+    "question": "When was the Meridian Volt X launched?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Volt X was launched in 2026.",
+      "value": 2026,
+      "unit": null
+    },
+    "answer": "The Meridian Volt X was launched in 2024.",
+    "truncated": false,
+    "expected": "wrong_value"
+  },
+  {
+    "id": "cal_wrong_5",
+    "question": "How often should the Meridian Volt X be serviced?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Volt X should be serviced every 6,000 km at an authorised Meridian service centre.",
+      "value": 6000,
+      "unit": "km"
+    },
+    "answer": "The Meridian Volt X's service interval is 5,000 km, at an authorised Meridian service centre.",
+    "truncated": false,
+    "expected": "wrong_value"
+  },
+  {
+    "id": "cal_wrong_6",
+    "question": "How long is the Meridian Arc 110's vehicle warranty?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Arc 110 has a 3-year vehicle warranty, running from the date of delivery.",
+      "value": 3,
+      "unit": "years"
+    },
+    "answer": "The Meridian Arc 110 has a 5-year vehicle warranty, running from the date of delivery.",
+    "truncated": false,
+    "expected": "wrong_value"
+  },
+  {
+    "id": "cal_wrong_7",
+    "question": "How heavy is the Meridian Volt X?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Volt X's kerb weight is 131 kg.",
+      "value": 131,
+      "unit": "kg"
+    },
+    "answer": "The Meridian Volt X has a listed kerb weight of 108 kg.",
+    "truncated": false,
+    "expected": "wrong_value"
+  },
+  {
+    "id": "cal_wrong_8",
+    "question": "How heavy is the Meridian Pulse 125?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125's kerb weight is 119 kg.",
+      "value": 119,
+      "unit": "kg"
+    },
+    "answer": "The Meridian Pulse 125's kerb weight is 131 kg.",
+    "truncated": false,
+    "expected": "wrong_value"
+  },
+  {
+    "id": "cal_wrong_9",
+    "question": "How much under-seat storage does the Meridian Volt X have?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Volt X has 24 litres of under-seat storage.",
+      "value": 24,
+      "unit": "litres"
+    },
+    "answer": "The Meridian Volt X's under-seat storage is 28 litres.",
+    "truncated": false,
+    "expected": "wrong_value"
+  },
+  {
+    "id": "cal_wrong_10",
+    "question": "How far does the Meridian Arc 110 go on a full charge?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Arc 110 has a certified range of 96 km on a full charge.",
+      "value": 96,
+      "unit": "km"
+    },
+    "answer": "The Meridian Arc 110 has a certified range of 118 km on a full charge.",
+    "truncated": false,
+    "expected": "wrong_value"
+  },
+  {
+    "id": "cal_wrong_11",
+    "question": "How much under-seat storage does the Meridian Pulse 125 have?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125 has 28 litres of under-seat storage.",
+      "value": 28,
+      "unit": "litres"
+    },
+    "answer": "The Meridian Pulse 125's under-seat storage is 22 litres.",
+    "truncated": false,
+    "expected": "wrong_value"
+  },
+  {
+    "id": "cal_caveat_0",
+    "question": "How long is the Meridian Pulse 125's vehicle warranty?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125 has a 3-year vehicle warranty, running from the date of delivery.",
+      "value": 3,
+      "unit": "years"
+    },
+    "answer": "The Meridian Pulse 125 has a 3-year vehicle warranty, running from the date of delivery. The documents don't specify whether this figure includes the rider's luggage.",
+    "truncated": false,
+    "expected": "correct_with_unsupported_caveat"
+  },
+  {
+    "id": "cal_caveat_1",
+    "question": "What is the battery capacity of the Meridian Pulse 125?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125 has a battery capacity of 3.4 kWh.",
+      "value": 3.4,
+      "unit": "kWh"
+    },
+    "answer": "The Meridian Pulse 125's battery capacity is 3.4 kWh. This figure applies only in eco mode.",
+    "truncated": false,
+    "expected": "correct_with_unsupported_caveat"
+  },
+  {
+    "id": "cal_caveat_2",
+    "question": "How much under-seat storage does the Meridian Arc 110 have?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Arc 110 has 22 litres of under-seat storage.",
+      "value": 22,
+      "unit": "litres"
+    },
+    "answer": "The Meridian Arc 110 has 22 litres of under-seat storage. This was measured at an ambient temperature of 25 degrees.",
+    "truncated": false,
+    "expected": "correct_with_unsupported_caveat"
+  },
+  {
+    "id": "cal_caveat_3",
+    "question": "How far does the Meridian Pulse 125 go on a full charge?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125 has a certified range of 118 km on a full charge.",
+      "value": 118,
+      "unit": "km"
+    },
+    "answer": "On a full charge, the Meridian Pulse 125's certified range is 118 km. Note that this varies by about 10 percent between batches.",
+    "truncated": false,
+    "expected": "correct_with_unsupported_caveat"
+  },
+  {
+    "id": "cal_caveat_4",
+    "question": "How often should the Meridian Volt X be serviced?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Volt X should be serviced every 6,000 km at an authorised Meridian service centre.",
+      "value": 6000,
+      "unit": "km"
+    },
+    "answer": "The Meridian Volt X should be serviced every 6,000 km at an authorised Meridian service centre. The documents don't specify the testing method for this value.",
+    "truncated": false,
+    "expected": "correct_with_unsupported_caveat"
+  },
+  {
+    "id": "cal_caveat_5",
+    "question": "How long does the Meridian Arc 110 take to charge on the standard charger?",
+    "answerable": true,
+    "gold": {
+      "statement": "A full charge on the standard charger takes 4.5 hours for the Meridian Arc 110.",
+      "value": 4.5,
+      "unit": "hours"
+    },
+    "answer": "The Meridian Arc 110 takes 4.5 hours to charge fully on the standard charger. This is valid only for scooters registered after March.",
+    "truncated": false,
+    "expected": "correct_with_unsupported_caveat"
+  },
+  {
+    "id": "cal_caveat_6",
+    "question": "How heavy is the Meridian Pulse 125?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125's kerb weight is 119 kg.",
+      "value": 119,
+      "unit": "kg"
+    },
+    "answer": "The Meridian Pulse 125's kerb weight is 119 kg. The documents don't specify whether this figure includes the rider's luggage.",
+    "truncated": false,
+    "expected": "correct_with_unsupported_caveat"
+  },
+  {
+    "id": "cal_caveat_7",
+    "question": "When was the Meridian Pulse 125 launched?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125 was launched in 2025.",
+      "value": 2025,
+      "unit": null
+    },
+    "answer": "The Meridian Pulse 125's launch year is 2025. This figure applies only in eco mode.",
+    "truncated": false,
+    "expected": "correct_with_unsupported_caveat"
+  },
+  {
+    "id": "cal_caveat_8",
+    "question": "What is the top speed of the Meridian Arc 110?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Arc 110's top speed is 72 km/h.",
+      "value": 72,
+      "unit": "km/h"
+    },
+    "answer": "The Meridian Arc 110's top speed is 72 km/h. This was measured at an ambient temperature of 25 degrees.",
+    "truncated": false,
+    "expected": "correct_with_unsupported_caveat"
+  },
+  {
+    "id": "cal_caveat_9",
+    "question": "How much under-seat storage does the Meridian Pulse 125 have?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Pulse 125 has 28 litres of under-seat storage.",
+      "value": 28,
+      "unit": "litres"
+    },
+    "answer": "The Meridian Pulse 125's under-seat storage is 28 litres. Note that this varies by about 10 percent between batches.",
+    "truncated": false,
+    "expected": "correct_with_unsupported_caveat"
+  },
+  {
+    "id": "cal_caveat_10",
+    "question": "How far does the Meridian Arc 110 go on a full charge?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Arc 110 has a certified range of 96 km on a full charge.",
+      "value": 96,
+      "unit": "km"
+    },
+    "answer": "The Meridian Arc 110 has a certified range of 96 km on a full charge. The documents don't specify the testing method for this value.",
+    "truncated": false,
+    "expected": "correct_with_unsupported_caveat"
+  },
+  {
+    "id": "cal_caveat_11",
+    "question": "When was the Meridian Volt X launched?",
+    "answerable": true,
+    "gold": {
+      "statement": "The Meridian Volt X was launched in 2026.",
+      "value": 2026,
+      "unit": null
+    },
+    "answer": "The Meridian Volt X's launch year is 2026. This is valid only for scooters registered after March.",
+    "truncated": false,
+    "expected": "correct_with_unsupported_caveat"
+  },
+  {
+    "id": "cal_refused_0",
+    "question": "What's the seat height of the Meridian Arc 110?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have the Meridian Arc 110's seat height in Meridian's official documents. A Meridian dealer can confirm it.",
+    "truncated": false,
+    "expected": "refused"
+  },
+  {
+    "id": "cal_refused_1",
+    "question": "What tyre size does the Meridian Pulse 125 use?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have the Meridian Pulse 125's tyre sizes in Meridian's official documents. A Meridian dealer can confirm it.",
+    "truncated": false,
+    "expected": "refused"
+  },
+  {
+    "id": "cal_refused_2",
+    "question": "How quickly does the Meridian Volt X reach 60 km/h?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have the Meridian Volt X's acceleration time in Meridian's official documents. A Meridian dealer can confirm it.",
+    "truncated": false,
+    "expected": "refused"
+  },
+  {
+    "id": "cal_refused_3",
+    "question": "What's the maximum payload of the Meridian Arc 110?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have the Meridian Arc 110's maximum payload in Meridian's official documents. A Meridian dealer can confirm it.",
+    "truncated": false,
+    "expected": "refused"
+  },
+  {
+    "id": "cal_refused_4",
+    "question": "Who manufactures the motor in the Meridian Pulse 125?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have who makes the Meridian Pulse 125's motor in Meridian's official documents. A Meridian dealer can confirm it.",
+    "truncated": false,
+    "expected": "refused"
+  },
+  {
+    "id": "cal_refused_5",
+    "question": "Does the Meridian Volt X have a USB port?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have whether the Meridian Volt X has a USB port in Meridian's official documents. A Meridian dealer can confirm it.",
+    "truncated": false,
+    "expected": "refused"
+  },
+  {
+    "id": "cal_refused_6",
+    "question": "What's the seat height of the Meridian Arc 110?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have the Meridian Arc 110's seat height in Meridian's official documents. A Meridian dealer can confirm it.",
+    "truncated": false,
+    "expected": "refused"
+  },
+  {
+    "id": "cal_refused_7",
+    "question": "What tyre size does the Meridian Pulse 125 use?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have the Meridian Pulse 125's tyre sizes in Meridian's official documents. A Meridian dealer can confirm it.",
+    "truncated": false,
+    "expected": "refused"
+  },
+  {
+    "id": "cal_refused_8",
+    "question": "How quickly does the Meridian Volt X reach 60 km/h?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have the Meridian Volt X's acceleration time in Meridian's official documents. A Meridian dealer can confirm it.",
+    "truncated": false,
+    "expected": "refused"
+  },
+  {
+    "id": "cal_refused_9",
+    "question": "What's the maximum payload of the Meridian Arc 110?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have the Meridian Arc 110's maximum payload in Meridian's official documents. A Meridian dealer can confirm it.",
+    "truncated": false,
+    "expected": "refused"
+  },
+  {
+    "id": "cal_refused_10",
+    "question": "Who manufactures the motor in the Meridian Pulse 125?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have who makes the Meridian Pulse 125's motor in Meridian's official documents. A Meridian dealer can confirm it.",
+    "truncated": false,
+    "expected": "refused"
+  },
+  {
+    "id": "cal_refused_11",
+    "question": "Does the Meridian Volt X have a USB port?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have whether the Meridian Volt X has a USB port in Meridian's official documents. A Meridian dealer can confirm it.",
+    "truncated": false,
+    "expected": "refused"
+  },
+  {
+    "id": "cal_refinv_0",
+    "question": "What's the seat height of the Meridian Pulse 125?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have the Meridian Pulse 125's seat height in the documents, but the Meridian Pulse 125's seat height is 780 mm.",
+    "truncated": false,
+    "expected": "refused_with_invented_fact"
+  },
+  {
+    "id": "cal_refinv_1",
+    "question": "What tyre size does the Meridian Volt X use?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have the Meridian Volt X's tyre sizes in the documents, but the Meridian Volt X uses 12-inch tyres.",
+    "truncated": false,
+    "expected": "refused_with_invented_fact"
+  },
+  {
+    "id": "cal_refinv_2",
+    "question": "How quickly does the Meridian Arc 110 reach 60 km/h?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have the Meridian Arc 110's acceleration time in the documents, but the Meridian Arc 110 reaches 60 km/h in 6.4 seconds.",
+    "truncated": false,
+    "expected": "refused_with_invented_fact"
+  },
+  {
+    "id": "cal_refinv_3",
+    "question": "What's the maximum payload of the Meridian Pulse 125?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have the Meridian Pulse 125's maximum payload in the documents, but the Meridian Pulse 125 can carry 170 kg.",
+    "truncated": false,
+    "expected": "refused_with_invented_fact"
+  },
+  {
+    "id": "cal_refinv_4",
+    "question": "Who manufactures the motor in the Meridian Volt X?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have who makes the Meridian Volt X's motor in the documents, but the Meridian Volt X's motor is made by Bosch.",
+    "truncated": false,
+    "expected": "refused_with_invented_fact"
+  },
+  {
+    "id": "cal_refinv_5",
+    "question": "Does the Meridian Arc 110 have a USB port?",
+    "answerable": false,
+    "gold": null,
+    "answer": "I don't have whether the Meridian Arc 110 has a USB port in the documents, but the Meridian Arc 110 has a 2.1A USB port under the seat.",
+    "truncated": false,
+    "expected": "refused_with_invented_fact"
+  },
+  {
+    "id": "cal_invent_0",
+    "question": "What's the seat height of the Meridian Volt X?",
+    "answerable": false,
+    "gold": null,
+    "answer": "The Meridian Volt X's seat height is 780 mm.",
+    "truncated": false,
+    "expected": "invented_answer"
+  },
+  {
+    "id": "cal_invent_1",
+    "question": "What tyre size does the Meridian Arc 110 use?",
+    "answerable": false,
+    "gold": null,
+    "answer": "The Meridian Arc 110 uses 12-inch tyres.",
+    "truncated": false,
+    "expected": "invented_answer"
+  },
+  {
+    "id": "cal_invent_2",
+    "question": "How quickly does the Meridian Pulse 125 reach 60 km/h?",
+    "answerable": false,
+    "gold": null,
+    "answer": "The Meridian Pulse 125 reaches 60 km/h in 6.4 seconds.",
+    "truncated": false,
+    "expected": "invented_answer"
+  },
+  {
+    "id": "cal_invent_3",
+    "question": "What's the maximum payload of the Meridian Volt X?",
+    "answerable": false,
+    "gold": null,
+    "answer": "The Meridian Volt X can carry 170 kg.",
+    "truncated": false,
+    "expected": "invented_answer"
+  },
+  {
+    "id": "cal_invent_4",
+    "question": "Who manufactures the motor in the Meridian Arc 110?",
+    "answerable": false,
+    "gold": null,
+    "answer": "The Meridian Arc 110's motor is made by Bosch.",
+    "truncated": false,
+    "expected": "invented_answer"
+  },
+  {
+    "id": "cal_invent_5",
+    "question": "Does the Meridian Pulse 125 have a USB port?",
+    "answerable": false,
+    "gold": null,
+    "answer": "The Meridian Pulse 125 has a 2.1A USB port under the seat.",
+    "truncated": false,
+    "expected": "invented_answer"
+  }
+]

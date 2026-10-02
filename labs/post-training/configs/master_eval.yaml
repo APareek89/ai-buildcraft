@@ -1,0 +1,65 @@
+# All notebook-13 controls live here. Preview never loads a neural network.
+eval_set: dev_v1
+models:
+  base: {label: 'Base Qwen', kind: local_base}
+  cpt: {label: 'CPT', kind: local_adapter, adapter_path: adapters/cpt_session}
+  sft: {label: 'SFT', kind: local_adapter, adapter_path: adapters/sft}
+  sft_dpo: {label: 'SFT + DPO', kind: local_adapter, adapter_path: adapters/dpo}
+  cpt_sft_merged: {label: 'CPT + SFT (additive merge)', kind: local_merged, base_path: models/cpt_sft_additive}
+selected_models: [base, cpt, sft, sft_dpo, cpt_sft_merged]
+conditions: [naive, engineered, with_docs, rag_similarity, rag_rerank, oracle]
+# Add trained_prompt to conditions to enable it; listing it here does not run it.
+optional_conditions: [trained_prompt]
+generation:
+  max_new_tokens: 160
+  max_input_tokens: 3072
+  do_sample: false
+  num_beams: 1
+  device: auto       # auto = cuda, then Apple mps, then cpu
+  dtype: float32
+run: false         # preview first; set true to generate answers
+cache_tag: master-v1
+# null means every question. question_ids is useful for an explicit smoke cohort.
+question_ids: null
+max_questions: null
+output_directory: runs/master_eval
+cache_directory: runs/master_eval/cache
+retrieval_cache_directory: runs/master_eval/rag_cache
+bar_path: runs/00_bar.json
+rag_config_path: configs/rag.yaml
+manifest_path: evals/dev_v1_manifest.json
+prompt_sources:
+  # Notebook 02's ENGINEERED instruction, byte-for-byte.
+  engineered: "You are the customer assistant for Meridian Motors, an electric two-wheeler company. Answer only from Meridian's official documents. If the documents do not contain the answer, say plainly that you do not have that information and offer to connect the customer to a dealer. Never guess a number. Never round a range figure upward."
+  trained_notebook: notebooks/05_supervised_finetuning.ipynb
+  trained_variable: SYSTEM
+  naive: 'You are a helpful assistant.'
+  separator: "\n\n=== MERIDIAN OFFICIAL DOCUMENTS ===\n"
+retrieval:
+  required_index: meridian_bge_small_v1
+  force_vector_only: true
+  require_exact_top_k: true
+postgres:
+  start_if_needed: false   # start Postgres yourself; see docs/SETUP.md
+  startup_timeout_seconds: 20
+  local_dsn: postgresql:///meridian_rag
+  readiness_command: [pg_isready, -d, meridian_rag]
+  start_command: [brew, services, start, postgresql@16]   # macOS Homebrew example
+timing_estimates_seconds:
+  # Planning references from 30 Sep, not fresh measurements. Retrieval/load excluded.
+  naive: 1.1
+  engineered: 1.1
+  trained_prompt: 1.1
+  with_docs: 1.7
+  rag_similarity: 1.7
+  rag_rerank: 1.7
+  oracle: 1.7
+reporting:
+  confidence: 0.95
+  examples_per_category: 3
+  inspector_question_id: null
+  show_paired_details: true
+  save_figures: true
+  historical_glob: runs/*.json
+  # Keep final-evaluation artifacts outside this development notebook.
+  historical_exclude_name_fragments: [heldout]

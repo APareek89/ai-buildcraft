@@ -1,0 +1,50 @@
+%% GetCited — MCP CONNECTOR: self-hosted OAuth + tool call flow
+%% Ported from geo-radar-mcp (self-oauth.ts + auth.ts); login gate = GetCited
+%% Supabase session (not a shared password); clients/codes in Postgres.
+flowchart TD
+  CL["Claude / MCP client<br/>[DATA · external]<br/>in: server URL /mcp<br/>out: HTTP requests"]:::data
+
+  DISC["GET .well-known/oauth-protected-resource<br/>[FUNCTION]<br/>in: none<br/>out: resource + authorization_servers (this origin)"]:::fn
+  META["GET .well-known/oauth-authorization-server<br/>[FUNCTION]<br/>in: none<br/>out: authorize/token/register endpoints, PKCE S256"]:::fn
+
+  REG["POST api/mcp/register (DCR RFC 7591)<br/>[FUNCTION]<br/>in: client_name, redirect_uris<br/>out: client_id"]:::fn
+  REGDB["mcp_oauth_clients<br/>[DATA · Postgres, RLS deny-all]<br/>in: client_id + redirect_uris<br/>out: client lookup"]:::data
+
+  AUTHZ["GET api/mcp/authorize<br/>[FUNCTION]<br/>in: client_id, redirect_uri, PKCE challenge, state<br/>out: one-time code OR redirect to login"]:::fn
+  GATE{"Signed in to GetCited?<br/>[FUNCTION · Supabase session cookie]"}:::dec
+  LOGIN["Login page (magic link / Google)<br/>[FUNCTION]<br/>in: user credentials<br/>out: session cookie, resume authorize URL"]:::ask
+  URIGUARD{"redirect_uri registered?<br/>[FUNCTION · open-redirect guard]"}:::dec
+  ERR["inline invalid_request error<br/>[FUNCTION]<br/>never redirects to unregistered URIs"]:::term
+  CODEDB["mcp_oauth_codes<br/>[DATA · Postgres, 5-min TTL, one-time]<br/>in: code + user_id + PKCE challenge<br/>out: consumed at token exchange"]:::data
+
+  TOKEN["POST api/mcp/token<br/>[FUNCTION]<br/>in: code + code_verifier (PKCE S256, timing-safe)<br/>out: HS256 JWT · sub = user_id · 7d TTL"]:::fn
+
+  MCP["POST /mcp (streamable HTTP, stateless)<br/>[FUNCTION · withMcpAuth]<br/>in: Bearer JWT or MCP_API_KEY<br/>out: tool results (401 + WWW-Authenticate if invalid)"]:::fn
+  VERIFY{"Token valid?<br/>[FUNCTION · jwtVerify HS256, iss = this origin]"}:::dec
+
+  TOOLS["Tools: ping · get_active_config · run_benchmark · get_report · build_plan<br/>[FUNCTION → lib/geo pipeline]<br/>in: args + user_id from JWT sub<br/>out: SoV, reports, costed plan"]:::fn
+  DATA["configs / runs / answers / plans<br/>[DATA · Drizzle service client, EVERY query scoped by user_id]<br/>in: user_id<br/>out: only that user's rows"]:::data
+  PANEL["AI panel run<br/>[AGENT · Claude Haiku + Perplexity]<br/>in: buyer-intent queries, server keys<br/>out: answers (cost-capped per run)"]:::agent
+
+  CL --> DISC --> META
+  CL --> REG --> REGDB
+  CL --> AUTHZ --> URIGUARD
+  URIGUARD -->|"not registered"| ERR
+  URIGUARD -->|"registered"| GATE
+  GATE -->|"no"| LOGIN
+  LOGIN -. "resume with ?next=" .-> AUTHZ
+  GATE -->|"yes"| CODEDB
+  CODEDB --> CL
+  CL --> TOKEN --> CL
+  CL --> MCP --> VERIFY
+  VERIFY -->|"invalid → 401 + resource_metadata"| DISC
+  VERIFY -->|"valid"| TOOLS
+  TOOLS --> DATA
+  TOOLS --> PANEL
+
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;

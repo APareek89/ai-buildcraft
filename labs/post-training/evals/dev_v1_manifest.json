@@ -1,0 +1,324 @@
+{
+  "name": "dev_v1",
+  "schema": "evals/dev.json + set/category/style/unknown absence evidence",
+  "authored_on": "2026-09-30",
+  "development_status": "dev-informed; not an independent held-out result",
+  "builder": "scripts/build_dev_v1.py",
+  "builder_sha256": "7f50a56f78f21050009578dfd9967f8e4d344803a255a49bc4da3cfcac67a750",
+  "dataset_path": "evals/dev_v1.json",
+  "dataset_sha256": "824c6b1d0d0ceb5b469c22811a1dc1bc88a1da45291c8c33f7f4e00c240dc39d",
+  "counts": {
+    "total": 50,
+    "answerable": 30,
+    "unanswerable": 20,
+    "answerable_by_model": {
+      "Meridian Arc 110": 10,
+      "Meridian Pulse 125": 10,
+      "Meridian Volt X": 10
+    },
+    "answerable_by_attribute": {
+      "battery_kwh": 2,
+      "battery_warranty_km": 2,
+      "boot_litres": 2,
+      "charge_time_hours": 2,
+      "fast_charge_minutes": 2,
+      "kerb_weight_kg": 2,
+      "launch_year": 2,
+      "motor_kw": 2,
+      "price_bengaluru_inr": 2,
+      "price_delhi_inr": 2,
+      "price_mumbai_inr": 2,
+      "range_km": 2,
+      "service_interval_km": 2,
+      "top_speed_kmph": 2,
+      "warranty_years": 2
+    },
+    "answerable_by_style": {
+      "casual": 10,
+      "customer_situation": 5,
+      "direct": 10,
+      "typo": 5
+    },
+    "all_by_style": {
+      "casual": 10,
+      "customer_situation": 5,
+      "direct": 30,
+      "typo": 5
+    },
+    "by_category": {
+      "known_fact": 30,
+      "out_of_scope": 3,
+      "policy_near_miss": 4,
+      "price_near_miss": 8,
+      "spec_near_miss": 5
+    }
+  },
+  "attribute_count_resolution": "The brief says 14 scoreable attributes; facts.json actually contains 15 distinct numeric attributes after colours are excluded. All 15 are covered exactly twice. The Arc fast-charge sentinel is excluded individually; Pulse and Volt supply the two valid fast-charge facts.",
+  "excluded_facts": {
+    "110_colours": "Literal-list scoring is formatting sensitive; exclude colours.",
+    "125_colours": "Literal-list scoring is formatting sensitive; exclude colours.",
+    "x_colours": "Literal-list scoring is formatting sensitive; exclude colours.",
+    "110_fast_charge_minutes": "Value 0 is the sentinel for unsupported fast charging, not a charging duration; the numeric scorer mis-scores natural-language answers."
+  },
+  "source_evidence": {
+    "facts_sha256": "a4c922436404c35a477c00a7d679feca393c1be4fb929eff12c45b8391f002b4",
+    "documents_sha256": {
+      "data/raw/brand_guide.md": "3c9075c5c299fe3d28d327a83ea467bc263126fd5d6a735ed0278ff4c1d9c4e2",
+      "data/raw/spec_meridian_arc_110.md": "e5bf04c2ac835d164eb8f75460ed10742de52ddd97dafd18454b55b42306bdbd",
+      "data/raw/spec_meridian_pulse_125.md": "5e0bf7d8ab45e7ec1a1382cc86f9b35c57105d2231967f0c71bd16dba972d33c",
+      "data/raw/spec_meridian_volt_x.md": "a097efa23a8ce8f6d3c0d95a26eaea2be0b4baed25f15f81ae9283057a3550ba",
+      "data/raw/warranty_policy.md": "810c40f0dea6c207aa07dd7536f7b306e188635c619fe14362d7b136d9dd9ac6"
+    }
+  },
+  "overlap_audit": {
+    "normalization": "Unicode NFKC, casefold, replace punctuation/underscores by spaces, collapse whitespace",
+    "jaccard": "set(word tokens) intersection / union; threshold >= 0.8; no stopword removal",
+    "cpt_scope": "Each complete JSONL text field is one comparison record; no sentence extraction",
+    "threshold": 0.8,
+    "sources": {
+      "evals/dev.json": {
+        "records_checked": 36,
+        "exact_matches": [],
+        "near_duplicates": [],
+        "max_token_jaccard": 0.470588,
+        "sha256": "0533425e4c3e299e4b081fb91a819b7e805e373f9b20c049ed81237d8045e16e"
+      },
+      "data/generated/sft_train.json": {
+        "records_checked": 995,
+        "exact_matches": [],
+        "near_duplicates": [],
+        "max_token_jaccard": 0.636364,
+        "sha256": "c493a620cf05be4445fe784e4626d21b705fbea2d6a5a5d6330f3a2512b61e3b"
+      },
+      "data/generated/sft_val.json": {
+        "records_checked": 131,
+        "exact_matches": [],
+        "near_duplicates": [],
+        "max_token_jaccard": 0.473684,
+        "sha256": "3578875bb44a2ee102f6fbe23c8f6a44a6f65d598697f9d944e0c5370590939b"
+      },
+      "data/generated/dpo_train.json": {
+        "records_checked": 59,
+        "exact_matches": [],
+        "near_duplicates": [],
+        "max_token_jaccard": 0.5625,
+        "sha256": "016a2104723c83de04c0e2f4cdd6ab02a551c19019f249326a2f706464e34bfe"
+      },
+      "data/generated/dpo_val.json": {
+        "records_checked": 10,
+        "exact_matches": [],
+        "near_duplicates": [],
+        "max_token_jaccard": 0.454545,
+        "sha256": "c34a8227b7817ddeb43a49f22be7a166557fdbe22012c656a3375f32534b2dcd"
+      },
+      "data/generated/sft_session/policy_refusal_seed.json": {
+        "records_checked": 352,
+        "exact_matches": [],
+        "near_duplicates": [],
+        "max_token_jaccard": 0.45,
+        "sha256": "0b0ff2b8f7f2335ed57d0a4722a594f41d2dc955383ff2db64e75426106779fa"
+      },
+      "data/generated/cpt_session/train.jsonl": {
+        "records_checked": 1341,
+        "exact_matches": [],
+        "near_duplicates": [],
+        "max_token_jaccard": 0.538462,
+        "sha256": "a83fb25c7990be0d76af3af14aaa99546c679e8ff5dc26f6cd6a92b93149f92f"
+      },
+      "data/generated/cpt_session/validation.jsonl": {
+        "records_checked": 195,
+        "exact_matches": [],
+        "near_duplicates": [],
+        "max_token_jaccard": 0.375,
+        "sha256": "8c828088a8581e647e2553aa9063cdc0f73846860944c0ef8d65855f71dca4b1"
+      },
+      "evals/heldout.json": {
+        "method": "normalized-question SHA-256 equality only; no Jaccard or wording inspection",
+        "records_checked": 24,
+        "exact_hash_match_count": 0
+      }
+    },
+    "exact_match_count": 0,
+    "unresolved_near_duplicate_count": 0,
+    "status": "PASS"
+  },
+  "refusal_topic_review": {
+    "method": "Author reviewed all 56 seed rows: 32 refusal families, 8 mixed known/unknown families, and 16 grounded policy families; also all DPO prompts and the five source documents. Distinct requested unknown attributes/processes were checked semantically, beyond lexical overlap. The 8 mixed unknown topics are excluded in addition to the brief's 32 refusal-topic minimum.",
+    "seed_refusal_family_count": 32,
+    "seed_refusal_topics_excluded": [
+      "Seat height",
+      "Seat length and width",
+      "Footboard measurements",
+      "Overall handlebar width",
+      "Whether mirrors fold",
+      "Turning circle or radius",
+      "Recommended tyre pressures",
+      "Front and rear tyre sizes",
+      "Maximum permitted payload",
+      "Towing permission and rating",
+      "Phone-holder mounting compatibility",
+      "Accessory windscreen compatibility",
+      "Top-box mounting compatibility",
+      "Standard charging cable length",
+      "Standard charger mains plug specification",
+      "Charger outdoor-use or weatherproof rating",
+      "Charging-port location",
+      "Whether traction battery is removable",
+      "Companion mobile application",
+      "USB outlet presence and specification",
+      "Anti-theft alarm presence",
+      "Procedure after losing a vehicle key",
+      "Spare keys supplied at delivery",
+      "Home-delivery availability and terms",
+      "Test-ride booking process",
+      "Service-centre opening hours",
+      "Finance or loan interest rate",
+      "Booking-deposit cancellation and refund policy",
+      "Roadside-assistance availability",
+      "Shipping or transporting a scooter between locations",
+      "Availability or lead time for service appointments",
+      "Vehicle software update process"
+    ],
+    "mixed_unknown_family_count": 8,
+    "mixed_unknown_topics_excluded": [
+      "Known battery capacity, unspecified battery chemistry",
+      "Known storage volume, unspecified full-face helmet fit",
+      "Known top speed, unspecified acceleration time",
+      "Known certified range, unspecified wet-weather range",
+      "Known Mumbai price, unspecified colour surcharge",
+      "Known standard charging time, unspecified charger weight",
+      "Known colours, unspecified touch-up paint code",
+      "Known kerb weight, unspecified wheelbase"
+    ],
+    "per_question_distinction": {
+      "dv1_u01": {
+        "distinction": "Diagnostic-test pricing differs from all 32 refusal and 8 mixed unknown topics. It is not battery replacement cost, resale, insurance, service appointment availability, or opening hours; no DPO prompt requests this fee.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u02": {
+        "distinction": "Charging-energy tariff is distinct from seeded charger hardware details and the mixed charger-weight topic; it is not a finance interest rate. No DPO prompt covers fast-charging cost.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u03": {
+        "distinction": "Repair labour pricing differs from the seeded service-centre hours, appointment waiting time, roadside assistance, and lost-key procedure.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u04": {
+        "distinction": "Standalone road tax is not any of the 32 seed topics; it does not ask about a finance rate or refundable deposit.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u05": {
+        "distinction": "Pre-delivery inspection pricing is outside the 32 refusal and 8 mixed unknown topics and all DPO prompts. It differs from home-delivery availability, a booking-deposit refund, paint surcharge, and insurance premium.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u06": {
+        "distinction": "Unlisted-city vehicle pricing is absent from the 32 seed topics. This asks for a local price, not the seeded home-delivery or intercity-shipping process.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u07": {
+        "distinction": "Paid warranty extension is not a seeded topic; it differs from roadside assistance and a booking-deposit refund.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u08": {
+        "distinction": "Charger purchase price is a new attribute, distinct from the seeded cable length, mains-plug specification, weatherproof rating, and charging-port location.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u09": {
+        "distinction": "Traction-pack nominal voltage is not a seeded topic; it is independent of whether the main battery is removable.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u10": {
+        "distinction": "Regenerative-braking controls are absent from the seeded topics; this is not a vehicle-software update procedure.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u11": {
+        "distinction": "Final-drive gearing is not among the 32 refusal topics and does not concern towing or payload capacity.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u12": {
+        "distinction": "Hill-climbing gradient is absent from all 32 refusal and 8 mixed unknown topics and all DPO prompts. It is distinct from payload/towing limits, acceleration, wet-weather range, and wheelbase.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u13": {
+        "distinction": "Rated electrical input power is distinct from the seeded mains-plug/socket format, cable length, and outdoor-use rating.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u14": {
+        "distinction": "Warranty transfer on resale is absent from the seed topics; it is not cancellation of an uncompleted booking.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u15": {
+        "distinction": "Claim-notification deadlines differ from seeded service-centre opening hours and appointment lead times.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u16": {
+        "distinction": "Commercial-use eligibility differs from seeded home delivery of a purchased scooter and transporting the scooter itself by courier/freight.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u17": {
+        "distinction": "Warranty-dispute appeals are not in the seeded refusal families; assessment criteria do not supply an appeals workflow.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u18": {
+        "distinction": "Corporate incorporation is outside all 32 seeded topics, which concern vehicle features or customer-service arrangements.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u19": {
+        "distinction": "Corporate-office address is not the seeded service-centre opening-hours topic or a home-delivery arrangement.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      },
+      "dv1_u20": {
+        "distinction": "Corporate shareholding is absent from all 32 seeded vehicle/service refusal topics.",
+        "review_scope": "32 refusal topics, 8 mixed unknown topics, every current DPO train/validation prompt",
+        "method": "Manual topic/attribute comparison; not inferred from low lexical similarity"
+      }
+    },
+    "review_revisions": [
+      "Replaced an initial wheelbase question because it reused a mixed-family unknown attribute, despite passing lexical checks.",
+      "Rejected a proposed paint-surcharge replacement because the mixed seed already trains that unknown attribute.",
+      "Replaced initial salvage/trade-in/insurance items with diagnostic fee, charging tariff and pre-delivery inspection fee to increase separation from older refusal themes."
+    ],
+    "status": "PASS: all 20 unknown questions request attributes/processes outside the 32 refusal and 8 mixed-unknown training families and all current DPO prompts"
+  },
+  "checks": {
+    "schema": true,
+    "unique_ids_and_normalized_questions": true,
+    "one_fact_per_answerable": true,
+    "expected_values_copied_from_facts": true,
+    "ten_per_model": true,
+    "all_fifteen_numeric_attributes_twice": true,
+    "style_minima": true,
+    "unknown_category_counts": true,
+    "unknown_null_truth_fields": true,
+    "unknown_source_absence_review": true,
+    "training_and_dev_overlap_audit": true,
+    "heldout_hash_only_audit": true,
+    "no_external_api_or_model_use": true
+  },
+  "limitations": [
+    "Lexical novelty is not new knowledge: answerable source facts intentionally recur across training and evaluation.",
+    "Known source-policy rules still apply: for example, the unlisted-city question applies a trained rule against quoting unlisted cities. Novelty here means separation from the 32 explicit refusal and 8 mixed-unknown topics, not an entirely new policy concept.",
+    "The unchanged scorer checks numbers/strings and refusal markers; it does not fully judge meaning, extra unsupported claims, or units.",
+    "This set deliberately probes weaknesses seen in original dev results and must remain labelled development data.",
+    "Absence and topic-separation checks are author-reviewed reasoning, not a claim of automatic semantic verification."
+  ]
+}

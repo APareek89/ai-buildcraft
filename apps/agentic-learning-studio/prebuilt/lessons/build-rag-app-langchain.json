@@ -1,0 +1,1264 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Build a RAG App with LangChain",
+    "title": "Build a RAG App with LangChain",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 44,
+    "thesis": "Build a RAG App with LangChain is practical when learners can apply it to this concrete case: A LangChain docs assistant answers support questions but often cites the wrong page. By the end, they should be able to build or review RAG chain with retriever, prompt, citation contract, and faithfulness check, measure faithful answer rate on support questions, and catch the failure where the generated answer uses a plausible policy not present in retrieved chunks."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Build a RAG App with LangChain",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Build a RAG App with LangChain: mental map",
+    "caption": "Build a LangChain RAG slice around Documents, splitters, retrievers, prompt assembly, model calls, and inspectable traces.",
+    "oneLineThesis": "A LangChain RAG app is strongest when the chain keeps retrieval, prompt construction, generation, and validation visible as separate runnable steps.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Pin the LangChain answer contract",
+        "sub": "Start with the exact grounded behavior the chain must guarantee.",
+        "what": "Learners turn the product requirement into a small chain acceptance target.",
+        "relevance": "This keeps LangChain integrations from becoming a demo without grounding tests.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Define the cited answer and refusal behavior before choosing integrations.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Documents and splitters make retrievable evidence",
+        "sub": "LangChain retrieval quality starts with Document text and metadata.",
+        "what": "Learners connect LangChain Documents to chunking and citation quality.",
+        "relevance": "Weak metadata produces weak citations even when the chain syntax is correct.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Preserve source title, heading, and permissions in every Document chunk.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Retriever, prompt, and model are separate runnables",
+        "sub": "The core chain should expose each stage instead of hiding failures.",
+        "what": "Learners design the chain as observable stages.",
+        "relevance": "A wrong answer can be traced to missing evidence, bad prompt packing, or unsupported synthesis.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Compose retrieval and answer synthesis so each output can be inspected.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code the chain with evidence logging",
+        "sub": "A runnable slice should print retrieved Documents before answering.",
+        "what": "Learners connect a retriever-like function to answer formatting and trace output.",
+        "relevance": "Visible traces catch retrieval errors before UI polish hides them.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Build a tiny chain whose trace makes the selected context obvious.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Promote the chain into regression tests",
+        "sub": "LangChain changes should rerun source-based checks.",
+        "what": "Learners convert the slice into a maintainable test surface.",
+        "relevance": "Framework upgrades, prompt edits, and splitter changes can silently break grounding.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Gate loaders, splitters, prompts, and retrievers with acceptance tests.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Pin the LangChain answer contract",
+      "sub": "Start with the exact grounded behavior the chain must guarantee.",
+      "summary": "The first LangChain decision is the user-visible contract, not the vector store brand.",
+      "objectives": [
+        "Explain why pin the langchain answer contract matters for this LangChain build.",
+        "Define answer and refusal behavior.",
+        "Choose representative documents and questions."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment",
+        "acceptance_test"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "A LangChain app still needs a contract",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a learner asks a LangChain-backed tutor why reranking improves RAG. The chain must answer from retrieved course notes, cite the note title, and refuse when the notes do not contain the answer."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "LangChain gives many integrations, but the build should start with the behavior contract: what counts as evidence, how citations appear, what happens when retrieval is empty, and which questions prove the slice works."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Write the five acceptance questions before importing a vector store."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ],
+          "analogy": "Build the smallest bridge you can load-test before opening the highway."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Worked contract: five questions and one refusal",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The LangChain prototype accepts a question, retrieves evidence from local Markdown notes, returns an answer with source titles, and logs retrieved chunks or nodes. It passes when four factual questions cite the expected source and the negative question refuses."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This artifact is small enough for a reviewer to inspect in one sitting, but complete enough to catch the failures that matter: missing evidence, noisy retrieval, unsupported claims, and silent fallback."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Pick three source files and record their source metadata."
+                  }
+                ],
+                [
+                  {
+                    "text": "Write five user-style questions with expected source titles."
+                  }
+                ],
+                [
+                  {
+                    "text": "Define answer, citation, and refusal requirements."
+                  }
+                ],
+                [
+                  {
+                    "text": "Run the slice before adding memory, chat history, or agents."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ],
+          "personalizedFor": "Build a RAG App with LangChain"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Build scope",
+          "prompt": "Why include a negative question in the first RAG app slice?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "To reduce the number of citations.",
+              "correct": false
+            },
+            {
+              "text": "To verify the app can say there is not enough evidence instead of inventing an answer.",
+              "correct": true
+            },
+            {
+              "text": "To avoid building retrieval.",
+              "correct": false
+            }
+          ],
+          "explanation": "Refusal on missing evidence is part of grounded behavior.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon9"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Documents and splitters make retrievable evidence",
+      "sub": "LangChain retrieval quality starts with Document text and metadata.",
+      "summary": "Loaders and text splitters decide what the retriever can later return.",
+      "objectives": [
+        "Explain why documents and splitters make retrievable evidence matters for this LangChain build.",
+        "Split or parse into evidence-sized units.",
+        "Preview units before embedding."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment",
+        "acceptance_test"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Document metadata is part of the answer",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A LangChain `Document` is more than `page_content`. Its metadata should carry source title, URL or path, heading, version, tenant, and category so retrieval can filter and the answer can cite."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Splitter settings should follow source structure first. Recursive splitting is useful, but a broken table or orphaned heading becomes a broken citation downstream."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Print sampled `Document` chunks before embedding and reject chunks whose metadata would not satisfy a reviewer."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ],
+          "analogy": "The loader stamps the passport each chunk carries through the app."
+        },
+        {
+          "id": "m2_worked",
+          "kind": "functionalExample",
+          "title": "Case study: from “Document 3” to useful source titles",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The first prototype returns citations like “Document 2,” which makes review painful. After ingestion stores human-readable titles and heading paths, the same answer becomes auditable."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "No model changed; the app simply preserved provenance."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Normalize text and remove boilerplate."
+                  }
+                ],
+                [
+                  {
+                    "text": "Split by source structure before token windows."
+                  }
+                ],
+                [
+                  {
+                    "text": "Attach title, URL/path, heading, and version metadata."
+                  }
+                ],
+                [
+                  {
+                    "text": "Print sample units and reject malformed ones."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ],
+          "personalizedFor": "Build a RAG App with LangChain"
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Ingestion signal",
+          "prompt": "What is the fastest way to catch bad chunking before model calls?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Raise answer temperature.",
+              "correct": false
+            },
+            {
+              "text": "Preview the chunk or node text together with metadata.",
+              "correct": true
+            },
+            {
+              "text": "Hide citations until production.",
+              "correct": false
+            }
+          ],
+          "explanation": "Inspection at ingestion catches source-shape errors early.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon9"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Retriever, prompt, and model are separate runnables",
+      "sub": "The core chain should expose each stage instead of hiding failures.",
+      "summary": "LangChain chains are easiest to debug when retrieval and generation remain separable.",
+      "objectives": [
+        "Explain why retriever, prompt, and model are separate runnables matters for this LangChain build.",
+        "Prompt the model with explicit evidence boundaries.",
+        "Validate citations and insufficient-evidence behavior."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment",
+        "acceptance_test"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Do not collapse the chain into one mystery call",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The retriever should be testable without the model. The prompt should show exactly which evidence chunks are passed. The model output should then be validated against those chunks."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "LangChain runnable composition is useful because each stage can carry callbacks, traces, retries, and tests. Treat that observability as part of the design, not a later add-on."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "A trace should show question, retrieved document IDs, prompt context, model answer, and citation validation result."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ],
+          "analogy": "Do not debug the whole machine when one visible gear is slipping."
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "RAG app failure surfaces",
+          "criteria": [
+            "Surface",
+            "Symptom",
+            "Fix"
+          ],
+          "options": [
+            {
+              "name": "Retrieval",
+              "cells": [
+                {
+                  "criterion": "Surface",
+                  "text": "Wrong or missing evidence.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Symptom",
+                  "text": "Expected source absent from top-k.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Fix",
+                  "text": "Chunking, filters, hybrid search, reranking.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Inspect before prompt tuning.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Generation",
+              "cells": [
+                {
+                  "criterion": "Surface",
+                  "text": "Evidence present but answer misreads it.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Symptom",
+                  "text": "Unsupported synthesis or overbroad claim.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Fix",
+                  "text": "Prompt, context packing, answer constraints.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Inspect with fixed evidence.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Validation",
+              "cells": [
+                {
+                  "criterion": "Surface",
+                  "text": "Answer lacks citations or schema.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Symptom",
+                  "text": "UI cannot trust or render output.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Fix",
+                  "text": "Structured output, citation checks, refusal gate.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Use before returning to users.",
+              "cost": "Low",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Debug split",
+          "prompt": "The expected source is absent from retrieved evidence. Which stage should you fix first?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "CSS layout.",
+              "correct": false
+            },
+            {
+              "text": "Retrieval or ingestion, before rewriting the answer prompt.",
+              "correct": true
+            },
+            {
+              "text": "The final citation renderer only.",
+              "correct": false
+            }
+          ],
+          "explanation": "The model cannot cite evidence it never receives.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon9"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code the chain with evidence logging",
+      "sub": "A runnable slice should print retrieved Documents before answering.",
+      "summary": "The first useful LangChain implementation is boring, inspectable, and source-aware.",
+      "objectives": [
+        "Explain why code the chain with evidence logging matters for this LangChain build.",
+        "Predict which source answers a test question.",
+        "Expose traces for validation."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment",
+        "acceptance_test"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "The useful code path prints the evidence first",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A local toy retriever is acceptable for the first architecture check because it proves the control flow without external credentials. Once the trace contract works, swap in LangChain loaders, vector stores, and chat models."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from RAG evaluation, judge the packed context that generation actually sees. Logging unused candidates does not prove the answer was grounded."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "The code should make it obvious which source the answer cites."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "LangChain-style RAG chain with trace",
+          "language": "python",
+          "code": "from langchain_core.documents import Document\n\nDOCS = [\n    Document(page_content=\"Reranking reorders retrieved candidates before generation.\", metadata={\"source\": \"retrieval.md\"}),\n    Document(page_content=\"Chunking preserves answer evidence with headings and metadata.\", metadata={\"source\": \"chunking.md\"}),\n]\n\ndef retrieve(question):\n    terms = set(question.lower().split())\n    ranked = sorted(DOCS, key=lambda d: len(terms & set(d.page_content.lower().split())), reverse=True)\n    return ranked[:2]\n\ndef answer(question):\n    evidence = retrieve(question)\n    print(\"TRACE\", [(d.metadata[\"source\"], d.page_content) for d in evidence])\n    if not evidence or \"reranking\" not in evidence[0].page_content.lower():\n        return \"Not enough evidence.\"\n    return f\"Reranking reorders retrieved candidates before generation. Source: {evidence[0].metadata['source']}\"\n\nprint(answer(\"What does reranking do before generation?\"))",
+          "explanation": "This uses a toy retriever so the control flow is runnable without external services; swap in LangChain loaders, vector stores, and models after the trace contract is clear.",
+          "predictThenReveal": {
+            "prompt": "Before running it, predict which source appears in TRACE for the reranking question.",
+            "answer": "retrieval.md should appear first. If a real retriever disagrees, debug retrieval before changing answer style."
+          },
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Runnable slice",
+          "prompt": "Why use a tiny corpus for the first implementation?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Tiny corpora prove production scalability.",
+              "correct": false
+            },
+            {
+              "text": "It makes retrieval and citation failures easy to inspect by hand.",
+              "correct": true
+            },
+            {
+              "text": "It removes the need for metadata.",
+              "correct": false
+            }
+          ],
+          "explanation": "Small slices are for correctness and observability, not scale claims.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon9"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Promote the chain into regression tests",
+      "sub": "LangChain changes should rerun source-based checks.",
+      "summary": "A LangChain RAG app is reviewable when failures are repeatable.",
+      "objectives": [
+        "Explain why promote the chain into regression tests matters for this LangChain build.",
+        "Verify citations support generated claims.",
+        "Define the next production rung."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment",
+        "acceptance_test"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The chain is not done until tests can fail it",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Record the expected source for each acceptance question and rerun the suite after changing loaders, splitters, retrievers, prompts, model versions, or LangChain packages."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The release bar should include packed-context hit rate, citation support, negative-case refusal, and trace completeness. A single happy-path chat transcript is not enough."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every failed test should name a likely owner: ingestion, retrieval, prompt, validation, or source content."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Regression gate for a LangChain RAG slice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use this checklist before calling the build complete."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The retrieved evidence contains the facts stated in the answer."
+                  }
+                ],
+                [
+                  {
+                    "text": "Each citation points to a readable source title and location."
+                  }
+                ],
+                [
+                  {
+                    "text": "The negative test produces a qualified refusal or “not enough evidence.”"
+                  }
+                ],
+                [
+                  {
+                    "text": "The trace shows retrieved IDs, scores or ranks, and final packed context."
+                  }
+                ],
+                [
+                  {
+                    "text": "The acceptance test reruns after source, model, framework, or chunking changes."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Release gate",
+          "prompt": "What should block release even if the answer sounds helpful?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The trace includes too many useful details for developers.",
+              "correct": false
+            },
+            {
+              "text": "A factual claim that is not supported by the retrieved cited evidence.",
+              "correct": true
+            },
+            {
+              "text": "The app has only one model provider.",
+              "correct": false
+            }
+          ],
+          "explanation": "Groundedness is the top-level promise of a RAG app.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment",
+            "acceptance_test"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon9"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon9"
+      ]
+    }
+  ],
+  "glossary": {
+    "prototype": {
+      "id": "prototype",
+      "label": "Prototype",
+      "laymanDefinition": "A small working version used to prove the workflow and failure cases.",
+      "technicalNote": "A useful AI prototype includes representative inputs, acceptance checks, observability, and known limits rather than only a happy-path demo.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "retriever": {
+      "id": "retriever",
+      "label": "Retriever",
+      "laymanDefinition": "The component that finds relevant evidence before the model answers.",
+      "technicalNote": "Retrievers need chunking, metadata filters, ranking, citation handoff, and evaluation against real questions.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "validator": {
+      "id": "validator",
+      "label": "Validator",
+      "laymanDefinition": "A check that decides whether an output or workflow step meets the contract.",
+      "technicalNote": "Validators can inspect schemas, citations, safety rules, acceptance tests, and regressions before a result reaches users.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A recorded path of model calls, retrieval, tools, tokens, latency, and errors.",
+      "technicalNote": "Traces make build lessons debuggable by showing which prompt, source, tool, model, and check produced a result.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "deployment": {
+      "id": "deployment",
+      "label": "Deployment",
+      "laymanDefinition": "The packaged path that serves the workflow to real users or reviewers.",
+      "technicalNote": "Deployment includes environment, secrets, routing, monitoring, rollback, and data-handling policy, not just pushing code.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "acceptance_test": {
+      "id": "acceptance_test",
+      "label": "Acceptance test",
+      "laymanDefinition": "A concrete test that says the feature is good enough for the intended use.",
+      "technicalNote": "Acceptance tests should cover the target scenario, expected artifact, failure mode, and evidence needed for review.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Build a RAG App with LangChain",
+    "themes": [
+      {
+        "name": "LangChain build gate",
+        "questions": [
+          {
+            "q": "What is the smallest app slice that proves grounded answers work end to end?",
+            "why": "A narrow slice makes loader, splitter, retriever, prompt, validator, and trace failures visible.",
+            "opts": [
+              "One-source grounded Q&A with source inspection",
+              "Full chat product immediately",
+              "Fine-tune the model before retrieval"
+            ],
+            "rot": "Ship the first slice only when it can answer, cite, and refuse on representative cases."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct the LangChain build by naming Documents, splitter settings, retriever top-k, prompt template, model call, citation validator, trace fields, and acceptance tests."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "LangChain RAG chain from Documents to cited answer",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Pin the LangChain answer contract",
+          "sub": "Start with the exact grounded behavior the chain must guarantee.",
+          "what": "Learners turn the product requirement into a small chain acceptance target.",
+          "relevance": "This keeps LangChain integrations from becoming a demo without grounding tests.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Define the cited answer and refusal behavior before choosing integrations.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Documents and splitters make retrievable evidence",
+          "sub": "LangChain retrieval quality starts with Document text and metadata.",
+          "what": "Learners connect LangChain Documents to chunking and citation quality.",
+          "relevance": "Weak metadata produces weak citations even when the chain syntax is correct.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Preserve source title, heading, and permissions in every Document chunk.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Retriever, prompt, and model are separate runnables",
+          "sub": "The core chain should expose each stage instead of hiding failures.",
+          "what": "Learners design the chain as observable stages.",
+          "relevance": "A wrong answer can be traced to missing evidence, bad prompt packing, or unsupported synthesis.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Compose retrieval and answer synthesis so each output can be inspected.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code the chain with evidence logging",
+          "sub": "A runnable slice should print retrieved Documents before answering.",
+          "what": "Learners connect a retriever-like function to answer formatting and trace output.",
+          "relevance": "Visible traces catch retrieval errors before UI polish hides them.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Build a tiny chain whose trace makes the selected context obvious.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Promote the chain into regression tests",
+          "sub": "LangChain changes should rerun source-based checks.",
+          "what": "Learners convert the slice into a maintainable test surface.",
+          "relevance": "Framework upgrades, prompt edits, and splitter changes can silently break grounding.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Gate loaders, splitters, prompts, and retrievers with acceptance tests.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "feeds"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "capstone": {
+      "prompt": "Build a LangChain RAG prototype over three Markdown files. Use Document metadata, a splitter, a retriever, a prompt that quotes evidence boundaries, a trace printout, and five acceptance tests including one insufficient-evidence case. Next rung: add LangSmith or OpenTelemetry tracing.",
+      "scopedTo": "Build a RAG App with LangChain"
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Pin the LangChain answer contract",
+        "detail": "The first LangChain decision is the user-visible contract, not the vector store brand."
+      },
+      {
+        "step": 2,
+        "label": "Documents and splitters make retrievable evidence",
+        "detail": "Loaders and text splitters decide what the retriever can later return."
+      },
+      {
+        "step": 3,
+        "label": "Retriever, prompt, and model are separate runnables",
+        "detail": "LangChain chains are easiest to debug when retrieval and generation remain separable."
+      },
+      {
+        "step": 4,
+        "label": "Code the chain with evidence logging",
+        "detail": "The first useful LangChain implementation is boring, inspectable, and source-aware."
+      },
+      {
+        "step": 5,
+        "label": "Promote the chain into regression tests",
+        "detail": "A LangChain RAG app is reviewable when failures are repeatable."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_contract",
+        "label": "Can you explain the contract in “Pin the LangChain answer contract”?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_trace",
+        "label": "Can a reviewer inspect evidence from “Code the chain with evidence logging”?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does “Promote the chain into regression tests” block unsupported answers?",
+        "fromModuleId": "m5"
+      }
+    ]
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LlamaIndex RAG documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    },
+    "kb3": {
+      "id": "kb3",
+      "kind": "kb",
+      "title": "KB: RAG Fundamentals",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-22"
+    },
+    "kb4": {
+      "id": "kb4",
+      "kind": "kb",
+      "title": "KB: Chunking, hybrid retrieval, Graph RAG, and retrieval evaluation notes",
+      "url": "kb/RAG-tooling",
+      "asOfDate": "2026-06-22"
+    },
+    "canon3": {
+      "id": "canon3",
+      "kind": "canonical",
+      "title": "LangChain retrieval concepts",
+      "url": "https://docs.langchain.com/oss/python/langchain/retrieval",
+      "asOfDate": "2026-06-22"
+    },
+    "canon4": {
+      "id": "canon4",
+      "kind": "canonical",
+      "title": "LlamaIndex RAG guide",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-22"
+    },
+    "canon9": {
+      "id": "canon9",
+      "kind": "canonical",
+      "title": "LangChain RAG docs",
+      "url": "https://docs.langchain.com/oss/python/langchain/rag",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

@@ -1,0 +1,1178 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Embedding Pipelines at Scale",
+    "title": "Embedding Pipelines at Scale",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 38,
+    "thesis": "Embedding Pipelines at Scale is practical when learners can apply it to this concrete case: A docs platform embeds thousands of changed pages nightly without serving stale search results. By the end, they should be able to build or review scaled embedding pipeline with queue, dedupe, and freshness checks, measure fresh searchable chunks after docs updates, and catch the failure where partial failures leave old and new embeddings mixed together."
+  },
+  "learnerProfile": {
+    "level": "advanced",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Embedding Pipelines at Scale",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": false,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Embedding Pipelines at Scale: mental map",
+    "caption": "Move from source changes to versioned vectors, filtered retrieval, backfills, and migration checks.",
+    "oneLineThesis": "An embedding pipeline is a data product: every vector must be reproducible, query-compatible, filterable, monitored, and replaceable during model migrations.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Define the vector contract before the queue",
+        "sub": "Specify chunk IDs, metadata, dimensions, and freshness rules before scaling workers.",
+        "what": "A scalable embedding pipeline starts with stable identities and metadata, because retries and migrations depend on them.",
+        "relevance": "Define a stable chunk identity and content hash.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Specify vector identity, metadata, and freshness before scaling workers.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Run ingestion as an idempotent state machine",
+        "sub": "Convert source events into chunk, embed, upsert, verify, and activate stages.",
+        "what": "A reliable pipeline can retry each stage without duplicating chunks or exposing half-built indexes.",
+        "relevance": "Describe the ingestion stages in order.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Turn source changes into retryable chunk, embed, upsert, and activate stages.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Choose storage around filters and migrations",
+        "sub": "Pick vector storage by operational boundary, metadata filters, recall tests, and rebuild cost.",
+        "what": "The vector store is part of the pipeline contract; it decides how filtering, snapshots, and re-embedding will be operated.",
+        "relevance": "Compare pgvector, Qdrant, managed stores, and distributed stores by job.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Select vector storage by filters, operations, and migration cost.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Build a migration smoke test",
+        "sub": "Make embedding changes runnable, comparable, and reversible before touching production retrieval.",
+        "what": "The practical implementation checks model compatibility, upsert idempotence, filter behavior, and recall before activation.",
+        "relevance": "Write a small migration manifest and check script.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Test model compatibility, filters, and recall before activating new vectors.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Operate freshness, recall, and rollback",
+        "sub": "Close the loop with monitoring, active retrieval checks, and a solo re-embedding plan.",
+        "what": "A scaled embedding pipeline remains healthy when freshness, filter correctness, recall, and rollback are continuously visible.",
+        "relevance": "Recall the pipeline lifecycle from memory.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Monitor freshness and recall, then rehearse a reversible migration.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Define the vector contract before the queue",
+      "sub": "Specify chunk IDs, metadata, dimensions, and freshness rules before scaling workers.",
+      "summary": "A scalable embedding pipeline starts with stable identities and metadata, because retries and migrations depend on them.",
+      "objectives": [
+        "Define a stable chunk identity and content hash.",
+        "Explain why dimensions and distance metric belong in the contract.",
+        "Name freshness and deletion rules before backfill starts."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The vector is not the source of truth",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: Agentic Learning Studio adds 8,000 KB chunks, updates 400 of them, and deletes 50 outdated notes. Search quality drops because old and new embeddings mix in the same collection, some deleted chunks still retrieve, and no one can tell which embedding model produced a result."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The pipeline contract fixes that. Each vector row needs a stable chunk ID, source URL, tenant or category, content hash, embedding model ID, vector dimension, distance metric, chunker version, created time, and active/deleted status. The source document remains authoritative; vectors are derived artifacts that can be rebuilt."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Product framing: freshness means learners retrieve current approved notes, not stale drafts."
+                  }
+                ],
+                [
+                  {
+                    "text": "Engineering framing: idempotent upserts, tombstones, and versioned collections make retries safe."
+                  }
+                ],
+                [
+                  {
+                    "text": "Evaluation framing: a model migration is allowed only after recall tests compare old and new indexes on the same queries."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Worked artifact: chunk-vector manifest",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A useful manifest row reads: `chunk_id=rag-fundamentals:00042`, `content_hash=sha256:...`, `embedding_model=BAAI/bge-small-en-v1.5`, `dimension=384`, `distance=cosine`, `chunker=markdown-v2`, `collection=kb_bge_v1`, `source_status=approved`, `valid_from=2026-06-23`, `deleted_at=null`."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "That row gives every downstream system something to check. The worker can skip unchanged content hashes. The vector store can reject wrong dimensions. The retriever can filter to approved sources. The migration job can create `kb_bge_v2` without corrupting active retrieval."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ],
+          "personalizedFor": "KB refresh pipeline"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Spot the missing contract field",
+          "prompt": "Which field most directly prevents mixing embeddings from two model families?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The document title alone.",
+              "correct": false
+            },
+            {
+              "text": "The embedding model version and vector dimension.",
+              "correct": true
+            },
+            {
+              "text": "The worker host name.",
+              "correct": false
+            }
+          ],
+          "explanation": "Titles help humans, but compatibility is determined by model, dimension, normalization, and distance metric.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Run ingestion as an idempotent state machine",
+      "sub": "Convert source events into chunk, embed, upsert, verify, and activate stages.",
+      "summary": "A reliable pipeline can retry each stage without duplicating chunks or exposing half-built indexes.",
+      "objectives": [
+        "Describe the ingestion stages in order.",
+        "Explain how dedupe and content hashes avoid wasted embeddings.",
+        "Separate backfill collections from the active retrieval path."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Queues scale only when retries are safe",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Embedding work fails in ordinary ways: rate limits, GPU memory pressure, malformed documents, vector-store timeouts, and schema mismatches. If a retry creates a second ID or activates a partial collection, search quality becomes a data consistency problem."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Treat ingestion as a state machine. Source changed, chunked, embedded, upserted, verified, activated, and tombstoned are separate states with owners. A failed worker should resume from the last durable state, not guess which chunks it already wrote."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Pipeline stages and their evidence",
+          "criteria": [
+            "Stage",
+            "Evidence to store",
+            "Common break"
+          ],
+          "options": [
+            {
+              "name": "Chunk",
+              "cells": [
+                {
+                  "criterion": "Stage",
+                  "text": "Split approved source into stable chunks",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Evidence to store",
+                  "text": "chunker version, content hash, source offset",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Common break",
+                  "text": "new chunker changes IDs and loses delete mapping",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Before embedding workers start.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Embed",
+              "cells": [
+                {
+                  "criterion": "Stage",
+                  "text": "Batch chunks through one encoder contract",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Evidence to store",
+                  "text": "model ID, dimension, normalization, worker version",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Common break",
+                  "text": "query encoder uses a different instruction or model",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "When content hash is new or model version changes.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Activate",
+              "cells": [
+                {
+                  "criterion": "Stage",
+                  "text": "Move verified collection or rows into retrieval",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Evidence to store",
+                  "text": "recall test report and rollback collection",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Common break",
+                  "text": "half the corpus uses the new model and half the old one",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "After backfill and retrieval checks pass.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m2_failure",
+          "kind": "functionalExample",
+          "title": "Case study: the half-migrated index",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A team swaps from a 384-dimensional model to a 768-dimensional model. New chunks go into a new collection, but query-time code still embeds with the old model for one endpoint. The system passes insert tests and fails user search in subtle ways: similar-looking chunks rank oddly, filters still work, and only evaluation catches recall loss."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The fix is procedural: activate model, query encoder, collection, distance metric, and eval report as one versioned bundle. Do not let document updates silently choose the new model before the query path does."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Choose storage around filters and migrations",
+      "sub": "Pick vector storage by operational boundary, metadata filters, recall tests, and rebuild cost.",
+      "summary": "The vector store is part of the pipeline contract; it decides how filtering, snapshots, and re-embedding will be operated.",
+      "objectives": [
+        "Compare pgvector, Qdrant, managed stores, and distributed stores by job.",
+        "Explain why metadata filters are not optional in RAG.",
+        "Plan a recall test against exact or trusted retrieval."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Storage choice changes pipeline shape",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A small Postgres-native corpus can start in pgvector because SQL filters, backups, and app data live together. A dedicated retrieval service such as Qdrant makes sense when filtered vector search is its own scaling boundary. Managed services reduce operations but still require IDs, metadata, snapshots, and migration plans."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Two framings keep the choice honest. The product framing asks whether retrieval can respect tenant, freshness, and approved-source filters. The platform framing asks who owns snapshots, index build time, payload schema, recall testing, and rollback when a model changes."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Vector-store fit for scaled pipelines",
+          "criteria": [
+            "Choice",
+            "Best fit",
+            "Migration risk"
+          ],
+          "options": [
+            {
+              "name": "pgvector",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Postgres extension with SQL joins",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "App data and retrieval metadata belong together",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Migration risk",
+                  "text": "Large scans can hurt OLTP; dimension changes need new columns or tables",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for simple operational boundaries.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Qdrant",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Dedicated vector service with payload filters",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "Filtered retrieval, snapshots, and collection boundaries matter",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Migration risk",
+                  "text": "Payload schema drift and collection cutover need discipline",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when retrieval deserves its own service.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Milvus or managed vector DB",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Large or managed vector infrastructure",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "Scale, managed operations, or distributed indexing dominate",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Migration risk",
+                  "text": "Costs, backups, and recall settings can hide behind provider defaults",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when corpus scale or operations justify the boundary.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2"
+          ]
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Choose the simplest store that can enforce filters and survive re-embedding.",
+          "useWhen": "Use a dedicated vector service when retrieval volume, metadata filters, snapshots, or independent scaling are first-order needs.",
+          "avoidWhen": "Avoid changing stores to fix weak chunk IDs, missing metadata, or absent evaluation; those problems travel with the data.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb2",
+        "canon2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Embedding Pipelines at Scale: baseline, production design, or advanced optimization."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Build a migration smoke test",
+      "sub": "Make embedding changes runnable, comparable, and reversible before touching production retrieval.",
+      "summary": "The practical implementation checks model compatibility, upsert idempotence, filter behavior, and recall before activation.",
+      "objectives": [
+        "Write a small migration manifest and check script.",
+        "Predict what breaks when dimensions mismatch.",
+        "Verify AI-generated embedding code for lifecycle gaps."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Check dimensions and stable upserts",
+          "language": "python",
+          "code": "manifest = {\n    \"collection\": \"kb_bge_v2\",\n    \"embedding_model\": \"BAAI/bge-small-en-v1.5\",\n    \"dimension\": 384,\n    \"distance\": \"cosine\",\n    \"chunker\": \"markdown-v2\",\n}\n\ndef prepare_point(chunk, vector):\n    assert len(vector) == manifest[\"dimension\"], \"wrong embedding dimension\"\n    return {\n        \"id\": chunk[\"chunk_id\"],\n        \"vector\": vector,\n        \"payload\": {\n            \"source_url\": chunk[\"source_url\"],\n            \"content_hash\": chunk[\"content_hash\"],\n            \"status\": \"approved\",\n            \"embedding_model\": manifest[\"embedding_model\"],\n        },\n    }\n\n# Upsert by stable chunk_id so a retry replaces the same point instead of duplicating it.",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The check is intentionally small: it proves that dimension, model identity, payload, and stable IDs are present before the vector-store client writes anything. Production code would add batch retry, tombstone handling, and recall evaluation."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "What happens if a 768-dimensional vector reaches a collection declared for 384 dimensions?",
+            "answer": "A correct store or guard rejects the insert. If the check is missing, the failure may show up later as broken retrieval, failed upserts, or mixed collections during migration."
+          },
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify an AI-generated embedding pipeline",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "AI-generated ingestion code often looks plausible while omitting lifecycle details. Review for stable IDs, content hashes, model and chunker versions, vector dimensions, delete handling, backpressure, retry idempotence, payload filters, and activation gates."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Can the code re-run the same document without duplicating vectors?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it keep deleted or unapproved sources out of active retrieval?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does query-time encoding use the same compatible contract as document-time encoding?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Is there a recall test comparing old and new collections before cutover?"
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Migration gate",
+          "prompt": "What is the safest way to migrate to a new embedding model?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Insert new vectors into the old collection whenever a document changes.",
+              "correct": false
+            },
+            {
+              "text": "Build a new versioned collection, test recall and filters, then switch the query path and collection together.",
+              "correct": true
+            },
+            {
+              "text": "Change only the query encoder and leave stored vectors untouched.",
+              "correct": false
+            }
+          ],
+          "explanation": "Embedding model changes are corpus migrations. The document path and query path must move as a tested bundle.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon2",
+        "kb2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Operate freshness, recall, and rollback",
+      "sub": "Close the loop with monitoring, active retrieval checks, and a solo re-embedding plan.",
+      "summary": "A scaled embedding pipeline remains healthy when freshness, filter correctness, recall, and rollback are continuously visible.",
+      "objectives": [
+        "Recall the pipeline lifecycle from memory.",
+        "Write a retrieval prompt that summarizes the lesson.",
+        "Plan a capstone migration for one corpus."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "conceptual",
+          "title": "Retrieval prompt for the whole lesson",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer this from memory: \"How do I run embeddings as a reliable data pipeline instead of a one-off script?\" Include stable chunk IDs, metadata payloads, content hashes, model dimensions, idempotent queue states, vector-store filters, recall tests, and collection rollback."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: the first module said the vector is a derived artifact. That idea should reappear in every operational decision: rebuildability beats clever one-time indexing."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Do not activate vectors until freshness, filters, and recall are proven.",
+          "useWhen": "Use a collection when it has a manifest, complete backfill, tombstone handling, filter tests, recall report, and rollback target.",
+          "avoidWhen": "Avoid treating a green upsert job as proof of search quality; inserts can succeed while retrieval gets worse.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m5_capstone",
+          "kind": "functionalExample",
+          "title": "Capstone: migrate one KB category",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Choose one category such as RAG tooling. Produce a migration manifest, sample 25 queries, build a new collection, compare top-8 recall against the current collection, verify tenant/status filters, and write the activation and rollback commands. The deliverable is a release note, not just code."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Next rung: connect this to monitoring model drift and quality, where embeddings become one signal among live traffic, labels, and user outcomes."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ],
+          "personalizedFor": "Solo embedding migration"
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Embedding Pipelines at Scale: baseline, production design, or advanced optimization."
+    }
+  ],
+  "glossary": {
+    "gpu": {
+      "id": "gpu",
+      "label": "GPU",
+      "laymanDefinition": "A parallel device that can accelerate large embedding batches.",
+      "technicalNote": "GPU use matters for offline backfills and high-volume embedding jobs, but the pipeline still needs idempotent queues and version tracking when work runs on CPU.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Graphics processing unit"
+    },
+    "serving": {
+      "id": "serving",
+      "label": "Serving",
+      "laymanDefinition": "Making embeddings available to retrieval and refresh jobs.",
+      "technicalNote": "Here serving includes the query-time encoder path plus vector-store reads, not only the batch job that created the document vectors.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "gateway": {
+      "id": "gateway",
+      "label": "Gateway",
+      "laymanDefinition": "The boundary between source systems, embedding workers, and vector storage.",
+      "technicalNote": "A pipeline gateway validates tenant, source status, model version, and schema before allowing records into the active retrieval collection.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "latency": {
+      "id": "latency",
+      "label": "Latency",
+      "laymanDefinition": "The delay between a source update and a retrievable fresh vector.",
+      "technicalNote": "At scale, latency includes queue age, chunking time, model batching, vector upsert time, index refresh, and query-time filter cost.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "throughput": {
+      "id": "throughput",
+      "label": "Throughput",
+      "laymanDefinition": "How many chunks the pipeline can embed and index per hour.",
+      "technicalNote": "Throughput is useful only when duplicate suppression, failure retries, and metadata filters keep the corpus correct.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "versioning": {
+      "id": "versioning",
+      "label": "Versioning",
+      "laymanDefinition": "Recording the embedding model, dimension, chunker, normalization, and collection used by each vector.",
+      "technicalNote": "Embedding versioning is mandatory because model swaps often require new collections or full re-embedding, not a tiny client change.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Embedding Pipelines at Scale",
+    "themes": [
+      {
+        "name": "Release-readiness check",
+        "questions": [
+          {
+            "q": "What decision does Embedding Pipelines at Scale change for this case?",
+            "why": "A good lesson changes how the learner builds, reviews, or ships scaled embedding pipeline with queue, dedupe, and freshness checks.",
+            "opts": [
+              "Thin slice",
+              "Production path",
+              "Advanced optimization"
+            ],
+            "rot": "Choose the smallest option that catches: partial failures leave old and new embeddings mixed together."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct the embedding pipeline lifecycle: source change, stable chunk identity, content hash, model and dimension contract, idempotent embed/upsert, filter tests, recall comparison, activation, and rollback."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Embedding Pipelines at Scale operating path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Define the vector contract before the queue",
+          "sub": "Specify chunk IDs, metadata, dimensions, and freshness rules before scaling workers.",
+          "what": "A scalable embedding pipeline starts with stable identities and metadata, because retries and migrations depend on them.",
+          "relevance": "Define a stable chunk identity and content hash.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Specify vector identity, metadata, and freshness before scaling workers.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Run ingestion as an idempotent state machine",
+          "sub": "Convert source events into chunk, embed, upsert, verify, and activate stages.",
+          "what": "A reliable pipeline can retry each stage without duplicating chunks or exposing half-built indexes.",
+          "relevance": "Describe the ingestion stages in order.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Turn source changes into retryable chunk, embed, upsert, and activate stages.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Choose storage around filters and migrations",
+          "sub": "Pick vector storage by operational boundary, metadata filters, recall tests, and rebuild cost.",
+          "what": "The vector store is part of the pipeline contract; it decides how filtering, snapshots, and re-embedding will be operated.",
+          "relevance": "Compare pgvector, Qdrant, managed stores, and distributed stores by job.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Select vector storage by filters, operations, and migration cost.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Build a migration smoke test",
+          "sub": "Make embedding changes runnable, comparable, and reversible before touching production retrieval.",
+          "what": "The practical implementation checks model compatibility, upsert idempotence, filter behavior, and recall before activation.",
+          "relevance": "Write a small migration manifest and check script.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Test model compatibility, filters, and recall before activating new vectors.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Operate freshness, recall, and rollback",
+          "sub": "Close the loop with monitoring, active retrieval checks, and a solo re-embedding plan.",
+          "what": "A scaled embedding pipeline remains healthy when freshness, filter correctness, recall, and rollback are continuously visible.",
+          "relevance": "Recall the pipeline lifecycle from memory.",
+          "moduleId": "m5",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Monitor freshness and recall, then rehearse a reversible migration.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Define the vector contract before the queue",
+        "detail": "Specify chunk IDs, metadata, dimensions, and freshness rules before scaling workers."
+      },
+      {
+        "step": 2,
+        "label": "Run ingestion as an idempotent state machine",
+        "detail": "Convert source events into chunk, embed, upsert, verify, and activate stages."
+      },
+      {
+        "step": 3,
+        "label": "Choose storage around filters and migrations",
+        "detail": "Pick vector storage by operational boundary, metadata filters, recall tests, and rebuild cost."
+      },
+      {
+        "step": 4,
+        "label": "Build a migration smoke test",
+        "detail": "Make embedding changes runnable, comparable, and reversible before touching production retrieval."
+      },
+      {
+        "step": 5,
+        "label": "Operate freshness, recall, and rollback",
+        "detail": "Close the loop with monitoring, active retrieval checks, and a solo re-embedding plan."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_contract",
+        "label": "Does every vector have a stable chunk ID, content hash, source status, model version, and dimension?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_flow",
+        "label": "Can the ingestion state machine retry without duplicating chunks or activating partial work?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_choice",
+        "label": "Are metadata filters, snapshots, and recall tests part of the vector-store decision?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_verify",
+        "label": "Can a new embedding model be tested in a separate collection before cutover?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_next",
+        "label": "Is there a documented rollback path to the previous query encoder and collection?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a one-page release-ready plan for scaled embedding pipeline with queue, dedupe, and freshness checks. Include: the user problem, realistic input, mechanism, design choice, runnable or reviewable check, metric (fresh searchable chunks after docs updates), failure case (partial failures leave old and new embeddings mixed together), owner, and the next rung after this lesson.",
+      "scopedTo": "Embedding Pipelines at Scale"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Embedding Models for RAG",
+      "url": "https://www.sbert.net/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB: Qdrant vector database",
+      "url": "https://qdrant.tech/documentation/",
+      "asOfDate": "2026-06-22"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Sentence Transformers documentation",
+      "url": "https://www.sbert.net/",
+      "asOfDate": "2026-06-23"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Qdrant documentation",
+      "url": "https://qdrant.tech/documentation/",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

@@ -1,0 +1,1968 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Build a Tool-Calling Chatbot",
+    "title": "Build a Tool-Calling Chatbot",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 42,
+    "thesis": "A tool-calling chatbot is an LLM you give a tool schema, then wrap in a loop that runs whatever tool the model requests and feeds the result back — with validation, tracing, and guardrails standing between the model's requests and your real systems."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Build a Tool-Calling Chatbot",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Build a Tool-Calling Chatbot: mental map",
+    "caption": "Follow the build path top to bottom; open each step for detail.",
+    "oneLineThesis": "A tool-calling chatbot is an LLM you give a tool schema, then a loop that runs the tool the model asks for and feeds the result back until the answer is grounded.",
+    "structureType": "procedural",
+    "entryNodeId": "n_m1",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Target behavior",
+        "sub": "Pin the one task the bot must do with a tool.",
+        "what": "Defines the user-visible job and which calls must hit a real tool, not the model's guess.",
+        "orient": "What 'tool-calling' buys you, and the one concrete task to make work first.",
+        "relevance": "Every later step is judged against this target; without it you can't tell done from drifting.",
+        "moduleId": "m1",
+        "order": 1,
+        "layer": "Path",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m2",
+        "label": "Tool schema + loop",
+        "sub": "Describe the tool to the model and wire the call-back loop.",
+        "what": "How you declare a tool to the LLM and the minimal observe-decide-act-update loop around it.",
+        "orient": "How the model learns a tool exists, and the smallest loop that runs its calls.",
+        "relevance": "The schema and loop are the skeleton; get this wrong and no amount of prompting fixes it.",
+        "moduleId": "m2",
+        "order": 2,
+        "layer": "Path",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m3",
+        "label": "Dispatch the call",
+        "sub": "Match the model's request to your function and run it.",
+        "what": "The dispatch table that maps a requested tool name to real code, runs it, and returns the result.",
+        "orient": "How you turn the model's tool request into a real function call and a result.",
+        "relevance": "This is where the chatbot actually touches the world; the core of the whole build.",
+        "moduleId": "m3",
+        "order": 3,
+        "layer": "Path",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m4",
+        "label": "Validate + trace",
+        "sub": "Check arguments and log every call before users see it.",
+        "what": "Argument validation, error handling, and a trace of each tool call so failures are visible early.",
+        "orient": "How to catch bad arguments and failed calls before they reach the user.",
+        "relevance": "Tool calls are where untrusted model output meets real systems; this is the safety layer.",
+        "moduleId": "m4",
+        "order": 4,
+        "layer": "Path",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m5",
+        "label": "Harden for ship",
+        "sub": "Cap turns, handle failures, decide what to monitor.",
+        "what": "Turn budgets, retry and fallback rules, and the failure modes that bite tool-calling bots in production.",
+        "orient": "How tool-calling bots break in the wild and what to set before you ship.",
+        "relevance": "The gap between a demo and a shippable bot is almost entirely these guardrails.",
+        "moduleId": "m5",
+        "order": 5,
+        "layer": "Path",
+        "emphasis": "spine"
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Target behavior: what a tool-calling bot is for",
+      "sub": "Starts the spine: the one task that needs a real tool.",
+      "summary": "A plain chatbot guesses from training data; a tool-calling chatbot can fetch live facts and take actions. This module pins the single user-visible task you'll make work first.",
+      "objectives": [
+        "Explain why a chatbot needs tool calls instead of answering from training data alone.",
+        "State the one target task your bot must do through a real tool.",
+        "Name one wrong answer a tool call would have prevented."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Why a chatbot needs to call tools",
+          "analogy": "A plain chatbot is a librarian working only from memory; a tool-calling chatbot can get up, walk to the shelf, and read the real book before answering.",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A plain "
+                },
+                {
+                  "text": "large language model",
+                  "term": "prototype"
+                },
+                {
+                  "text": " answers from frozen training data. Ask it today's order status, the current exchange rate, or to actually send an email, and it can only guess or apologize."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A "
+                },
+                {
+                  "text": "tool-calling chatbot",
+                  "strong": true
+                },
+                {
+                  "text": " fixes this. You hand the model a list of functions it may use, and when a question needs live data or a real action, the model asks you to run one. Your code runs it and feeds the result back, so the answer is grounded in reality, not memory."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: "
+                },
+                {
+                  "em": true,
+                  "text": "for a 'check my order status' bot, which part of the answer must come from a tool, and which part can the model write on its own?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Before writing any code, pin one concrete target task. A sharp target tells you exactly which calls must hit a real tool."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Name the task in one sentence (\"tell a user where their package is\")."
+                  }
+                ],
+                [
+                  {
+                    "text": "Mark which facts must be live — those become tool calls, not model guesses."
+                  }
+                ],
+                [
+                  {
+                    "text": "Write one wrong answer the tool call should prevent (a made-up tracking number)."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_visual",
+          "kind": "steppedFlow",
+          "title": "Click through one tool-calling exchange",
+          "caption": "The smallest round trip: user asks, model requests a tool, your code runs it, model answers.",
+          "steps": [
+            {
+              "label": "User message",
+              "detail": "\"Where is my order #4821?\" arrives along with the list of tools the model is allowed to use."
+            },
+            {
+              "label": "Model requests a tool",
+              "detail": "Instead of answering, the model emits a tool call: get_order_status(order_id=\"4821\")."
+            },
+            {
+              "label": "Your code runs it",
+              "detail": "The loop matches the name to your function, runs it, and gets back {status: \"in transit\"}."
+            },
+            {
+              "label": "Result fed back",
+              "detail": "The tool result is appended to the conversation and the model is called again."
+            },
+            {
+              "label": "Grounded answer",
+              "detail": "Now holding real data, the model replies: \"Order #4821 is in transit, arriving Thursday.\""
+            }
+          ],
+          "min": 1,
+          "max": 5,
+          "unit": "step",
+          "stops": [
+            {
+              "at": 1,
+              "label": "Question in",
+              "note": "Nothing fetched yet."
+            },
+            {
+              "at": 3,
+              "label": "Tool runs",
+              "note": "The bot touches a real system."
+            },
+            {
+              "at": 5,
+              "label": "Grounded reply",
+              "note": "Answer backed by live data, not a guess."
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_walk",
+          "kind": "walkthrough",
+          "title": "How to scope your first tool-calling bot",
+          "steps": [
+            {
+              "label": "Name the one task",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Write a single sentence: \"Given an order ID, tell the user the current shipping status.\" One task, not a platform."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Find the live fact",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Identify what the model cannot know: the order's real status. That fact must come from a tool, so it becomes your first function: get_order_status."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Choose a test",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Pick the failure to catch: the bot inventing a delivery date. Your test asserts that the date in the reply matches what the tool returned."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_example",
+          "kind": "functionalExample",
+          "title": "Concrete target: an order-status assistant",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A user types \"Has my order shipped yet? It's #4821.\" The right behavior: the bot does NOT guess. It calls get_order_status(\"4821\"), gets back \"in transit, ETA Thursday\", and only then writes a reply."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Contrast the failure: a plain chatbot says \"Your order should arrive in 3-5 business days\" — plausible, confident, and completely made up. That gap is exactly why you reach for tool calling."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_technical",
+          "kind": "technical",
+          "title": "What the model decides vs. what your code owns",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Draw a hard line. The model decides WHICH tool to call and with WHAT arguments. Your application decides whether that call is allowed, runs it, and owns the real side effects (database reads, payments, emails)."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "Treat every tool call the model emits as a request, not a command. Your code is the gatekeeper that validates and executes it."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Why would you give a chatbot a tool instead of letting it answer directly?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Because larger models always need tools to function.",
+              "correct": false
+            },
+            {
+              "text": "Because the answer depends on live data or a real action the model cannot do from memory.",
+              "correct": true
+            },
+            {
+              "text": "Because tools make the model respond faster.",
+              "correct": false
+            }
+          ],
+          "explanation": "Tool calling exists to ground answers in facts the model cannot know (live status, current prices) or in actions it cannot take (sending an email). If the model already knows the answer, a tool just wastes a turn.",
+          "termIds": [
+            "prototype",
+            "retriever"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Tool schema and the call-back loop",
+      "sub": "Follows the target: describe the tool, then wire the loop that runs it.",
+      "summary": "Now you have a task. This module shows how to declare the tool to the model with a schema, and the minimal loop that runs whatever call the model asks for and feeds the result back.",
+      "objectives": [
+        "Write a tool schema: name, description, and a typed parameter list.",
+        "Trace the four steps of the tool-calling loop for one exchange.",
+        "Predict what the model emits when it wants to use a tool."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The tool schema: how the model learns a tool exists",
+          "analogy": "A tool schema is like the label on a vending machine button: it tells the model what the button does and exactly what to type to press it.",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model can only call tools you describe to it. A "
+                },
+                {
+                  "text": "tool schema",
+                  "strong": true
+                },
+                {
+                  "text": " is a small structured description you pass alongside the user message. Every schema has three parts."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Name",
+                    "strong": true
+                  },
+                  {
+                    "text": " — the identifier the model emits to invoke it, e.g. get_order_status."
+                  }
+                ],
+                [
+                  {
+                    "text": "Description",
+                    "strong": true
+                  },
+                  {
+                    "text": " — plain English telling the model WHEN to use it. This is what the model reasons over, so write it well."
+                  }
+                ],
+                [
+                  {
+                    "text": "Parameters",
+                    "strong": true
+                  },
+                  {
+                    "text": " — a typed list of arguments (order_id: string), so the model knows what to fill in."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Around the schema sits the "
+                },
+                {
+                  "text": "loop",
+                  "term": "prototype"
+                },
+                {
+                  "text": ": send message + tools, read the model's reply, if it is a tool call then run it and append the result, then call the model again. Repeat until the model returns plain text instead of a tool call."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_walk",
+          "kind": "walkthrough",
+          "title": "Walking the loop, one turn at a time",
+          "steps": [
+            {
+              "label": "Send message + tool schemas",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "You call the model with the user's question AND the list of tool schemas it may use. The model now knows get_order_status exists and what it takes."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Read the reply",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "The reply is one of two shapes: plain text (the model is done) or a tool call (it wants you to run something). You branch on which it is."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Run and append, then loop",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "If it is a tool call, run the function, append the result to the conversation, and call the model again. The new result is now part of what the model sees on the next turn."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_example",
+          "kind": "functionalExample",
+          "title": "What the model actually emits",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Given the user message \"Where is order 4821?\" and a get_order_status schema, the model does not reply with prose. It replies with a structured tool call: name = \"get_order_status\", arguments = {\"order_id\": \"4821\"}."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Your loop sees that shape, knows it is not a final answer, runs the matching function, and appends {\"status\": \"in transit\"}. On the next call the model — now holding the real status — returns plain text, and the loop ends."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_code",
+          "kind": "codeExample",
+          "title": "A tool schema and the loop skeleton",
+          "language": "python",
+          "code": "TOOLS = [{\n    \"name\": \"get_order_status\",\n    \"description\": \"Look up the live shipping status of an order by its ID.\",\n    \"parameters\": {\"order_id\": \"string\"},\n}]\n\ndef run_turn(messages):\n    reply = model.call(messages, tools=TOOLS)\n    if reply.tool_call:               # model wants a tool\n        result = dispatch(reply.tool_call)\n        messages.append(result)        # feed it back\n        return run_turn(messages)       # loop again\n    return reply.text                  # plain text = done",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The schema teaches the model the tool exists; run_turn is the loop. The recursion is the loop body — it keeps calling the model until the reply is plain text instead of a tool call."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "If you remove the messages.append(result) line, what happens on the next call to run_turn?",
+            "answer": "The model never sees the tool's result, so it asks for the exact same tool again — an infinite loop. The append is what lets the loop make progress."
+          },
+          "syntax": [
+            {
+              "part": "TOOLS",
+              "explains": "The list of schemas passed to the model so it knows what it may call."
+            },
+            {
+              "part": "reply.tool_call",
+              "explains": "Truthy when the model requested a tool instead of answering."
+            },
+            {
+              "part": "return run_turn(messages)",
+              "explains": "Recurses — this is the loop that repeats until a final answer."
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "canon1",
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "What ends the tool-calling loop?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The model emits another tool call.",
+              "correct": false
+            },
+            {
+              "text": "The model returns plain text instead of a tool call.",
+              "correct": true
+            },
+            {
+              "text": "The first tool runs successfully.",
+              "correct": false
+            }
+          ],
+          "explanation": "The loop runs as long as the model keeps asking for tools. It exits the moment the model replies with a final text answer — meaning it has everything it needs.",
+          "termIds": [
+            "prototype",
+            "retriever"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Dispatch: turning a tool request into a real call",
+      "sub": "Follows the loop: the loop spotted a tool call — now actually run it.",
+      "summary": "The loop has caught a tool call. This module builds the dispatch layer that maps the model's requested name to your real function, runs it safely, and returns a result the model can use.",
+      "objectives": [
+        "Build a dispatch table mapping tool names to functions.",
+        "Decide how much rigor a dispatch layer needs for your stage.",
+        "Verify AI-generated dispatch code before trusting it."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_recall",
+          "kind": "note",
+          "tone": "info",
+          "body": [
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict from memory: "
+                },
+                {
+                  "em": true,
+                  "text": "back in module 2, what exact shape does the model emit when it wants a tool — and what two fields does it always contain?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "(Answer: a tool call, containing a name and a set of arguments. Dispatch is what we do with those two fields next.)"
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "The dispatch table: name in, function out",
+          "analogy": "Dispatch is the switchboard operator: the model says a name, the operator plugs it into the matching line, and connects the call.",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model hands you a tool call with a name and arguments. "
+                },
+                {
+                  "text": "Dispatch",
+                  "strong": true
+                },
+                {
+                  "text": " is the lookup that turns that name into a real function and runs it with those arguments. The simplest form is a dictionary mapping names to functions."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Three things every dispatch layer must do: reject any name not in the table (the model can hallucinate one), pass the arguments through, and return the result in a shape the model can read back."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Look up the function by the requested name — and fail loudly if it is unknown."
+                  }
+                ],
+                [
+                  {
+                    "text": "Call it with the model's arguments."
+                  }
+                ],
+                [
+                  {
+                    "text": "Return the result as text or JSON the next model turn can use."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m3_walk",
+          "kind": "walkthrough",
+          "title": "Building the dispatch step by step",
+          "steps": [
+            {
+              "label": "Register the function",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Map the schema name to real code: REGISTRY = {\"get_order_status\": get_order_status}. The key must match the schema's name exactly."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Guard the lookup",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "If the model asks for a name not in REGISTRY, return a clear error string rather than crashing. Hallucinated tool names are common, so never call REGISTRY[name] blindly."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Run and shape the result",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Invoke the function with the arguments, then return its output as JSON so the model can parse it on the next turn."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionMatrix",
+          "title": "How much rigor does your dispatch layer need?",
+          "criteria": [
+            "Argument handling",
+            "Side-effect safety",
+            "When it fits"
+          ],
+          "options": [
+            {
+              "name": "Bare dict dispatch",
+              "cells": [
+                {
+                  "criterion": "Argument handling",
+                  "text": "Passes args straight through, no checks.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Side-effect safety",
+                  "text": "None — any registered tool just runs.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "When it fits",
+                  "text": "Read-only tools in a prototype.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Use to get a demo working when every tool is read-only and safe.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Validated dispatch",
+              "cells": [
+                {
+                  "criterion": "Argument handling",
+                  "text": "Validates args against the schema before calling.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Side-effect safety",
+                  "text": "Catches bad types and missing fields early.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "When it fits",
+                  "text": "Any tool with real reads users depend on.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Use once real users see the output and bad arguments would surface as wrong answers.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Gated dispatch",
+              "cells": [
+                {
+                  "criterion": "Argument handling",
+                  "text": "Validates, plus per-tool permission checks.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Side-effect safety",
+                  "text": "Requires confirmation for writes/payments.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "When it fits",
+                  "text": "Tools that send email, charge cards, or delete data.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Use whenever a tool has irreversible side effects.",
+              "cost": "High",
+              "complexity": "High"
+            }
+          ],
+          "howToRead": "Match the rigor to the worst side effect a tool can cause. Read-only? Bare dict is fine. Irreversible writes? You need gating.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_verify",
+          "kind": "note",
+          "tone": "warn",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If you let an AI assistant generate your dispatch code, check these four things before running it — they are exactly where generated tool-calling code goes wrong."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Does it reject unknown tool names, or does it call REGISTRY[name] directly and crash on a hallucinated name?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does the registry key match the schema name character-for-character? One mismatch and the tool is never found."
+                  }
+                ],
+                [
+                  {
+                    "text": "Are arguments validated before the function runs, or passed straight into a database/API call?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Is the result returned as text/JSON the model can read, not a raw Python object the next turn can't parse?"
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "The model emits a tool call for a name not in your dispatch table. What should the dispatch layer do?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Call the closest matching function instead.",
+              "correct": false
+            },
+            {
+              "text": "Return a clear error the model can read, rather than crashing.",
+              "correct": true
+            },
+            {
+              "text": "Silently skip the turn and return nothing.",
+              "correct": false
+            }
+          ],
+          "explanation": "Models can hallucinate tool names. A robust dispatch returns an explicit error string so the model can correct itself on the next turn; guessing or crashing both hide the problem.",
+          "termIds": [
+            "prototype",
+            "retriever"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Choose the dispatch rigor that matches a tool's worst side effect: bare dict, validated, or gated."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Validate arguments and trace every call",
+      "sub": "Follows dispatch: now make the dispatch safe and observable.",
+      "summary": "Tool arguments come from the model, which means they are untrusted. This module adds argument validation and a trace of every call, so bad inputs and silent failures surface before a user does.",
+      "objectives": [
+        "Validate model-supplied arguments against the tool's schema.",
+        "Log a trace of each tool call: name, arguments, result, and errors.",
+        "Complete a validation guard left as a TODO."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Tool arguments are untrusted input",
+          "analogy": "The model's arguments are like a form a stranger filled out: useful, probably right, but you still check it before acting on it.",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The arguments in a tool call are generated by the "
+                },
+                {
+                  "text": "model",
+                  "term": "validator"
+                },
+                {
+                  "text": ", not typed by your code. The model can omit a required field, send the wrong type, or invent a plausible-but-wrong value. Treat every argument as untrusted until validated."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Two habits make tool calls safe and debuggable."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Validate",
+                    "strong": true
+                  },
+                  {
+                    "text": " — check arguments against the schema (required fields present, types correct) before running the function."
+                  }
+                ],
+                [
+                  {
+                    "text": "Trace",
+                    "strong": true
+                  },
+                  {
+                    "text": " — log every call's name, arguments, result, and any error, so a failure is visible in your logs, not just in a confused user."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_walk",
+          "kind": "walkthrough",
+          "title": "Adding the safety layer",
+          "steps": [
+            {
+              "label": "Validate before running",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Before calling the function, confirm each required parameter is present and the right type. If not, return a validation error to the model so it can retry with corrected arguments."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Wrap the call in try/except",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Real tools fail: the order API times out, the row is missing. Catch the error and return it as a result the model can read, instead of letting the loop crash."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Trace the whole thing",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Log {name, args, result_or_error, ms} for every call. When a user reports a bad answer, the trace tells you exactly which tool call went wrong."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_example",
+          "kind": "functionalExample",
+          "title": "A bad argument caught before it does harm",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model emits get_order_status(order_id=4821) — an integer, but the schema says string. Without validation, the database lookup silently returns nothing and the bot says \"I couldn't find that order,\" confusing a user whose order exists."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "With validation, the layer catches the type mismatch, returns \"order_id must be a string\" to the model, and the model retries with \"4821\". The trace shows both attempts, so you can see the model self-corrected."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Completion problem: finish the validation guard",
+          "language": "python",
+          "code": "def safe_dispatch(call, registry, schema):\n    if call.name not in registry:\n        return {\"error\": f\"unknown tool {call.name}\"}\n    for field, ftype in schema[call.name].items():\n        # TODO: reject the call if a required field is\n        # missing or the wrong type — return an error dict\n        ...\n    try:\n        result = registry[call.name](**call.args)\n        trace.log(call.name, call.args, result)\n        return {\"result\": result}\n    except Exception as e:\n        trace.log(call.name, call.args, error=e)\n        return {\"error\": str(e)}",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The dispatch, error handling, and tracing are wired. The one missing piece is the validation guard — predict what it should do, then reveal the answer."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Fill in the TODO: what should the loop body check, and what should it return on failure?",
+            "answer": "Check that the field exists in call.args and that type(call.args[field]) matches ftype. If a field is missing or mistyped, return {\"error\": f\"{field} must be {ftype}\"} so the model can retry — do NOT raise, or you lose the chance for the model to self-correct."
+          },
+          "syntax": [
+            {
+              "part": "if call.name not in registry",
+              "explains": "Rejects hallucinated tool names before anything runs."
+            },
+            {
+              "part": "schema[call.name].items()",
+              "explains": "Iterates the declared parameters to validate against."
+            },
+            {
+              "part": "try / except",
+              "explains": "Turns a tool crash into a readable error the model can handle."
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "canon1",
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Why validate tool arguments instead of trusting what the model sent?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Validation makes the model respond faster.",
+              "correct": false
+            },
+            {
+              "text": "The arguments are model-generated and can be missing, mistyped, or wrong.",
+              "correct": true
+            },
+            {
+              "text": "The API requires a validation step before any call.",
+              "correct": false
+            }
+          ],
+          "explanation": "Arguments come from the model, not your code, so they are untrusted input. Validating against the schema catches missing or mistyped fields and lets the model retry, rather than producing a silently wrong answer.",
+          "termIds": [
+            "prototype",
+            "retriever"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Harden for ship: failure modes and guardrails",
+      "sub": "Last step: turn a working demo into something safe to deploy.",
+      "summary": "The loop works on the happy path. This module covers the ways tool-calling bots break in production — infinite loops, runaway costs, unsafe writes — and the guardrails that separate a demo from a shippable bot.",
+      "objectives": [
+        "Name the common failure modes of a tool-calling chatbot.",
+        "Set a turn budget and a retry-then-fallback policy.",
+        "Decide which guardrails to ship for your tool's risk level."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "From happy path to shippable",
+          "analogy": "A demo bot is a car that drives in an empty lot; hardening is adding brakes, seatbelts, and a speed limit before it goes on the road.",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Your "
+                },
+                {
+                  "text": "loop",
+                  "term": "prototype"
+                },
+                {
+                  "text": " runs, dispatches, and validates. What still separates it from production is that nothing stops it from misbehaving when things go wrong. Hardening adds the limits."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "A turn budget",
+                    "strong": true
+                  },
+                  {
+                    "text": " — a hard cap on loop iterations, so a stuck model can't spin forever and burn tokens."
+                  }
+                ],
+                [
+                  {
+                    "text": "A retry-then-fallback policy",
+                    "strong": true
+                  },
+                  {
+                    "text": " — retry a transient tool failure once or twice, then give the user a graceful message instead of crashing."
+                  }
+                ],
+                [
+                  {
+                    "text": "Write protection",
+                    "strong": true
+                  },
+                  {
+                    "text": " — confirmation or scoping for any tool that sends, charges, or deletes."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m5_failure",
+          "kind": "conceptual",
+          "title": "How tool-calling bots break in production",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "These are the failures that don't show up in a quick demo but bite once real traffic hits. Each maps to a guardrail.",
+                  "strong": true
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "1. Infinite tool loop"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model keeps calling tools and never decides it is done — often because a tool returns an error it doesn't know how to recover from. Without a turn budget, this runs until you hit a rate limit or a large bill. Fix: cap turns and force a final answer when the cap is hit."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "2. Repeated failing call"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A tool fails, the model tries the exact same call again, it fails again. The loop \"works\" but makes no progress. Fix: detect identical consecutive calls and break out with a fallback message."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "3. Unsafe write (the dangerous one)"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model, trying to be helpful, calls a write tool — cancel_order, send_refund — that it shouldn't have. Read tools are recoverable; writes are not. Fix: gate every side-effecting tool behind a confirmation or a scoped permission, so a single bad decision can't charge a card."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "4. Context bloat (non-obvious)"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Every tool result is appended to the conversation. After many turns the context window fills, early instructions get dropped, and the bot \"forgets\" the original task. Fix: summarize or prune old tool results once the conversation gets long."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_walk",
+          "kind": "walkthrough",
+          "title": "Wiring the guardrails into the loop",
+          "steps": [
+            {
+              "label": "Add a turn counter",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Pass max_turns into run_turn and decrement it each pass. At zero, stop looping and ask the model for a final answer with the tools it has — never let it loop unbounded."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Detect repeats",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Track the last tool call. If the model emits the identical call after a failure, break out and return a graceful fallback rather than retrying forever."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Gate the writes",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Tag each tool as read or write. Read tools run freely; write tools require a confirmation step before dispatch executes them."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionMatrix",
+          "title": "Which guardrails must ship for your bot?",
+          "criteria": [
+            "Tool type",
+            "Worst case if it breaks",
+            "Minimum guardrail"
+          ],
+          "options": [
+            {
+              "name": "Read-only bot",
+              "cells": [
+                {
+                  "criterion": "Tool type",
+                  "text": "Lookups only: status, search, FAQ.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Worst case if it breaks",
+                  "text": "A wrong or stale answer.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Minimum guardrail",
+                  "text": "Turn budget + trace.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Ship with turn budget and tracing once read tools are validated.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Read + reversible write",
+              "cells": [
+                {
+                  "criterion": "Tool type",
+                  "text": "Creates drafts, tickets, notes you can undo.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Worst case if it breaks",
+                  "text": "A bad record you can delete later.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Minimum guardrail",
+                  "text": "Above, plus retry/fallback + repeat detection.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Add fallback handling and repeated-call detection before exposing writes.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Irreversible write",
+              "cells": [
+                {
+                  "criterion": "Tool type",
+                  "text": "Charges cards, sends email, deletes data.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Worst case if it breaks",
+                  "text": "Real money lost; cannot undo.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Minimum guardrail",
+                  "text": "Above, plus confirmation gating + scoped permissions.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Never ship without a human or rule-based confirmation in front of the write.",
+              "cost": "High",
+              "complexity": "High"
+            }
+          ],
+          "howToRead": "Find the row matching your riskiest tool. The guardrails are cumulative — each tier adds to the one above it.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_technical",
+          "kind": "technical",
+          "title": "The pre-ship checklist",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Before deploying a tool-calling chatbot, confirm each of these is in place. They map one-to-one to the failure modes above."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "A turn budget that forces a final answer when hit."
+                  }
+                ],
+                [
+                  {
+                    "text": "Retry-then-fallback for transient tool failures, plus repeated-call detection."
+                  }
+                ],
+                [
+                  {
+                    "text": "Confirmation gating on every irreversible write tool."
+                  }
+                ],
+                [
+                  {
+                    "text": "A trace of every call, and a plan to prune context when it grows long."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "If you can't point to where each of these lives in your code, the bot isn't ready to ship."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "What does a turn budget directly prevent?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "An unsafe write to a payment tool.",
+              "correct": false
+            },
+            {
+              "text": "The loop spinning forever when the model never decides it is done.",
+              "correct": true
+            },
+            {
+              "text": "The model hallucinating a tool name.",
+              "correct": false
+            }
+          ],
+          "explanation": "A turn budget caps how many times the loop can repeat, so a stuck model can't run indefinitely and rack up cost. Unsafe writes are stopped by gating; hallucinated names by dispatch checks.",
+          "termIds": [
+            "prototype",
+            "retriever"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Choose which guardrails must ship based on whether your tools are read-only, reversible, or irreversible writes."
+    }
+  ],
+  "glossary": {
+    "prototype": {
+      "id": "prototype",
+      "label": "Tool-calling loop",
+      "laymanDefinition": "The cycle that sends a message plus tool schemas to the model, runs any tool it requests, feeds the result back, and repeats until the model gives a final answer.",
+      "technicalNote": "In this lesson the loop is the skeleton of the whole build: observe the reply, decide if it is a tool call, act by dispatching, update the conversation, then loop.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "retriever": {
+      "id": "retriever",
+      "label": "Tool schema",
+      "laymanDefinition": "The structured description of a tool — its name, what it does, and its arguments — that you pass to the model so it knows the tool exists and how to call it.",
+      "technicalNote": "The model can only emit a tool call for a tool you have described. The description field is what the model reasons over to decide when to use it.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "validator": {
+      "id": "validator",
+      "label": "Argument validation",
+      "laymanDefinition": "Checking the arguments the model supplied against the tool's schema — required fields present, types correct — before running the function.",
+      "technicalNote": "Tool arguments are model-generated and untrusted. Validation rejects bad arguments with a readable error so the model can retry, instead of producing a silently wrong answer.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Call trace",
+      "laymanDefinition": "A log of every tool call — its name, arguments, result, and any error — so failures are visible in your logs rather than only to a confused user.",
+      "technicalNote": "The trace is your primary debugging tool: when a bad answer is reported, it shows exactly which tool call went wrong and with what arguments.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "deployment": {
+      "id": "deployment",
+      "label": "Turn budget",
+      "laymanDefinition": "A hard cap on how many times the tool-calling loop may repeat, so a stuck model can't spin forever and run up cost.",
+      "technicalNote": "When the budget is hit, force the model to produce a final answer with whatever it has rather than letting it keep calling tools.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "acceptance_test": {
+      "id": "acceptance_test",
+      "label": "Write gating",
+      "laymanDefinition": "Requiring a confirmation or scoped permission before a tool that causes irreversible side effects (charging a card, sending email, deleting data) is allowed to run.",
+      "technicalNote": "Read tools are recoverable; writes are not. Gating ensures a single bad model decision can't take an irreversible action on its own.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts",
+    "themes": [
+      {
+        "name": "Build check",
+        "questions": [
+          {
+            "q": "Does your bot's task actually need a tool, or can the model answer from what it knows?",
+            "why": "Tool calling only pays off for live data or real actions; adding a tool to a question the model can already answer just wastes a turn.",
+            "opts": [
+              "Needs live data",
+              "Needs an action",
+              "Model already knows"
+            ],
+            "rot": "Reach for a tool only when the answer depends on something outside the model."
+          },
+          {
+            "q": "What is the worst side effect any of your tools can cause?",
+            "why": "The riskiest tool sets the guardrail tier for the whole bot.",
+            "opts": [
+              "Read-only",
+              "Reversible write",
+              "Irreversible write"
+            ],
+            "rot": "Gate irreversible writes behind confirmation before shipping."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct the build: name the one task that needs a tool, the three parts of a tool schema, the four steps of the loop, what dispatch does with a tool call, the two safety habits at the dispatch boundary, and the failure mode each guardrail prevents. If any step is fuzzy, reopen that module before you build."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Reference build path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Target behavior",
+          "sub": "Pin the one task that needs a real tool.",
+          "what": "The single user-visible task and which facts must come from a tool, not a guess.",
+          "relevance": "The target is what every later step is judged against.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m2",
+          "label": "Tool schema + loop",
+          "sub": "Describe the tool; wire the call-back loop.",
+          "what": "The schema teaches the model the tool exists; the loop runs whatever it requests.",
+          "relevance": "This skeleton is what everything else hangs on.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal"
+        },
+        {
+          "id": "n_m3",
+          "label": "Dispatch the call",
+          "sub": "Map the requested name to your function and run it.",
+          "what": "The dispatch table that turns a tool request into a real function call.",
+          "relevance": "This is where the bot actually touches the world.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m4",
+          "label": "Validate + trace",
+          "sub": "Check arguments and log every call.",
+          "what": "Validation and tracing at the boundary where untrusted model output meets real systems.",
+          "relevance": "This is the safety and debugging layer.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal"
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Pin the target behavior",
+        "detail": "Write the one task in a sentence and mark which facts must come from a tool."
+      },
+      {
+        "step": 2,
+        "label": "Write the tool schema and loop",
+        "detail": "Declare name, description, and parameters; wire the observe-decide-act-update loop around it."
+      },
+      {
+        "step": 3,
+        "label": "Build the dispatch",
+        "detail": "Map the requested tool name to your function, reject unknown names, and return a readable result."
+      },
+      {
+        "step": 4,
+        "label": "Validate and trace",
+        "detail": "Check arguments against the schema and log every call's name, args, result, and errors."
+      },
+      {
+        "step": 5,
+        "label": "Harden for ship",
+        "detail": "Add a turn budget, retry-then-fallback, repeat detection, and gating on irreversible writes."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_goal",
+        "label": "Can you name the one task and the fact that must come from a tool?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_loop",
+        "label": "Does your loop feed each tool result back before calling the model again?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_dispatch",
+        "label": "Does dispatch reject a tool name not in the table?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_validate",
+        "label": "Are model-supplied arguments validated, and is every call traced?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_harden",
+        "label": "Is there a turn budget, and is every irreversible write gated?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Build a working order-status bot end to end: define one tool schema, write the call-back loop, add a guarded dispatch table, validate arguments, trace every call, and cap the loop with a turn budget. Test it on a question the model can't answer from memory. NEXT RUNG: add a second tool (e.g. cancel_order) that is an irreversible write, and gate it behind a confirmation step — then move on to multi-tool agents that chain several calls per turn.",
+      "scopedTo": "Build Projects"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LlamaIndex RAG documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    }
+  }
+}

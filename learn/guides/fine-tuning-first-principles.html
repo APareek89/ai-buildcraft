@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fine-Tuning from First Principles — LoRA &amp; Full Fine-Tuning</title>
+<style>
+  :root{
+    --bg:#0f1219; --bg2:#161b26; --bg3:#1d2432; --line:#2a3446;
+    --fg:#e6ebf5; --dim:#94a3b8; --dim2:#64748b;
+    --acc:#6ea8fe; --acc2:#8b7cf6; --ok:#4ade80; --warn:#fbbf24; --bad:#f87171;
+    --code:#0b0e14;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  .wrap{display:flex;min-height:100vh}
+  /* nav */
+  nav{width:250px;flex:0 0 250px;background:var(--bg2);border-right:1px solid var(--line);
+    padding:22px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  nav h1{font-size:15px;margin:0 20px 4px;letter-spacing:.2px}
+  nav .sub{font-size:11.5px;color:var(--dim2);margin:0 20px 18px;line-height:1.45}
+  nav a{display:block;padding:8px 20px;color:var(--dim);text-decoration:none;font-size:13.5px;
+    border-left:2px solid transparent}
+  nav a:hover{color:var(--fg);background:var(--bg3)}
+  nav a.on{color:var(--acc);border-left-color:var(--acc);background:var(--bg3)}
+  nav .grp{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--dim2);
+    margin:18px 20px 6px;font-weight:600}
+  /* main */
+  main{flex:1;max-width:900px;padding:40px 46px 120px}
+  section{display:none;animation:fade .25s ease}
+  section.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  h2{font-size:27px;margin:0 0 6px;letter-spacing:-.4px}
+  .lede{color:var(--dim);font-size:15px;margin:0 0 26px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  h3{font-size:19px;margin:32px 0 10px;letter-spacing:-.2px}
+  h4{font-size:15px;margin:22px 0 8px;color:var(--acc)}
+  p{margin:0 0 14px}
+  ul,ol{margin:0 0 14px;padding-left:22px} li{margin:5px 0}
+  code{font-family:var(--mono);font-size:13px;background:var(--bg3);padding:1.5px 5px;
+    border-radius:4px;color:#c8d6f0}
+  b,strong{color:#fff;font-weight:600}
+  a{color:var(--acc)}
+  /* callouts */
+  .box{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:15px 17px;margin:18px 0}
+  .box.key{border-left:3px solid var(--acc)}
+  .box.warn{border-left:3px solid var(--warn)}
+  .box.win{border-left:3px solid var(--ok)}
+  .box .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.9px;color:var(--dim2);
+    font-weight:700;margin-bottom:6px}
+  .box p:last-child{margin-bottom:0}
+  /* code */
+  pre{background:var(--code);border:1px solid var(--line);border-radius:9px;padding:14px 16px;
+    overflow-x:auto;margin:14px 0;font-family:var(--mono);font-size:12.8px;line-height:1.62}
+  pre .cm{color:#5d6b85}      /* comment */
+  pre .kw{color:#c792ea}      /* keyword */
+  pre .fn{color:#82aaff}      /* function */
+  pre .st{color:#c3e88d}      /* string */
+  pre .nu{color:#f78c6c}      /* number */
+  pre .hl{background:rgba(110,168,254,.13);display:block;margin:0 -16px;padding:0 16px;
+    border-left:2px solid var(--acc)}
+  .fname{font-family:var(--mono);font-size:11.5px;color:var(--dim2);margin:16px 0 -8px;display:block}
+  /* annotated code */
+  .ann{border:1px solid var(--line);border-radius:9px;overflow:hidden;margin:16px 0}
+  .ann .row{display:grid;grid-template-columns:1fr;border-bottom:1px solid var(--line);cursor:pointer}
+  .ann .row:last-child{border-bottom:0}
+  .ann .ln{background:var(--code);padding:9px 14px;font-family:var(--mono);font-size:12.6px;
+    display:flex;gap:10px;align-items:flex-start}
+  .ann .row:hover .ln{background:#11151d}
+  .ann .tog{color:var(--dim2);font-size:11px;flex:0 0 14px;margin-top:2px}
+  .ann .row.open .tog{color:var(--acc)}
+  .ann .note{display:none;padding:11px 15px 13px 38px;background:var(--bg2);font-size:13.5px;
+    color:var(--dim);border-top:1px dashed var(--line)}
+  .ann .row.open .note{display:block}
+  .ann .note b{color:#dce6f7}
+  /* table */
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.8px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--dim2);font-size:11px;text-transform:uppercase;letter-spacing:.7px;font-weight:600}
+  td code{font-size:12.4px}
+  /* interactive */
+  .lab{background:linear-gradient(160deg,#151b28,#111621);border:1px solid #2e3a52;
+    border-radius:11px;padding:19px;margin:20px 0}
+  .lab .h{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--acc2);
+    font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+  .ctl{display:flex;align-items:center;gap:13px;margin:11px 0;flex-wrap:wrap}
+  .ctl label{font-size:13px;color:var(--dim);min-width:150px}
+  input[type=range]{flex:1;min-width:170px;accent-color:var(--acc)}
+  .val{font-family:var(--mono);font-size:13px;color:var(--acc);min-width:74px;text-align:right}
+  .out{background:#0b0e14;border:1px solid var(--line);border-radius:8px;padding:14px;
+    margin-top:14px;font-family:var(--mono);font-size:12.8px;line-height:1.85}
+  .out .big{font-size:20px;color:var(--ok);font-weight:600}
+  .bar{height:9px;border-radius:5px;background:#222b3c;overflow:hidden;margin:5px 0 11px}
+  .bar>i{display:block;height:100%;border-radius:5px;transition:width .3s}
+  select,button{background:var(--bg3);color:var(--fg);border:1px solid var(--line);
+    border-radius:7px;padding:7px 11px;font-size:13px;font-family:inherit;cursor:pointer}
+  button:hover{border-color:var(--acc)}
+  /* quiz */
+  .q{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:15px 17px;margin:14px 0}
+  .q .qt{font-weight:600;margin-bottom:10px}
+  .q .opt{padding:8px 11px;border:1px solid var(--line);border-radius:7px;margin:6px 0;
+    cursor:pointer;font-size:13.8px;transition:.15s}
+  .q .opt:hover{border-color:var(--acc)}
+  .q .opt.right{border-color:var(--ok);background:rgba(74,222,128,.09);color:#bbf7d0}
+  .q .opt.wrong{border-color:var(--bad);background:rgba(248,113,113,.09);color:#fecaca}
+  .q .exp{display:none;margin-top:11px;padding-top:11px;border-top:1px dashed var(--line);
+    font-size:13.5px;color:var(--dim)}
+  .q.done .exp{display:block}
+  /* misc */
+  .pill{display:inline-block;font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;
+    padding:2.5px 8px;border-radius:20px;font-weight:700;vertical-align:middle}
+  .pill.lora{background:rgba(110,168,254,.16);color:#9ec5ff}
+  .pill.fft{background:rgba(251,191,36,.15);color:#fcd34d}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:880px){.grid2{grid-template-columns:1fr}
+    .wrap{flex-direction:column}nav{width:100%;height:auto;position:static;flex:none}
+    main{padding:24px 18px 80px}}
+  .mathline{font-family:var(--mono);background:var(--code);border:1px solid var(--line);
+    border-radius:8px;padding:13px 15px;margin:13px 0;font-size:13.5px;color:#cfe0ff;text-align:center}
+  /* flow diagram */
+  .flow{text-align:center}
+  .tokchip{display:inline-block;background:var(--bg3);border:1px solid var(--acc);
+    border-radius:8px;padding:7px 16px;font-size:14px}
+  .ar{color:var(--dim2);font-size:12px;margin:9px 0}
+  .ar.sm{margin:5px 0;font-size:14px}
+  .bar2560{background:linear-gradient(90deg,#2d3f63,#3a5488,#2d3f63);
+    border:1px solid #4a6ea8;border-radius:6px;padding:9px;font-size:12px;color:#cfe0ff;
+    max-width:560px;margin:0 auto}
+  .three{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;margin-top:6px;align-items:start}
+  .col{text-align:center}
+  .wbox{border-radius:8px;padding:9px 6px;font-size:13.5px;line-height:1.35;border:1px solid}
+  .wbox small{font-size:10.5px;color:var(--dim2);font-family:var(--mono)}
+  .wbox.q{background:rgba(110,168,254,.12);border-color:#4a6ea8}
+  .wbox.k{background:rgba(139,124,246,.12);border-color:#6b5fd0}
+  .wbox.v{background:rgba(74,222,128,.10);border-color:#3d8f5c}
+  .strip{display:flex;gap:1.5px;justify-content:center;flex-wrap:nowrap}
+  .strip i{display:block;height:34px;flex:1;border-radius:2px;cursor:pointer;
+    transition:.15s;font-style:normal}
+  .strip.q i{background:#3a5488} .strip.k i{background:#4c4193} .strip.v i{background:#2f6b46}
+  .strip i:hover{transform:scaleY(1.18)}
+  .strip i.sel{background:var(--acc)!important;box-shadow:0 0 0 1.5px var(--fg)}
+  .strip i.grp{background:#7c6fd8!important}
+  .cap{font-size:10.5px;color:var(--dim2);margin-top:6px;font-family:var(--mono)}
+  @media(max-width:700px){.three{grid-template-columns:1fr;gap:10px}}
+  .steps{counter-reset:s;list-style:none;padding:0}
+  .steps li{counter-increment:s;position:relative;padding:0 0 0 38px;margin:14px 0}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:25px;height:25px;
+    border-radius:50%;background:var(--bg3);border:1px solid var(--line);color:var(--acc);
+    font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim2);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <h1>Fine-Tuning from First Principles</h1>
+  <p class="sub">LoRA &amp; Full Fine-Tuning, explained through a Qwen / MLX teaching example.</p>
+  <div class="grp">Foundations</div>
+  <a href="#" data-s="start" class="on">0 · Start here</a>
+  <a href="#" data-s="model">1 · What a model is</a>
+  <a href="#" data-s="worked">1b · Worked example: Q,K,V,O</a>
+  <a href="#" data-s="forward">2 · Forward pass &amp; loss</a>
+  <a href="#" data-s="learn">3 · Gradients &amp; learning</a>
+  <div class="grp">The two methods</div>
+  <a href="#" data-s="fft">4 · Full fine-tuning</a>
+  <a href="#" data-s="freeze">5 · Freezing</a>
+  <a href="#" data-s="lora">6 · LoRA</a>
+  <a href="#" data-s="compare">7 · Choosing between them</a>
+  <div class="grp">The code</div>
+  <a href="#" data-s="map">8 · Code map</a>
+  <a href="#" data-s="syntax">9 · Syntax decoder</a>
+  <div class="grp">Check &amp; continue</div>
+  <a href="#" data-s="quiz">10 · Self-check</a>
+  <a href="#" data-s="next">11 · Glossary &amp; courses</a>
+</nav>
+<main>
+
+<!-- ============================================ 0 -->
+<section id="start" class="on">
+  <h2>Start here</h2>
+  <p class="lede">You already ran a fine-tune. This explains what actually happened — in the order the concepts build on each other.</p>
+
+  <p>This archived teaching example uses <b>Qwen3-4B-Instruct, 4-bit, 36 layers</b> with <code>mlx-lm</code>. Model shapes and numeric examples are retained from the original lesson. Its checkpoint, dataset and training run are not bundled or freshly reproduced here; memory estimates depend on hardware, optimizer and implementation.</p>
+
+  <div class="box key">
+    <div class="lbl">The one-sentence version</div>
+    <p>Fine-tuning shows a model examples of the behavior you want, measures how wrong its guesses are, and nudges its internal numbers to be slightly less wrong — a few hundred times. <b>Full fine-tuning</b> nudges all of them; <b>LoRA</b> nudges a tiny set of add-on numbers instead, which is the only reason this fits on a laptop.</p>
+  </div>
+
+  <h3>How the pieces you have fit together</h3>
+  <table>
+    <tr><th>Where</th><th>What it is</th></tr>
+    <tr><td><code>finetune.ipynb</code></td><td>The 10-part guided run: import data → train → evaluate.</td></tr>
+    <tr><td><code>training-loop-lab.ipynb</code></td><td>The training loop hand-written in ~30 lines, no library hiding it.</td></tr>
+    <tr><td><code>model-explorer.ipynb</code></td><td>Pokes at the model's insides: weights, layers, predictions.</td></tr>
+    <tr><td>This page</td><td>The <i>why</i> under all three, plus the maths, plus the Python syntax.</td></tr>
+  </table>
+
+  <h3>The five ideas, in dependency order</h3>
+  <ol class="steps">
+    <li><b>A model is numbers in a shape.</b> Weights, layers, tensors — nothing more exotic.</li>
+    <li><b>A forward pass makes a guess; loss scores it.</b> One number saying "how surprised were you by the right answer".</li>
+    <li><b>A gradient says which way to nudge each number</b> to lower that score. An optimizer takes the step.</li>
+    <li><b>Doing that to every weight is full fine-tuning.</b> It works, and it needs ~50GB of RAM for your model.</li>
+    <li><b>LoRA freezes the model and trains a small add-on instead.</b> 3.7 million numbers rather than 4 billion.</li>
+  </ol>
+  <p>Read straight through — each section assumes the one before it. Budget ~45 minutes.</p>
+</section>
+
+<!-- ============================================ 1 -->
+<section id="model">
+  <h2>1 · What a model actually is</h2>
+  <p class="lede">Before "fine-tuning" means anything, you need a concrete picture of the thing being tuned.</p>
+
+  <h3>It's a stack of matrices</h3>
+  <p>A language model is a large collection of <b>numbers arranged in rectangles</b> (matrices), organised into repeated blocks. That's genuinely it. Your model:</p>
+
+  <table>
+    <tr><th>Piece</th><th>Your model</th><th>In English</th></tr>
+    <tr><td>hidden size</td><td>2,560</td><td>Each token is represented by a list of 2,560 numbers as it moves through.</td></tr>
+    <tr><td>layers (blocks)</td><td>36</td><td>The same block structure, repeated 36 times. Depth = repetition.</td></tr>
+    <tr><td>vocabulary</td><td>151,936</td><td>The token options it can predict. Every guess is a score over all of them.</td></tr>
+    <tr><td>parameters</td><td>~4 billion</td><td>The individual numbers. These are what training changes.</td></tr>
+  </table>
+
+  <h3>What's inside one block</h3>
+  <p>Every one of the 36 blocks has the same seven weight matrices, in two groups:</p>
+  <ul>
+    <li><b>Attention</b> — <code>q_proj</code>, <code>k_proj</code>, <code>v_proj</code>, <code>o_proj</code>. This is where tokens look at <i>other</i> tokens. It's how "it" knows what it refers to.</li>
+    <li><b>MLP</b> — <code>gate_proj</code>, <code>up_proj</code>, <code>down_proj</code>. Per-token processing, no looking around. Most of the parameters — and most of what we loosely call "knowledge" — sit here.</li>
+  </ul>
+  <p>Between them sit <b>layer norms</b> (keep numbers in a sane range) and <b>RoPE</b> (tells the model token order — pure maths, no weights).</p>
+
+  <div class="box key">
+    <div class="lbl">Why "projection"</div>
+    <p>Every <code>*_proj</code> is a matrix multiply that reshapes a vector: <code>q_proj</code> takes 2,560 numbers in and gives 4,096 out. "Projection" is just linear-algebra vocabulary for that. When you read <code>nn.Linear(2560, 4096)</code>, picture a 2560×4096 grid of trainable numbers.</p>
+  </div>
+
+  <h3>Verify it yourself</h3>
+  <span class="fname">model-explorer.ipynb · cell 3</span>
+<pre><span class="kw">for</span> name, child <span class="kw">in</span> model.model.layers[<span class="nu">0</span>].children().items():
+    <span class="fn">print</span>(name, <span class="fn">type</span>(child).__name__)</pre>
+  <p>Modules nest like folders, and <code>.children()</code> lists one level. Nothing is hidden — you can walk the entire 4-billion-parameter model with a <code>for</code> loop.</p>
+
+  <div class="box warn">
+    <div class="lbl">The 4-bit wrinkle</div>
+    <p>Your model is <b>quantized</b>: each weight is squeezed from 16 bits to 4, and eight of them are packed into one 32-bit integer. That's why the file is 2.3GB instead of ~8GB, and why <code>q_proj.weight</code> prints a shape of <code>(4096, 320)</code> instead of <code>(4096, 2560)</code> — 320 × 8 = 2,560. To read the real values you <b>dequantize</b>, which cell 5 of the explorer does.</p>
+  </div>
+</section>
+
+<!-- ============================================ 1b -->
+<section id="worked">
+  <h2>1b · A worked example: one token, one matrix, one number</h2>
+  <p class="lede">This section retains the original lesson’s Qwen3-4B arithmetic as a worked example. Recompute it against your own checkpoint before using the numbers as experiment evidence.</p>
+
+  <p>We'll push the phrase <b>"The cat sat"</b> through the very first attention block and watch the arithmetic, then zoom all the way in on a single parameter.</p>
+
+  <h3>Step 1 — text becomes token ids</h3>
+<pre>tok.encode(<span class="st">"The cat sat"</span>)   →   [<span class="nu">785</span>, <span class="nu">8251</span>, <span class="nu">7578</span>]
+                              <span class="cm">'The'   ' cat'   ' sat'</span></pre>
+  <p>Three words, three tokens. Note the leading spaces belong to the tokens.</p>
+
+  <h3>Step 2 — each id becomes a vector of 2,560 numbers</h3>
+  <p>The embedding table is a lookup: row 7578 <i>is</i> the starting representation of " sat".</p>
+<pre>x = embed_tokens(<span class="nu">7578</span>)          <span class="cm"># shape (2560,)</span>
+
+first 8 of 2560:
+[ 0.00000, -0.03711, -0.01489, +0.02234,
+  +0.05957, +0.02234, +0.00745, +0.02234 ]</pre>
+  <div class="box key">
+    <div class="lbl">What these 2,560 numbers are</div>
+    <p>Not "features" you could name. They're a learned coordinate system — the model's private encoding of everything it knows about the token " sat". Nobody, including the people who trained it, can tell you what dimension 1,847 means. It only has meaning in combination.</p>
+  </div>
+
+  <h3>Step 3 — the matrix multiply</h3>
+  <p><code>q_proj</code> turns that 2,560-number vector into a 4,096-number <b>query</b>. Its weight matrix is 4096 × 2560:</p>
+  <div class="mathline">q = x · W<sub>q</sub><sup>T</sup> &nbsp;&nbsp;&nbsp; (2560) × (2560 → 4096) = (4096)</div>
+<pre>q_proj stored : (4096, 320)     <span class="cm"># 4-bit packed, 8 values per uint32</span>
+q_proj real   : (4096, 2560)    <span class="cm"># after dequantizing</span>
+entries       : 10,485,760      <span class="cm"># one matrix, one layer</span>
+
+q = x @ Wq.T   →  first 6 of 4096:
+[ +0.01201, -0.00045, -0.00525, -0.01657, +0.00676, +0.02390 ]</pre>
+
+  <h3>Step 4 — where one of those output numbers came from</h3>
+  <p><code>q[0]</code> is a single dot product: multiply all 2,560 input numbers by 2,560 weights and add them up.</p>
+<pre>q[<span class="nu">0</span>] = Σ<sub>k=0..2559</sub>  x[k] × W[<span class="nu">0</span>, k]
+
+  x[0]=+0.00000 × W[0,0]=-0.00237  =  -0.0000000
+  x[1]=-0.03711 × W[0,1]=-0.01184  =  +0.0004394
+  x[2]=-0.01489 × W[0,2]=+0.00946  =  -0.0001409
+  x[3]=+0.02234 × W[0,3]=+0.00473  =  +0.0001057
+  x[4]=+0.05957 × W[0,4]=+0.00237  =  +0.0001409
+  ... 2,555 more terms ...
+  ─────────────────────────────────────────────
+  total                            =  <b>+0.01201</b>  ✓</pre>
+  <p>That's the entire operation. A transformer is billions of these, arranged.</p>
+
+  <h3>Step 5 — one parameter, out of four billion</h3>
+  <div class="box key">
+    <div class="lbl">The single number you asked about</div>
+    <p style="font-family:var(--mono);font-size:15px;color:#9ec5ff;margin:6px 0 12px">
+      W<sub>q</sub>[0, 0]  =  −0.002365
+    </p>
+    <p>Read the two indices as <b>[output, input]</b>:</p>
+    <ul>
+      <li><b>Column 0</b> — it reads input feature #0, one of the 2,560 numbers describing the token right now.</li>
+      <li><b>Row 0</b> — it contributes to output feature #0, one of the 4,096 numbers of the query vector.</li>
+      <li><b>The value −0.002365</b> — "when building query-feature 0, count input-feature 0 with weight −0.0024." Negative means it pushes <i>down</i>. Small magnitude means it barely matters, relative to the other 2,559 votes.</li>
+    </ul>
+    <p style="margin-top:10px">This one number is <b>1 of 10,485,760</b> in this matrix, which is 1 of 7 matrices in this block, which is 1 of 36 blocks — <b>1 of ~4 billion</b> in the model. Training changes numbers like this one. Full fine-tuning would adjust all four billion; your LoRA run adjusted 3.67 million add-on numbers instead and left this one frozen at exactly −0.002365.</p>
+  </div>
+  <p><b>The honest part:</b> this parameter means nothing on its own. It is one vote, among 2,560 votes, producing one number, among 4,096, at one layer, of 36. Meaning lives in the pattern, never in the parameter. That's why you can't "look up" a fact in a model — and why fine-tuning is nudging millions of numbers slightly rather than editing any of them deliberately.</p>
+
+  <h3>Step 6 — now Q, K, V and O</h3>
+  <p>The same multiply happens four times per block, with four different weight matrices. In the archived example model:</p>
+  <table>
+    <tr><th>Matrix</th><th>Shape</th><th>Produces</th><th>The question it answers</th></tr>
+    <tr><td><code>q_proj</code> <b>Q</b></td><td>2560 → 4096</td><td>Query</td><td>"What am I looking for?"</td></tr>
+    <tr><td><code>k_proj</code> <b>K</b></td><td>2560 → 1024</td><td>Key</td><td>"What do I offer to others?"</td></tr>
+    <tr><td><code>v_proj</code> <b>V</b></td><td>2560 → 1024</td><td>Value</td><td>"What content do I pass on if chosen?"</td></tr>
+    <tr><td><code>o_proj</code> <b>O</b></td><td>4096 → 2560</td><td>Output</td><td>"Fold the result back into the token."</td></tr>
+  </table>
+  <p>The library-catalogue analogy: <b>Q</b> is your search request, <b>K</b> is each book's spine label, <b>V</b> is the book's actual contents. You compare your request against every spine, and take a weighted blend of the contents of whichever match.</p>
+
+  <h3>Visual: one token through 32 heads</h3>
+  <p>The common confusion: <i>does the 2,560-number vector get copied to 32 heads?</i> Not quite. It goes through <b>one</b> matmul, and the <b>output</b> is sliced into 32 pieces. Click any head below.</p>
+
+  <div class="lab">
+    <div class="h">◆ Click a head to trace it</div>
+
+    <div class="flow">
+      <div class="tokchip">token &nbsp;<b>" sat"</b></div>
+      <div class="ar">↓ &nbsp;embedding lookup</div>
+      <div class="bar2560"><span>one vector · 2,560 numbers</span></div>
+      <div class="ar">↓ &nbsp;the <b>same</b> vector feeds all three projections</div>
+
+      <div class="three">
+        <div class="col">
+          <div class="wbox q">W<sub>q</sub><br><small>2560 × 4096</small></div>
+          <div class="ar sm">↓</div>
+          <div class="strip" id="stripQ"></div>
+          <div class="cap">32 query heads × 128</div>
+        </div>
+        <div class="col">
+          <div class="wbox k">W<sub>k</sub><br><small>2560 × 1024</small></div>
+          <div class="ar sm">↓</div>
+          <div class="strip" id="stripK"></div>
+          <div class="cap">8 key heads × 128</div>
+        </div>
+        <div class="col">
+          <div class="wbox v">W<sub>v</sub><br><small>2560 × 1024</small></div>
+          <div class="ar sm">↓</div>
+          <div class="strip" id="stripV"></div>
+          <div class="cap">8 value heads × 128</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="out" id="headOut"></div>
+  </div>
+
+  <div class="box key">
+    <div class="lbl">The two views are the same thing</div>
+    <p><b>Implementation view:</b> one big matmul <code>x @ Wq.T</code> gives 4,096 numbers, which you then reshape to <code>(32, 128)</code>.</p>
+    <p style="margin-top:8px"><b>Conceptual view:</b> W<sub>q</sub>'s 4,096 columns are really <b>32 blocks of 128 columns</b> — columns 0–127 build head 0's query, columns 128–255 build head 1's, and so on. Each head effectively has its own private 2560×128 matrix.</p>
+    <p style="margin-top:8px">They're mathematically identical. The library does one matmul because it's faster; you should <i>think</i> in the second view because it explains what heads are.</p>
+  </div>
+
+  <h4>So what does one head actually do?</h4>
+  <p>Take head 7. Every token in your sentence produced a 128-number query and (via its group) a 128-number key. Head 7 does this, using <b>only its own 128 numbers</b> — never the other 3,968:</p>
+<pre><span class="cm"># head 7, for the token " sat", over the sentence "The cat sat"</span>
+q₇(sat) · k₇(The)  /  √128   →  score
+q₇(sat) · k₇(cat)  /  √128   →  score
+q₇(sat) · k₇(sat)  /  √128   →  score
+                    softmax  →  [0.2, 0.5, 0.3]      <span class="cm"># weights, sum to 1</span>
+     0.2·v₇(The) + 0.5·v₇(cat) + 0.3·v₇(sat)  →  head 7's 128-number answer</pre>
+  <p>All 32 heads do this <b>simultaneously and independently</b>, each with different weights, so each learns to track something different — one might follow grammatical subjects, another long-range topic, another punctuation. Then:</p>
+  <div class="mathline">32 answers × 128 = 4,096 concatenated → o_proj → 2,560 → added back to the token</div>
+  <p>And the token is back to 2,560 numbers, slightly better informed than before, ready for the next of the 36 blocks.</p>
+
+  <h4>Where does 4,096 come from?</h4>
+  <p>Not from "expanding" anything. The output is immediately sliced into <b>32 attention heads of 128 numbers each</b>:</p>
+  <div class="mathline">32 heads × 128 per head = 4,096</div>
+  <p>So <code>q_proj</code> doesn't produce one 4,096-long query — it produces <b>32 separate 128-long queries</b>, one per head, computed in a single matmul for efficiency. Each head then runs its own independent attention over the sentence, asking a different question about it. Their 32 answers are concatenated back to 4,096, and <code>o_proj</code> folds that down to 2,560 so it can be added back into the token's running representation.</p>
+  <div class="mathline" style="font-size:12.5px">2560 → q:4096 / k:1024 / v:1024 → attention → 4096 → o_proj → 2560 ↺</div>
+
+  <div class="box key">
+    <div class="lbl">The surprise in Qwen3's config</div>
+    <p>In the classic transformer, <code>head_dim = hidden_size ÷ num_heads</code>, which would make each head <b>2560 ÷ 32 = 80</b> numbers wide and <code>q_proj</code> a square 2560→2560. Qwen3 doesn't do that — it <b>declares <code>head_dim: 128</code> independently</b> in <code>config.json</code>. That decoupling is exactly why the output is wider than the input:</p>
+<pre>hidden_size          2560
+num_attention_heads    32
+head_dim              <b>128</b>   <span class="cm"># declared, NOT 2560/32 = 80</span>
+
+q_proj out = 32 × 128 = <b>4096</b>   <span class="cm"># wider than hidden_size</span>
+k/v_proj  =  8 × 128 = <b>1024</b></pre>
+    <p>The model deliberately spends extra parameters to give each head 128 dimensions of room instead of a cramped 80. Better attention quality, slightly more compute. When you see a projection whose output doesn't match the hidden size, this is nearly always why — check <code>head_dim</code> before assuming it's a typo.</p>
+  </div>
+
+  <div class="box warn">
+    <div class="lbl">Why K and V are narrower (1024, not 4096)</div>
+    <p>Grouped-query attention. 32 query heads × 128 = 4096, but only 8 key/value heads × 128 = 1024 — four query heads share each key/value head. It cuts memory during generation substantially, at almost no quality cost. That asymmetry in the shapes is GQA, visible right there in the numbers.</p>
+  </div>
+
+  <h3>Step 7 — the tokens actually compare themselves</h3>
+  <p>Attention compares every query against every key, scaled, then softmaxed into weights that sum to 1:</p>
+  <div class="mathline">attention = softmax( Q · K<sup>T</sup> / √128 ) · V</div>
+  <p>Computed on our three tokens, head 0:</p>
+<pre>scores (3×3):
+            The     cat     sat
+   The    [ 0.009,  0.001, -0.001 ]
+   cat    [ 0.004,  0.000, -0.002 ]
+   sat    [ 0.004,  0.000, -0.001 ]
+
+softmax for " sat" over [The, cat, sat]:
+   [ 0.334, 0.333, 0.333 ]</pre>
+  <p>Each row asks "how much should this token attend to each other token?" The result is a weighted average of the <b>V</b> vectors, which <code>o_proj</code> then maps back to 2,560 numbers and adds into the token's running representation.</p>
+
+  <div class="box warn">
+    <div class="lbl">Read those numbers honestly</div>
+    <p>The near-uniform 0.334/0.333/0.333 is <b>not</b> what the real model computes. To keep the arithmetic legible this demo skipped four things the real forward pass does: <code>input_layernorm</code> before the projections, Qwen3's per-head <code>q_norm</code>/<code>k_norm</code>, <b>RoPE</b> positional encoding, and the causal mask that stops tokens seeing the future. With those applied the scores become sharply differentiated. The <i>mechanics</i> above are exact; the specific attention weights are a simplification.</p>
+  </div>
+
+  <h3>Where LoRA attaches</h3>
+  <p>The example adapter wraps all four of these matrices (plus the three MLP ones) in blocks 28–35. For <code>q_proj</code> it never touches the 10,485,760 numbers above. Instead it computes a correction alongside them:</p>
+  <div class="mathline">q = x·W<sub>q</sub><sup>T</sup>  +  scale · ((x · A) · B)</div>
+  <p>where <code>A</code> is 2560×8 and <code>B</code> is 8×4096 — <b>53,248</b> trainable numbers standing in for 10.5 million. That single frozen −0.002365 stays exactly where it is; the adapter learns to add a small correction to the <i>result</i> instead.</p>
+</section>
+
+<!-- ============================================ 2 -->
+<section id="forward">
+  <h2>2 · The forward pass and the loss</h2>
+  <p class="lede">How a guess is made, and how we turn "that guess was bad" into a single number.</p>
+
+  <h3>The forward pass</h3>
+  <p>Text goes in as token ids. Each token becomes a 2,560-number vector, then flows through all 36 blocks, each one adding information. At the end you get <b>logits</b>: for every position, a raw score for each of the 151,936 possible next tokens. <code>softmax</code> turns those scores into probabilities that sum to 1.</p>
+  <div class="mathline">tokens → [36 blocks] → logits → softmax → probabilities</div>
+
+  <h3>Everything is next-token prediction</h3>
+  <p>Here's the trick that makes training work, and it's the line you saw in the code:</p>
+  <span class="fname">tuner/trainer.py · default_loss, lines 87–88</span>
+<pre>inputs  = batch[:, :-<span class="nu">1</span>]   <span class="cm"># everything except the last token</span>
+targets = batch[:, <span class="nu">1</span>:]    <span class="cm"># everything except the first</span></pre>
+  <p>Shifting by one means: at every position, the "right answer" is simply <b>the next token</b>. One forward pass over a 400-token email produces 400 graded predictions at once. Your training data needs no labels — the text <i>is</i> the label.</p>
+
+  <h3>Cross-entropy, in plain terms</h3>
+  <p>Cross-entropy loss for one position is:</p>
+  <div class="mathline">loss = −log( probability the model gave the correct token )</div>
+  <p>That's the whole formula. It has one behaviour worth feeling: it punishes <b>confident wrongness</b> brutally and rewards confident correctness. Drag the slider:</p>
+
+  <div class="lab">
+    <div class="h">◆ Loss calculator</div>
+    <div class="ctl">
+      <label>Probability given to the correct token</label>
+      <input type="range" id="pSl" min="1" max="99" value="60">
+      <span class="val" id="pV">60%</span>
+    </div>
+    <div class="out">
+      loss = −log(<span id="pV2">0.60</span>) = <span class="big" id="lV">0.51</span><br>
+      <span id="lMsg" style="color:var(--dim)"></span>
+    </div>
+  </div>
+
+  <p>The number in your training log is this, averaged over every token in the batch.</p>
+
+  <div class="box key">
+    <div class="lbl">Perplexity = e<sup>loss</sup></div>
+    <p>The archived example reports <code>Test loss 2.340, Test ppl 10.382</code>. Perplexity is just the loss exponentiated, and it reads in English: <b>"on average the model was wavering between ~10 candidate tokens."</b> Perfect certainty is 1.0. Same information, friendlier scale — that's why <code>lora.py</code> line ~313 computes <code>math.exp(test_loss)</code>.</p>
+  </div>
+
+  <h3>The mask (the part the lab skipped)</h3>
+  <span class="fname">tuner/trainer.py · lines 92–96</span>
+<pre>steps = mx.arange(<span class="nu">1</span>, targets.shape[<span class="nu">1</span>] + <span class="nu">1</span>)
+mask  = mx.logical_and(steps &gt;= lengths[:, <span class="nu">0</span>:<span class="nu">1</span>], steps &lt;= lengths[:, <span class="nu">1</span>:])
+ce    = nn.losses.cross_entropy(logits, targets) * mask</pre>
+  <p>Multiplying by a 0/1 mask <b>zeroes out positions that shouldn't count</b>: padding at the end of short rows, and — if you pass <code>--mask-prompt</code> — the customer's email text, so the model is graded only on writing the reply. Dividing by <code>mask.sum()</code> rather than the array size keeps the loss comparable across batches of different lengths.</p>
+</section>
+
+<!-- ============================================ 3 -->
+<section id="learn">
+  <h2>3 · Gradients and how learning happens</h2>
+  <p class="lede">The only real "maths" in the whole process, and it's one idea: slope.</p>
+
+  <h3>A gradient is a slope</h3>
+  <p>You have a loss (how wrong we are) and 4 billion knobs. For each knob, we want to know: <b>"if I turn this one slightly up, does the loss go up or down, and how sharply?"</b> That answer — the derivative — is the gradient for that knob.</p>
+  <p>The classic picture: you're on a foggy hillside and want to reach the valley. You can't see the landscape, but you can feel the slope under your feet. Take a small step downhill. Repeat. The gradient is the slope; the <b>learning rate</b> is your step size.</p>
+
+  <div class="box warn">
+    <div class="lbl">Why learning rate is delicate</div>
+    <p>Steps too big and you leap across the valley and up the far side — that's loss going <code>nan</code> or exploding. Too small and you crawl, needing far more iterations. <code>1e-5</code> is the default in the example run; the troubleshooting table suggests <code>2e-5</code> if loss barely moves and <code>5e-6</code> if it's jumpy.</p>
+  </div>
+
+  <h3>Backpropagation, and why you never write it</h3>
+  <p>Computing that slope for 4 billion knobs sounds impossible. It isn't, because of the chain rule from calculus: if you know how the loss changes with respect to a layer's output, you can work out how it changes with respect to that layer's input — and so on backwards through the network. That's <b>backpropagation</b>.</p>
+  <p>Frameworks do it automatically. This is that moment in your code:</p>
+  <span class="fname">tuner/trainer.py · line 240 and 250</span>
+<pre>loss_value_and_grad = nn.value_and_grad(model, loss)
+...
+(lvalue, toks), grad = loss_value_and_grad(model, *batch)</pre>
+  <p>MLX traced every operation in the forward pass, so it can walk it backwards and hand you <code>grad</code> — a structure mirroring your model, holding one gradient per trainable parameter. <b>Note the phrase "trainable":</b> frozen parameters aren't in there at all, which is exactly why LoRA is cheap.</p>
+
+  <h3>The optimizer takes the step</h3>
+  <span class="fname">tuner/trainer.py · line 259</span>
+<pre>optimizer.update(model, grad)</pre>
+  <p>The simplest optimizer would be <code>weight = weight − learning_rate × gradient</code>. The example run uses <b>Adam</b>, which adds two refinements:</p>
+  <ul>
+    <li><b>Momentum</b> — keeps a running average of recent gradients, so consistent directions build speed and noisy ones cancel out.</li>
+    <li><b>Per-parameter step sizes</b> — parameters with consistently large gradients get smaller steps, and vice versa. Everyone moves at a sensible pace.</li>
+  </ul>
+  <p>The cost: Adam stores <b>two extra numbers per trainable parameter</b> (the two running averages). Remember that — it's the punchline of the next section.</p>
+
+  <div class="box win">
+    <div class="lbl">You've seen this work</div>
+    <p>In <code>training-loop-lab.ipynb</code>, one call to <code>value_and_grad</code> plus one <code>optimizer.update</code> dropped the loss on a single email from <b>4.53 to 3.70</b>. That's one step downhill. Training is 600 of them.</p>
+  </div>
+</section>
+
+<!-- ============================================ 4 -->
+<section id="fft">
+  <h2>4 · Full fine-tuning <span class="pill fft">FFT</span></h2>
+  <p class="lede">The straightforward method: update every weight. Understand it first, because LoRA is defined by what it changes about it.</p>
+
+  <h3>What it means</h3>
+  <p>All 4 billion parameters are trainable. Every gradient step adjusts the entire model. Conceptually it's the purest form of fine-tuning and has the highest quality ceiling: nothing about the model is off-limits, so it can learn new domains, new formats, even new languages.</p>
+  <p>In your toolchain it's one flag — <code>--fine-tune-type full</code> — and the code is refreshingly blunt:</p>
+  <span class="fname">mlx_lm/lora.py · lines 232–235</span>
+<pre><span class="kw">if</span> args.fine_tune_type == <span class="st">"full"</span>:
+    <span class="kw">for</span> l <span class="kw">in</span> model.layers[-<span class="fn">max</span>(args.num_layers, <span class="nu">0</span>):]:
+        l.unfreeze()</pre>
+  <p>No adapters, no cleverness: just mark the last N layers trainable again.</p>
+
+  <h3>Why full training can exceed a 16 GB machine</h3>
+  <p>Training needs far more memory than the weights alone. For every trainable parameter you must hold:</p>
+  <ul>
+    <li>the <b>weight</b> itself</li>
+    <li>its <b>gradient</b> (same size)</li>
+    <li>Adam's <b>two running averages</b> (usually in higher precision)</li>
+  </ul>
+  <p>Play with it — the defaults are a 4B model on a 16 GB machine:</p>
+
+  <div class="lab">
+    <div class="h">◆ Training memory calculator</div>
+    <div class="ctl">
+      <label>Model size (billions of params)</label>
+      <input type="range" id="mSl" min="1" max="70" value="4" step="1">
+      <span class="val" id="mV">4B</span>
+    </div>
+    <div class="ctl">
+      <label>Method</label>
+      <select id="mMode">
+        <option value="fft">Full fine-tuning (bf16)</option>
+        <option value="lora" selected>LoRA (4-bit base, r=8, 8 layers)</option>
+      </select>
+    </div>
+    <div class="ctl">
+      <label>Your RAM</label>
+      <input type="range" id="rSl" min="8" max="128" value="16" step="8">
+      <span class="val" id="rV">16 GB</span>
+    </div>
+    <div class="out" id="memOut"></div>
+  </div>
+
+  <p>For a 4B model, full fine-tuning needs roughly <b>48GB</b> before activations even enter the picture. A 16 GB machine shares that memory with the OS. It isn't close, and no amount of patience fixes it — the run simply cannot start.</p>
+
+  <div class="box key">
+    <div class="lbl">When FFT is still the right answer</div>
+    <p>On rented A100/H100 GPUs, with a genuinely large dataset (tens of thousands of examples), or when you need the model to absorb a whole domain rather than adopt a style. Also for small models — full fine-tuning a 0.5B model on a laptop is entirely reasonable, which is why the DeepLearning.AI lesson uses a 135M model for its live demo.</p>
+  </div>
+
+  <h3>The other cost: one full copy per task</h3>
+  <p>A fully fine-tuned 4B model is a new ~8GB file. Ten tasks, ten copies. Adapters are ~15MB each and share one base — that difference matters more in production than the training cost does.</p>
+</section>
+
+<!-- ============================================ 5 -->
+<section id="freeze">
+  <h2>5 · Freezing — the mechanism underneath everything</h2>
+  <p class="lede">"Frozen" sounds abstract. In code it's a boolean flag, and it has one precise consequence.</p>
+
+  <h3>What freezing does</h3>
+  <p>Every parameter carries a "trainable" flag. Freezing sets it to false. The single consequence: <b>the autograd system doesn't compute a gradient for it, and the optimizer never touches it.</b> The weight still participates fully in the forward pass — it just never changes.</p>
+  <span class="fname">mlx_lm/lora.py · line 224</span>
+<pre>model.freeze()</pre>
+  <p>One line freezes all 4 billion. That's step one of <i>every</i> LoRA run — the model is fully frozen first, then a small number of things are made trainable again.</p>
+
+  <h3>The three consequences</h3>
+  <table>
+    <tr><th>Effect</th><th>Why it matters</th></tr>
+    <tr><td>No gradients stored</td><td>The biggest memory saving. Gradients are the same size as weights.</td></tr>
+    <tr><td>No optimizer state</td><td>Adam's two averages per parameter simply don't exist for frozen weights.</td></tr>
+    <tr><td>Can't be damaged</td><td>The base model's general ability is preserved exactly — no "catastrophic forgetting".</td></tr>
+  </table>
+
+  <h3>Inspect the relevant training code</h3>
+  <span class="fname">MLX training loop · illustrative excerpt</span>
+<pre>total     = <span class="fn">sum</span>(p.size <span class="kw">for</span> _, p <span class="kw">in</span> tree_flatten(model.parameters()))
+trainable = <span class="fn">sum</span>(p.size <span class="kw">for</span> _, p <span class="kw">in</span> tree_flatten(model.trainable_parameters()))</pre>
+  <p>Two different methods: <code>parameters()</code> returns everything, <code>trainable_parameters()</code> returns only the unfrozen. In the example lab that printed <b>0.29% trainable</b>. And it's why the saved adapter file contains only the LoRA matrices — look at the save line:</p>
+  <span class="fname">tuner/trainer.py · line 372</span>
+<pre>adapter_weights = <span class="fn">dict</span>(tree_flatten(model.<span class="fn">trainable_parameters</span>()))</pre>
+  <p>That one word, <code>trainable_</code>, is why your checkpoint is 14MB and not 2.3GB.</p>
+
+  <div class="box win">
+    <div class="lbl">Battery-interruption bonus</div>
+    <p>Because the file holds <i>only</i> adapter weights, resuming loads it with <code>strict=False</code> — "don't complain that most of the model is missing from this file." That's <code>lora.py</code> line ~248, and it's what makes your <code>0000400_adapters.safetensors</code> resumable.</p>
+  </div>
+</section>
+
+<!-- ============================================ 6 -->
+<section id="lora">
+  <h2>6 · LoRA <span class="pill lora">Low-Rank Adaptation</span></h2>
+  <p class="lede">Freeze everything, then add a small, trainable detour beside each layer you care about.</p>
+
+  <h3>The core insight</h3>
+  <p>Full fine-tuning learns an update <b>ΔW</b> — a change for every entry of a weight matrix. For <code>q_proj</code> that's a 2,560 × 4,096 grid: 10.5 million numbers, for one matrix in one layer.</p>
+  <p>LoRA's bet: the useful update isn't random noise, it has <b>structure</b> — a few coherent patterns rather than 10 million independent choices. So instead of learning ΔW directly, learn two skinny matrices whose product is ΔW:</p>
+  <div class="mathline">ΔW  ≈  A · B      where A is 2560×r  and  B is r×4096</div>
+  <p>with <b>r</b> (the rank) small — 8 in the example run. You've forced the update through an 8-dimensional waist. That's the entire idea; everything else is bookkeeping.</p>
+
+  <div class="lab">
+    <div class="h">◆ Rank explorer — q_proj (2560 → 4096)</div>
+    <div class="ctl">
+      <label>Rank r</label>
+      <input type="range" id="rank" min="1" max="128" value="8">
+      <span class="val" id="rankV">8</span>
+    </div>
+    <div class="out" id="rankOut"></div>
+  </div>
+
+  <h3>The layer, in code</h3>
+  <p>Three lines do the work, and you can read every one:</p>
+  <div class="ann" id="annLora">
+    <div class="row"><div class="ln"><span class="tog">▸</span><span><span class="kw">def</span> <span class="fn">__call__</span>(self, x):</span></div>
+      <div class="note"><b>The forward pass of a LoRA-wrapped layer.</b> <code>x</code> is the incoming activation. Python calls this whenever you use the layer like a function — <code>layer(x)</code>.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span>&nbsp;&nbsp;&nbsp;&nbsp;y = self.linear(x)</span></div>
+      <div class="note"><b>The original frozen layer, untouched.</b> <code>self.linear</code> is the real Qwen weight matrix. Its output <code>y</code> is exactly what the base model would produce — LoRA never interferes with this path.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span>&nbsp;&nbsp;&nbsp;&nbsp;z = (self.dropout(x) @ self.lora_a) @ self.lora_b</span></div>
+      <div class="note"><b>The trainable detour.</b> <code>@</code> is matrix multiply in Python. Read it right to left: <code>x</code> (2560 wide) is squeezed by <code>lora_a</code> down to just 8 numbers, then expanded by <code>lora_b</code> back out to 4096. The squeeze is where the parameter saving comes from. <code>dropout</code> randomly zeroes some inputs during training to reduce overfitting (off in the example run).</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> y + (self.scale * z).astype(x.dtype)</span></div>
+      <div class="note"><b>Original plus correction.</b> <code>scale</code> (20.0 in the example run) controls how loudly the adapter speaks. <code>.astype(x.dtype)</code> converts back to the model's precision — the adapter computes in float32 for stability but the model runs in bfloat16.</div></div>
+  </div>
+
+  <h3>The zero-initialization trick</h3>
+  <span class="fname">tuner/lora.py · lines 88–93</span>
+<pre>self.lora_a = mx.random.uniform(low=-scale, high=scale, shape=(input_dims, r))
+<span class="hl">self.lora_b = mx.zeros(shape=(r, output_dims))</span></pre>
+  <p><code>A</code> starts random, <code>B</code> starts as <b>all zeros</b>. So on iteration 1, <code>z = (x·A)·B = 0</code>, and the wrapped model behaves <i>identically</i> to the original. Training begins from "change nothing" rather than from noise — you can never make the model worse by attaching an untrained adapter.</p>
+  <div class="box key">
+    <div class="lbl">The consequence you observed</div>
+    <p>The example lab printed <code>lora_a</code> change = <b>0.00e+00</b> after the first step, while <code>lora_b</code> moved. That's not a bug: the gradient of <code>A</code> is proportional to <code>B</code>, and <code>B</code> is zero, so <code>A</code> mathematically cannot move until <code>B</code> does. From step 2 onward both train.</p>
+  </div>
+
+  <h3>What the example run actually trained</h3>
+  <p>In the archived example <code>adapters.safetensors</code>:</p>
+  <table>
+    <tr><th>Fact</th><th>Value</th></tr>
+    <tr><td>Blocks with adapters</td><td>28–35 (the last 8 of 36)</td></tr>
+    <tr><td>Projections per block</td><td>All 7 — q, k, v, o, gate, up, down</td></tr>
+    <tr><td>Arrays in the file</td><td>112 (8 blocks × 7 projections × 2 matrices)</td></tr>
+    <tr><td>Trainable numbers</td><td>3,670,016</td></tr>
+    <tr><td>Same layers, full fine-tuned</td><td>807,403,520 — <b>220× more</b></td></tr>
+    <tr><td>Share of the whole model</td><td>~0.09%</td></tr>
+    <tr><td>File on disk</td><td>14.7 MB (3.67M × 4 bytes + header)</td></tr>
+  </table>
+  <p><b>Why the last layers?</b> Early layers handle general structure — grammar, syntax, basic semantics — that your emails don't need to change. Later layers shape higher-level style and output format, which is exactly what you're teaching. Adapting the end is cheaper and usually enough.</p>
+
+  <h3>Fusing</h3>
+  <p>At inference you can keep base + adapter separate (swap adapters per task) or merge them permanently:</p>
+  <span class="fname">tuner/lora.py · line 52</span>
+<pre>delta = ((self.scale * self.lora_b.T) @ self.lora_a.T).astype(weight.dtype)
+fused_linear.weight = weight + delta</pre>
+  <p>Multiply the two skinny matrices back into a full-size ΔW, add it to the base weight, and the adapter disappears into an ordinary layer. This is often called adapter merging. Note it costs a full model copy — which is why you only do it when you're happy.</p>
+</section>
+
+<!-- ============================================ 7 -->
+<section id="compare">
+  <h2>7 · Choosing between them</h2>
+  <p class="lede">Same goal, different trade-offs. Here's how to decide without hand-waving.</p>
+
+  <table>
+    <tr><th></th><th class="pill fft">Full fine-tuning</th><th class="pill lora">LoRA</th></tr>
+    <tr><td><b>What trains</b></td><td>Every weight (or every weight in the last N layers)</td><td>Small A·B matrices beside chosen layers</td></tr>
+    <tr><td><b>Your model</b></td><td>~4B parameters</td><td>3.67M parameters</td></tr>
+    <tr><td><b>Memory (4B)</b></td><td>~48GB+</td><td>~2.5GB</td></tr>
+    <tr><td><b>Fits the example memory budget</b></td><td>No</td><td>Yes</td></tr>
+    <tr><td><b>Output artifact</b></td><td>Full model, ~8GB</td><td>Adapter, ~15MB</td></tr>
+    <tr><td><b>Multiple tasks</b></td><td>One full copy each</td><td>Many adapters, one shared base</td></tr>
+    <tr><td><b>Quality ceiling</b></td><td>Highest</td><td>Very close for style/format tasks</td></tr>
+    <tr><td><b>Forgetting risk</b></td><td>Real — can degrade general ability</td><td>Near zero — base is frozen</td></tr>
+    <tr><td><b>Speed</b></td><td>Slower per step</td><td>Faster (fewer gradients)</td></tr>
+  </table>
+
+  <h3>The honest decision rule</h3>
+  <ul>
+    <li><b>Teaching style, tone, or output format?</b> LoRA. A short-form response task is a reasonable LoRA baseline; evaluate it against the untuned model.</li>
+    <li><b>Teaching a genuinely new domain</b> (a new language, a specialised technical field) with tens of thousands of examples? Full fine-tuning, on rented GPUs.</li>
+    <li><b>Model under ~1B parameters?</b> Full fine-tuning is affordable even locally; the LoRA machinery buys you less.</li>
+    <li><b>Need several behaviours from one deployment?</b> LoRA, decisively — hot-swappable adapters over a single base.</li>
+  </ul>
+
+  <div class="box key">
+    <div class="lbl">The family tree, so the jargon stops being scary</div>
+    <p><b>PEFT</b> (Parameter-Efficient Fine-Tuning) is the umbrella for "don't train everything". LoRA is its most popular member. <b>QLoRA</b> = LoRA where the frozen base is also quantized — which, since your base is 4-bit, is what you're actually running. <b>DoRA</b> splits each update into direction and magnitude and trains them separately; one flag away (<code>--fine-tune-type dora</code>). <b>Prompt/prefix tuning</b> trains virtual tokens instead of weights — cheaper, weaker, mostly superseded.</p>
+  </div>
+
+  <h3>A different axis: what you train on</h3>
+  <p>LoRA vs FFT is about <i>which weights</i>. Separately there's <i>what signal</i>:</p>
+  <ul>
+    <li><b>SFT</b> (supervised fine-tuning) — input → correct output pairs. What you're doing.</li>
+    <li><b>DPO / RLHF</b> — pairs of answers labelled "this one is better". How chat models learn tone and refusals. Usually applied after SFT.</li>
+    <li><b>Continued pre-training</b> — raw domain text, no Q→A structure. Absorbs vocabulary before any SFT.</li>
+  </ul>
+  <p>These combine freely with either method: "LoRA + DPO" is a perfectly normal sentence.</p>
+</section>
+
+<!-- ============================================ 8 -->
+<section id="map">
+  <h2>8 · The code map</h2>
+  <p class="lede">Five files, one call chain. Once you see the hand-offs, the source stops being intimidating.</p>
+
+  <h3>What calls what</h3>
+<pre>a training command
+  └─ python -m mlx_lm lora --flags
+       │
+       ├─ <b>mlx_lm/lora.py</b>            (377 lines) the CLI conductor
+       │    ├─ build_parser()          every --flag lives here
+       │    ├─ model.freeze()          line 224
+       │    ├─ linear_to_lora_layers() line 238 ──┐
+       │    ├─ opt = optim.Adam(...)   line ~290  │
+       │    └─ train(...)              line 295 ──┼──┐
+       │                                          │  │
+       ├─ <b>tuner/lora.py</b>       (285 lines) ◂──┘  │  the LoRALinear layer
+       ├─ <b>tuner/trainer.py</b>    (387 lines) ◂─────┘  the loop, loss, updates
+       │    ├─ default_loss()          line 86
+       │    ├─ iterate_batches()       line 102
+       │    └─ train()                 line 218
+       ├─ <b>tuner/datasets.py</b>   JSONL → tokens
+       └─ <b>tuner/dora.py</b>       the DoRA alternative</pre>
+
+  <div class="box warn">
+    <div class="lbl">Two files named lora.py</div>
+    <p><code>mlx_lm/lora.py</code> is the <b>CLI script</b> (377 lines) — argument parsing and setup. <code>mlx_lm/tuner/lora.py</code> is the <b>layer definition</b> (285 lines) — the actual LoRA maths. VS Code's file search shows the first one; the concepts in this page live in the second.</p>
+  </div>
+
+  <h3>One iteration, end to end</h3>
+  <ol class="steps">
+    <li><code>iterate_batches</code> pulls rows, sorted by length to minimise padding, and pads to a multiple of 32.</li>
+    <li><code>default_loss</code> shifts tokens, runs the forward pass, applies cross-entropy, masks padding, averages per real token.</li>
+    <li><code>nn.value_and_grad</code> back-propagates to get a gradient for every <i>trainable</i> parameter — i.e. only the LoRA matrices.</li>
+    <li><code>optimizer.update</code> nudges those matrices with Adam.</li>
+    <li>Every 10 iters: print the loss. Every 100: <code>mx.save_safetensors</code> writes a checkpoint.</li>
+  </ol>
+
+  <h3>The lines worth bookmarking</h3>
+  <table>
+    <tr><th>File · line</th><th>What happens</th></tr>
+    <tr><td><code>lora.py:224</code></td><td><code>model.freeze()</code> — everything becomes untrainable</td></tr>
+    <tr><td><code>lora.py:238</code></td><td><code>linear_to_lora_layers()</code> — adapters injected</td></tr>
+    <tr><td><code>lora.py:248</code></td><td><code>load_weights(..., strict=False)</code> — resume from checkpoint</td></tr>
+    <tr><td><code>tuner/lora.py:93</code></td><td><code>lora_b = mx.zeros(...)</code> — the no-op start</td></tr>
+    <tr><td><code>tuner/lora.py:95</code></td><td><code>__call__</code> — the three-line forward pass</td></tr>
+    <tr><td><code>trainer.py:86</code></td><td><code>default_loss</code> — the shift, cross-entropy, mask</td></tr>
+    <tr><td><code>trainer.py:240</code></td><td><code>value_and_grad</code> — autograd</td></tr>
+    <tr><td><code>trainer.py:259</code></td><td><code>optimizer.update</code> — the actual learning</td></tr>
+    <tr><td><code>trainer.py:372</code></td><td><code>trainable_parameters()</code> — why the file is 14MB</td></tr>
+  </table>
+</section>
+
+<!-- ============================================ 9 -->
+<section id="syntax">
+  <h2>9 · Syntax decoder</h2>
+  <p class="lede">The Python and MLX constructs that make this code look harder than it is. Click any line.</p>
+
+  <h3>Python you'll trip on</h3>
+  <div class="ann" id="annPy">
+    <div class="row"><div class="ln"><span class="tog">▸</span><span>inputs = batch[:, :-<span class="nu">1</span>]</span></div>
+      <div class="note"><b>Two-dimensional slicing.</b> The comma separates dimensions: <code>[rows, columns]</code>. <code>:</code> alone means "all of this dimension", <code>:-1</code> means "everything except the last". So: all rows, all columns except the final one. <code>[:, 1:]</code> is all rows, columns from index 1 onward.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span>z = x @ a</span></div>
+      <div class="note"><b>Matrix multiplication.</b> <code>@</code> is Python's dedicated matmul operator (<code>*</code> would multiply element-by-element instead). Shapes must line up: <code>(n×2560) @ (2560×8)</code> gives <code>(n×8)</code>.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span><span class="kw">def</span> <span class="fn">__call__</span>(self, x):</span></div>
+      <div class="note"><b>Makes an object callable.</b> Defining <code>__call__</code> means you can write <code>layer(x)</code> instead of <code>layer.forward(x)</code>. The double underscores mark Python's built-in hooks ("dunder" methods). <code>__init__</code> is the constructor — it runs once when the layer is created.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span><span class="kw">yield</span> batch, mx.array(lengths)</span></div>
+      <div class="note"><b>A generator.</b> <code>yield</code> hands back a value and <i>pauses</i>, resuming where it left off next time. That's how <code>iterate_batches</code> feeds an endless stream of batches without ever building them all in memory — critical when the dataset is large.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span><span class="kw">@dataclass</span><br><span class="kw">class</span> TrainingArgs:</span></div>
+      <div class="note"><b>A decorator.</b> The <code>@</code> prefix wraps the thing below it. <code>@dataclass</code> auto-generates boilerplate (constructor, printing) for a class that's just a bag of settings. <code>@partial(mx.compile, ...)</code> on <code>step()</code> is the same mechanism, wrapping the function so MLX compiles it into one optimised GPU graph.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span>len_fn = <span class="kw">lambda</span> idx: <span class="fn">len</span>(dataset[idx][<span class="nu">0</span>])</span></div>
+      <div class="note"><b>An anonymous function.</b> <code>lambda args: expression</code> is a one-line function without a name. Here it's handed to <code>sorted()</code> as the "how to measure each item" rule.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span>train(model=model, args=training_args, **kwargs)</span></div>
+      <div class="note"><b>Keyword arguments and unpacking.</b> <code>name=value</code> passes by name rather than position. <code>*batch</code> unpacks a tuple into separate arguments; <code>**kwargs</code> does the same for a dictionary into named ones.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span><span class="fn">sum</span>(p.size <span class="kw">for</span> _, p <span class="kw">in</span> tree_flatten(...))</span></div>
+      <div class="note"><b>A generator expression.</b> Builds values on the fly and feeds them to <code>sum()</code> without making a list. The <code>_</code> is a conventional name for "a value I'm required to unpack but don't care about" — here, the parameter's name.</div></div>
+  </div>
+
+  <h3>MLX-specific</h3>
+  <div class="ann" id="annMx">
+    <div class="row"><div class="ln"><span class="tog">▸</span><span>mx.eval(loss, model.parameters())</span></div>
+      <div class="note"><b>Force computation.</b> MLX is <i>lazy</i>: operations build a graph and don't run until a result is needed. <code>mx.eval()</code> says "actually compute this now". You'll see it before printing or timing anything. Forgetting it makes timings meaningless — you'd be measuring graph-building, not maths.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span>nn.value_and_grad(model, loss_fn)</span></div>
+      <div class="note"><b>Returns a new function.</b> Call the result and you get back both the loss value <i>and</i> all gradients in one pass. Higher-order functions like this are the standard functional-style API in MLX and JAX.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span>tree_flatten(model.parameters())</span></div>
+      <div class="note"><b>Flattens a nested structure.</b> Model parameters come as dicts inside dicts (mirroring the module tree). <code>tree_flatten</code> turns that into a flat list of <code>(name, array)</code> pairs — e.g. <code>("model.layers.28.mlp.up_proj.lora_a", array)</code> — which is how they get counted and saved.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span>W.astype(mx.float32)</span></div>
+      <div class="note"><b>Change numeric precision.</b> The model runs in <code>bfloat16</code> (16 bits, fast, less precise); losses accumulate in <code>float32</code> to avoid rounding drift. Also required before handing arrays to numpy, which has no bfloat16 type.</div></div>
+    <div class="row"><div class="ln"><span class="tog">▸</span><span>mx.dequantize(q.weight, q.scales, q.biases, ...)</span></div>
+      <div class="note"><b>Unpack 4-bit weights.</b> Quantized weights are stored as packed integers plus per-group <code>scales</code> and <code>biases</code>. Dequantizing reverses the compression to give readable floats. Needed any time you want to inspect or fuse.</div></div>
+  </div>
+</section>
+
+<!-- ============================================ 10 -->
+<section id="quiz">
+  <h2>10 · Self-check</h2>
+  <p class="lede">Nine questions. If you can answer these, you can read the source.</p>
+  <div id="quizBox"></div>
+  <div class="out" id="score" style="display:none"></div>
+</section>
+
+<!-- ============================================ 11 -->
+<section id="next">
+  <h2>11 · Glossary &amp; where to go next</h2>
+  <p class="lede">Vocabulary in one place, then the two courses actually worth your time.</p>
+
+  <h3>Glossary</h3>
+  <table>
+    <tr><th>Term</th><th>Plain English</th></tr>
+    <tr><td><b>Parameter / weight</b></td><td>One trainable number inside the model.</td></tr>
+    <tr><td><b>Tensor</b></td><td>An array of numbers, possibly multi-dimensional. A matrix is a 2D tensor.</td></tr>
+    <tr><td><b>Token</b></td><td>A chunk of text (~4 characters). Models read and predict these, not words.</td></tr>
+    <tr><td><b>Logits</b></td><td>Raw, unnormalised scores for every possible next token.</td></tr>
+    <tr><td><b>Softmax</b></td><td>Turns logits into probabilities summing to 1.</td></tr>
+    <tr><td><b>Loss</b></td><td>One number: how wrong the model was. Lower is better.</td></tr>
+    <tr><td><b>Cross-entropy</b></td><td>The specific loss used: −log(probability of the correct token).</td></tr>
+    <tr><td><b>Perplexity</b></td><td>e<sup>loss</sup>. "How many tokens is it wavering between."</td></tr>
+    <tr><td><b>Gradient</b></td><td>The slope: which way to nudge a weight to reduce loss.</td></tr>
+    <tr><td><b>Backpropagation</b></td><td>The chain-rule algorithm that computes all gradients efficiently.</td></tr>
+    <tr><td><b>Optimizer / Adam</b></td><td>Decides the actual step from the gradient; Adam adds momentum and per-parameter step sizes.</td></tr>
+    <tr><td><b>Learning rate</b></td><td>Step size. Too big explodes, too small crawls.</td></tr>
+    <tr><td><b>Iteration</b></td><td>One weight update = one batch processed.</td></tr>
+    <tr><td><b>Epoch</b></td><td>One full pass over the dataset. iters × batch ÷ rows.</td></tr>
+    <tr><td><b>Overfitting</b></td><td>Memorising training data; train loss falls, validation loss doesn't.</td></tr>
+    <tr><td><b>Frozen</b></td><td>Marked untrainable: no gradient, no optimizer state, never changes.</td></tr>
+    <tr><td><b>Rank (r)</b></td><td>The width of LoRA's bottleneck. Higher = more capacity and more parameters.</td></tr>
+    <tr><td><b>Adapter</b></td><td>The small trained LoRA matrices, saved as a separate file.</td></tr>
+    <tr><td><b>Quantization</b></td><td>Storing weights in fewer bits (4 instead of 16) to save memory.</td></tr>
+    <tr><td><b>PEFT</b></td><td>Parameter-Efficient Fine-Tuning — the family LoRA belongs to.</td></tr>
+    <tr><td><b>SFT</b></td><td>Supervised Fine-Tuning: learning from input→output pairs. What you're doing.</td></tr>
+    <tr><td><b>Gradient checkpointing</b></td><td>Discard intermediate values and recompute them; trades speed for memory.</td></tr>
+  </table>
+
+  <h3>Courses — only if you want the maths properly</h3>
+  <p>You don't need any of these to continue your project. Take one only if the gradient/backprop section left you wanting the real derivation.</p>
+  <ul>
+    <li><b>Andrej Karpathy — "Neural Networks: Zero to Hero"</b> (free, YouTube). The single best fit for you: he builds autograd from scratch in Python, so <code>value_and_grad</code> stops being magic. Watch <i>"The spelled-out intro to backpropagation"</i> (2.5h) — that one video covers the gap you named.</li>
+    <li><b>DeepLearning.AI — "Finetuning LLMs"</b> short courses (free, ~1–2h each). Same concepts, PyTorch/TRL instead of MLX — useful because the wider industry uses that stack.</li>
+    <li><b>Hugging Face PEFT docs</b> (free, docs). The conceptual guides on LoRA and its variants are short and accurate; good reference once you're experimenting with rank and target modules.</li>
+  </ul>
+  <p>Reading the source of <code>mlx-lm</code>, is worth more than a fourth course. It's under 1,300 lines and it's the real thing.</p>
+
+  <h3>Try the mechanism</h3><ol class="steps"><li>Use public or synthetic training examples and keep a separate evaluation set.</li><li>Compare base and adapted outputs with a fixed rubric.</li><li>Change one variable at a time: rank, target layers, learning rate or data quality.</li><li>Record model revision, library versions, hardware, loss curves and failure cases.</li></ol><p class="foot">An archived MLX teaching example. Source code excerpts refer to the upstream <a href="https://github.com/ml-explore/mlx-lm">MLX LM project</a>; line numbers are version-specific.</p>
+</section>
+
+</main>
+</div>
+
+<script>
+// ---------- nav
+const links=[...document.querySelectorAll('nav a')], secs=[...document.querySelectorAll('section')];
+links.forEach(a=>a.onclick=e=>{
+  e.preventDefault();
+  links.forEach(x=>x.classList.remove('on')); a.classList.add('on');
+  secs.forEach(s=>s.classList.remove('on'));
+  document.getElementById(a.dataset.s).classList.add('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+// ---------- annotated code toggles
+document.querySelectorAll('.ann .row').forEach(r=>r.onclick=()=>{
+  r.classList.toggle('open');
+  r.querySelector('.tog').textContent = r.classList.contains('open') ? '▾' : '▸';
+});
+
+// ---------- head flow diagram
+const HEADS=32, KVHEADS=8, HD=128, SHARE=HEADS/KVHEADS;
+const sQ=document.getElementById('stripQ'), sK=document.getElementById('stripK'), sV=document.getElementById('stripV');
+sQ.className='strip q'; sK.className='strip k'; sV.className='strip v';
+for(let i=0;i<HEADS;i++){const e=document.createElement('i');e.dataset.h=i;e.title='query head '+i;sQ.appendChild(e);}
+for(let i=0;i<KVHEADS;i++){
+  const k=document.createElement('i');k.dataset.kv=i;k.title='key head '+i;sK.appendChild(k);
+  const v=document.createElement('i');v.dataset.kv=i;v.title='value head '+i;sV.appendChild(v);
+}
+function pickHead(h){
+  const kv=Math.floor(h/SHARE), lo=h*HD, hi=lo+HD-1;
+  const sibs=[...Array(SHARE)].map((_,i)=>kv*SHARE+i);
+  sQ.querySelectorAll('i').forEach(e=>{
+    const n=+e.dataset.h;
+    e.className = n===h?'sel' : sibs.includes(n)?'grp':'';
+  });
+  [sK,sV].forEach(s=>s.querySelectorAll('i').forEach(e=>{
+    e.className = +e.dataset.kv===kv?'sel':'';
+  }));
+  document.getElementById('headOut').innerHTML=
+   `<b style="color:var(--acc)">Query head ${h}</b> — one of 32<br>`+
+   `${'─'.repeat(46)}<br>`+
+   `its 128 numbers = q[<b>${lo}</b> … <b>${hi}</b>] of the 4096<br>`+
+   `built by columns <b>${lo}–${hi}</b> of W<sub>q</sub> &nbsp;<span style="color:var(--dim)">(2560 × 128 of the weights)</span><br><br>`+
+   `uses <b style="color:#a99cf5">key/value head ${kv}</b> &nbsp;<span style="color:var(--dim)">(highlighted purple)</span><br>`+
+   `shared with query heads <b>${sibs.join(', ')}</b> &nbsp;<span style="color:var(--dim)">— that's GQA: ${SHARE} queries per KV head</span><br><br>`+
+   `<span style="color:var(--dim)">This head only ever sees these 128 numbers. The other ${(HEADS-1)*HD} belong to the other 31 heads and are invisible to it.</span>`;
+}
+sQ.querySelectorAll('i').forEach(e=>e.onclick=()=>pickHead(+e.dataset.h));
+[sK,sV].forEach(s=>s.querySelectorAll('i').forEach(e=>e.onclick=()=>pickHead(+e.dataset.kv*SHARE)));
+pickHead(7);
+
+// ---------- loss calculator
+const pSl=document.getElementById('pSl');
+function loss(){
+  const p=+pSl.value/100, l=-Math.log(p);
+  document.getElementById('pV').textContent=pSl.value+'%';
+  document.getElementById('pV2').textContent=p.toFixed(2);
+  const lv=document.getElementById('lV'); lv.textContent=l.toFixed(2);
+  lv.style.color = l<0.5?'#4ade80' : l<1.5?'#fbbf24' : '#f87171';
+  const m=document.getElementById('lMsg');
+  if(p>=0.9) m.textContent='Confident and correct — almost no penalty.';
+  else if(p>=0.5) m.textContent='Reasonable. A well-trained model sits around here.';
+  else if(p>=0.15) m.textContent='Uncertain. Typical for an untrained model on your style.';
+  else m.textContent='Confidently wrong — punished hard. This is what training removes first.';
+}
+pSl.oninput=loss; loss();
+
+// ---------- memory calculator
+const mSl=document.getElementById('mSl'), rSl=document.getElementById('rSl'), mMode=document.getElementById('mMode');
+function mem(){
+  const B=+mSl.value, ram=+rSl.value, mode=mMode.value;
+  document.getElementById('mV').textContent=B+'B';
+  document.getElementById('rV').textContent=ram+' GB';
+  let rows,total;
+  if(mode==='fft'){
+    const w=B*2, g=B*2, o=B*8;               // bf16 weights+grads, fp32 Adam m&v
+    total=w+g+o;
+    rows=[['weights (bf16)',w],['gradients (bf16)',g],['Adam state (2×fp32)',o]];
+  } else {
+    const w=B*0.55;                           // 4-bit packed + overhead
+    const tr=B*0.0009;                        // ≈0.09% trainable, matches the example run
+    const a=tr*4, g=tr*4, o=tr*8;             // fp32 adapter, grads, Adam (GB)
+    total=w+a+g+o;
+    rows=[['frozen base (4-bit)',w],['adapter weights (fp32)',a],['gradients (fp32)',g],['Adam state (2×fp32)',o]];
+  }
+  const fits = total < ram*0.8;
+  const fmt=v=>v<1 ? (v*1024).toFixed(0)+' MB' : v.toFixed(1)+' GB';
+  let html = rows.map(([k,v])=>`${k.padEnd(24,' ')} ${fmt(v)}`).join('<br>');
+  html += `<br>${'─'.repeat(38)}<br><b>total</b>${' '.repeat(19)}<span class="big" style="color:${fits?'#4ade80':'#f87171'}">${total.toFixed(1)} GB</span>`;
+  const pct=Math.min(100,total/ram*100);
+  html += `<div class="bar"><i style="width:${pct}%;background:${fits?'#4ade80':'#f87171'}"></i></div>`;
+  html += fits
+    ? `Fits in ${ram} GB — with room for activations and the OS.`
+    : `<span style="color:#f87171">Needs ${(total/ram).toFixed(1)}× your ${ram} GB. This run cannot start.</span>`;
+  document.getElementById('memOut').innerHTML=html;
+}
+[mSl,rSl,mMode].forEach(e=>e.oninput=mem); mMode.onchange=mem; mem();
+
+// ---------- rank explorer
+const rk=document.getElementById('rank');
+function rank(){
+  const r=+rk.value, IN=2560, OUT=4096;
+  const full=IN*OUT, lora=IN*r+r*OUT, ratio=full/lora;
+  document.getElementById('rankV').textContent=r;
+  const pct=(lora/full*100);
+  document.getElementById('rankOut').innerHTML=
+    `full ΔW  : ${IN} × ${OUT} = <b>${full.toLocaleString()}</b> numbers<br>`+
+    `LoRA A   : ${IN} × ${r} = ${(IN*r).toLocaleString()}<br>`+
+    `LoRA B   : ${r} × ${OUT} = ${(r*OUT).toLocaleString()}<br>`+
+    `${'─'.repeat(38)}<br>`+
+    `LoRA total: <span class="big">${lora.toLocaleString()}</span> &nbsp;<span style="color:var(--dim)">(${pct.toFixed(2)}% of full)</span>`+
+    `<div class="bar"><i style="width:${Math.max(0.5,pct)}%;background:linear-gradient(90deg,#6ea8fe,#8b7cf6)"></i></div>`+
+    `<b style="color:#8b7cf6">${ratio.toFixed(0)}× fewer parameters</b> than full fine-tuning this one matrix.<br>`+
+    `<span style="color:var(--dim)">${r<=4?'Very small — fast and tiny, may underfit complex styles.':r<=16?'The sweet spot for style/format tasks. The example run uses r=8.':r<=64?'High capacity — use when the task needs real new behaviour, watch for overfitting on small data.':'Very high — approaching full fine-tuning cost with little added benefit for most tasks.'}</span>`;
+}
+rk.oninput=rank; rank();
+
+// ---------- quiz
+const QS=[
+ {q:'The example run has BATCH_SIZE=1, ITERS=600, and 450 training rows. How many epochs is that?',
+  o:['600 epochs','About 1.3 epochs','450 epochs','Impossible to say'],a:1,
+  e:'Rows seen = iters × batch = 600. Epochs = 600 ÷ 450 ≈ 1.33. An iteration is one weight update, not one pass over the data.'},
+ {q:'What does model.freeze() actually change?',
+  o:['Deletes the weights from memory','Stops those weights being used in the forward pass','Stops gradients and optimizer updates for them','Compresses them to 4 bits'],a:2,
+  e:'Frozen weights participate fully in the forward pass — they just get no gradient and are never updated. That is where the memory saving comes from.'},
+ {q:'Why is lora_b initialized to zeros?',
+  o:['To save disk space','So the adapter starts as a no-op and cannot make the model worse','Because zeros train faster','It is an arbitrary choice'],a:1,
+  e:'With B=0 the whole detour computes zero, so the wrapped model is identical to the original at step 0. It also means A has zero gradient on the first step — exactly what the example lab printed.'},
+ {q:'Test loss 2.34 gave perplexity 10.38. What does that mean?',
+  o:['The model is 10% accurate','It took 10 seconds per token','On average it was wavering between ~10 candidate tokens','It saw the data 10 times'],a:2,
+  e:'Perplexity = e^loss. It rescales loss into "effective number of choices". 1.0 would be perfect certainty.'},
+ {q:'Full fine-tuning your 4B model needs ~48GB. Where does most of it go?',
+  o:['The weights themselves','Gradients and Adam optimizer state','The training data','The tokenizer'],a:1,
+  e:'Weights are ~8GB in bf16. Gradients add another 8GB, and Adam keeps two fp32 running averages per parameter — ~32GB. The optimizer state is the biggest single cost.'},
+ {q:'In `z = (x @ lora_a) @ lora_b` with rank 8, what happens to the data?',
+  o:['It is copied twice','It is squeezed to 8 numbers then expanded back','It is randomly shuffled','It is quantized to 8 bits'],a:1,
+  e:'That bottleneck is the entire idea of "low-rank". The 8-wide waist is why 10.5M parameters become 53K.'},
+ {q:'The example adapter file is 14.7MB while the model is 2.3GB. Why?',
+  o:['It is compressed','It only stores trainable parameters — the LoRA matrices','It stores only the last layer','It is a pointer to the model'],a:1,
+  e:'trainer.py line 372 saves tree_flatten(model.trainable_parameters()) — 3.67M numbers × 4 bytes. The frozen base is never written.'},
+ {q:'Train loss keeps falling but validation loss flattens then rises. What is happening?',
+  o:['The learning rate is too low','The model is overfitting','The data is corrupted','Training finished successfully'],a:1,
+  e:'The model is memorising training rows rather than learning generalisable patterns. Stop at the iteration where validation loss turned, or add more data.'},
+ {q:'You want one deployment to handle support emails, sales emails, and bug triage. Best approach?',
+  o:['Three fully fine-tuned models','One LoRA adapter per task over a shared base','One model trained on all three mixed','Prompt engineering only'],a:1,
+  e:'Adapters are ~15MB each and hot-swappable over one 2.3GB base. Three full fine-tunes would be ~24GB and lose the shared base entirely.'}
+];
+const qb=document.getElementById('quizBox'); let answered=0, correct=0;
+QS.forEach((item,i)=>{
+  const d=document.createElement('div'); d.className='q';
+  d.innerHTML=`<div class="qt">${i+1}. ${item.q}</div>`+
+    item.o.map((o,j)=>`<div class="opt" data-i="${j}">${o}</div>`).join('')+
+    `<div class="exp"><b>Why:</b> ${item.e}</div>`;
+  d.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{
+    if(d.classList.contains('done'))return;
+    d.classList.add('done'); answered++;
+    const pick=+o.dataset.i;
+    if(pick===item.a){o.classList.add('right'); correct++;}
+    else{o.classList.add('wrong'); d.querySelectorAll('.opt')[item.a].classList.add('right');}
+    if(answered===QS.length){
+      const s=document.getElementById('score'); s.style.display='block';
+      s.innerHTML=`<span class="big">${correct} / ${QS.length}</span><br>`+
+        (correct>=8?'Strong — go read trainer.py, it will read like prose now.'
+        :correct>=6?'Good grasp. Re-skim sections 3 and 6, then continue the project.'
+        :'Worth a second pass through sections 2–6 before the next training run.');
+      s.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+  });
+  qb.appendChild(d);
+});
+</script>
+</body>
+</html>

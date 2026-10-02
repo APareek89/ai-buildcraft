@@ -1,0 +1,250 @@
+/* ============================================================================
+   Agentic Learning Studio — Home tab (Halo design system). EVERY selector is scoped under
+   #tab-home so nothing here can collide with the rest of the app's chrome.
+   Ported 1:1 from public/design/halo-demo.html (#home). Tokens live in
+   styles.css :root (shared). This is the ONLY tab with a bespoke layout.
+   ============================================================================ */
+
+#tab-home { line-height: 1.6; color: var(--ink); }
+#tab-home .wrap { max-width: 1140px; margin: 0 auto; padding: 0 28px; }
+#tab-home h1, #tab-home h2, #tab-home h3, #tab-home h4 { letter-spacing: -.025em; line-height: 1.1; font-weight: 800; color: var(--ink); margin: 0; }
+#tab-home p { margin: 0; }
+#tab-home .eyebrow { font: 700 12px/1 var(--font); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+#tab-home .muted { color: var(--muted); }
+#tab-home .grad-t { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* buttons */
+#tab-home .btn { display: inline-flex; align-items: center; gap: 8px; font: 700 14.5px var(--font); padding: 12px 20px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; transition: .15s; }
+#tab-home .btn-primary { background: var(--grad); color: #fff; box-shadow: 0 8px 22px rgba(37, 99, 235, .3); }
+#tab-home .btn-primary:hover { transform: translateY(-1px); }
+#tab-home .btn-ghost { background: var(--surface); border-color: var(--border-2); color: var(--ink); }
+#tab-home .btn-ghost:hover { border-color: var(--accent); }
+#tab-home .cta-band .btn { background: #fff; color: var(--accent); font-weight: 800; }
+
+/* hero */
+#tab-home .hero { position: relative; padding: 64px 0 26px; text-align: center; overflow: hidden; }
+#tab-home .halo { position: absolute; border-radius: 50%; filter: blur(64px); opacity: .5; z-index: 0; pointer-events: none; }
+#tab-home .halo.a { width: 540px; height: 430px; background: radial-gradient(closest-side, #60a5fa, transparent); top: -150px; left: 6%; }
+#tab-home .halo.b { width: 500px; height: 420px; background: radial-gradient(closest-side, #60a5fa, transparent); top: -110px; right: 4%; }
+#tab-home .hero > *:not(.halo) { position: relative; z-index: 1; }
+#tab-home .kw-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 22px; }
+#tab-home .kw { font: 600 12.5px var(--font); color: var(--accent); background: var(--accent-weak); border: 1px solid var(--border-2); border-radius: 99px; padding: 6px 13px; }
+#tab-home .hero h1 { font-size: 58px; max-width: 16ch; margin: 0 auto 18px; }
+#tab-home .hero p.sub { font-size: 19px; color: var(--ink-2); max-width: 34em; margin: 0 auto; }
+#tab-home .cta-row { display: flex; gap: 13px; justify-content: center; margin: 28px 0 14px; }
+#tab-home .trust { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; font: 500 13px var(--font); color: var(--muted); }
+#tab-home .trust .ck { color: var(--accent); }
+
+/* preview tabs */
+#tab-home .preview { max-width: 980px; margin: 36px auto 0; text-align: left; }
+#tab-home .preview-tabs { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
+#tab-home .ptab { font: 600 13px var(--font); color: var(--ink-2); background: var(--surface); border: 1px solid var(--border-2); border-radius: 99px; padding: 8px 16px; cursor: pointer; transition: .12s; display: flex; gap: 7px; align-items: center; }
+#tab-home .ptab:hover { border-color: var(--accent); }
+#tab-home .ptab.on { background: var(--grad); color: #fff; border-color: transparent; }
+#tab-home .frame { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+#tab-home .frame-bar { display: flex; align-items: center; gap: 7px; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+#tab-home .frame-bar .d { width: 10px; height: 10px; border-radius: 50%; }
+#tab-home .fd1 { background: #ff5f57; } #tab-home .fd2 { background: #febc2e; } #tab-home .fd3 { background: #28c840; }
+#tab-home .frame-bar .url { margin-left: 10px; font: 500 12px var(--mono); color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px 12px; }
+#tab-home .stage { padding: 26px 30px; min-height: 330px; }
+#tab-home .pv { display: none; } #tab-home .pv.on { display: block; }
+#tab-home .pv .pv-h { font: 700 11px var(--font); letter-spacing: .09em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+#tab-home .pv .pv-t { font-size: 22px; font-weight: 800; margin-bottom: 3px; }
+#tab-home .pv .pv-s { color: var(--ink-2); font-size: 14.5px; margin-bottom: 16px; }
+/* Real world-lesson screenshots in the "See it before you generate" showcase. */
+#tab-home .pv-shot { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+
+/* shared lesson bits inside the preview */
+#tab-home .map-row { display: flex; align-items: stretch; gap: 10px; }
+#tab-home .step { flex: 1; background: var(--surface-2); border: 1px solid var(--border); border-radius: 14px; padding: 13px; }
+#tab-home .step .n { width: 24px; height: 24px; border-radius: 8px; background: var(--grad); color: #fff; font: 700 12px var(--font); display: grid; place-items: center; margin-bottom: 8px; }
+#tab-home .step h4 { font: 700 14px var(--font); margin-bottom: 3px; }
+#tab-home .step p { font: 500 11.5px var(--font); color: var(--muted); line-height: 1.4; }
+#tab-home .arrow { align-self: center; color: var(--border-2); font-size: 18px; }
+#tab-home .block { border: 1px solid var(--border); background: linear-gradient(180deg, var(--surface), var(--surface-2)); border-radius: 14px; padding: 18px 20px; position: relative; overflow: hidden; }
+#tab-home .block::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--grad); }
+#tab-home .block .lab { font: 700 11px var(--font); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 7px; }
+#tab-home .block h3 { font-size: 18px; margin-bottom: 7px; }
+#tab-home .block p { color: var(--ink-2); font-size: 14.5px; }
+#tab-home .block p + p { margin-top: 8px; }
+#tab-home .analogy { background: var(--accent-weak); border-radius: 11px; padding: 11px 14px; margin-top: 12px; font-size: 14px; color: var(--ink-2); }
+#tab-home .analogy b { color: var(--accent); }
+#tab-home .code { background: #0b1228; border-radius: 12px; padding: 15px 17px; font: 500 13px var(--mono); color: #e7ecff; overflow: auto; line-height: 1.65; margin: 0; }
+#tab-home .code .cm { color: #9b91c6; } #tab-home .code .k { color: #c4b5fd; } #tab-home .code .s { color: #7dd3fc; } #tab-home .code .f { color: #f0abfc; }
+#tab-home .kc { border: 1px solid var(--border-2); border-radius: 14px; padding: 18px 20px; background: var(--surface); }
+#tab-home .kc h3 { font-size: 16px; margin-bottom: 4px; }
+#tab-home .kc .kq { font-size: 14px; color: var(--ink-2); margin: 10px 0 10px; }
+#tab-home .kc .opt { display: block; width: 100%; text-align: left; border: 1px solid var(--border-2); border-radius: 11px; padding: 10px 14px; font: 500 13.5px var(--font); margin-bottom: 8px; cursor: pointer; background: var(--surface); color: var(--ink); }
+#tab-home .kc .opt:hover { border-color: var(--accent); }
+#tab-home .kc .opt.correct { border-color: var(--ok); background: #eefaf4; }
+#tab-home .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+#tab-home .dgm-cap { font-size: 12px; color: var(--muted); margin-top: 8px; text-align: center; }
+#tab-home .attach { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--border-2); border-radius: 11px; padding: 9px 14px; font: 600 13.5px var(--font); cursor: pointer; background: var(--surface); }
+
+/* decision matrix */
+#tab-home .dmx { width: 100%; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; font: 500 12.5px var(--font); }
+#tab-home .dmx table { width: 100%; border-collapse: collapse; }
+#tab-home .dmx th, #tab-home .dmx td { text-align: left; padding: 9px 11px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); vertical-align: top; }
+#tab-home .dmx th { background: var(--surface-2); font: 800 11px var(--font); color: var(--ink); text-transform: uppercase; letter-spacing: .03em; }
+#tab-home .dmx td:first-child { font-weight: 800; color: var(--ink); }
+#tab-home .dmx tr:last-child td { border-bottom: 0; }
+#tab-home .dmx td:last-child, #tab-home .dmx th:last-child { border-right: 0; }
+#tab-home .dmx .rate { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+#tab-home .dmx .good { background: var(--ok); } #tab-home .dmx .ok { background: var(--warn); } #tab-home .dmx .bad { background: #d2433a; }
+#tab-home .dmx .pickfor { color: var(--accent); font-weight: 700; }
+
+/* how it works */
+#tab-home .section { padding: 56px 0; }
+#tab-home .sec-head { text-align: center; max-width: 44em; margin: 0 auto 34px; }
+#tab-home .sec-head h2 { font-size: 34px; margin: 10px 0; }
+#tab-home .sec-head p { color: var(--ink-2); font-size: 17px; }
+#tab-home .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+#tab-home .how .hc { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; box-shadow: var(--shadow-sm); }
+#tab-home .how .hn { width: 34px; height: 34px; border-radius: 10px; background: var(--accent-weak); color: var(--accent); font: 800 16px var(--font); display: grid; place-items: center; margin-bottom: 12px; }
+#tab-home .how h3 { font-size: 17px; margin-bottom: 6px; }
+#tab-home .how p { color: var(--ink-2); font-size: 14.5px; }
+
+/* SEO feature rows */
+#tab-home .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: center; padding: 42px 0; border-top: 1px solid var(--border); }
+#tab-home .frow.rev .ftext { order: 2; }
+#tab-home .ftext .eyebrow { margin-bottom: 12px; display: block; }
+#tab-home .ftext h2 { font-size: 30px; margin-bottom: 14px; line-height: 1.12; }
+#tab-home .ftext p { color: var(--ink-2); font-size: 16px; }
+#tab-home .ftext p + p { margin-top: 12px; }
+#tab-home .ftext .feat-list { list-style: none; padding: 0; margin: 16px 0 0; }
+#tab-home .ftext .feat-list li { font-size: 14.5px; color: var(--ink-2); padding: 5px 0; display: flex; gap: 10px; }
+#tab-home .ftext .feat-list li .ck { color: var(--accent); font-weight: 800; flex: none; }
+#tab-home .fvis { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); padding: 20px; }
+#tab-home .toggle-demo { display: flex; gap: 6px; margin-bottom: 12px; }
+#tab-home .toggle-demo span { font: 600 11.5px var(--font); padding: 6px 12px; border-radius: 99px; border: 1px solid var(--border-2); color: var(--ink-2); }
+#tab-home .toggle-demo span.on { background: var(--grad); color: #fff; border-color: transparent; }
+
+/* mission / principles / community band */
+#tab-home .mission-head { max-width: 46em; margin: 0 auto 30px; text-align: center; }
+#tab-home .mission-head h2 { font-size: 32px; margin: 10px 0 14px; }
+#tab-home .mission-head p { color: var(--ink-2); font-size: 16.5px; }
+#tab-home .principles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+#tab-home .pr { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--shadow-sm); }
+#tab-home .pr-ic { font-size: 22px; margin-bottom: 10px; }
+#tab-home .pr h3 { font-size: 15.5px; margin-bottom: 6px; }
+#tab-home .pr p { font-size: 13.5px; color: var(--ink-2); }
+#tab-home .community-band { margin-top: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-sm); padding: 26px 28px; display: flex; align-items: center; gap: 24px; justify-content: space-between; flex-wrap: wrap; }
+#tab-home .community-band h3 { font-size: 20px; margin: 8px 0 6px; }
+#tab-home .community-band p { color: var(--ink-2); font-size: 15px; max-width: 46em; }
+
+/* AI-landscape coverage box (#ai-areas) — broad topic chips below the community band */
+#tab-home .sec-head .sec-sub { color: var(--ink-2); font-size: 15px; margin: 8px auto 0; max-width: 52em; }
+#tab-home .kw-areas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px 24px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-sm); padding: 26px 28px; }
+#tab-home .kw-group h4 { font: 700 12px var(--font); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+#tab-home .kw-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+#tab-home .kw-tags span { font: 600 12.5px var(--font); color: var(--accent); background: var(--accent-weak);
+  border: 1px solid var(--border-2); border-radius: 99px; padding: 5px 12px; }
+@media (max-width: 720px) { #tab-home .kw-areas { grid-template-columns: 1fr; } }
+
+/* FAQ */
+#tab-home .faq { max-width: 780px; margin: 0 auto; }
+#tab-home .faq .q { border-top: 1px solid var(--border); padding: 20px 0; }
+#tab-home .faq .q h3 { font-size: 16.5px; }
+#tab-home .faq .q p { color: var(--ink-2); font-size: 14.5px; margin-top: 6px; }
+
+/* CTA band */
+#tab-home .cta-band { margin: 50px 0 0; border-radius: 24px; background: var(--grad); color: #fff; padding: 48px; text-align: center; box-shadow: var(--shadow); }
+#tab-home .cta-band h2 { font-size: 34px; margin-bottom: 10px; }
+#tab-home .cta-band p { opacity: .9; font-size: 17px; max-width: 40em; margin: 0 auto 22px; }
+
+/* footer */
+#tab-home footer { border-top: 1px solid var(--border); margin-top: 40px; padding: 34px 0; color: var(--muted); font: 500 13px var(--font); }
+#tab-home .foot-in { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+#tab-home .foot-in .brand { color: var(--ink); }
+#tab-home .foot-legal { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+#tab-home .foot-links { display: flex; flex-wrap: wrap; gap: 18px; }
+#tab-home .foot-links a { color: var(--muted); text-decoration: none; font-weight: 600; }
+#tab-home .foot-links a:hover { color: var(--accent); }
+#tab-home .foot-operator { color: var(--faint); }
+#tab-home .foot-operator a { color: var(--muted); }
+
+@media (max-width: 900px) {
+  #tab-home .hero h1 { font-size: 40px; }
+  #tab-home .how, #tab-home .principles { grid-template-columns: 1fr; }
+  #tab-home .cols { grid-template-columns: 1fr; }
+  #tab-home .frow { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  #tab-home .frow.rev .ftext { order: 0; }
+  /* let grid/flex children shrink below a wide child's intrinsic width (a feature-row
+     table/code block was forcing the track wider than a 375px viewport → page overflow). */
+  #tab-home .frow > *, #tab-home .ftext { min-width: 0; }
+  #tab-home .ftext h2 { overflow-wrap: anywhere; }
+}
+
+/* ============================================================================
+   IMAGE-LED REFRESH (2026-07-15) — photographic, Coursera-style visuals blended
+   INTO the existing SEO content. Scoped to #tab-home; nav/other tabs untouched
+   except the global Source Sans font. Coursera blue is scoped here only.
+   ============================================================================ */
+#tab-home { --accent:#0056D2; --accent-2:#00419E; --accent-weak:#EAF1FE; }
+#tab-home .section { padding: 54px 0; }
+
+/* image-led hero: SEO H1/copy on the left, a real lifestyle photo on the right */
+#tab-home .hh { display:grid; grid-template-columns:1.02fr .98fr; gap:44px; align-items:center; padding:48px 0 36px; }
+#tab-home .hh-copy h1 { font-size:50px; font-weight:800; line-height:1.06; }
+#tab-home .hh-copy .sub { font-size:19px; color:var(--ink-2); margin:18px 0 26px; max-width:560px; line-height:1.5; font-weight:400; }
+#tab-home .hh-cta { display:flex; gap:13px; flex-wrap:wrap; }
+#tab-home .hh-trust { display:flex; gap:22px; margin-top:24px; flex-wrap:wrap; }
+#tab-home .hh-trust span { font-size:14.5px; color:var(--ink-2); font-weight:600; }
+#tab-home .hh-trust .ck { color:#0A7C58; font-weight:800; }
+#tab-home .hh-art { position:relative; border-radius:20px; overflow:hidden; aspect-ratio:4/3; box-shadow:0 2px 6px rgba(15,23,41,.10),0 24px 60px rgba(15,23,41,.14); }
+#tab-home .hh-art img { width:100%; height:100%; object-fit:cover; display:block; }
+#tab-home .hh-badge { position:absolute; background:#fff; border-radius:12px; box-shadow:var(--shadow); padding:9px 13px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:8px; }
+#tab-home .hh-badge .d { width:9px; height:9px; border-radius:50%; }
+#tab-home .hb1 { left:-12px; top:24px } #tab-home .hb2 { right:-10px; bottom:34px }
+@media(max-width:900px){ #tab-home .hh{ grid-template-columns:1fr; padding:28px 0 } #tab-home .hh-copy h1{ font-size:34px } #tab-home .hh-art{ order:-1 } #tab-home .hb1,#tab-home .hb2{ display:none } }
+
+/* stat strip */
+#tab-home .stat-strip { border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+#tab-home .stat-strip .in { display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:18px 0; }
+#tab-home .stat-strip .lab { font-size:14px; color:var(--muted); font-weight:600; margin-right:6px; }
+#tab-home .stat-strip .st { display:flex; align-items:baseline; gap:7px; }
+#tab-home .stat-strip .st b { font-size:22px; font-weight:800; color:var(--accent); }
+#tab-home .stat-strip .st span { font-size:14px; color:var(--ink-2); }
+#tab-home .stat-strip .sep { width:1px; height:24px; background:var(--border); }
+
+/* photo card grids — category tiles + lesson cards (Coursera-style) */
+#tab-home .pgrid { display:grid; gap:18px; }
+#tab-home .pgrid.cats { grid-template-columns:repeat(5,1fr); }
+#tab-home .pgrid.lessons { grid-template-columns:repeat(4,1fr); }
+#tab-home .pcard { border:1px solid var(--border); border-radius:14px; overflow:hidden; background:#fff; display:flex; flex-direction:column; text-align:left; transition:transform .16s, box-shadow .16s, border-color .16s; }
+#tab-home .pcard:hover { box-shadow:var(--shadow); transform:translateY(-3px); border-color:#c9d6ef; }
+#tab-home .pcard-img { aspect-ratio:16/10; overflow:hidden; position:relative; background:var(--surface-2); }
+#tab-home .pcard.lesson .pcard-img { aspect-ratio:16/9; }
+#tab-home .pcard-img img { width:100%; height:100%; object-fit:cover; display:block; }
+#tab-home .pcard-pill { position:absolute; left:11px; top:11px; background:rgba(255,255,255,.94); color:var(--accent); font-size:11.5px; font-weight:800; padding:4px 9px; border-radius:99px; }
+#tab-home .pcard-b { padding:12px 14px 14px; display:flex; flex-direction:column; flex:1; }
+#tab-home .pcard-b h3 { font-size:15.5px; font-weight:700; line-height:1.3; margin:0; }
+#tab-home .pcard.lesson .pcard-b h3 { font-size:16px; margin-bottom:auto; }
+#tab-home .pcard-b .meta { font-size:12.5px; color:var(--muted); margin-top:4px; }
+#tab-home .pcard .prov { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-weight:600; margin-bottom:7px; }
+#tab-home .pcard .prov .lg { width:18px; height:18px; border-radius:5px; background:var(--accent); color:#fff; display:grid; place-items:center; font-size:10px; font-weight:800; }
+#tab-home .pcard .foot { display:flex; align-items:center; gap:7px; font-size:12px; margin-top:10px; flex-wrap:wrap; color:var(--muted); }
+#tab-home .pcard .tag { background:var(--accent-weak); color:var(--accent); font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px; }
+#tab-home .pcard .tag.free { background:#E7F6EF; color:#0A7C58; }
+#tab-home .pcard .stars { color:#E8A33D; font-size:12.5px; letter-spacing:.5px; }
+@media(max-width:1000px){ #tab-home .pgrid.cats{ grid-template-columns:repeat(3,1fr) } #tab-home .pgrid.lessons{ grid-template-columns:repeat(2,1fr) } }
+@media(max-width:600px){ #tab-home .pgrid.cats{ grid-template-columns:repeat(2,1fr) } #tab-home .pgrid.lessons{ grid-template-columns:1fr } }
+
+/* how-it-works: add a photo to the top of each existing step card */
+#tab-home .how .hc { padding:0; overflow:hidden; }
+#tab-home .how .hc .hc-img { aspect-ratio:16/9; overflow:hidden; background:var(--surface-2); }
+#tab-home .how .hc .hc-img img { width:100%; height:100%; object-fit:cover; display:block; }
+#tab-home .how .hc .hc-b { padding:20px 22px 24px; }
+#tab-home .how .hc .hn { margin-bottom:10px; }
+
+/* softer, sharper section rhythm to read professional */
+#tab-home .sec-head h2 { font-size:32px; }
+
+/* full-width Beta strip directly below the nav — dark blue, white font, rocket */
+#tab-home .beta-strip { background:#00276e; color:#fff; text-align:center; padding:11px 16px; font-weight:600; font-size:14.5px; letter-spacing:.005em; }
+#tab-home .beta-strip strong { font-weight:800; }
+
+/* card/tile links must never show the browser's default underline */
+#tab-home .pcard, #tab-home .pcard:hover { text-decoration:none; color:inherit; }
+

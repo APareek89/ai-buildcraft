@@ -1,0 +1,1118 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Monitoring Model Drift and Quality",
+    "title": "Monitoring Model Drift and Quality",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 38,
+    "thesis": "Monitoring Model Drift and Quality is practical when learners can apply it to this concrete case: A deployed classifier and LLM assistant degrade as customer questions and product docs change. By the end, they should be able to build or review drift and quality monitor with alerts and review queues, measure time from quality drop to triage, and catch the failure where aggregate metrics stay flat while a high-value segment fails."
+  },
+  "learnerProfile": {
+    "level": "advanced",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Monitoring Model Drift and Quality",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": false,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Monitoring Model Drift and Quality: mental map",
+    "caption": "Move from logged predictions to reference windows, drift signals, delayed labels, alerts, and playbooks.",
+    "oneLineThesis": "Model monitoring works when data, predictions, outcomes, slices, and LLM-specific traces are tied to versioned owners and response playbooks.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Monitor decisions, not just endpoints",
+        "sub": "Define what quality means after deployment and which evidence can arrive late.",
+        "what": "A model can be available and fast while its decisions become wrong, biased, stale, or expensive.",
+        "relevance": "Distinguish system health from model quality.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Separate endpoint health from the quality of live decisions.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Choose reference windows and slices",
+        "sub": "Compare live traffic to a meaningful baseline and avoid aggregate blindness.",
+        "what": "Drift checks are useful only when the reference window, slice definitions, and sample sizes match the decision.",
+        "relevance": "Select a reference window for drift monitoring.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Compare live windows to meaningful baselines and risky slices.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Add LLM quality signals to ML monitoring",
+        "sub": "Track prompts, retrieval, route policy, cost, latency, safety, and human feedback for generative systems.",
+        "what": "LLM apps need classic service and drift signals plus traces for prompts, retrieval, model routes, guardrails, and evaluations.",
+        "relevance": "Name LLM-specific monitoring dimensions.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Extend monitoring to prompts, retrieval, routes, cost, and safety.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Write the alert and investigation loop",
+        "sub": "Make drift checks runnable and connect them to owners, thresholds, and playbooks.",
+        "what": "Monitoring becomes operational when a check produces a severity, owner, evidence bundle, and next action.",
+        "relevance": "Write a minimal monitoring check.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Convert drift signals into owner-driven investigation and response loops.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Turn alerts into learning cycles",
+        "sub": "Finish by rehearsing the monitoring loop from signal to decision.",
+        "what": "The final skill is deciding what an alert means and which controlled action should follow.",
+        "relevance": "Recall the monitoring loop from memory.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Reconstruct the monitoring loop and rehearse one drift playbook.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Monitor decisions, not just endpoints",
+      "sub": "Define what quality means after deployment and which evidence can arrive late.",
+      "summary": "A model can be available and fast while its decisions become wrong, biased, stale, or expensive.",
+      "objectives": [
+        "Distinguish system health from model quality.",
+        "Name data drift, prediction drift, concept drift, and performance decay.",
+        "Define the owner and action for alerts."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Healthy software can serve bad predictions",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a loan pre-screen model returns responses in 80 ms with no server errors, yet approval quality deteriorates after a new marketing campaign changes applicant mix. Uptime dashboards are green while the model is wrong for a growing slice of traffic."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Monitoring model quality means watching more than infrastructure. Data drift asks whether inputs changed. Prediction drift asks whether outputs changed. Concept drift asks whether the relationship between inputs and outcomes changed. Performance decay asks whether users or business outcomes got worse, often after labels arrive days or weeks later."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Product framing: monitoring protects decisions and user trust."
+                  }
+                ],
+                [
+                  {
+                    "text": "Engineering framing: monitoring joins request logs, model version, features, predictions, labels, and latency."
+                  }
+                ],
+                [
+                  {
+                    "text": "Operations framing: every alert needs severity, owner, playbook, and rollback or investigation path."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Worked monitoring target: loan pre-screen",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The release card says model v42 is live. The monitoring target records application channel, region, employment type, score band, decision, latency, model version, and later repayment or manual-review outcome. Reference window: last stable 14 days after v42 rollout. Alert slices: new applicants, self-employed, region, campaign source, and protected-class proxies only where policy allows."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The output of monitoring is not \"drift detected.\" It is a decision: investigate data pipeline, adjust thresholds, retrain, roll back, or add human review for a slice."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Monitoring design review"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Green service, bad model",
+          "prompt": "What can be true when uptime and latency dashboards are green?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The model is automatically high quality.",
+              "correct": false
+            },
+            {
+              "text": "The model can still be wrong because data, labels, or user behavior shifted.",
+              "correct": true
+            },
+            {
+              "text": "No monitoring beyond CPU and memory is needed.",
+              "correct": false
+            }
+          ],
+          "explanation": "Production model quality depends on live data and outcomes, not only service health.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Choose reference windows and slices",
+      "sub": "Compare live traffic to a meaningful baseline and avoid aggregate blindness.",
+      "summary": "Drift checks are useful only when the reference window, slice definitions, and sample sizes match the decision.",
+      "objectives": [
+        "Select a reference window for drift monitoring.",
+        "Explain why aggregate metrics hide cohort failures.",
+        "Connect delayed labels to monitoring design."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The baseline is a decision, not a default",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A reference window can be training data, a recent stable production period, or an approved benchmark. Training data may be too old; yesterday may include an incident; a benchmark may miss seasonal traffic. Choose deliberately and record why."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Slices matter because aggregate stability can hide harm. A recommender may look fine overall while new users fail. A fraud model may improve global precision while missing a new merchant type. A chatbot may keep average satisfaction while one language regresses."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Signals and what they can prove",
+          "criteria": [
+            "Signal",
+            "What it catches",
+            "What it cannot prove alone"
+          ],
+          "options": [
+            {
+              "name": "Data drift",
+              "cells": [
+                {
+                  "criterion": "Signal",
+                  "text": "Input distribution changed",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it catches",
+                  "text": "new traffic mix, pipeline shifts, missing values",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it cannot prove alone",
+                  "text": "that business performance is worse",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use as early warning.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Prediction drift",
+              "cells": [
+                {
+                  "criterion": "Signal",
+                  "text": "Output distribution changed",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it catches",
+                  "text": "threshold shifts, route changes, model behavior changes",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it cannot prove alone",
+                  "text": "which input caused the change",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use with data and version slices.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Delayed labels",
+              "cells": [
+                {
+                  "criterion": "Signal",
+                  "text": "Outcomes arrive after decisions",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it catches",
+                  "text": "true performance decay",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it cannot prove alone",
+                  "text": "real-time cause without supporting traces",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for retraining and rollback evidence.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m2_slice",
+          "kind": "functionalExample",
+          "title": "Case study: aggregate hides a regional failure",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Overall approval precision moves from .81 to .80, below the alert threshold. In one region, precision drops from .79 to .62 after a new data vendor starts filling missing employment length with zeros. A slice alert catches what the global metric hides."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This recalls module 1: monitoring protects decisions. If the decision affects a cohort, the monitoring view must be able to see that cohort within privacy and policy boundaries."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Add LLM quality signals to ML monitoring",
+      "sub": "Track prompts, retrieval, route policy, cost, latency, safety, and human feedback for generative systems.",
+      "summary": "LLM apps need classic service and drift signals plus traces for prompts, retrieval, model routes, guardrails, and evaluations.",
+      "objectives": [
+        "Name LLM-specific monitoring dimensions.",
+        "Explain why route and cache status affect quality.",
+        "Design alerts that lead to action rather than noise."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Generative monitoring has more moving parts",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For an LLM support assistant, quality can change because the prompt changed, retrieval index refreshed, model route switched, semantic cache reused stale content, a tool schema broke, or policy filters became stricter. Traditional accuracy labels may arrive slowly or not at all, so traces and eval samples become core monitoring evidence."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Useful dimensions include model and response model, prompt version, retrieval index version, top-k citations, tool outcome, guardrail action, refusal rate, token usage, cost, latency, route, cache hit, fallback chain, and user feedback. OpenTelemetry-style GenAI attributes give teams a shared vocabulary for many of these fields."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_llm",
+          "kind": "functionalExample",
+          "title": "Worked LLM dashboard for lesson generation",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Dashboard rows group by prompt version, model route, retrieval index, and lesson category. Signals: validation pass rate, citation coverage, editor rejection rate, average tokens, p95 render latency, safety intervention rate, and top regression examples. A spike in cost with stable pass rate may be acceptable; a stable cost with lower citation coverage is not."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The alert message should name the owner and next action: \"RAG citation coverage for Safety lessons dropped below 92 percent after index kb_v12; run retrieval smoke set and hold enrichment releases.\""
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "personalizedFor": "LLMOps dashboard"
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Alert on product-relevant movement, not every statistical wiggle.",
+          "useWhen": "Use LLM monitoring when prompt, model, route, retrieval, or safety policy changes can affect users without code deploys.",
+          "avoidWhen": "Avoid paging humans for tiny distribution shifts without severity, sample size, slice, and playbook.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb2",
+        "canon1",
+        "kb1"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Monitoring Model Drift and Quality: baseline, production design, or advanced optimization."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Write the alert and investigation loop",
+      "sub": "Make drift checks runnable and connect them to owners, thresholds, and playbooks.",
+      "summary": "Monitoring becomes operational when a check produces a severity, owner, evidence bundle, and next action.",
+      "objectives": [
+        "Write a minimal monitoring check.",
+        "Predict why raw payload logging can create privacy risk.",
+        "Verify AI-generated monitoring plans for actionability."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Minimal drift alert skeleton",
+          "language": "python",
+          "code": "def alert_if_needed(live, reference):\n    report = {\n        \"missing_rate_delta\": live.missing_rate - reference.missing_rate,\n        \"approval_rate_delta\": live.approval_rate - reference.approval_rate,\n        \"p95_latency_ms\": live.p95_latency_ms,\n        \"model_version\": live.model_version,\n        \"slice\": live.slice_name,\n    }\n    high = abs(report[\"approval_rate_delta\"]) > 0.08 and live.sample_size >= 500\n    if high:\n        return {\"severity\": \"high\", \"owner\": \"risk-model-oncall\", \"report\": report}\n    return {\"severity\": \"watch\", \"report\": report}\n\n# In production, join delayed labels and link the alert to a playbook.",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The code deliberately combines magnitude, sample size, version, slice, and owner. A real system would use a monitoring library or platform, but the alert contract is the teaching point."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Why is `sample_size >= 500` included before a high-severity alert?",
+            "answer": "Without a sample-size guard, tiny windows can create noisy alerts that look severe but are not reliable enough for action."
+          },
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify an AI-generated monitoring plan",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review AI-generated monitoring advice for missing operational pieces. It should name reference windows, slices, sample-size rules, model and prompt versions, delayed-label joins, privacy limits, thresholds, owners, playbooks, and rollback or retraining criteria."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Does the plan monitor data, predictions, outcomes, and service behavior?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Can every alert be sliced by release version and relevant cohort?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it avoid storing raw sensitive text or features unless redaction and retention are defined?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does the playbook say investigate, roll back, retrain, adjust threshold, or add human review?"
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Privacy in monitoring",
+          "prompt": "What is a common monitoring risk for LLM apps?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Latency metrics always reveal private data.",
+              "correct": false
+            },
+            {
+              "text": "Trace logs can capture sensitive prompts or retrieved content without redaction and retention policy.",
+              "correct": true
+            },
+            {
+              "text": "Monitoring eliminates the need for evals.",
+              "correct": false
+            }
+          ],
+          "explanation": "Monitoring payloads need governance because they may contain user text, features, or decisions.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "kb2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Turn alerts into learning cycles",
+      "sub": "Finish by rehearsing the monitoring loop from signal to decision.",
+      "summary": "The final skill is deciding what an alert means and which controlled action should follow.",
+      "objectives": [
+        "Recall the monitoring loop from memory.",
+        "Write a retrieval prompt that reconstructs the lesson.",
+        "Plan a capstone drift playbook for one model."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "conceptual",
+          "title": "Retrieval prompt for the whole lesson",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer this from memory: \"How do I monitor whether a deployed model is still useful?\" Include service health, data drift, prediction drift, concept drift, delayed labels, slices, reference windows, LLM traces, privacy controls, owners, and playbooks."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: module 1 warned that healthy software can serve bad predictions. The final monitoring loop exists to catch that gap and choose a response with evidence."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "A drift alert is a question, not an automatic retrain button.",
+          "useWhen": "Use monitoring to trigger investigation, rollback, threshold review, human review, or retraining based on evidence.",
+          "avoidWhen": "Avoid retraining blindly from every distribution shift; some shifts are expected, harmless, or caused by instrumentation changes.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m5_capstone",
+          "kind": "functionalExample",
+          "title": "Capstone: build one alert playbook",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Choose a model or LLM feature. Define one reference window, three slices, two drift signals, one delayed-label metric, version fields, privacy limits, alert thresholds, owner, and first-response playbook. Then write the exact alert message a human should receive."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Next rung: connect this to model registries and versioning, where release identity lets monitoring point to the artifact or policy that changed."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ],
+          "personalizedFor": "Solo monitoring playbook"
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Monitoring Model Drift and Quality: baseline, production design, or advanced optimization."
+    }
+  ],
+  "glossary": {
+    "gpu": {
+      "id": "gpu",
+      "label": "GPU",
+      "laymanDefinition": "The compute layer whose health can hide or amplify model-quality problems.",
+      "technicalNote": "GPU saturation, queue time, or fallback to a different endpoint should be monitored alongside quality because infra changes can alter model behavior.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Graphics processing unit"
+    },
+    "serving": {
+      "id": "serving",
+      "label": "Serving",
+      "laymanDefinition": "The production prediction path being monitored.",
+      "technicalNote": "Serving logs need model version, input summaries, prediction, decision, latency, errors, and later labels or feedback when available.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "gateway": {
+      "id": "gateway",
+      "label": "Gateway",
+      "laymanDefinition": "The policy layer that can change which model or provider answers.",
+      "technicalNote": "Gateway route, cache status, fallback chain, and model alias are monitoring dimensions for LLM and multi-model systems.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "latency": {
+      "id": "latency",
+      "label": "Latency",
+      "laymanDefinition": "A reliability signal that can correlate with quality issues.",
+      "technicalNote": "Rising latency can indicate overload, longer prompts, fallback chains, retrieval slowdown, or a model version change.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "throughput": {
+      "id": "throughput",
+      "label": "Throughput",
+      "laymanDefinition": "The volume of predictions or requests flowing through the system.",
+      "technicalNote": "Monitoring windows must account for traffic volume because tiny samples and seasonal spikes can create false alarms.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "versioning": {
+      "id": "versioning",
+      "label": "Versioning",
+      "laymanDefinition": "The link between monitoring signals and the release that produced them.",
+      "technicalNote": "Every alert should be sliceable by model, prompt, retrieval index, feature code, route policy, and deployment version.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Monitoring Model Drift and Quality",
+    "themes": [
+      {
+        "name": "Release-readiness check",
+        "questions": [
+          {
+            "q": "What decision does Monitoring Model Drift and Quality change for this case?",
+            "why": "A good lesson changes how the learner builds, reviews, or ships drift and quality monitor with alerts and review queues.",
+            "opts": [
+              "Thin slice",
+              "Production path",
+              "Advanced optimization"
+            ],
+            "rot": "Choose the smallest option that catches: aggregate metrics stay flat while a high-value segment fails."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct the monitoring loop: log versioned predictions, choose reference windows and slices, watch data and prediction drift, join delayed labels, add LLM traces, and route alerts to playbooks."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Monitoring Model Drift and Quality operating path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Monitor decisions, not just endpoints",
+          "sub": "Define what quality means after deployment and which evidence can arrive late.",
+          "what": "A model can be available and fast while its decisions become wrong, biased, stale, or expensive.",
+          "relevance": "Distinguish system health from model quality.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Separate endpoint health from the quality of live decisions.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Choose reference windows and slices",
+          "sub": "Compare live traffic to a meaningful baseline and avoid aggregate blindness.",
+          "what": "Drift checks are useful only when the reference window, slice definitions, and sample sizes match the decision.",
+          "relevance": "Select a reference window for drift monitoring.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Compare live windows to meaningful baselines and risky slices.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Add LLM quality signals to ML monitoring",
+          "sub": "Track prompts, retrieval, route policy, cost, latency, safety, and human feedback for generative systems.",
+          "what": "LLM apps need classic service and drift signals plus traces for prompts, retrieval, model routes, guardrails, and evaluations.",
+          "relevance": "Name LLM-specific monitoring dimensions.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Extend monitoring to prompts, retrieval, routes, cost, and safety.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Write the alert and investigation loop",
+          "sub": "Make drift checks runnable and connect them to owners, thresholds, and playbooks.",
+          "what": "Monitoring becomes operational when a check produces a severity, owner, evidence bundle, and next action.",
+          "relevance": "Write a minimal monitoring check.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Convert drift signals into owner-driven investigation and response loops.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Turn alerts into learning cycles",
+          "sub": "Finish by rehearsing the monitoring loop from signal to decision.",
+          "what": "The final skill is deciding what an alert means and which controlled action should follow.",
+          "relevance": "Recall the monitoring loop from memory.",
+          "moduleId": "m5",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Reconstruct the monitoring loop and rehearse one drift playbook.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Monitor decisions, not just endpoints",
+        "detail": "Define what quality means after deployment and which evidence can arrive late."
+      },
+      {
+        "step": 2,
+        "label": "Choose reference windows and slices",
+        "detail": "Compare live traffic to a meaningful baseline and avoid aggregate blindness."
+      },
+      {
+        "step": 3,
+        "label": "Add LLM quality signals to ML monitoring",
+        "detail": "Track prompts, retrieval, route policy, cost, latency, safety, and human feedback for generative systems."
+      },
+      {
+        "step": 4,
+        "label": "Write the alert and investigation loop",
+        "detail": "Make drift checks runnable and connect them to owners, thresholds, and playbooks."
+      },
+      {
+        "step": 5,
+        "label": "Turn alerts into learning cycles",
+        "detail": "Finish by rehearsing the monitoring loop from signal to decision."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_contract",
+        "label": "Does monitoring define quality, not only endpoint health?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_flow",
+        "label": "Are reference windows, slices, sample-size rules, and delayed labels explicit?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_choice",
+        "label": "Do LLM traces include prompt, route, retrieval, cache, cost, latency, and safety dimensions?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_verify",
+        "label": "Does each alert name severity, owner, evidence, and first response?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_next",
+        "label": "Are privacy, redaction, and retention limits defined for monitoring payloads?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a one-page release-ready plan for drift and quality monitor with alerts and review queues. Include: the user problem, realistic input, mechanism, design choice, runnable or reviewable check, metric (time from quality drop to triage), failure case (aggregate metrics stay flat while a high-value segment fails), owner, and the next rung after this lesson.",
+      "scopedTo": "Monitoring Model Drift and Quality"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Production Model Monitoring",
+      "url": "https://docs.evidentlyai.com/",
+      "asOfDate": "2026-06-23"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB: LLMOps Operating Loop",
+      "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+      "asOfDate": "2026-06-23"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Evidently documentation",
+      "url": "https://docs.evidentlyai.com/",
+      "asOfDate": "2026-06-23"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "NannyML documentation",
+      "url": "https://nannyml.readthedocs.io/",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

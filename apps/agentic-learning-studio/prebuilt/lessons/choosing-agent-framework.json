@@ -1,0 +1,1314 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Choosing an Agent Framework",
+    "title": "Choosing an Agent Framework",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Choosing an Agent Framework is practical when learners can apply it to this concrete case: A platform team compares frameworks for a customer-support agent with tools, memory, and approvals. By the end, they should be able to build or review agent-framework selection matrix and proof-of-concept plan, measure framework fit against durability, observability, and deployment needs, and catch the failure where the team picks a popular framework that cannot express its control flow."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Choosing an Agent Framework",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Choosing an Agent Framework: mental map",
+    "caption": "Choose an agent framework by the control problem: integration layer, explicit graph, data-centric RAG, provider-native runtime, role teams, or enterprise ecosystem.",
+    "oneLineThesis": "The right framework is the one whose native abstraction matches the product risk and workflow shape.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Start with the hardest product constraint",
+        "sub": "Framework choice follows the risk, not the logo.",
+        "what": "Learners select from product constraints rather than popularity.",
+        "relevance": "This prevents picking a framework that solves the wrong problem.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Name the bottleneck before comparing feature lists.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Match abstraction to workflow shape",
+        "sub": "Integration layers, graphs, data engines, and teams solve different problems.",
+        "what": "Learners understand the key framework families.",
+        "relevance": "Different frameworks can all “build agents” while optimizing for different surfaces.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Compare native objects rather than marketing categories.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "State, durability, and human review narrow the field",
+        "sub": "Control-flow requirements often decide the runtime.",
+        "what": "Learners treat state as a first-class framework criterion.",
+        "relevance": "Ignoring state leads to brittle demos that fail under real workflows.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Ask whether the agent must pause, resume, branch, or survive failure.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Prototype the riskiest slice, not the happiest path",
+        "sub": "A framework comparison should test the failure mode.",
+        "what": "Learners implement a decision helper and use it critically.",
+        "relevance": "Happy-path examples hide framework mismatch until late.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Build one thin slice that exercises the hardest constraint.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Plan migration, observability, and lock-in",
+        "sub": "The selection decision continues after the prototype.",
+        "what": "Learners add production criteria to framework choice.",
+        "relevance": "Fast demos can hide telemetry gaps, provider coupling, and migration cost.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Review ecosystem, telemetry, versioning, and exit paths.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "comparative"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Start with the hardest product constraint",
+      "sub": "Framework choice follows the risk, not the logo.",
+      "summary": "A framework should make the hard part easier.",
+      "objectives": [
+        "Identify the core constraint in an agent app.",
+        "Avoid feature-list shopping.",
+        "Choose a framework based on native abstraction."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The bottleneck chooses the framework",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a support triage app needs tool calls, customer data retrieval, human approval for refunds, and trace review. The best framework depends on which part is hardest: integration, RAG, explicit state, provider-native handoffs, or enterprise deployment."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A framework is not a quality guarantee. It gives you defaults and vocabulary. You still own security, evals, cost, and product behavior."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Write one sentence: “The hardest part of this app is...” before naming a framework."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ],
+          "analogy": "Choose the wrench for the bolt, not the shiniest toolbox."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Worked selection: support triage",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If the hardest part is broad provider/tool integrations, LangChain may fit. If the hard part is approval and resumable state, LangGraph or a workflow engine matters. If the hard part is private data indexing, LlamaIndex is stronger."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If the app is OpenAI-native with handoffs and tracing, OpenAI Agents SDK may be faster. If the org is Microsoft/Azure-heavy, Microsoft Agent Framework may fit better."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Write the product workflow and failure modes."
+                  }
+                ],
+                [
+                  {
+                    "text": "Mark state, data, tools, approvals, observability, and deployment needs."
+                  }
+                ],
+                [
+                  {
+                    "text": "Compare frameworks on the hardest two needs."
+                  }
+                ],
+                [
+                  {
+                    "text": "Prototype the riskiest path before committing."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Selection anchor",
+          "prompt": "What should you identify before choosing an agent framework?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The framework with the longest README.",
+              "correct": false
+            },
+            {
+              "text": "The hardest product constraint or failure mode the framework must own.",
+              "correct": true
+            },
+            {
+              "text": "The one with the most agent personas by default.",
+              "correct": false
+            }
+          ],
+          "explanation": "Framework fit starts with the problem shape.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb6",
+        "kb7",
+        "kb8",
+        "kb9",
+        "kb11"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Match abstraction to workflow shape",
+      "sub": "Integration layers, graphs, data engines, and teams solve different problems.",
+      "summary": "The native object tells you what the framework is good at.",
+      "objectives": [
+        "Compare LangChain, LangGraph, LlamaIndex, CrewAI, OpenAI Agents SDK, and Microsoft stack.",
+        "Name each framework’s center of gravity.",
+        "Spot mismatch early."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Look at the native nouns",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "LangChain centers models, tools, prompts, middleware, and integration breadth. LangGraph centers state graphs, nodes, edges, checkpoints, and interrupts. LlamaIndex centers documents, nodes, indexes, retrievers, query engines, agents, and workflows."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "CrewAI centers agents, tasks, crews, and flows. OpenAI Agents SDK centers agents, runs, tools, handoffs, sessions, guardrails, and tracing. Microsoft stack centers kernels/plugins historically and newer Agent Framework workflows, middleware, telemetry, and Azure integration."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If your design diagram uses the framework’s native nouns naturally, fit is probably improving."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ],
+          "analogy": "A framework’s nouns reveal its worldview."
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Framework center-of-gravity comparison",
+          "criteria": [
+            "Best native abstraction",
+            "Use when",
+            "Watch"
+          ],
+          "options": [
+            {
+              "name": "LangGraph",
+              "cells": [
+                {
+                  "criterion": "Best native abstraction",
+                  "text": "State graph with checkpoints and interrupts.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Control flow, resume, approval, branches matter.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Watch",
+                  "text": "You own graph design and tests.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for explicit agent workflows.",
+              "cost": "Medium",
+              "complexity": "High"
+            },
+            {
+              "name": "LlamaIndex",
+              "cells": [
+                {
+                  "criterion": "Best native abstraction",
+                  "text": "Documents, nodes, indexes, query engines.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Data/RAG quality dominates.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Watch",
+                  "text": "Agents still need tool and citation eval.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for data-centric RAG agents.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "OpenAI Agents SDK",
+              "cells": [
+                {
+                  "criterion": "Best native abstraction",
+                  "text": "Agents, tools, handoffs, sessions, tracing.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "OpenAI-native runtime is desired.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Watch",
+                  "text": "Provider coupling and state strategy.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for OpenAI-centered product agents.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Native nouns",
+          "prompt": "Which framework naturally centers nodes, edges, checkpoints, and interrupts?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A bare OpenAPI spec.",
+              "correct": false
+            },
+            {
+              "text": "LangGraph.",
+              "correct": true
+            },
+            {
+              "text": "pgvector alone.",
+              "correct": false
+            }
+          ],
+          "explanation": "Those are LangGraph’s core orchestration concepts.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb6",
+        "kb7",
+        "kb8",
+        "kb9",
+        "kb11"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "State, durability, and human review narrow the field",
+      "sub": "Control-flow requirements often decide the runtime.",
+      "summary": "State needs are often more decisive than model choice.",
+      "objectives": [
+        "Compare thread state, graph checkpoints, workflow durability, and sessions.",
+        "Choose explicit graphs when branches matter.",
+        "Recognize when a workflow engine belongs underneath."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "State is where demos become products",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If the agent only answers one question, a provider SDK or simple chain may be enough. If it branches, waits for review, resumes after interruption, or must survive deploys, state control becomes central."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "LangGraph gives graph checkpoints and interrupts. OpenAI Agents SDK offers sessions and continuation strategies. Durable engines such as Temporal/Inngest/Restate may sit underneath when external orchestration spans long periods."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Draw the resume point after a crash. If you cannot, your framework plan is incomplete."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ],
+          "analogy": "State is the bookmark in a long task."
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Case study: refund approval workflow",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A refund agent retrieves policy, drafts a recommendation, pauses for human approval, then updates a ticket. LangGraph handles explicit pause/resume well. A durable workflow engine may wrap it if the approval can wait days."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A one-turn FAQ agent does not need that machinery."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Mark every branch and pause."
+                  }
+                ],
+                [
+                  {
+                    "text": "Decide which state must persist."
+                  }
+                ],
+                [
+                  {
+                    "text": "Choose graph/session/workflow support accordingly."
+                  }
+                ],
+                [
+                  {
+                    "text": "Test resume and cancellation before release."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "State criterion",
+          "prompt": "Which need points most strongly toward LangGraph or a workflow engine?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The answer should use a friendly tone.",
+              "correct": false
+            },
+            {
+              "text": "The agent must pause for approval and resume after a process restart.",
+              "correct": true
+            },
+            {
+              "text": "The UI needs a blue button.",
+              "correct": false
+            }
+          ],
+          "explanation": "Pause/resume is a control-flow and durability requirement.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb6",
+        "kb7",
+        "kb8",
+        "kb9",
+        "kb11"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Prototype the riskiest slice, not the happiest path",
+      "sub": "A framework comparison should test the failure mode.",
+      "summary": "The right prototype attacks the scary part first.",
+      "objectives": [
+        "Choose evaluation tasks for framework fit.",
+        "Predict recommended framework from constraints.",
+        "Avoid overfitting to toy examples."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Framework evaluation is a product experiment",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Prototype the slice that could fail expensively: approval resume, citation support, tool permission, query-engine retrieval, or handoff ownership. Do not choose based on how quickly a hello-world agent runs."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from multi-agent orchestration, compare against a simpler baseline. Framework complexity must earn its place."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "The prototype should make one framework advantage or weakness observable."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Tiny framework fit helper",
+          "language": "python",
+          "code": "def choose_framework(needs):\n    if needs.get(\"explicit_graph\") or needs.get(\"interrupts\"):\n        return \"LangGraph\"\n    if needs.get(\"data_rag\") and needs.get(\"query_engines\"):\n        return \"LlamaIndex\"\n    if needs.get(\"openai_native\") and needs.get(\"handoffs\"):\n        return \"OpenAI Agents SDK\"\n    if needs.get(\"microsoft_stack\"):\n        return \"Microsoft Agent Framework / Semantic Kernel\"\n    if needs.get(\"role_tasks\"):\n        return \"CrewAI\"\n    return \"LangChain or direct provider SDK\"\n\nprint(choose_framework({\"data_rag\": True, \"query_engines\": True, \"handoffs\": False}))\nprint(choose_framework({\"explicit_graph\": True, \"interrupts\": True}))",
+          "explanation": "The helper is not a universal truth; it forces the learner to map needs to native framework strengths.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict the two printed recommendations.",
+            "answer": "It prints LlamaIndex for data/query-engine needs and LangGraph for explicit graph plus interrupts."
+          },
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Prototype target",
+          "prompt": "What should a framework prototype test first?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only the default hello-world demo.",
+              "correct": false
+            },
+            {
+              "text": "The riskiest product constraint, such as resume, retrieval quality, tool policy, or handoff ownership.",
+              "correct": true
+            },
+            {
+              "text": "Only whether the logo appears in docs.",
+              "correct": false
+            }
+          ],
+          "explanation": "Framework fit is about the hard production path.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb6",
+        "kb7",
+        "kb8",
+        "kb9",
+        "kb11"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Plan migration, observability, and lock-in",
+      "sub": "The selection decision continues after the prototype.",
+      "summary": "A framework choice is an operating decision.",
+      "objectives": [
+        "Assess observability and eval support.",
+        "Plan version pinning and migration.",
+        "Name provider or ecosystem lock-in tradeoffs."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Frameworks shape operations",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Ask how traces work, where prompts and tool outputs are logged, how evals run, how versions are pinned, how deployment works, and what happens if the provider or package changes."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Provider-native frameworks can be faster inside one ecosystem; provider-neutral frameworks can reduce lock-in but add integration work. Enterprise stacks can solve identity and hosting while constraining portability."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Include an exit or migration note in the design review."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify a framework selection",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use this checklist before committing a product team."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The chosen framework owns the hardest product constraint better than alternatives."
+                  }
+                ],
+                [
+                  {
+                    "text": "A thin prototype exercises the risky path, not only a demo."
+                  }
+                ],
+                [
+                  {
+                    "text": "State, memory, approvals, and durability have explicit ownership."
+                  }
+                ],
+                [
+                  {
+                    "text": "Tool security, evals, and tracing are planned outside model prompts."
+                  }
+                ],
+                [
+                  {
+                    "text": "Versioning, provider coupling, deployment, and migration risks are documented."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Selection review",
+          "prompt": "What is a red flag in a framework decision?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Running a prototype with real eval cases.",
+              "correct": false
+            },
+            {
+              "text": "Choosing the framework before naming the workflow’s hardest failure mode.",
+              "correct": true
+            },
+            {
+              "text": "Documenting migration risk.",
+              "correct": false
+            }
+          ],
+          "explanation": "A framework should be selected to solve a named problem.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb5",
+            "kb6",
+            "kb7",
+            "kb8",
+            "kb9",
+            "kb11"
+          ]
+        }
+      ],
+      "citations": [
+        "kb5",
+        "kb6",
+        "kb7",
+        "kb8",
+        "kb9",
+        "kb11"
+      ]
+    }
+  ],
+  "glossary": {
+    "framework": {
+      "id": "framework",
+      "label": "Framework",
+      "laymanDefinition": "A library or platform that provides agent building blocks and conventions.",
+      "technicalNote": "Framework choice affects state handling, tools, tracing, deployment model, ecosystem fit, and how much control the application keeps.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "graph": {
+      "id": "graph",
+      "label": "Graph",
+      "laymanDefinition": "A workflow shape where nodes and edges define how work moves between steps.",
+      "technicalNote": "Graph-based agents make branching, retries, checkpoints, and human review more explicit than a single loose loop.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "checkpoint": {
+      "id": "checkpoint",
+      "label": "Checkpoint",
+      "laymanDefinition": "A saved workflow state that lets execution resume or be inspected later.",
+      "technicalNote": "Checkpoints are essential for durable agents because retries, approvals, and debugging need the exact state at a step boundary.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "handoff": {
+      "id": "handoff",
+      "label": "Handoff",
+      "laymanDefinition": "Passing work from one agent, tool, or human role to another.",
+      "technicalNote": "Handoffs need a typed payload, ownership transfer, stop condition, and audit trail so context does not vanish between actors.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "sdk": {
+      "id": "sdk",
+      "label": "SDK",
+      "laymanDefinition": "A software development kit with APIs and helpers for building applications.",
+      "technicalNote": "Agent SDKs encode assumptions about models, tools, sessions, tracing, and deployment, so evaluate those assumptions against the product architecture.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Software development kit"
+    },
+    "orchestration": {
+      "id": "orchestration",
+      "label": "Orchestration",
+      "laymanDefinition": "Coordinating steps, agents, tools, state, and decisions in a workflow.",
+      "technicalNote": "Orchestration owns sequencing, parallelism, retries, timeouts, approvals, and failure visibility across the agent system.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Choosing an Agent Framework",
+    "themes": [
+      {
+        "name": "Framework selection",
+        "questions": [
+          {
+            "q": "Which part of the agent app is hardest: tools, state graph, data/RAG, provider runtime, team roles, or enterprise hosting?",
+            "why": "Framework mismatch creates hidden complexity and weak lessons.",
+            "opts": [
+              "LangChain integration layer",
+              "LangGraph state graph",
+              "LlamaIndex data-centric RAG",
+              "OpenAI Agents SDK",
+              "CrewAI roles/tasks",
+              "Microsoft Agent Framework/Semantic Kernel"
+            ],
+            "rot": "Pick the framework whose strongest abstraction owns your hardest production concern."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: compare frameworks by native abstraction, state/durability, data/RAG, tools, multi-agent shape, observability, deployment, and team ecosystem."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Framework choice path from problem shape to runtime fit",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Start with the hardest product constraint",
+          "sub": "Framework choice follows the risk, not the logo.",
+          "what": "Learners select from product constraints rather than popularity.",
+          "relevance": "This prevents picking a framework that solves the wrong problem.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Name the bottleneck before comparing feature lists.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Match abstraction to workflow shape",
+          "sub": "Integration layers, graphs, data engines, and teams solve different problems.",
+          "what": "Learners understand the key framework families.",
+          "relevance": "Different frameworks can all “build agents” while optimizing for different surfaces.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Compare native objects rather than marketing categories.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "State, durability, and human review narrow the field",
+          "sub": "Control-flow requirements often decide the runtime.",
+          "what": "Learners treat state as a first-class framework criterion.",
+          "relevance": "Ignoring state leads to brittle demos that fail under real workflows.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Ask whether the agent must pause, resume, branch, or survive failure.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Prototype the riskiest slice, not the happiest path",
+          "sub": "A framework comparison should test the failure mode.",
+          "what": "Learners implement a decision helper and use it critically.",
+          "relevance": "Happy-path examples hide framework mismatch until late.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Build one thin slice that exercises the hardest constraint.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Plan migration, observability, and lock-in",
+          "sub": "The selection decision continues after the prototype.",
+          "what": "Learners add production criteria to framework choice.",
+          "relevance": "Fast demos can hide telemetry gaps, provider coupling, and migration cost.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Review ecosystem, telemetry, versioning, and exit paths.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Start with the hardest product constraint",
+        "detail": "A framework should make the hard part easier."
+      },
+      {
+        "step": 2,
+        "label": "Match abstraction to workflow shape",
+        "detail": "The native object tells you what the framework is good at."
+      },
+      {
+        "step": 3,
+        "label": "State, durability, and human review narrow the field",
+        "detail": "State needs are often more decisive than model choice."
+      },
+      {
+        "step": 4,
+        "label": "Prototype the riskiest slice, not the happiest path",
+        "detail": "The right prototype attacks the scary part first."
+      },
+      {
+        "step": 5,
+        "label": "Plan migration, observability, and lock-in",
+        "detail": "A framework choice is an operating decision."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_fit",
+        "label": "Can you justify the fit described in \"Start with the hardest product constraint\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_impl",
+        "label": "Can you inspect the implementation surface in \"Prototype the riskiest slice, not the happiest path\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Plan migration, observability, and lock-in\" define production checks?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Choose a framework for a support triage agent and justify it against two alternatives. Include state needs, data/RAG needs, tool risk, deployment ecosystem, evaluation plan, and migration risk. Next rung: study the chosen framework in depth.",
+      "scopedTo": "Choosing an Agent Framework"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LangGraph documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "kb5": {
+      "id": "kb5",
+      "kind": "kb",
+      "title": "KB: LangChain",
+      "url": "https://docs.langchain.com/oss/python/langchain/overview",
+      "asOfDate": "2026-06-22"
+    },
+    "kb6": {
+      "id": "kb6",
+      "kind": "kb",
+      "title": "KB: LangGraph",
+      "url": "https://docs.langchain.com/oss/python/langgraph/overview",
+      "asOfDate": "2026-06-22"
+    },
+    "kb7": {
+      "id": "kb7",
+      "kind": "kb",
+      "title": "KB: LlamaIndex",
+      "url": "https://developers.llamaindex.ai/python/framework/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb8": {
+      "id": "kb8",
+      "kind": "kb",
+      "title": "KB: OpenAI Agents SDK",
+      "url": "https://openai.github.io/openai-agents-python/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb9": {
+      "id": "kb9",
+      "kind": "kb",
+      "title": "KB: Semantic Kernel and Microsoft Agent Framework",
+      "url": "https://learn.microsoft.com/en-us/agent-framework/overview/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb11": {
+      "id": "kb11",
+      "kind": "kb",
+      "title": "KB: CrewAI",
+      "url": "https://docs.crewai.com/",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

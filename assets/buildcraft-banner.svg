@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="320" viewBox="0 0 1400 320" role="img" aria-labelledby="title desc">
+<title id="title">AI Buildcraft</title><desc id="desc">Build, inspect, evaluate and understand practical AI systems.</desc>
+<rect width="1400" height="320" fill="#f6f8fc"/>
+<path d="M0 1h1400M0 319h1400" stroke="#dce3ee"/>
+<g fill="none" stroke="#b7c5dd" stroke-width="2"><rect x="1010" y="62" width="98" height="72" rx="8"/><rect x="1166" y="62" width="98" height="72" rx="8"/><rect x="1088" y="194" width="98" height="72" rx="8"/><path d="M1108 98h58m-107 36v26h78v34m78-60v26h-78"/></g>
+<g fill="#2861d5"><circle cx="1059" cy="98" r="10"/><circle cx="1215" cy="98" r="10"/><circle cx="1137" cy="230" r="10"/></g>
+<text x="66" y="78" font-family="Arial,sans-serif" font-size="17" letter-spacing="4" fill="#2861d5">ANAND PAREEK</text>
+<text x="62" y="160" font-family="Arial,sans-serif" font-size="68" font-weight="700" fill="#152139">AI Buildcraft</text>
+<text x="66" y="212" font-family="Arial,sans-serif" font-size="24" fill="#42526c">Build. Inspect. Evaluate. Understand.</text>
+<text x="66" y="263" font-family="Arial,sans-serif" font-size="17" fill="#59677e">APPLICATIONS  /  AGENT SKILLS  /  MODEL LABS  /  VISUAL GUIDES</text>
+</svg>

@@ -1,0 +1,19 @@
+# Tested on macOS arm64 (Apple M4, 24 GB) with Python 3.13.
+# The full resolved environment is in requirements-lock-macos-arm64.txt.
+torch==2.14.0
+transformers==5.17.0
+peft==0.21.0
+trl==1.14.0
+accelerate==1.15.0
+datasets==5.0.1
+huggingface_hub==1.33.0
+safetensors==0.8.0
+numpy==2.5.3
+pandas==3.0.6
+matplotlib==3.11.2
+tqdm==4.70.1
+PyYAML==6.0.3
+psycopg[binary]==3.3.6
+nbformat==5.11.1
+ipykernel==7.3.0
+jupyter==1.1.1

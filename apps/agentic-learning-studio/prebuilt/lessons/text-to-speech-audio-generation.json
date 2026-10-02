@@ -1,0 +1,940 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Text-to-Speech and Audio Generation",
+    "title": "Text-to-Speech and Audio Generation",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 42,
+    "thesis": "Text-to-Speech and Audio Generation is practical when learners can apply it to this concrete case: A support team generates voice prompts and must keep pronunciation, consent, and brand tone consistent. By the end, they should be able to build or review TTS script, voice, pronunciation, and QA checklist, measure review-approved clips without pronunciation defects, and catch the failure where the voice sounds fluent but mispronounces account or product names."
+  },
+  "learnerProfile": {
+    "level": "beginner",
+    "depth": "conceptual",
+    "examples": "functional",
+    "topic": "Text-to-Speech and Audio Generation",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Text-to-Speech and Audio Generation: mental map",
+    "caption": "Generate audio responsibly by preparing text, choosing voice/style, synthesizing with metadata, checking intelligibility, and governing consent/disclosure.",
+    "oneLineThesis": "Text-to-speech is a media-production workflow, not just an API call from text to waveform.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "TTS starts with a speakable script",
+        "sub": "Good audio begins before model inference.",
+        "what": "Learners treat TTS as production, not magic playback.",
+        "relevance": "This prevents unclear narration from poor scripts.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Rewrite dense lesson text into a speakable narration script.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Voice and prosody carry trust signals",
+        "sub": "Speaker choice is a policy decision.",
+        "what": "Learners connect audio generation to audience trust.",
+        "relevance": "This prevents accidental voice impersonation or inaccessible media.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Select a synthetic narrator without implying a real instructor.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Synthesis turns text into waveform",
+        "sub": "Model, sampling settings, and output format shape the sound.",
+        "what": "Learners understand the generation step.",
+        "relevance": "This makes audio reproducible and reviewable.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Generate narration and attach the script and model settings.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code TTS with metadata and captions",
+        "sub": "Generated audio should not be separated from its script.",
+        "what": "Learners implement a reviewable TTS artifact.",
+        "relevance": "This prevents orphaned audio files with unknown source.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Generate narration and save the script metadata beside it.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Audio QA protects clarity and consent",
+        "sub": "Natural-sounding does not mean ready.",
+        "what": "Learners finish with review and release policy.",
+        "relevance": "This prevents synthetic voices from confusing or excluding learners.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Approve, edit, regenerate, or reject narration based on QA.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "prepares"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "chooses"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "renders"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "reviews"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "TTS starts with a speakable script",
+      "sub": "Good audio begins before model inference.",
+      "summary": "Script structure, punctuation, and pronunciation guide synthesis quality.",
+      "objectives": [
+        "Prepare text for speech.",
+        "Name pronunciation and pacing controls.",
+        "Anchor in lesson narration."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Text that reads well may not speak well",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a beginner lesson needs a 30-second narration. The paragraph is full of abbreviations, code terms, and long clauses. A TTS model can generate natural-sounding audio, but the script should include punctuation, pronunciation notes, and pauses before synthesis."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_tts",
+            "canon_hf_audio_tts",
+            "kb_multimodal_generative"
+          ],
+          "analogy": "A TTS script is sheet music for a synthetic voice."
+        },
+        {
+          "id": "m1_script",
+          "kind": "functionalExample",
+          "title": "Worked script rewrite",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Original: \"Backprop computes gradients for params.\" Speakable: \"Backpropagation computes gradients for each parameter. Pause. Those gradients tell the optimizer how to update the model.\" Pronunciation note: params becomes parameters; ReLU is introduced before abbreviating."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_audio_tts"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Script prep",
+          "prompt": "Why rewrite lesson text before TTS?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "TTS cannot read punctuation.",
+              "correct": false
+            },
+            {
+              "text": "Spoken audio needs pacing, pronunciation, and clarity that raw prose may lack.",
+              "correct": true
+            },
+            {
+              "text": "Scripts are only for human actors.",
+              "correct": false
+            }
+          ],
+          "explanation": "Audio quality starts with the script.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_tts"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_tts",
+        "canon_hf_audio_tts",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Voice and prosody carry trust signals",
+      "sub": "Speaker choice is a policy decision.",
+      "summary": "Generated voices need consent, disclosure, and accessibility choices.",
+      "objectives": [
+        "Choose voice style responsibly.",
+        "Explain consent and likeness risk.",
+        "Plan captions and alternatives."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "A voice can imply identity",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "TTS can sound natural, emotional, and human. That helps accessibility and narration, but voice choice can imply a real person, authority, age, gender, or cultural identity. Do not imitate a specific person without permission and disclosure."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_nist_genai_profile",
+            "canon_hf_tts"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Voice-choice review",
+          "criteria": [
+            "Choice",
+            "Benefit",
+            "Risk to manage"
+          ],
+          "options": [
+            {
+              "name": "Neutral synthetic voice",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Neutral synthetic voice",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Benefit",
+                  "text": "clear narration without real likeness",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk to manage",
+                  "text": "still disclose synthetic audio",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "General lesson narration.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Branded character voice",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Branded character voice",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Benefit",
+                  "text": "consistent learning persona",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk to manage",
+                  "text": "over-personification or consent questions",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Owned character with policy.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Cloned real voice",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Cloned real voice",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Benefit",
+                  "text": "familiarity or continuity",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk to manage",
+                  "text": "requires explicit consent and strong labeling",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Only with permission and governance.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_nist_genai_profile"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_nist_genai_profile",
+        "canon_hf_tts"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Synthesis turns text into waveform",
+      "sub": "Model, sampling settings, and output format shape the sound.",
+      "summary": "TTS pipelines produce audio that should be saved with metadata.",
+      "objectives": [
+        "Describe the text-to-audio pipeline.",
+        "Record model, voice, script, and settings.",
+        "Recognize pronunciation failures."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "The output is waveform plus provenance",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Hugging Face Transformers exposes text-to-audio and text-to-speech pipelines for models that generate speech. A production artifact should save the waveform, exact script, model, voice or speaker setting, language, sample rate, generation date, and review status."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_tts",
+            "kb_multimodal_generative"
+          ]
+        },
+        {
+          "id": "m3_case",
+          "kind": "functionalExample",
+          "title": "Pronunciation review",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model says \"SQL\" as \"squill\" and \"LoRA\" inconsistently. The team adds a pronunciation glossary, regenerates the clip, and stores the glossary with the release record."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_audio_tts"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_tts",
+        "kb_multimodal_generative",
+        "canon_hf_audio_tts"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code TTS with metadata and captions",
+      "sub": "Generated audio should not be separated from its script.",
+      "summary": "A small script saves both audio and the release sidecar.",
+      "objectives": [
+        "Run a TTS pipeline pattern.",
+        "Predict why captions matter.",
+        "Verify generated audio workflows."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "TTS generation with metadata sidecar",
+          "language": "python",
+          "code": "import json\nfrom transformers import pipeline\n\nscript = \"Backpropagation computes gradients for each parameter. Those gradients guide the optimizer.\"\npipe = pipeline(\"text-to-audio\", model=\"suno/bark-small\")\noutput = pipe(script)\n\nmetadata = {\n    \"script\": script,\n    \"model\": \"suno/bark-small\",\n    \"synthetic_audio\": True,\n    \"visible_label\": \"Synthetic narration\",\n    \"caption_required\": True,\n    \"review_status\": \"needs_pronunciation_review\",\n}\nprint(json.dumps(metadata, indent=2))",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The code focuses on the production habit: the audio output needs script, model, synthetic label, caption requirement, and review status."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Why is caption_required true even when audio sounds clear?",
+            "answer": "Captions support accessibility, search, review, and fallback for learners who cannot or prefer not to use audio."
+          },
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_tts",
+            "canon_hf_audio_tts"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify AI-generated TTS code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: script is saved; model and voice settings recorded; synthetic label present; captions/transcript created; pronunciation reviewed; consent/likeness status clear; file format/sample rate documented."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_tts",
+            "canon_nist_genai_profile"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_tts",
+        "canon_hf_audio_tts",
+        "canon_nist_genai_profile"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Audio QA protects clarity and consent",
+      "sub": "Natural-sounding does not mean ready.",
+      "summary": "Release checks cover intelligibility, pronunciation, accessibility, safety, and rights.",
+      "objectives": [
+        "Define TTS quality checks.",
+        "Route failures to regenerate or human narration.",
+        "Close with disclosure and ownership."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The release question is whether learners can trust and use it",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "QA checks intelligibility, pronunciation, pacing, loudness, captions, synthetic disclosure, consent/likeness status, and content safety. If the clip mispronounces key terms or sounds like a real instructor without permission, regenerate, edit, or use human narration."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_nist_genai_profile",
+            "canon_hf_tts"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Ship generated audio only with script, captions, disclosure, consent status, and reviewer approval.",
+          "useWhen": "Use TTS for accessibility, narration drafts, multilingual support, and low-risk media where review is possible.",
+          "avoidWhen": "Avoid voice cloning, high-stakes instructions, or identity-like audio without explicit consent and labeling.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_nist_genai_profile"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Audio gate",
+          "prompt": "What should happen if TTS mispronounces a key technical term?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Ship because the waveform exists.",
+              "correct": false
+            },
+            {
+              "text": "Fix the script/pronunciation or replace the audio before release.",
+              "correct": true
+            },
+            {
+              "text": "Hide captions so nobody notices.",
+              "correct": false
+            }
+          ],
+          "explanation": "Instructional audio must be intelligible and reviewable.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_tts"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_nist_genai_profile",
+        "canon_hf_tts"
+      ]
+    }
+  ],
+  "glossary": {
+    "diffusion": {
+      "id": "diffusion",
+      "label": "Diffusion",
+      "laymanDefinition": "A generative process that learns to turn noise into structured media.",
+      "technicalNote": "Diffusion systems combine denoising steps, conditioning, schedulers, and safety controls; quality and provenance depend on the full pipeline.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "latent_space": {
+      "id": "latent_space",
+      "label": "Latent space",
+      "laymanDefinition": "A compressed representation where models manipulate meaning more efficiently than raw pixels or audio.",
+      "technicalNote": "Latent-space choices affect speed, detail, editability, artifacts, and what safety or provenance checks can inspect.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "The ordered set of model, preprocessing, generation, postprocessing, and safety steps.",
+      "technicalNote": "Media pipelines should pin model versions, prompts, parameters, assets, moderation, watermarking, and review metadata for reproducibility.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "vlm": {
+      "id": "vlm",
+      "label": "VLM",
+      "laymanDefinition": "A model that connects visual inputs with language understanding or generation.",
+      "technicalNote": "VLM workflows need image preprocessing, prompt grounding, output validation, and privacy review for uploaded visual content.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Vision-language model"
+    },
+    "asr": {
+      "id": "asr",
+      "label": "ASR",
+      "laymanDefinition": "Technology that converts spoken audio into text.",
+      "technicalNote": "ASR systems should track language, accent, noise, timestamps, confidence, privacy, and downstream correction paths.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Automatic speech recognition"
+    },
+    "provenance": {
+      "id": "provenance",
+      "label": "Provenance",
+      "laymanDefinition": "Evidence about where media came from and how it was created or edited.",
+      "technicalNote": "Provenance for generated media includes source assets, model versions, prompts, parameters, edits, disclosures, and review decisions.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Text-to-Speech and Audio Generation",
+    "themes": [
+      {
+        "name": "Audio release gate",
+        "questions": [
+          {
+            "q": "What makes this generated narration acceptable for learners?",
+            "why": "TTS can mispronounce terms, imply a real speaker, exclude learners, or violate likeness/consent expectations.",
+            "opts": [
+              "Script plus voice consent plus QA",
+              "Audio exists",
+              "No transcript needed"
+            ],
+            "rot": "Prepare script, choose allowed voice, synthesize with metadata, then review intelligibility and disclosure."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct TTS by naming script preparation, voice choice, pronunciation, synthesis pipeline, metadata, consent/disclosure, captions, and audio QA."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "TTS path from reviewed script to approved narration",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "TTS starts with a speakable script",
+          "sub": "Good audio begins before model inference.",
+          "what": "Learners treat TTS as production, not magic playback.",
+          "relevance": "This prevents unclear narration from poor scripts.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Rewrite dense lesson text into a speakable narration script.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Voice and prosody carry trust signals",
+          "sub": "Speaker choice is a policy decision.",
+          "what": "Learners connect audio generation to audience trust.",
+          "relevance": "This prevents accidental voice impersonation or inaccessible media.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Select a synthetic narrator without implying a real instructor.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Synthesis turns text into waveform",
+          "sub": "Model, sampling settings, and output format shape the sound.",
+          "what": "Learners understand the generation step.",
+          "relevance": "This makes audio reproducible and reviewable.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Generate narration and attach the script and model settings.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code TTS with metadata and captions",
+          "sub": "Generated audio should not be separated from its script.",
+          "what": "Learners implement a reviewable TTS artifact.",
+          "relevance": "This prevents orphaned audio files with unknown source.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Generate narration and save the script metadata beside it.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Audio QA protects clarity and consent",
+          "sub": "Natural-sounding does not mean ready.",
+          "what": "Learners finish with review and release policy.",
+          "relevance": "This prevents synthetic voices from confusing or excluding learners.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Approve, edit, regenerate, or reject narration based on QA.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "prepares"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "chooses"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "renders"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "reviews"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "TTS starts with a speakable script",
+        "detail": "Script structure, punctuation, and pronunciation guide synthesis quality."
+      },
+      {
+        "step": 2,
+        "label": "Voice and prosody carry trust signals",
+        "detail": "Generated voices need consent, disclosure, and accessibility choices."
+      },
+      {
+        "step": 3,
+        "label": "Synthesis turns text into waveform",
+        "detail": "TTS pipelines produce audio that should be saved with metadata."
+      },
+      {
+        "step": 4,
+        "label": "Code TTS with metadata and captions",
+        "detail": "A small script saves both audio and the release sidecar."
+      },
+      {
+        "step": 5,
+        "label": "Audio QA protects clarity and consent",
+        "detail": "Release checks cover intelligibility, pronunciation, accessibility, safety, and rights."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"TTS starts with a speakable script\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Code TTS with metadata and captions\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Audio QA protects clarity and consent\" define the release or review gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Generate a short synthetic narration for a lesson. Include script, pronunciation list, voice policy, model ID, metadata sidecar, transcript/captions, intelligibility review, and synthetic-audio label. Next rung: add multilingual pronunciation QA.",
+      "scopedTo": "Audio generation",
+      "checks": [
+        "Script reviewed before synthesis.",
+        "Voice consent/status explicit.",
+        "Pronunciation and captions checked.",
+        "Synthetic label and metadata saved."
+      ]
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Multimodal Generative AI",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Multimodal Generative AI",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Diffusers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-20"
+    },
+    "canon_hf_tts": {
+      "id": "canon_hf_tts",
+      "kind": "canonical",
+      "title": "Hugging Face Transformers text-to-speech task",
+      "url": "https://huggingface.co/docs/transformers/en/tasks/text-to-speech",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_hf_audio_tts": {
+      "id": "canon_hf_audio_tts",
+      "kind": "canonical",
+      "title": "Hugging Face Audio Course: Text to Speech",
+      "url": "https://huggingface.co/learn/audio-course/chapter6/introduction",
+      "asOfDate": "2026-06-23"
+    },
+    "kb_multimodal_generative": {
+      "id": "kb_multimodal_generative",
+      "kind": "kb",
+      "title": "KB: Multimodal and Generative Models",
+      "url": "https://huggingface.co/docs/diffusers/index",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_nist_genai_profile": {
+      "id": "canon_nist_genai_profile",
+      "kind": "canonical",
+      "title": "NIST AI RMF Generative AI Profile",
+      "url": "https://doi.org/10.6028/NIST.AI.600-1",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

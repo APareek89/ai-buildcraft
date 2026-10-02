@@ -1,0 +1,929 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Feature Engineering and Pipelines",
+    "title": "Feature Engineering and Pipelines",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Feature Engineering and Pipelines is practical when learners can apply it to this concrete case: A churn model depends on billing, product, and support features that refresh daily. By the end, they should be able to build or review feature pipeline contract with leakage, freshness, and ownership checks, measure fresh features available before scoring, and catch the failure where a feature leaks future behavior into the training set."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Feature Engineering and Pipelines",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Feature Engineering and Pipelines: mental map",
+    "caption": "Build leakage-safe feature pipelines: define raw data, fit train-only transforms, compose columns, test leakage, and monitor feature behavior.",
+    "oneLineThesis": "Feature engineering turns raw data into model inputs, and pipelines keep those transformations repeatable and evaluation-safe.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Features are the model view of raw data",
+        "sub": "Raw columns become signals only after careful definition.",
+        "what": "Learners see features as product choices, not automatic columns.",
+        "relevance": "This prevents models from seeing data that will not exist at inference.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Define ticket-priority features from raw support events and account data.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Fit transformers on train only",
+        "sub": "Scalers, imputers, and encoders can leak evaluation information.",
+        "what": "Learners understand the core anti-leakage rule.",
+        "relevance": "This catches inflated metrics from preprocessing on all rows.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Fit scalers and encoders on training tickets before validation.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Column pipelines keep preprocessing repeatable",
+        "sub": "Different column types need different transforms in one artifact.",
+        "what": "Learners build the reliable shape used in real ML projects.",
+        "relevance": "This prevents notebook-only transformations from drifting in production.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Compose numeric and categorical ticket features into one pipeline.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Leakage hides in time, targets, and aggregates",
+        "sub": "The hardest feature bugs look like impressive validation scores.",
+        "what": "Learners implement a leakage-safe pipeline and checklist.",
+        "relevance": "This makes feature safety concrete for build work.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Code preprocessing inside a scikit-learn pipeline and audit leakage.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Monitoring keeps feature contracts honest",
+        "sub": "A feature pipeline can drift even when code does not change.",
+        "what": "Learners extend feature engineering beyond training notebooks.",
+        "relevance": "This prevents silent production breakage from data changes.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Monitor ticket features so production inputs still match training assumptions.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "composes"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "guards"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "monitors"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Features are the model view of raw data",
+      "sub": "Raw columns become signals only after careful definition.",
+      "summary": "Feature engineering defines what the model can see.",
+      "objectives": [
+        "Turn raw support data into candidate features.",
+        "Explain why feature definitions need lineage.",
+        "Separate available-at-prediction-time fields from future fields."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "A feature is a promise about what the model may know",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: predict whether a support ticket is urgent. Raw data includes ticket text, customer plan, account age, previous ticket count, agent notes, and final resolution time. Resolution time is tempting because it predicts urgency, but it is known only after the ticket is handled. It is leakage, not a usable feature."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Good feature engineering states source, timestamp, transformation, allowed use, and owner. The model can only learn from the view you give it."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_pipeline",
+            "canon_sklearn_preprocessing"
+          ],
+          "analogy": "Features are ingredients laid out before cooking; future facts are ingredients from tomorrow."
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Feature definition sheet",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Feature: recent_ticket_count_30d. Source: ticket table. Time rule: count tickets opened before current ticket timestamp. Transform: log1p count. Owner: support analytics. Leakage check: excludes current ticket resolution and future tickets."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_pipeline"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Feature availability",
+          "prompt": "Why is final resolution time a bad training feature for ticket-priority prediction?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It is numeric, and numeric features are never allowed.",
+              "correct": false
+            },
+            {
+              "text": "It is unavailable when the model must make the prediction.",
+              "correct": true
+            },
+            {
+              "text": "It would make the model too interpretable.",
+              "correct": false
+            }
+          ],
+          "explanation": "Features must exist at prediction time.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_preprocessing"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_pipeline",
+        "canon_sklearn_preprocessing"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Fit transformers on train only",
+      "sub": "Scalers, imputers, and encoders can leak evaluation information.",
+      "summary": "Learned preprocessing must be fit on training data and applied to validation/test.",
+      "objectives": [
+        "Explain fit versus transform.",
+        "Name preprocessing leakage paths.",
+        "Use pipelines to enforce train-only fitting."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "fit learns; transform applies",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A scaler learns means and variances. An imputer learns replacement values. A category encoder learns category mapping. If these are fit on all rows before splitting, validation and test information has influenced training. A pipeline helps by fitting preprocessing inside cross-validation or train-only fit calls."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_pipeline",
+            "canon_sklearn_preprocessing"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Leakage through a harmless-looking scaler",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The team standardizes account_age using the mean from all tickets, including validation. The validation distribution has a launch-week surge of new accounts. The train features now contain a hint of validation distribution. The effect may be small, but the discipline is simple: fit preprocessing on train only."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_preprocessing"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_pipeline",
+        "canon_sklearn_preprocessing"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Column pipelines keep preprocessing repeatable",
+      "sub": "Different column types need different transforms in one artifact.",
+      "summary": "ColumnTransformer and Pipeline make preprocessing and model fitting reproducible.",
+      "objectives": [
+        "Compose numeric and categorical transforms.",
+        "Keep preprocessing tied to the model.",
+        "Review pipeline steps as a production artifact."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "The pipeline is the model input contract",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A support-ticket model may scale numeric features, one-hot encode product category, and pass text-derived counts through unchanged. A pipeline ties those transformations to the model so training, validation, and inference use the same steps."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_pipeline"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Pipeline component responsibilities",
+          "criteria": [
+            "Component",
+            "Learns during fit",
+            "Production risk"
+          ],
+          "options": [
+            {
+              "name": "Imputer",
+              "cells": [
+                {
+                  "criterion": "Component",
+                  "text": "Imputer",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Learns during fit",
+                  "text": "replacement values from train",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Production risk",
+                  "text": "validation/test distribution leak if fit globally",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Missing numeric or categorical values.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Scaler",
+              "cells": [
+                {
+                  "criterion": "Component",
+                  "text": "Scaler",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Learns during fit",
+                  "text": "mean and variance from train",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Production risk",
+                  "text": "distance or coefficient distortion if inconsistent",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Linear, SVM, kNN, neural models.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "One-hot encoder",
+              "cells": [
+                {
+                  "criterion": "Component",
+                  "text": "One-hot encoder",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Learns during fit",
+                  "text": "category mapping from train",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Production risk",
+                  "text": "unknown categories at inference",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Categorical columns.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Model",
+              "cells": [
+                {
+                  "criterion": "Component",
+                  "text": "Model",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Learns during fit",
+                  "text": "parameters from transformed train rows",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Production risk",
+                  "text": "cannot reproduce predictions if preprocessing is separate",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Always tied to preprocessing.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_pipeline"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_pipeline"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Leakage hides in time, targets, and aggregates",
+      "sub": "The hardest feature bugs look like impressive validation scores.",
+      "summary": "Leakage checks should be coded and reviewed like tests.",
+      "objectives": [
+        "Run a small pipeline example.",
+        "Predict why target-derived features inflate metrics.",
+        "Verify AI-generated feature pipelines."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 10,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Leakage-safe preprocessing pipeline skeleton",
+          "language": "python",
+          "code": "from sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.linear_model import LogisticRegression\n\nnumeric = [\"account_age_days\", \"recent_ticket_count_30d\", \"text_length\"]\ncategorical = [\"plan_tier\", \"product_area\"]\n\nnumeric_pipe = Pipeline([\n    (\"impute\", SimpleImputer(strategy=\"median\")),\n    (\"scale\", StandardScaler()),\n])\ncategory_pipe = Pipeline([\n    (\"impute\", SimpleImputer(strategy=\"most_frequent\")),\n    (\"onehot\", OneHotEncoder(handle_unknown=\"ignore\")),\n])\n\npreprocess = ColumnTransformer([\n    (\"num\", numeric_pipe, numeric),\n    (\"cat\", category_pipe, categorical),\n])\n\nmodel = Pipeline([\n    (\"preprocess\", preprocess),\n    (\"clf\", LogisticRegression(max_iter=1000)),\n])\n\n# Correct pattern after splitting:\n# model.fit(X_train, y_train)\n# validation_score = model.score(X_val, y_val)",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The pipeline learns imputations, scaling, encodings, and model weights only when fit is called on training data. Validation rows are transformed using the learned training transforms."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the leakage risk if SimpleImputer and StandardScaler are fit on the full dataset before train/validation split.",
+            "answer": "Validation statistics influence the training representation. Metrics can look better than deployment reality because preprocessing saw information from the evaluation rows."
+          },
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_pipeline",
+            "canon_sklearn_preprocessing"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify AI-generated feature engineering code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: split before fit; learned transforms are inside Pipeline or ColumnTransformer; target-derived and future-derived features are excluded; aggregations use only past data; unknown categories are handled; and feature definitions include source and timestamp rules."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_pipeline",
+            "canon_sklearn_model_selection"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_pipeline",
+        "canon_sklearn_preprocessing",
+        "canon_sklearn_model_selection"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Monitoring keeps feature contracts honest",
+      "sub": "A feature pipeline can drift even when code does not change.",
+      "summary": "Production feature quality needs data checks, drift alerts, and owner review.",
+      "objectives": [
+        "Name feature drift and schema drift.",
+        "Plan monitoring for missingness, ranges, and categories.",
+        "Connect pipeline checks to model maintenance."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Features are living dependencies",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "After deployment, product_area may get new categories, text_length may shift after a UI change, or recent_ticket_count_30d may break when an event pipeline changes. Monitor missingness, value ranges, category rates, freshness, and prediction slices. A feature owner should know when a contract changes."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_pipeline"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Treat feature definitions, pipelines, and monitors as one artifact.",
+          "useWhen": "Use this approach for any ML system where raw product data must be transformed before modeling.",
+          "avoidWhen": "Avoid one-off notebook features, all-data preprocessing, and unowned aggregates that cannot be reproduced at inference.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_pipeline"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Feature monitoring",
+          "prompt": "A new product_area category appears in production. What should a robust pipeline do?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Crash silently and drop predictions.",
+              "correct": false
+            },
+            {
+              "text": "Handle the unknown category safely and alert owners if rates shift materially.",
+              "correct": true
+            },
+            {
+              "text": "Refit using production test labels automatically.",
+              "correct": false
+            }
+          ],
+          "explanation": "Pipelines need runtime contracts as well as training code.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_pipeline"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_pipeline"
+      ]
+    }
+  ],
+  "glossary": {
+    "ai": {
+      "id": "ai",
+      "label": "AI",
+      "laymanDefinition": "Software systems that perform tasks associated with human intelligence.",
+      "technicalNote": "In these foundations lessons, AI is the broad field; the concrete mechanisms are models, data, objectives, and evaluation loops.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_pipeline"
+      ],
+      "acronymExpansion": "Artificial intelligence"
+    },
+    "ml": {
+      "id": "ml",
+      "label": "ML",
+      "laymanDefinition": "A branch of AI where systems learn patterns from data instead of only following hand-written rules.",
+      "technicalNote": "ML work is defined by training data, features, models, objectives, validation, and deployment constraints.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_pipeline"
+      ],
+      "acronymExpansion": "Machine learning"
+    },
+    "model": {
+      "id": "model",
+      "label": "Model",
+      "laymanDefinition": "A learned or configured function that maps inputs to predictions, scores, clusters, or generated outputs.",
+      "technicalNote": "Model choice encodes assumptions such as linearity, distance, tree splits, capacity, or sequential reward.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_pipeline"
+      ]
+    },
+    "loss": {
+      "id": "loss",
+      "label": "Loss",
+      "laymanDefinition": "A numerical training signal that measures how wrong a prediction is for a task.",
+      "technicalNote": "Loss drives optimization; it is not the same as product quality, fairness, or final generalization.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_pipeline"
+      ]
+    },
+    "generalization": {
+      "id": "generalization",
+      "label": "Generalization",
+      "laymanDefinition": "The ability of a model to perform well on examples it did not train on.",
+      "technicalNote": "Generalization is checked with validation/test data, leakage audits, and slice monitoring.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_pipeline"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "A repeatable sequence of data transforms, feature steps, model fitting, and evaluation or inference.",
+      "technicalNote": "Pipelines prevent train/test leakage and keep preprocessing identical between training and production.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_pipeline"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Feature Engineering and Pipelines",
+    "themes": [
+      {
+        "name": "Leakage-safe preprocessing",
+        "questions": [
+          {
+            "q": "Which transformations learn from data, and are they fit only on training rows?",
+            "why": "Feature engineering can inflate validation scores when scalers, encoders, imputers, or aggregates learn from validation/test data.",
+            "opts": [
+              "Train-fitted pipeline",
+              "Manual preprocessing on all rows",
+              "Feature list without lineage"
+            ],
+            "rot": "Put learned preprocessing inside a pipeline and fit it only on training data."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct feature pipelines by naming raw columns, transformations, train-only fit, ColumnTransformer, leakage checks, validation slices, and monitoring for feature drift."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Feature pipeline path from raw columns to monitored model input",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Features are the model view of raw data",
+          "sub": "Raw columns become signals only after careful definition.",
+          "what": "Learners see features as product choices, not automatic columns.",
+          "relevance": "This prevents models from seeing data that will not exist at inference.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Define ticket-priority features from raw support events and account data.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Fit transformers on train only",
+          "sub": "Scalers, imputers, and encoders can leak evaluation information.",
+          "what": "Learners understand the core anti-leakage rule.",
+          "relevance": "This catches inflated metrics from preprocessing on all rows.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Fit scalers and encoders on training tickets before validation.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Column pipelines keep preprocessing repeatable",
+          "sub": "Different column types need different transforms in one artifact.",
+          "what": "Learners build the reliable shape used in real ML projects.",
+          "relevance": "This prevents notebook-only transformations from drifting in production.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Compose numeric and categorical ticket features into one pipeline.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Leakage hides in time, targets, and aggregates",
+          "sub": "The hardest feature bugs look like impressive validation scores.",
+          "what": "Learners implement a leakage-safe pipeline and checklist.",
+          "relevance": "This makes feature safety concrete for build work.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Code preprocessing inside a scikit-learn pipeline and audit leakage.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Monitoring keeps feature contracts honest",
+          "sub": "A feature pipeline can drift even when code does not change.",
+          "what": "Learners extend feature engineering beyond training notebooks.",
+          "relevance": "This prevents silent production breakage from data changes.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Monitor ticket features so production inputs still match training assumptions.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "defines"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "fits"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "checks"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "operates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Features are the model view of raw data",
+        "detail": "Feature engineering defines what the model can see."
+      },
+      {
+        "step": 2,
+        "label": "Fit transformers on train only",
+        "detail": "Learned preprocessing must be fit on training data and applied to validation/test."
+      },
+      {
+        "step": 3,
+        "label": "Column pipelines keep preprocessing repeatable",
+        "detail": "ColumnTransformer and Pipeline make preprocessing and model fitting reproducible."
+      },
+      {
+        "step": 4,
+        "label": "Leakage hides in time, targets, and aggregates",
+        "detail": "Leakage checks should be coded and reviewed like tests."
+      },
+      {
+        "step": 5,
+        "label": "Monitoring keeps feature contracts honest",
+        "detail": "Production feature quality needs data checks, drift alerts, and owner review."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Features are the model view of raw data\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Leakage hides in time, targets, and aggregates\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Monitoring keeps feature contracts honest\" define the selection or evaluation gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Build a leakage-safe pipeline for support-ticket priority. Include text length, product category, account age, and recent ticket count; fit preprocessing on train only; validate with held-out data; add leakage tests and feature monitoring notes. Next rung: add feature store lineage.",
+      "scopedTo": "Foundations",
+      "checks": [
+        "Feature definitions are documented.",
+        "Learned transforms fit only train.",
+        "Pipeline includes preprocessing and model.",
+        "Leakage-prone features are audited."
+      ]
+    }
+  },
+  "citations": {
+    "canon_sklearn_pipeline": {
+      "id": "canon_sklearn_pipeline",
+      "kind": "canonical",
+      "title": "scikit-learn Pipeline and composite estimators",
+      "url": "https://scikit-learn.org/stable/modules/compose.html#pipeline",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_sklearn_preprocessing": {
+      "id": "canon_sklearn_preprocessing",
+      "kind": "canonical",
+      "title": "scikit-learn preprocessing guide",
+      "url": "https://scikit-learn.org/stable/modules/preprocessing.html",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_sklearn_model_selection": {
+      "id": "canon_sklearn_model_selection",
+      "kind": "canonical",
+      "title": "scikit-learn model selection",
+      "url": "https://scikit-learn.org/stable/model_selection.html",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

@@ -1,0 +1,406 @@
+<!doctype html>
+<!-- Adapted for standalone use: viewer runtime removed; rendered code-copy and navigation interactions rebound. -->
+
+<html><head><!-- frame-runtime --><!-- /frame-runtime --><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Inside LLMs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap">
+<style>
+/* Layout: sticky rail of block IDs on the left, one reading column on the right; every code block numbers its own lines from 1 so "LLM-06, line 12" is unambiguous. */
+:root{
+  --bg:#f1f3f6; --surface:#ffffff; --fg:#16202b; --muted:#5a6574; --rule:#d8dde5;
+  --accent:#2646c4; --id:#7d5200; --id-bg:#f8ecd2;
+  --code-bg:#f7f8fb; --code-fg:#1a2431; --comment:#6d7889; --ln:#a0a8b4; --math-bg:#eef1fb;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10151c; --surface:#161d26; --fg:#e3e8ef; --muted:#97a1b0; --rule:#2a3340;
+  --accent:#93a8ff; --id:#f1c062; --id-bg:#2d2412;
+  --code-bg:#0c1117; --code-fg:#d9e0e9; --comment:#7c8899; --ln:#525e6e; --math-bg:#1a2233; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10151c; --surface:#161d26; --fg:#e3e8ef; --muted:#97a1b0; --rule:#2a3340;
+  --accent:#93a8ff; --id:#f1c062; --id-bg:#2d2412;
+  --code-bg:#0c1117; --code-fg:#d9e0e9; --comment:#7c8899; --ln:#525e6e; --math-bg:#1a2233; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16.5px;line-height:1.6;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+header.top{display:grid;gap:10px;padding-bottom:22px;border-bottom:1px solid var(--rule);margin-bottom:26px}
+.series{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,5vw,46px);line-height:1.05;margin:0;text-wrap:balance}
+.sub{color:var(--muted);max-width:68ch;margin:0}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--mono);font-size:13px}
+.flow span{background:var(--surface);border:1px solid var(--rule);padding:3px 9px;border-radius:4px}
+.flow i{font-style:normal;color:var(--muted)}
+.blk code,.sub code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);border:1px solid var(--rule);padding:0 4px;border-radius:3px}
+.how{font-size:14px;color:var(--muted)}
+.how b{color:var(--fg)}
+.grid{display:grid;grid-template-columns:230px minmax(0,1fr);gap:40px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);align-self:start;max-height:calc(100vh - 32px);overflow:auto;display:grid;gap:2px;font-size:14px}
+nav.rail a{display:grid;grid-template-columns:62px 1fr;gap:6px;color:var(--fg);text-decoration:none;padding:5px 8px;border-radius:4px;line-height:1.3}
+nav.rail a:hover,nav.rail a:focus-visible{background:var(--surface);outline:none}
+nav.rail a.on{background:var(--id-bg)}
+nav.rail code{font-family:var(--mono);font-size:12px;color:var(--id);font-weight:600}
+main{display:grid;gap:44px;min-width:0}
+section.blk{display:grid;gap:14px;min-width:0;scroll-margin-top:20px}
+.bh{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px}
+.bid{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--id);background:var(--id-bg);padding:3px 10px;border-radius:4px;letter-spacing:.02em}
+h2{font-family:var(--display);font-weight:600;font-size:24px;line-height:1.2;margin:0;text-wrap:balance}
+.blk p{margin:0;max-width:70ch}
+.blk ul{margin:0;padding-left:20px;max-width:70ch;display:grid;gap:4px}
+.key{border-left:3px solid var(--accent);padding:4px 0 4px 14px;max-width:70ch}
+.math{font-family:var(--mono);font-size:14.5px;background:var(--math-bg);padding:12px 16px;border-radius:6px;overflow-x:auto;white-space:pre;line-height:1.7}
+figure.code{margin:0;border:1px solid var(--rule);border-radius:6px;background:var(--code-bg);min-width:0;overflow:hidden}
+figure.code .ch{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:12px;color:var(--muted)}
+figure.code button{font:inherit;color:var(--accent);background:none;border:1px solid var(--rule);border-radius:4px;padding:2px 8px;cursor:pointer}
+figure.code button:focus-visible{outline:2px solid var(--accent)}
+pre{margin:0;padding:10px 0;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.6;color:var(--code-fg)}
+pre .l{display:grid;grid-template-columns:44px max-content;padding-right:16px}
+pre .n{color:var(--ln);text-align:right;padding-right:14px;user-select:none;font-variant-numeric:tabular-nums}
+pre .cm{color:var(--comment)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;font-size:14.5px;min-width:100%}
+th,td{text-align:left;padding:7px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+td{font-variant-numeric:tabular-nums}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--rule);color:var(--muted);font-size:14px}
+@media (max-width:820px){
+  .grid{grid-template-columns:minmax(0,1fr);gap:20px}
+  nav.rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--bg);display:flex;overflow-x:auto;max-height:none;padding-block:8px;border-bottom:1px solid var(--rule)}
+  nav.rail a{display:block;white-space:nowrap}
+  nav.rail a span{display:none}
+}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="series">Part 1 of 4 · Transformers</div>
+  <h1>Inside LLMs</h1>
+  <p class="sub">From Karpathy's GPT to a modern LLM: RMSNorm, RoPE, SwiGLU, Mixture of Experts, quantization, LoRA, sampling and speculative decoding.</p>
+  <div class="flow"><span>tokens</span><i>→</i><span>embed</span><i>→</i><span>RMSNorm → GQA attention (RoPE)</span><i>→</i><span>+</span><i>→</i><span>RMSNorm → SwiGLU or MoE</span><i>→</i><span>+</span><i>→</i><span>× L layers</span><i>→</i><span>RMSNorm</span><i>→</i><span>logits</span></div>
+  <p class="how">Follow along: I say a <b>block ID</b> and a <b>line number</b>. Line numbers restart at 1 in every block.</p>
+</header>
+<div class="grid">
+<nav class="rail" id="rail" aria-label="Blocks"><a href="#LLM-01" class="on"><code>LLM-01</code><span>Attention recap in one formula</span></a><a href="#LLM-02"><code>LLM-02</code><span>Karpathy GPT vs a modern LLM</span></a><a href="#LLM-03"><code>LLM-03</code><span>RMSNorm</span></a><a href="#LLM-04"><code>LLM-04</code><span>RoPE: position by rotation</span></a><a href="#LLM-05"><code>LLM-05</code><span>SwiGLU MLP</span></a><a href="#LLM-06"><code>LLM-06</code><span>A modern block, assembled</span></a><a href="#LLM-07"><code>LLM-07</code><span>Mixture of Experts (MoE)</span></a><a href="#LLM-08"><code>LLM-08</code><span>Total vs active parameters</span></a><a href="#LLM-09"><code>LLM-09</code><span>Load balancing the router</span></a><a href="#LLM-10"><code>LLM-10</code><span>Quantization: the basic idea</span></a><a href="#LLM-11"><code>LLM-11</code><span>4-bit, groups and outliers</span></a><a href="#LLM-12"><code>LLM-12</code><span>LoRA in code</span></a><a href="#LLM-13"><code>LLM-13</code><span>Sampling: temperature and top-p</span></a><a href="#LLM-14"><code>LLM-14</code><span>Speculative decoding</span></a><a href="#LLM-15"><code>LLM-15</code><span>Research map: what to read next</span></a></nav>
+<main>
+<section class="blk" id="LLM-01">
+<div class="bh"><span class="bid">LLM-01</span><h2>Attention recap in one formula</h2></div>
+<p>Everything we discussed so far, in maths. <code>x</code> is one token's 384-number vector.</p>
+<div class="math">q_i = W_Q x_i      k_j = W_K x_j      v_j = W_V x_j
+
+score(i, j) = q_i · k_j / √d  =  x_iᵀ (W_Qᵀ W_K) x_j / √d     ← W_Q, W_K only appear as one product
+α_i       = softmax over j ≤ i of score(i, j)                ← causal mask (tril)
+out_i     = Σ_j α_ij · v_j                                    ← V goes straight to the output
+y_i       = W_O · concat(heads)                               ← O mixes the heads</div>
+<ul>
+<li><b>LoRA on Q and V:</b> Q steers the scores (shared with K). V changes the content directly.</li>
+<li><b>KV cache:</b> row i needs one query (q_i) but every key and value (k_1…k_i). Rows are used once; columns are read forever. So cache K and V, never Q.</li>
+<li><b>GQA:</b> many query heads share fewer K/V heads. Head size stays the same, so the dot product still works.</li>
+</ul>
+</section>
+
+<section class="blk" id="LLM-02">
+<div class="bh"><span class="bid">LLM-02</span><h2>Karpathy GPT vs a modern LLM</h2></div>
+<p>Same skeleton: embed, then N blocks of (norm → attention → add, norm → MLP → add). Only the parts changed.</p>
+<div class="tbl"><table>
+<tbody><tr><th>Part</th><th>Karpathy GPT</th><th>Llama / Qwen style</th><th>Why</th></tr>
+<tr><td>Position</td><td>Learned table</td><td>RoPE (LLM-04)</td><td>Works on relative distance, extends to longer text</td></tr>
+<tr><td>Norm</td><td>LayerNorm</td><td>RMSNorm (LLM-03)</td><td>Fewer ops, same quality</td></tr>
+<tr><td>Attention</td><td>MHA, 6 heads</td><td>GQA, e.g. 28 Q / 4 KV heads</td><td>Smaller KV cache</td></tr>
+<tr><td>MLP</td><td>Linear → ReLU → Linear</td><td>SwiGLU (LLM-05) or MoE (LLM-07)</td><td>Better quality per parameter</td></tr>
+<tr><td>Bias</td><td>Yes</td><td>Mostly none</td><td>Not needed, saves params</td></tr>
+<tr><td>Norm place</td><td>Pre-norm</td><td>Pre-norm</td><td>Clean gradient path</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="blk" id="LLM-03">
+<div class="bh"><span class="bid">LLM-03</span><h2>RMSNorm</h2></div>
+<div class="math">LayerNorm(x) = (x − mean(x)) / std(x) · g + b
+RMSNorm(x)   =  x / √(mean(x²) + ε)   · g          ← no mean, no shift b</div>
+<figure class="code"><div class="ch"><span>LLM-03 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">class RMSNorm(nn.Module):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    def __init__(self, dim, eps=1e-6):</span></span>
+<span class="l"><span class="n">3</span><span class="t">        super().__init__()</span></span>
+<span class="l"><span class="n">4</span><span class="t">        self.eps = eps</span></span>
+<span class="l"><span class="n">5</span><span class="t">        self.weight = nn.Parameter(torch.ones(dim))  <span class="cm"># learned scale g, one per channel</span></span></span>
+<span class="l"><span class="n">6</span><span class="t"> </span></span>
+<span class="l"><span class="n">7</span><span class="t">    def forward(self, x):                            <span class="cm"># x: (B, T, C)</span></span></span>
+<span class="l"><span class="n">8</span><span class="t">        rms = x.pow(2).mean(-1, keepdim=True).add(self.eps).sqrt()   <span class="cm"># one number per token</span></span></span>
+<span class="l"><span class="n">9</span><span class="t">        return x / rms * self.weight</span></span></pre></figure>
+<p class="key">It is applied per token, across its C numbers. It only fixes the scale. The learned <code>weight</code> lets the model choose the scale it wants.</p>
+</section>
+
+<section class="blk" id="LLM-04">
+<div class="bh"><span class="bid">LLM-04</span><h2>RoPE: position by rotation</h2></div>
+<p>Instead of adding a position vector to x, rotate q and k. Split each vector into pairs. Rotate pair i by angle <code>pos × θ_i</code>. Early pairs spin fast, later pairs spin slow.</p>
+<div class="math">rotate(q, m) · rotate(k, n)  =  depends only on q, k and (m − n)
+
+So the score sees the DISTANCE between tokens, not their absolute place.</div>
+<figure class="code"><div class="ch"><span>LLM-04 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">def rope_angles(head_size, T, base=10000.0):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    i = torch.arange(0, head_size, 2).float()        <span class="cm"># (hs/2,) pair index</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">    theta = 1.0 / (base ** (i / head_size))          <span class="cm"># fast -&gt; slow frequencies</span></span></span>
+<span class="l"><span class="n">4</span><span class="t">    pos = torch.arange(T).float()                    <span class="cm"># (T,)</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">    ang = torch.outer(pos, theta)                    <span class="cm"># (T, hs/2) angle per position, per pair</span></span></span>
+<span class="l"><span class="n">6</span><span class="t">    return ang.cos(), ang.sin()</span></span>
+<span class="l"><span class="n">7</span><span class="t"> </span></span>
+<span class="l"><span class="n">8</span><span class="t">def apply_rope(x, cos, sin):                         <span class="cm"># x: (B, H, T, hs)</span></span></span>
+<span class="l"><span class="n">9</span><span class="t">    x1, x2 = x[..., 0::2], x[..., 1::2]              <span class="cm"># split into pairs (a, b)</span></span></span>
+<span class="l"><span class="n">10</span><span class="t">    out = torch.stack([x1 * cos - x2 * sin,          <span class="cm"># 2D rotation of each pair</span></span></span>
+<span class="l"><span class="n">11</span><span class="t">                       x1 * sin + x2 * cos], dim=-1)</span></span>
+<span class="l"><span class="n">12</span><span class="t">    return out.flatten(-2)                           <span class="cm"># back to (B, H, T, hs)</span></span></span>
+<span class="l"><span class="n">13</span><span class="t"> </span></span>
+<span class="l"><span class="n">14</span><span class="t"><span class="cm"># inside attention, just before  wei = q @ k.T :</span></span></span>
+<span class="l"><span class="n">15</span><span class="t"><span class="cm"># q = apply_rope(q, cos, sin)</span></span></span>
+<span class="l"><span class="n">16</span><span class="t"><span class="cm"># k = apply_rope(k, cos, sin)        # V is NOT rotated</span></span></span></pre></figure>
+<ul>
+<li>Applied to Q and K only, because only the score needs position.</li>
+<li>With a KV cache, keys are stored already rotated. A new token must use its true position (like <code>start_pos</code> in <code>kv_cache_gqa.py</code>).</li>
+<li>Real code (Hugging Face) pairs the first half with the second half instead of even/odd. Same maths.</li>
+</ul>
+</section>
+
+<section class="blk" id="LLM-05">
+<div class="bh"><span class="bid">LLM-05</span><h2>SwiGLU MLP</h2></div>
+<div class="math">Karpathy: y = W2 · ReLU(W1 x)                       2 matrices, hidden = 4C
+SwiGLU:   y = W_down · ( SiLU(W_gate x) ⊙ (W_up x) )    3 matrices, hidden ≈ 8/3 · C
+SiLU(z) = z · sigmoid(z)        ⊙ = element-wise multiply</div>
+<figure class="code"><div class="ch"><span>LLM-05 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">class SwiGLU(nn.Module):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    def __init__(self, dim, hidden):</span></span>
+<span class="l"><span class="n">3</span><span class="t">        super().__init__()</span></span>
+<span class="l"><span class="n">4</span><span class="t">        self.gate = nn.Linear(dim, hidden, bias=False)   <span class="cm"># "gate_proj"</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">        self.up   = nn.Linear(dim, hidden, bias=False)   <span class="cm"># "up_proj"</span></span></span>
+<span class="l"><span class="n">6</span><span class="t">        self.down = nn.Linear(hidden, dim, bias=False)   <span class="cm"># "down_proj"</span></span></span>
+<span class="l"><span class="n">7</span><span class="t"> </span></span>
+<span class="l"><span class="n">8</span><span class="t">    def forward(self, x):                                <span class="cm"># x: (B, T, C)</span></span></span>
+<span class="l"><span class="n">9</span><span class="t">        return self.down(F.silu(self.gate(x)) * self.up(x))</span></span></pre></figure>
+<p class="key">The gate decides, per hidden neuron, how much of <code>up(x)</code> passes. These three names are also LoRA targets. "All-linear" LoRA means q, k, v, o, gate, up, down.</p>
+</section>
+
+<section class="blk" id="LLM-06">
+<div class="bh"><span class="bid">LLM-06</span><h2>A modern block, assembled</h2></div>
+<figure class="code"><div class="ch"><span>LLM-06 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">class ModernBlock(nn.Module):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    def __init__(self, dim, n_head, n_kv_head, hidden):</span></span>
+<span class="l"><span class="n">3</span><span class="t">        super().__init__()</span></span>
+<span class="l"><span class="n">4</span><span class="t">        self.norm1 = RMSNorm(dim)                            <span class="cm"># LLM-03</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">        self.attn  = GQAAttention(dim, n_head, n_kv_head)    <span class="cm"># kv_cache_gqa.py + RoPE (LLM-04)</span></span></span>
+<span class="l"><span class="n">6</span><span class="t">        self.norm2 = RMSNorm(dim)</span></span>
+<span class="l"><span class="n">7</span><span class="t">        self.mlp   = SwiGLU(dim, hidden)                     <span class="cm"># LLM-05, or MoE (LLM-07)</span></span></span>
+<span class="l"><span class="n">8</span><span class="t"> </span></span>
+<span class="l"><span class="n">9</span><span class="t">    def forward(self, x, cache=None):</span></span>
+<span class="l"><span class="n">10</span><span class="t">        a, cache = self.attn(self.norm1(x), cache)   <span class="cm"># pre-norm: normalise the copy</span></span></span>
+<span class="l"><span class="n">11</span><span class="t">        x = x + a                                    <span class="cm"># write back to the residual stream</span></span></span>
+<span class="l"><span class="n">12</span><span class="t">        x = x + self.mlp(self.norm2(x))</span></span>
+<span class="l"><span class="n">13</span><span class="t">        return x, cache</span></span>
+<span class="l"><span class="n">14</span><span class="t"> </span></span>
+<span class="l"><span class="n">15</span><span class="t"><span class="cm"># model = embed -&gt; [ModernBlock] x L -&gt; RMSNorm -&gt; lm_head</span></span></span></pre></figure>
+<p class="key">Compare with Karpathy's <code>Block.forward</code>: the two <code>x = x + ...</code> lines are identical. Only the parts inside changed.</p>
+</section>
+
+<section class="blk" id="LLM-07">
+<div class="bh"><span class="bid">LLM-07</span><h2>Mixture of Experts (MoE)</h2></div>
+<p>Replace the one MLP with E smaller MLPs called experts, plus a router. For each token, the router picks the top k experts. Only those run. Attention stays the same.</p>
+<div class="math">router scores  s = W_r · x                    (E numbers per token)
+pick           top-k of s                    (e.g. k = 2 of E = 8)
+weights        g = softmax(top-k scores)
+output         y = Σ over chosen e of  g_e · Expert_e(x)</div>
+<figure class="code"><div class="ch"><span>LLM-07 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">class MoE(nn.Module):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    def __init__(self, dim, hidden, n_experts=8, top_k=2):</span></span>
+<span class="l"><span class="n">3</span><span class="t">        super().__init__()</span></span>
+<span class="l"><span class="n">4</span><span class="t">        self.router  = nn.Linear(dim, n_experts, bias=False)     <span class="cm"># one score per expert</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">        self.experts = nn.ModuleList([SwiGLU(dim, hidden) for _ in range(n_experts)])</span></span>
+<span class="l"><span class="n">6</span><span class="t">        self.top_k = top_k</span></span>
+<span class="l"><span class="n">7</span><span class="t"> </span></span>
+<span class="l"><span class="n">8</span><span class="t">    def forward(self, x):                        <span class="cm"># x: (B, T, C)</span></span></span>
+<span class="l"><span class="n">9</span><span class="t">        B, T, C = x.shape</span></span>
+<span class="l"><span class="n">10</span><span class="t">        x = x.view(-1, C)                        <span class="cm"># (N, C), N = B*T tokens, each routed alone</span></span></span>
+<span class="l"><span class="n">11</span><span class="t">        logits = self.router(x)                  <span class="cm"># (N, E)</span></span></span>
+<span class="l"><span class="n">12</span><span class="t">        w, idx = logits.topk(self.top_k, dim=-1) <span class="cm"># (N, k) best experts per token</span></span></span>
+<span class="l"><span class="n">13</span><span class="t">        w = F.softmax(w, dim=-1)                 <span class="cm"># mixing weights for the chosen k</span></span></span>
+<span class="l"><span class="n">14</span><span class="t">        out = torch.zeros_like(x)</span></span>
+<span class="l"><span class="n">15</span><span class="t">        for e, expert in enumerate(self.experts):</span></span>
+<span class="l"><span class="n">16</span><span class="t">            tok, slot = (idx == e).nonzero(as_tuple=True)    <span class="cm"># tokens that chose expert e</span></span></span>
+<span class="l"><span class="n">17</span><span class="t">            if tok.numel() == 0:</span></span>
+<span class="l"><span class="n">18</span><span class="t">                continue</span></span>
+<span class="l"><span class="n">19</span><span class="t">            out[tok] += w[tok, slot, None] * expert(x[tok])  <span class="cm"># run e only on its tokens</span></span></span>
+<span class="l"><span class="n">20</span><span class="t">        return out.view(B, T, C), logits</span></span></pre></figure>
+<ul>
+<li>Routing is per token, per layer. One word can use experts 2 and 5 in layer 3, and 1 and 7 in layer 4.</li>
+<li>Experts do not learn neat topics like "maths" or "French". They split work in ways that are hard to read.</li>
+<li>Some models add a <b>shared expert</b> that every token always uses, plus many small routed experts (DeepSeek style).</li>
+</ul>
+</section>
+
+<section class="blk" id="LLM-08">
+<div class="bh"><span class="bid">LLM-08</span><h2>Total vs active parameters</h2></div>
+<p>Total = everything stored. Active = what one token actually uses. Memory needs total. Speed follows active.</p>
+<figure class="code"><div class="ch"><span>LLM-08 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t"><span class="cm"># Mixtral-8x7B-like numbers</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">dim, hidden, E, k, layers = 4096, 14336, 8, 2, 32</span></span>
+<span class="l"><span class="n">3</span><span class="t">expert = 3 * dim * hidden                 <span class="cm"># one SwiGLU expert = 3 matrices ~ 176M params</span></span></span>
+<span class="l"><span class="n">4</span><span class="t">total_mlp  = layers * E * expert          <span class="cm"># all experts must sit in GPU memory</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">active_mlp = layers * k * expert          <span class="cm"># only k run per token</span></span></span>
+<span class="l"><span class="n">6</span><span class="t">print(total_mlp / 1e9, active_mlp / 1e9)  <span class="cm"># ~45.1B  vs  ~11.3B</span></span></span>
+<span class="l"><span class="n">7</span><span class="t"><span class="cm"># + attention + embeddings (always active)  -&gt;  ~47B total, ~13B active</span></span></span></pre></figure>
+<div class="tbl"><table>
+<tbody><tr><th></th><th>Dense 13B</th><th>MoE 47B total / 13B active</th></tr>
+<tr><td>GPU memory (bf16)</td><td>~26 GB</td><td>~94 GB</td></tr>
+<tr><td>Compute per token</td><td>13B</td><td>~13B</td></tr>
+<tr><td>Knowledge capacity</td><td>13B</td><td>closer to a large dense model</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="blk" id="LLM-09">
+<div class="bh"><span class="bid">LLM-09</span><h2>Load balancing the router</h2></div>
+<p>Left alone, the router sends most tokens to a few experts. Those get better, so they get picked more. The rest die. An extra loss pushes usage to be even.</p>
+<div class="math">f_e = share of tokens sent to expert e
+P_e = average router probability for expert e
+aux = E · Σ_e  f_e · P_e          ← smallest when both are spread evenly
+loss = lm_loss + 0.01 · aux</div>
+<figure class="code"><div class="ch"><span>LLM-09 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">def load_balance_loss(logits, idx, n_experts):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    <span class="cm"># logits: (N, E) router scores    idx: (N, k) chosen experts</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">    probs = F.softmax(logits, dim=-1)</span></span>
+<span class="l"><span class="n">4</span><span class="t">    f = F.one_hot(idx, n_experts).float().sum(1).mean(0)   <span class="cm"># (E,) share of tokens per expert</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">    P = probs.mean(0)                                      <span class="cm"># (E,) avg probability per expert</span></span></span>
+<span class="l"><span class="n">6</span><span class="t">    return n_experts * (f * P).sum()</span></span></pre></figure>
+<p class="key">Other fixes: a <b>capacity limit</b> per expert (extra tokens are dropped or overflow), and DeepSeek-V3's bias trick that balances without an extra loss.</p>
+</section>
+
+<section class="blk" id="LLM-10">
+<div class="bh"><span class="bid">LLM-10</span><h2>Quantization: the basic idea</h2></div>
+<p>Store each weight in fewer bits. Pick a scale so the biggest weight maps to the biggest integer. Round the rest. At use time, multiply back.</p>
+<div class="math">scale = max(|w|) / 127              (int8: −127 … 127)
+q     = round(w / scale)             stored as int8
+w'    = q · scale                    error = w − w'  (rounding only)</div>
+<figure class="code"><div class="ch"><span>LLM-10 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">def quant_int8(w):                                      <span class="cm"># w: (out, in) float weights</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">    scale = w.abs().amax(dim=1, keepdim=True) / 127     <span class="cm"># one scale per output row</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">    q = torch.round(w / scale).clamp(-127, 127).to(torch.int8)</span></span>
+<span class="l"><span class="n">4</span><span class="t">    return q, scale</span></span>
+<span class="l"><span class="n">5</span><span class="t"> </span></span>
+<span class="l"><span class="n">6</span><span class="t">def dequant(q, scale):</span></span>
+<span class="l"><span class="n">7</span><span class="t">    return q.float() * scale</span></span>
+<span class="l"><span class="n">8</span><span class="t"> </span></span>
+<span class="l"><span class="n">9</span><span class="t">w = torch.randn(4096, 4096) * 0.02</span></span>
+<span class="l"><span class="n">10</span><span class="t">q, s = quant_int8(w)</span></span>
+<span class="l"><span class="n">11</span><span class="t">print((dequant(q, s) - w).abs().mean())    <span class="cm"># tiny error; 2x smaller than bf16</span></span></span></pre></figure>
+<p class="key">Why it is fast, not just small: decoding one token reads every weight from memory. Fewer bytes to read means more tokens per second.</p>
+</section>
+
+<section class="blk" id="LLM-11">
+<div class="bh"><span class="bid">LLM-11</span><h2>4-bit, groups and outliers</h2></div>
+<p>At 4 bits there are only 16 levels. One large weight makes the scale large, and small weights round to zero. Fix: one scale per small group of weights.</p>
+<figure class="code"><div class="ch"><span>LLM-11 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">def quant_int4_groups(w, group=128):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    out, inp = w.shape</span></span>
+<span class="l"><span class="n">3</span><span class="t">    g = w.view(out, inp // group, group)          <span class="cm"># each row split into groups of 128</span></span></span>
+<span class="l"><span class="n">4</span><span class="t">    scale = g.abs().amax(-1, keepdim=True) / 7    <span class="cm"># int4 range -8..7</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">    q = torch.round(g / scale).clamp(-8, 7)</span></span>
+<span class="l"><span class="n">6</span><span class="t">    return q, scale                               <span class="cm"># ~4.1 bits per weight incl. scales</span></span></span>
+<span class="l"><span class="n">7</span><span class="t"> </span></span>
+<span class="l"><span class="n">8</span><span class="t"><span class="cm"># GPTQ: quantise columns one by one, adjust the rest to cancel the error (uses 2nd-order info)</span></span></span>
+<span class="l"><span class="n">9</span><span class="t"><span class="cm"># AWQ:  find channels with large activations, scale them up before rounding to protect them</span></span></span></pre></figure>
+<div class="tbl"><table>
+<tbody><tr><th>Format</th><th>Bits</th><th>7B model</th><th>70B model</th><th>Notes</th></tr>
+<tr><td>FP32</td><td>32</td><td>28 GB</td><td>280 GB</td><td>Training master copy</td></tr>
+<tr><td>BF16 / FP16</td><td>16</td><td>14 GB</td><td>140 GB</td><td>Default for serving</td></tr>
+<tr><td>FP8 / INT8</td><td>8</td><td>7 GB</td><td>70 GB</td><td>Near-lossless</td></tr>
+<tr><td>INT4 (GPTQ, AWQ, GGUF Q4)</td><td>~4.5</td><td>~4 GB</td><td>~40 GB</td><td>Small quality loss</td></tr>
+</tbody></table></div>
+<ul>
+<li><b>Weight-only</b> (W4A16): weights small, maths still in 16-bit. <b>W8A8</b>: activations also 8-bit, needs hardware support.</li>
+<li><b>KV cache quantization</b>: store K and V in 8 or 4 bit. Helps long context.</li>
+<li><b>QLoRA</b>: frozen base in 4-bit (NF4), LoRA adapters trained in bf16 (LLM-12).</li>
+</ul>
+</section>
+
+<section class="blk" id="LLM-12">
+<div class="bh"><span class="bid">LLM-12</span><h2>LoRA in code</h2></div>
+<div class="math">y = W x + (α / r) · B A x        W: (out, in) frozen   A: (r, in)   B: (out, r)
+params trained = r · (in + out)   vs   in · out      (r = 8, 4096×4096 → 65K vs 16.8M)</div>
+<figure class="code"><div class="ch"><span>LLM-12 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">class LoRALinear(nn.Module):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    def __init__(self, base: nn.Linear, r=8, alpha=16):</span></span>
+<span class="l"><span class="n">3</span><span class="t">        super().__init__()</span></span>
+<span class="l"><span class="n">4</span><span class="t">        self.base = base                                       <span class="cm"># frozen W (4-bit in QLoRA)</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">        for p in self.base.parameters():</span></span>
+<span class="l"><span class="n">6</span><span class="t">            p.requires_grad = False</span></span>
+<span class="l"><span class="n">7</span><span class="t">        self.A = nn.Parameter(torch.randn(r, base.in_features) * 0.01)   <span class="cm"># (r, in)</span></span></span>
+<span class="l"><span class="n">8</span><span class="t">        self.B = nn.Parameter(torch.zeros(base.out_features, r))         <span class="cm"># (out, r) starts at 0</span></span></span>
+<span class="l"><span class="n">9</span><span class="t">        self.scale = alpha / r</span></span>
+<span class="l"><span class="n">10</span><span class="t"> </span></span>
+<span class="l"><span class="n">11</span><span class="t">    def forward(self, x):</span></span>
+<span class="l"><span class="n">12</span><span class="t">        return self.base(x) + (x @ self.A.T @ self.B.T) * self.scale</span></span>
+<span class="l"><span class="n">13</span><span class="t"> </span></span>
+<span class="l"><span class="n">14</span><span class="t"><span class="cm"># "target modules" = which nn.Linear layers you wrap with this:</span></span></span>
+<span class="l"><span class="n">15</span><span class="t"><span class="cm"># Karpathy names: key, query, value, proj    HF names: q_proj, k_proj, v_proj, o_proj</span></span></span></pre></figure>
+<p class="key">B starts at zero, so the model starts exactly as the base model. With GQA, <code>k_proj</code> and <code>v_proj</code> are narrower, so their adapters are smaller too.</p>
+</section>
+
+<section class="blk" id="LLM-13">
+<div class="bh"><span class="bid">LLM-13</span><h2>Sampling: temperature and top-p</h2></div>
+<div class="math">p_i = softmax(logits / T)        T &lt; 1 sharper,  T &gt; 1 flatter,  T → 0 = argmax
+top-p: keep the fewest tokens whose probabilities add up to p, renormalise, sample</div>
+<figure class="code"><div class="ch"><span>LLM-13 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">def sample(logits, temperature=0.8, top_p=0.9):     <span class="cm"># logits: (V,) for the last position</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">    probs = F.softmax(logits / temperature, dim=-1)</span></span>
+<span class="l"><span class="n">3</span><span class="t">    p, order = probs.sort(descending=True)</span></span>
+<span class="l"><span class="n">4</span><span class="t">    keep = (p.cumsum(0) - p) &lt; top_p                 <span class="cm"># stop once top_p is covered</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">    p = p * keep</span></span>
+<span class="l"><span class="n">6</span><span class="t">    p = p / p.sum()</span></span>
+<span class="l"><span class="n">7</span><span class="t">    return order[torch.multinomial(p, 1)]</span></span></pre></figure>
+<p class="key">Karpathy's <code>generate</code> uses plain <code>torch.multinomial(probs)</code>: temperature 1, no top-p.</p>
+</section>
+
+<section class="blk" id="LLM-14">
+<div class="bh"><span class="bid">LLM-14</span><h2>Speculative decoding</h2></div>
+<p>Decoding is slow because each token reads all weights. A small draft model guesses k tokens. The big model checks all k in one pass. Keep the guesses it agrees with.</p>
+<figure class="code"><div class="ch"><span>LLM-14 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">@torch.no_grad()</span></span>
+<span class="l"><span class="n">2</span><span class="t">def speculative_greedy(big, small, idx, k=4):         <span class="cm"># models return (logits, ...) like Karpathy's</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">    draft = idx</span></span>
+<span class="l"><span class="n">4</span><span class="t">    for _ in range(k):                                 <span class="cm"># 1. small model guesses k tokens</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">        nxt = small(draft)[0][:, -1].argmax(-1, keepdim=True)</span></span>
+<span class="l"><span class="n">6</span><span class="t">        draft = torch.cat([draft, nxt], dim=1)</span></span>
+<span class="l"><span class="n">7</span><span class="t">    logits = big(draft)[0]                             <span class="cm"># 2. ONE big pass over all of them</span></span></span>
+<span class="l"><span class="n">8</span><span class="t">    n = idx.shape[1]</span></span>
+<span class="l"><span class="n">9</span><span class="t">    big_pick = logits[:, n-1:-1].argmax(-1)            <span class="cm"># what big would pick at each slot</span></span></span>
+<span class="l"><span class="n">10</span><span class="t">    guess = draft[:, n:]</span></span>
+<span class="l"><span class="n">11</span><span class="t">    ok = (big_pick == guess).long().cumprod(-1).sum().item()   <span class="cm"># length of agreeing prefix</span></span></span>
+<span class="l"><span class="n">12</span><span class="t">    fix = logits[:, n-1+ok].argmax(-1, keepdim=True)   <span class="cm"># big model's own next token</span></span></span>
+<span class="l"><span class="n">13</span><span class="t">    return torch.cat([idx, guess[:, :ok], fix], dim=1) <span class="cm"># ok + 1 tokens for one big pass</span></span></span></pre></figure>
+<p class="key">The output is exactly what the big model would write alone. The sampling version uses an accept/reject rule that keeps the same guarantee.</p>
+</section>
+
+<section class="blk" id="LLM-15">
+<div class="bh"><span class="bid">LLM-15</span><h2>Research map: what to read next</h2></div>
+<div class="tbl"><table>
+<tbody><tr><th>Topic</th><th>One-line idea</th><th>Builds on</th></tr>
+<tr><td>FlashAttention</td><td>Same exact attention, computed in tiles so the T×T matrix never sits in slow memory</td><td>LLM-01</td></tr>
+<tr><td>MLA (DeepSeek)</td><td>Compress K and V into one small latent per token; smaller cache than GQA</td><td>KV cache</td></tr>
+<tr><td>Sliding window / hybrids</td><td>Some layers only see recent tokens, or use linear-time layers (SSM, Mamba-style)</td><td>KV cache</td></tr>
+<tr><td>Long context (YaRN etc.)</td><td>Stretch RoPE angles so the model works past its training length</td><td>LLM-04</td></tr>
+<tr><td>Distillation</td><td>Train a small model on a big model's outputs</td><td>LLM-13</td></tr>
+<tr><td>RLHF / RL with verifiers</td><td>After pretraining, reward good answers; reasoning models come from this</td><td>Training loop</td></tr>
+<tr><td>Interpretability (SAEs)</td><td>Find readable features inside the residual stream</td><td>Residual stream</td></tr>
+</tbody></table></div>
+</section>
+
+</main>
+</div>
+<footer>Series: Inside LLMs · Inside CNNs · Inside Speech Models · Inside Diffusion. Code is PyTorch, written in the style of Karpathy's GPT notebook.</footer>
+</div>
+
+<script>
+(function(){
+  document.querySelectorAll('figure.code').forEach(function(fig){
+    var btn=fig.querySelector('button'); if(!btn)return;
+    var src=Array.from(fig.querySelectorAll('.t')).map(function(line){return line.textContent}).join('\n');
+    function selectCode(){var range=document.createRange();range.selectNodeContents(fig.querySelector('pre'));var selected=window.getSelection();selected.removeAllRanges();selected.addRange(range)}
+    btn.addEventListener('click',function(){
+      function done(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy'},1400)}
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(src).then(done,selectCode);else selectCode();
+    });
+  });
+  var rail=document.getElementById('rail'); if(!rail)return;
+  var links=rail.querySelectorAll('a');
+  if('IntersectionObserver' in window){var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){links.forEach(function(link){link.classList.toggle('on',link.getAttribute('href')==='#'+entry.target.id)})}})},{rootMargin:'-20% 0px -70% 0px'});document.querySelectorAll('section.blk').forEach(function(section){observer.observe(section)})}
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,258 @@
+<!doctype html>
+<!-- Adapted for standalone use: viewer runtime removed; rendered code-copy and navigation interactions rebound. -->
+
+<html data-theme="light" style="color-scheme: light;"><head><!-- frame-runtime --><!-- /frame-runtime --><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Inside Diffusion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap">
+<style>
+/* Layout: sticky rail of block IDs on the left, one reading column on the right; every code block numbers its own lines from 1 so "LLM-06, line 12" is unambiguous. */
+:root{
+  --bg:#f1f3f6; --surface:#ffffff; --fg:#16202b; --muted:#5a6574; --rule:#d8dde5;
+  --accent:#2646c4; --id:#7d5200; --id-bg:#f8ecd2;
+  --code-bg:#f7f8fb; --code-fg:#1a2431; --comment:#6d7889; --ln:#a0a8b4; --math-bg:#eef1fb;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10151c; --surface:#161d26; --fg:#e3e8ef; --muted:#97a1b0; --rule:#2a3340;
+  --accent:#93a8ff; --id:#f1c062; --id-bg:#2d2412;
+  --code-bg:#0c1117; --code-fg:#d9e0e9; --comment:#7c8899; --ln:#525e6e; --math-bg:#1a2233; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10151c; --surface:#161d26; --fg:#e3e8ef; --muted:#97a1b0; --rule:#2a3340;
+  --accent:#93a8ff; --id:#f1c062; --id-bg:#2d2412;
+  --code-bg:#0c1117; --code-fg:#d9e0e9; --comment:#7c8899; --ln:#525e6e; --math-bg:#1a2233; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16.5px;line-height:1.6;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+header.top{display:grid;gap:10px;padding-bottom:22px;border-bottom:1px solid var(--rule);margin-bottom:26px}
+.series{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,5vw,46px);line-height:1.05;margin:0;text-wrap:balance}
+.sub{color:var(--muted);max-width:68ch;margin:0}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--mono);font-size:13px}
+.flow span{background:var(--surface);border:1px solid var(--rule);padding:3px 9px;border-radius:4px}
+.flow i{font-style:normal;color:var(--muted)}
+.blk code,.sub code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);border:1px solid var(--rule);padding:0 4px;border-radius:3px}
+.how{font-size:14px;color:var(--muted)}
+.how b{color:var(--fg)}
+.grid{display:grid;grid-template-columns:230px minmax(0,1fr);gap:40px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);align-self:start;max-height:calc(100vh - 32px);overflow:auto;display:grid;gap:2px;font-size:14px}
+nav.rail a{display:grid;grid-template-columns:62px 1fr;gap:6px;color:var(--fg);text-decoration:none;padding:5px 8px;border-radius:4px;line-height:1.3}
+nav.rail a:hover,nav.rail a:focus-visible{background:var(--surface);outline:none}
+nav.rail a.on{background:var(--id-bg)}
+nav.rail code{font-family:var(--mono);font-size:12px;color:var(--id);font-weight:600}
+main{display:grid;gap:44px;min-width:0}
+section.blk{display:grid;gap:14px;min-width:0;scroll-margin-top:20px}
+.bh{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px}
+.bid{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--id);background:var(--id-bg);padding:3px 10px;border-radius:4px;letter-spacing:.02em}
+h2{font-family:var(--display);font-weight:600;font-size:24px;line-height:1.2;margin:0;text-wrap:balance}
+.blk p{margin:0;max-width:70ch}
+.blk ul{margin:0;padding-left:20px;max-width:70ch;display:grid;gap:4px}
+.key{border-left:3px solid var(--accent);padding:4px 0 4px 14px;max-width:70ch}
+.math{font-family:var(--mono);font-size:14.5px;background:var(--math-bg);padding:12px 16px;border-radius:6px;overflow-x:auto;white-space:pre;line-height:1.7}
+figure.code{margin:0;border:1px solid var(--rule);border-radius:6px;background:var(--code-bg);min-width:0;overflow:hidden}
+figure.code .ch{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:12px;color:var(--muted)}
+figure.code button{font:inherit;color:var(--accent);background:none;border:1px solid var(--rule);border-radius:4px;padding:2px 8px;cursor:pointer}
+figure.code button:focus-visible{outline:2px solid var(--accent)}
+pre{margin:0;padding:10px 0;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.6;color:var(--code-fg)}
+pre .l{display:grid;grid-template-columns:44px max-content;padding-right:16px}
+pre .n{color:var(--ln);text-align:right;padding-right:14px;user-select:none;font-variant-numeric:tabular-nums}
+pre .cm{color:var(--comment)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;font-size:14.5px;min-width:100%}
+th,td{text-align:left;padding:7px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+td{font-variant-numeric:tabular-nums}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--rule);color:var(--muted);font-size:14px}
+@media (max-width:820px){
+  .grid{grid-template-columns:minmax(0,1fr);gap:20px}
+  nav.rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--bg);display:flex;overflow-x:auto;max-height:none;padding-block:8px;border-bottom:1px solid var(--rule)}
+  nav.rail a{display:block;white-space:nowrap}
+  nav.rail a span{display:none}
+}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="series">Part 4 of 4 · Image generation</div>
+  <h1>Inside Diffusion</h1>
+  <p class="sub">How diffusion models learn to remove noise, and how text prompts steer them.</p>
+  <div class="flow"><span>noise</span><i>→</i><span>denoise step</span><i>→</i><span>denoise step</span><i>→</i><span>…</span><i>→</i><span>latent</span><i>→</i><span>VAE decode</span><i>→</i><span>image</span></div>
+  <p class="how">Follow along: I say a <b>block ID</b> and a <b>line number</b>. Line numbers restart at 1 in every block.</p>
+</header>
+<div class="grid">
+<nav class="rail" id="rail" aria-label="Blocks"><a href="#DF-01" class="on"><code>DF-01</code><span>The idea: learn to remove noise</span></a><a href="#DF-02"><code>DF-02</code><span>The noise schedule</span></a><a href="#DF-03"><code>DF-03</code><span>Jump straight to any noise level</span></a><a href="#DF-04"><code>DF-04</code><span>Training loop</span></a><a href="#DF-05"><code>DF-05</code><span>The denoiser: a tiny U-Net</span></a><a href="#DF-06"><code>DF-06</code><span>Sampling: from noise to image</span></a><a href="#DF-07"><code>DF-07</code><span>Text prompts and guidance</span></a><a href="#DF-08"><code>DF-08</code><span>Latent diffusion (Stable Diffusion)</span></a><a href="#DF-09"><code>DF-09</code><span>Current models: DiT and flow matching</span></a><a href="#DF-10"><code>DF-10</code><span>One map across all four pages</span></a></nav>
+<main>
+<section class="blk" id="DF-01">
+<div class="bh"><span class="bid">DF-01</span><h2>The idea: learn to remove noise</h2></div>
+<p>Take a real image. Add a little noise, again and again, until it is pure static. Train a network to undo one step: given a noisy image and how noisy it is, predict the noise. To make a new image, start from pure static and remove noise step by step.</p>
+<div class="math">training:  clean image  →  add noise  →  model guesses the noise  →  MSE loss
+sampling:  pure noise   →  remove a bit  →  remove a bit  → ... →  image</div>
+<p class="key">GPT predicts the next token. A diffusion model predicts the noise. Both are just "predict a target, minimise a loss".</p>
+</section>
+
+<section class="blk" id="DF-02">
+<div class="bh"><span class="bid">DF-02</span><h2>The noise schedule</h2></div>
+<div class="math">β_t       = noise added at step t          (small, 0.0001 → 0.02)
+α_t       = 1 − β_t
+ᾱ_t       = α_1 · α_2 · … · α_t            = how much of the image is left after t steps</div>
+<figure class="code"><div class="ch"><span>DF-02 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">T_steps = 1000</span></span>
+<span class="l"><span class="n">2</span><span class="t">betas = torch.linspace(1e-4, 0.02, T_steps)    <span class="cm"># noise per step</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">alphas = 1 - betas</span></span>
+<span class="l"><span class="n">4</span><span class="t">alpha_bar = torch.cumprod(alphas, dim=0)       <span class="cm"># signal left after t steps</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">print(alpha_bar[0], alpha_bar[499], alpha_bar[-1])   <span class="cm"># ~1.0, ~0.08, ~0.00004</span></span></span></pre></figure>
+</section>
+
+<section class="blk" id="DF-03">
+<div class="bh"><span class="bid">DF-03</span><h2>Jump straight to any noise level</h2></div>
+<p>We do not need to add noise 500 times to get step 500. One formula jumps there directly. This makes training cheap.</p>
+<div class="math">x_t = √ᾱ_t · x_0  +  √(1 − ᾱ_t) · ε          ε ~ N(0, 1)
+      └ signal ┘      └──── noise ────┘</div>
+<figure class="code"><div class="ch"><span>DF-03 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">def add_noise(x0, t, noise):                   <span class="cm"># x0: (B, C, H, W) images scaled to [-1, 1]</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">    ab = alpha_bar[t].view(-1, 1, 1, 1)        <span class="cm"># one level per image in the batch</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">    return ab.sqrt() * x0 + (1 - ab).sqrt() * noise</span></span></pre></figure>
+</section>
+
+<section class="blk" id="DF-04">
+<div class="bh"><span class="bid">DF-04</span><h2>Training loop</h2></div>
+<p>Same shape as your notebook's loop. Each image gets a random noise level. The target is the noise we added.</p>
+<div class="math">loss = ‖ ε − ε_θ(x_t, t) ‖²</div>
+<figure class="code"><div class="ch"><span>DF-04 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">for xb, _ in loader:                                  <span class="cm"># labels not needed</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">    xb = xb.to(device) * 2 - 1                        <span class="cm"># [0, 1] -&gt; [-1, 1]</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">    t = torch.randint(0, T_steps, (xb.shape[0],), device=device)   <span class="cm"># random step per image</span></span></span>
+<span class="l"><span class="n">4</span><span class="t">    noise = torch.randn_like(xb)</span></span>
+<span class="l"><span class="n">5</span><span class="t">    xt = add_noise(xb, t, noise)                      <span class="cm"># DF-03</span></span></span>
+<span class="l"><span class="n">6</span><span class="t">    pred = model(xt, t)                               <span class="cm"># predict the noise</span></span></span>
+<span class="l"><span class="n">7</span><span class="t">    loss = F.mse_loss(pred, noise)</span></span>
+<span class="l"><span class="n">8</span><span class="t">    opt.zero_grad(set_to_none=True)</span></span>
+<span class="l"><span class="n">9</span><span class="t">    loss.backward()</span></span>
+<span class="l"><span class="n">10</span><span class="t">    opt.step()</span></span></pre></figure>
+</section>
+
+<section class="blk" id="DF-05">
+<div class="bh"><span class="bid">DF-05</span><h2>The denoiser: a tiny U-Net</h2></div>
+<p>Input and output have the same shape (image in, noise out). A U-Net goes down (smaller, more channels), then up, with <b>skip connections</b> that pass fine detail across. The step t is turned into a vector with sin/cos, the same idea as positions in RoPE, and added in.</p>
+<figure class="code"><div class="ch"><span>DF-05 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">import math</span></span>
+<span class="l"><span class="n">2</span><span class="t"> </span></span>
+<span class="l"><span class="n">3</span><span class="t">def time_embedding(t, dim):                          <span class="cm"># t: (B,) integer steps</span></span></span>
+<span class="l"><span class="n">4</span><span class="t">    half = dim // 2</span></span>
+<span class="l"><span class="n">5</span><span class="t">    freqs = torch.exp(-math.log(10000) * torch.arange(half, device=t.device) / half)</span></span>
+<span class="l"><span class="n">6</span><span class="t">    ang = t[:, None].float() * freqs[None]           <span class="cm"># (B, half)</span></span></span>
+<span class="l"><span class="n">7</span><span class="t">    return torch.cat([ang.sin(), ang.cos()], dim=-1) <span class="cm"># (B, dim)</span></span></span>
+<span class="l"><span class="n">8</span><span class="t"> </span></span>
+<span class="l"><span class="n">9</span><span class="t">class TinyUNet(nn.Module):</span></span>
+<span class="l"><span class="n">10</span><span class="t">    def __init__(self, c=64, tdim=128):</span></span>
+<span class="l"><span class="n">11</span><span class="t">        super().__init__()</span></span>
+<span class="l"><span class="n">12</span><span class="t">        self.tdim = tdim</span></span>
+<span class="l"><span class="n">13</span><span class="t">        self.t_mlp = nn.Sequential(nn.Linear(tdim, c), nn.SiLU(), nn.Linear(c, c))</span></span>
+<span class="l"><span class="n">14</span><span class="t">        self.down1 = nn.Conv2d(3, c, 3, padding=1)                      <span class="cm"># 32x32</span></span></span>
+<span class="l"><span class="n">15</span><span class="t">        self.down2 = nn.Conv2d(c, 2 * c, 3, stride=2, padding=1)        <span class="cm"># 16x16</span></span></span>
+<span class="l"><span class="n">16</span><span class="t">        self.mid   = nn.Conv2d(2 * c, 2 * c, 3, padding=1)</span></span>
+<span class="l"><span class="n">17</span><span class="t">        self.up    = nn.ConvTranspose2d(2 * c, c, 4, stride=2, padding=1)  <span class="cm"># back to 32x32</span></span></span>
+<span class="l"><span class="n">18</span><span class="t">        self.out   = nn.Conv2d(2 * c, 3, 3, padding=1)                  <span class="cm"># 2c: skip is concatenated</span></span></span>
+<span class="l"><span class="n">19</span><span class="t"> </span></span>
+<span class="l"><span class="n">20</span><span class="t">    def forward(self, x, t):                          <span class="cm"># x: (B, 3, 32, 32)</span></span></span>
+<span class="l"><span class="n">21</span><span class="t">        temb = self.t_mlp(time_embedding(t, self.tdim))[:, :, None, None]   <span class="cm"># (B, c, 1, 1)</span></span></span>
+<span class="l"><span class="n">22</span><span class="t">        h1 = F.silu(self.down1(x)) + temb             <span class="cm"># tell the net how noisy x is</span></span></span>
+<span class="l"><span class="n">23</span><span class="t">        h2 = F.silu(self.down2(h1))</span></span>
+<span class="l"><span class="n">24</span><span class="t">        h2 = F.silu(self.mid(h2))</span></span>
+<span class="l"><span class="n">25</span><span class="t">        u = F.silu(self.up(h2))</span></span>
+<span class="l"><span class="n">26</span><span class="t">        u = torch.cat([u, h1], dim=1)                 <span class="cm"># skip connection: the "U"</span></span></span>
+<span class="l"><span class="n">27</span><span class="t">        return self.out(u)                            <span class="cm"># predicted noise, same shape as x</span></span></span></pre></figure>
+<p class="key">Real U-Nets stack ResBlocks (CNN-07) at each level and put attention layers at the small resolutions.</p>
+</section>
+
+<section class="blk" id="DF-06">
+<div class="bh"><span class="bid">DF-06</span><h2>Sampling: from noise to image</h2></div>
+<div class="math">x_{t−1} = (1/√α_t) · ( x_t − β_t / √(1 − ᾱ_t) · ε_θ(x_t, t) )  +  √β_t · z
+          └──────── remove the predicted noise ────────┘     └ small fresh noise ┘</div>
+<figure class="code"><div class="ch"><span>DF-06 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">@torch.no_grad()</span></span>
+<span class="l"><span class="n">2</span><span class="t">def sample(model, n=16):</span></span>
+<span class="l"><span class="n">3</span><span class="t">    x = torch.randn(n, 3, 32, 32, device=device)       <span class="cm"># start: pure noise</span></span></span>
+<span class="l"><span class="n">4</span><span class="t">    for t in reversed(range(T_steps)):                 <span class="cm"># 999 -&gt; 0</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">        tt = torch.full((n,), t, device=device)</span></span>
+<span class="l"><span class="n">6</span><span class="t">        eps = model(x, tt)</span></span>
+<span class="l"><span class="n">7</span><span class="t">        a, ab, b = alphas[t], alpha_bar[t], betas[t]</span></span>
+<span class="l"><span class="n">8</span><span class="t">        x = (x - b / (1 - ab).sqrt() * eps) / a.sqrt()</span></span>
+<span class="l"><span class="n">9</span><span class="t">        if t &gt; 0:</span></span>
+<span class="l"><span class="n">10</span><span class="t">            x = x + b.sqrt() * torch.randn_like(x)</span></span>
+<span class="l"><span class="n">11</span><span class="t">    return (x.clamp(-1, 1) + 1) / 2                    <span class="cm"># back to [0, 1]</span></span></span></pre></figure>
+<p class="key">1000 steps is slow. DDIM and newer samplers skip steps and get good images in 20–50.</p>
+</section>
+
+<section class="blk" id="DF-07">
+<div class="bh"><span class="bid">DF-07</span><h2>Text prompts and guidance</h2></div>
+<p>A text encoder turns the prompt into token vectors. Inside the U-Net, cross-attention (SP-04) lets image positions ask questions (Q) of the prompt tokens (K, V). Then classifier-free guidance pushes harder toward the prompt.</p>
+<div class="math">ε = ε_uncond + w · (ε_cond − ε_uncond)        w ≈ 5 to 8
+     └ no prompt ┘     └ direction the prompt adds ┘</div>
+<figure class="code"><div class="ch"><span>DF-07 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t"><span class="cm"># training: replace the prompt with "" 10% of the time, so one model learns both</span></span></span>
+<span class="l"><span class="n">2</span><span class="t"><span class="cm"># sampling, each step:</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">eps_cond   = model(x, t, text_emb)</span></span>
+<span class="l"><span class="n">4</span><span class="t">eps_uncond = model(x, t, empty_emb)</span></span>
+<span class="l"><span class="n">5</span><span class="t">eps = eps_uncond + w * (eps_cond - eps_uncond)</span></span></pre></figure>
+<p class="key">Higher w follows the prompt more closely but looks less natural. That is the "guidance scale" slider in image tools.</p>
+</section>
+
+<section class="blk" id="DF-08">
+<div class="bh"><span class="bid">DF-08</span><h2>Latent diffusion (Stable Diffusion)</h2></div>
+<p>Diffusing full-size pixels is expensive. First compress the image with a VAE. Diffuse the small latent. Decode at the end.</p>
+<div class="math">image (3, 512, 512) = 786,432 numbers  → VAE encoder →  latent (4, 64, 64) = 16,384 numbers
+48× fewer numbers. DF-03 to DF-06 run on the latent unchanged.</div>
+<figure class="code"><div class="ch"><span>DF-08 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">z = vae.encode(img).latent_dist.sample() * 0.18215   <span class="cm"># SD 1.x latent scaling factor</span></span></span>
+<span class="l"><span class="n">2</span><span class="t"><span class="cm"># ... train / sample the denoiser on z instead of pixels ...</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">img = vae.decode(z / 0.18215).sample                  <span class="cm"># latent -&gt; image</span></span></span></pre></figure>
+</section>
+
+<section class="blk" id="DF-09">
+<div class="bh"><span class="bid">DF-09</span><h2>Current models: DiT and flow matching</h2></div>
+<p><b>DiT</b>: replace the U-Net with a transformer. Patchify the latent like ViT (CNN-09), run transformer blocks, unpatchify. <b>Flow matching</b>: draw a straight line from image to noise, and train the model to predict the direction along it.</p>
+<div class="math">x_t = (1 − t) · x_0 + t · ε          t ∈ [0, 1]
+target velocity  v = ε − x_0
+loss = ‖ v − v_θ(x_t, t) ‖²          sampling: x ← x − v_θ · Δt, from t = 1 to 0</div>
+<figure class="code"><div class="ch"><span>DF-09 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">t = torch.rand(B, 1, 1, 1, device=device)    <span class="cm"># continuous time, not 1000 steps</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">noise = torch.randn_like(x0)</span></span>
+<span class="l"><span class="n">3</span><span class="t">xt = (1 - t) * x0 + t * noise                <span class="cm"># point on the straight line</span></span></span>
+<span class="l"><span class="n">4</span><span class="t">v_target = noise - x0</span></span>
+<span class="l"><span class="n">5</span><span class="t">loss = F.mse_loss(model(xt, t.flatten()), v_target)</span></span></pre></figure>
+<p class="key">Straight paths need fewer sampling steps. Video models use the same recipe with an extra time axis in the patches.</p>
+</section>
+
+<section class="blk" id="DF-10">
+<div class="bh"><span class="bid">DF-10</span><h2>One map across all four pages</h2></div>
+<div class="tbl"><table>
+<tbody><tr><th>Idea</th><th>LLMs</th><th>CNNs</th><th>Speech</th><th>Diffusion</th></tr>
+<tr><td>Residual add</td><td>x + attn(x)</td><td>ResNet</td><td>Encoder, decoder</td><td>U-Net, DiT</td></tr>
+<tr><td>Normalisation</td><td>RMSNorm</td><td>BatchNorm</td><td>LayerNorm</td><td>GroupNorm, adaLN</td></tr>
+<tr><td>Sin/cos encoding</td><td>RoPE</td><td>-</td><td>Positions</td><td>Time step t</td></tr>
+<tr><td>Cross-attention</td><td>-</td><td>-</td><td>Text ← audio</td><td>Image ← prompt</td></tr>
+<tr><td>Tokens</td><td>Text</td><td>Patches (ViT)</td><td>Codec tokens</td><td>Latent patches</td></tr>
+<tr><td>Target</td><td>Next token</td><td>Class</td><td>Next token / mel</td><td>Noise or velocity</td></tr>
+</tbody></table></div>
+</section>
+
+</main>
+</div>
+<footer>Series: Inside LLMs · Inside CNNs · Inside Speech Models · Inside Diffusion. Code is PyTorch, written in the style of Karpathy's GPT notebook.</footer>
+</div>
+
+<script>
+(function(){
+  document.querySelectorAll('figure.code').forEach(function(fig){
+    var btn=fig.querySelector('button'); if(!btn)return;
+    var src=Array.from(fig.querySelectorAll('.t')).map(function(line){return line.textContent}).join('\n');
+    function selectCode(){var range=document.createRange();range.selectNodeContents(fig.querySelector('pre'));var selected=window.getSelection();selected.removeAllRanges();selected.addRange(range)}
+    btn.addEventListener('click',function(){
+      function done(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy'},1400)}
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(src).then(done,selectCode);else selectCode();
+    });
+  });
+  var rail=document.getElementById('rail'); if(!rail)return;
+  var links=rail.querySelectorAll('a');
+  if('IntersectionObserver' in window){var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){links.forEach(function(link){link.classList.toggle('on',link.getAttribute('href')==='#'+entry.target.id)})}})},{rootMargin:'-20% 0px -70% 0px'});document.querySelectorAll('section.blk').forEach(function(section){observer.observe(section)})}
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,168 @@
+/**
+ * # Uploaded-document store — the learner's own files, used to ground a lesson
+ *
+ * When a learner uploads PDFs/docs/code, we parse → chunk → embed them LOCALLY
+ * (bge-small, free, no API), persist private content to S3/PostgreSQL, and cache it
+ * only for its authenticated owner. They are NEVER written to the shared knowledge base (the `chunks`
+ * table) — a user's file shouldn't pollute the global KB. The front-end remembers
+ * the returned ids for the browser session and passes them with each generation.
+ *
+ * Retrieval over these is a plain cosine scan in JS (vectors are unit-normalized, so
+ * cosine == dot product) — fine for the handful of chunks one upload produces.
+ */
+
+import { persistPrivateUpload } from "./storage";
+import { localEmbeddings } from "../rag/embed";
+import { chunkSource } from "../rag/chunkers";
+import type { LoadedSource } from "../rag/loaders";
+import { dbEnabled, query, requireUserId } from "./db";
+
+interface UploadChunk {
+  content: string;
+  embedding: number[];
+  title?: string;
+}
+interface StoredUpload {
+  userId: string;
+  id: string;
+  title: string;
+  sourceType: string;
+  chunks: UploadChunk[];
+  createdAt: number;
+}
+
+// docId → parsed+embedded upload. Module-level singleton (whole process).
+const uploads = new Map<string, StoredUpload>();
+
+// Light GC (memory-leak fix): evict uploads older than 2h so this in-process Map can't grow
+// unbounded. Uploads are session-scoped (they ground a lesson during generation); 2h comfortably
+// covers an attach → overview → build flow even on a slow day. Called on each new upload.
+function gcUploads(): void {
+  const cutoff = Date.now() - 2 * 60 * 60 * 1000;
+  for (const [id, u] of uploads) if (u.createdAt < cutoff) uploads.delete(id);
+}
+
+export interface UploadHit {
+  content: string;
+  title?: string;
+  sim: number; // cosine similarity 0..1
+}
+
+function dot(a: number[], b: number[]): number {
+  let s = 0;
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) s += a[i] * b[i];
+  return s;
+}
+
+/** Parse → chunk → embed an uploaded source and store it under `id`. */
+export async function addUpload(id: string, src: LoadedSource): Promise<{ id: string; title: string; chunkCount: number }> {
+  const userId = requireUserId();
+  const chunks = chunkSource(src);
+  const vectors = await localEmbeddings.embedPassages(chunks.map((c) => c.content));
+  uploads.set(id, {
+    userId,
+    id,
+    title: src.title,
+    sourceType: src.sourceType,
+    chunks: chunks.map((c, i) => ({ content: c.content, embedding: vectors[i], title: c.title })),
+    createdAt: Date.now(),
+  });
+  gcUploads();
+  try { await persistUploadDoc(id); } catch (error) { uploads.delete(id); throw error; }
+  return { id, title: src.title, chunkCount: chunks.length };
+}
+
+/** Split text into ~`words`-word chunks (simple, for repo files). */
+function splitText(text: string, words = 280): string[] {
+  const toks = text.split(/\s+/).filter(Boolean);
+  if (toks.length <= words) return toks.length ? [text.trim()] : [];
+  const out: string[] = [];
+  for (let i = 0; i < toks.length; i += words) out.push(toks.slice(i, i + words).join(" "));
+  return out;
+}
+
+/** Ingest a cloned GitHub repo as ONE upload doc (chunks tagged with their file path). */
+export async function addRepoUpload(id: string, title: string, files: { path: string; content: string }[], maxChunks = 220): Promise<{ id: string; title: string; chunkCount: number }> {
+  const userId = requireUserId();
+  const raw: { content: string; title: string }[] = [];
+  for (const f of files) {
+    for (const part of splitText(f.content, 280)) {
+      raw.push({ content: `[file: ${f.path}]\n${part}`, title: f.path });
+      if (raw.length >= maxChunks) break;
+    }
+    if (raw.length >= maxChunks) break;
+  }
+  if (!raw.length) { uploads.set(id, { id, userId, title, sourceType: "repo", chunks: [], createdAt: Date.now() }); gcUploads(); return { id, title, chunkCount: 0 }; }
+  const vectors = await localEmbeddings.embedPassages(raw.map((c) => c.content));
+  uploads.set(id, { id, userId, title, sourceType: "repo", chunks: raw.map((c, i) => ({ content: c.content, embedding: vectors[i], title: c.title })), createdAt: Date.now() });
+  gcUploads();
+  try { await persistUploadDoc(id); } catch (error) { uploads.delete(id); throw error; }
+  return { id, title, chunkCount: raw.length };
+}
+
+// ---- Cross-instance persistence (additive) ---------------------------------------------------
+// In-memory Map above is the fast path. We also write-through each upload's chunks+embeddings to
+// `upload_docs` so a generation that lands on ANOTHER instance can hydrate them into its own Map
+// (see hydrateUploads, called at the /api/overview and /api/build entry points). Best-effort.
+
+/** Persist the authenticated user's document to private S3 and the durable database. */
+async function persistUploadDoc(id: string): Promise<void> {
+  const userId = requireUserId();
+  const u = uploads.get(id);
+  if (!u || u.userId !== userId) throw new Error("Upload not found");
+  const storageKey = await persistPrivateUpload(id, u);
+  if (!dbEnabled()) return;
+  await query(
+    `insert into upload_docs (id, user_id, title, source_type, chunks, storage_key) values ($1,$2,$3,$4,$5,$6)
+     on conflict (id) do update set title=excluded.title, chunks=excluded.chunks, storage_key=excluded.storage_key
+     where upload_docs.user_id=excluded.user_id`,
+    [u.id, userId, u.title, u.sourceType, JSON.stringify(u.chunks), storageKey],
+  );
+}
+
+/** Hydrate only documents belonging to the current authenticated actor. */
+export async function hydrateUploads(ids: string[] | undefined): Promise<void> {
+  const userId = requireUserId();
+  if (!Array.isArray(ids) || !ids.length || !dbEnabled()) return;
+  const missing = ids.filter((id) => id && uploads.get(id)?.userId !== userId);
+  if (!missing.length) return;
+  const rows = await query<{ id: string; user_id: string; title: string; source_type: string; chunks: unknown }>(
+    `select id, user_id, title, source_type, chunks from upload_docs where id = any($1) and user_id = $2`, [missing, userId],
+  );
+  for (const r of rows) {
+    const chunks = (typeof r.chunks === "string" ? JSON.parse(r.chunks) : r.chunks) as UploadChunk[];
+    uploads.set(r.id, { id: r.id, userId, title: r.title, sourceType: r.source_type, chunks: Array.isArray(chunks) ? chunks : [], createdAt: Date.now() });
+  }
+}
+
+/** Titles for the given ids (used for the provenance banner). Defensive: older lessons
+ *  persisted upload_ids as `{}`/null, so guard against non-array inputs everywhere. */
+export function getUploadTitles(ids: string[] | undefined): string[] {
+  const userId = requireUserId();
+  if (!Array.isArray(ids)) return [];
+  return ids.map((id) => { const u = uploads.get(id); return u?.userId === userId ? u.title : undefined; }).filter((t): t is string => !!t);
+}
+
+/** True when at least one of the ids resolves to a stored upload. */
+export function hasUploads(ids: string[] | undefined): boolean {
+  const userId = requireUserId();
+  return Array.isArray(ids) && ids.some((id) => uploads.get(id)?.userId === userId);
+}
+
+/** Top-k chunks from the given uploads, by cosine similarity to the query. */
+export async function retrieveFromUploads(query: string, ids: string[] | undefined, k = 6): Promise<UploadHit[]> {
+  const userId = requireUserId();
+  if (!Array.isArray(ids) || !ids.length || !query.trim()) return [];
+  const pool: UploadChunk[] = [];
+  for (const id of ids) {
+    const u = uploads.get(id);
+    if (u?.userId === userId) pool.push(...u.chunks);
+  }
+  if (!pool.length) return [];
+  const q = await localEmbeddings.embedQuery(query);
+  return pool
+    .map((c) => ({ content: c.content, title: c.title, sim: dot(q, c.embedding) }))
+    .sort((a, b) => b.sim - a.sim)
+    .slice(0, k);
+}

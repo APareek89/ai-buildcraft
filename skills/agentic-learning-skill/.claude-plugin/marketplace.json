@@ -1,0 +1,21 @@
+{
+  "name": "agentic-learning-studio",
+  "owner": {
+    "name": "Anand Pareek",
+    "url": "https://github.com/APareek89"
+  },
+  "metadata": {
+    "description": "Interactive lesson generator + Agent Skill builder, distilled from the hosted Agentic Learning Studio (https://prathibhax.com).",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "agentic-learning-studio",
+      "source": "./",
+      "description": "Generate a single self-contained interactive HTML lesson on any topic, or build an installable Agent Skill from a brief. Model-driven; no backend.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "category": ["education", "productivity"]
+    }
+  ]
+}

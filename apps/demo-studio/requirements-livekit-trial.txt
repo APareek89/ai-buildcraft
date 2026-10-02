@@ -1,0 +1,2 @@
+# Compatibility entry for older local trial instructions.
+-r requirements-livekit.txt

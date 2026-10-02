@@ -1,0 +1,438 @@
+{
+  "company": "Meridian Motors",
+  "fictional": true,
+  "facts": [
+    {
+      "id": "110_battery_kwh",
+      "model": "Meridian Arc 110",
+      "attribute": "battery_kwh",
+      "label": "battery capacity",
+      "value": 2.9,
+      "unit": "kWh",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "110_range_km",
+      "model": "Meridian Arc 110",
+      "attribute": "range_km",
+      "label": "certified range on a full charge",
+      "value": 96,
+      "unit": "km",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "110_top_speed_kmph",
+      "model": "Meridian Arc 110",
+      "attribute": "top_speed_kmph",
+      "label": "top speed",
+      "value": 72,
+      "unit": "km/h",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "110_charge_time_hours",
+      "model": "Meridian Arc 110",
+      "attribute": "charge_time_hours",
+      "label": "time for a full charge on the standard charger",
+      "value": 4.5,
+      "unit": "hours",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "110_fast_charge_minutes",
+      "model": "Meridian Arc 110",
+      "attribute": "fast_charge_minutes",
+      "label": "time to reach 80 percent on the fast charger",
+      "value": 0,
+      "unit": "minutes",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "110_motor_kw",
+      "model": "Meridian Arc 110",
+      "attribute": "motor_kw",
+      "label": "peak motor power",
+      "value": 2.7,
+      "unit": "kW",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "110_kerb_weight_kg",
+      "model": "Meridian Arc 110",
+      "attribute": "kerb_weight_kg",
+      "label": "kerb weight",
+      "value": 108,
+      "unit": "kg",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "110_boot_litres",
+      "model": "Meridian Arc 110",
+      "attribute": "boot_litres",
+      "label": "under-seat storage",
+      "value": 22,
+      "unit": "litres",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "110_warranty_years",
+      "model": "Meridian Arc 110",
+      "attribute": "warranty_years",
+      "label": "vehicle warranty period",
+      "value": 3,
+      "unit": "years",
+      "source_doc": "warranty_policy"
+    },
+    {
+      "id": "110_battery_warranty_km",
+      "model": "Meridian Arc 110",
+      "attribute": "battery_warranty_km",
+      "label": "battery warranty distance limit",
+      "value": 50000,
+      "unit": "km",
+      "source_doc": "warranty_policy"
+    },
+    {
+      "id": "110_service_interval_km",
+      "model": "Meridian Arc 110",
+      "attribute": "service_interval_km",
+      "label": "service interval",
+      "value": 5000,
+      "unit": "km",
+      "source_doc": "warranty_policy"
+    },
+    {
+      "id": "110_price_mumbai_inr",
+      "model": "Meridian Arc 110",
+      "attribute": "price_mumbai_inr",
+      "label": "on-road price in Mumbai",
+      "value": 109900,
+      "unit": "INR",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "110_price_bengaluru_inr",
+      "model": "Meridian Arc 110",
+      "attribute": "price_bengaluru_inr",
+      "label": "on-road price in Bengaluru",
+      "value": 107400,
+      "unit": "INR",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "110_price_delhi_inr",
+      "model": "Meridian Arc 110",
+      "attribute": "price_delhi_inr",
+      "label": "on-road price in Delhi",
+      "value": 104900,
+      "unit": "INR",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "110_colours",
+      "model": "Meridian Arc 110",
+      "attribute": "colours",
+      "label": "available colours",
+      "value": "Slate Grey, Ivory, Cobalt",
+      "unit": null,
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "110_launch_year",
+      "model": "Meridian Arc 110",
+      "attribute": "launch_year",
+      "label": "launch year",
+      "value": 2024,
+      "unit": null,
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_battery_kwh",
+      "model": "Meridian Pulse 125",
+      "attribute": "battery_kwh",
+      "label": "battery capacity",
+      "value": 3.4,
+      "unit": "kWh",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_range_km",
+      "model": "Meridian Pulse 125",
+      "attribute": "range_km",
+      "label": "certified range on a full charge",
+      "value": 118,
+      "unit": "km",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_top_speed_kmph",
+      "model": "Meridian Pulse 125",
+      "attribute": "top_speed_kmph",
+      "label": "top speed",
+      "value": 88,
+      "unit": "km/h",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_charge_time_hours",
+      "model": "Meridian Pulse 125",
+      "attribute": "charge_time_hours",
+      "label": "time for a full charge on the standard charger",
+      "value": 3.5,
+      "unit": "hours",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_fast_charge_minutes",
+      "model": "Meridian Pulse 125",
+      "attribute": "fast_charge_minutes",
+      "label": "time to reach 80 percent on the fast charger",
+      "value": 55,
+      "unit": "minutes",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_motor_kw",
+      "model": "Meridian Pulse 125",
+      "attribute": "motor_kw",
+      "label": "peak motor power",
+      "value": 4.2,
+      "unit": "kW",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_kerb_weight_kg",
+      "model": "Meridian Pulse 125",
+      "attribute": "kerb_weight_kg",
+      "label": "kerb weight",
+      "value": 119,
+      "unit": "kg",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_boot_litres",
+      "model": "Meridian Pulse 125",
+      "attribute": "boot_litres",
+      "label": "under-seat storage",
+      "value": 28,
+      "unit": "litres",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_warranty_years",
+      "model": "Meridian Pulse 125",
+      "attribute": "warranty_years",
+      "label": "vehicle warranty period",
+      "value": 3,
+      "unit": "years",
+      "source_doc": "warranty_policy"
+    },
+    {
+      "id": "125_battery_warranty_km",
+      "model": "Meridian Pulse 125",
+      "attribute": "battery_warranty_km",
+      "label": "battery warranty distance limit",
+      "value": 60000,
+      "unit": "km",
+      "source_doc": "warranty_policy"
+    },
+    {
+      "id": "125_service_interval_km",
+      "model": "Meridian Pulse 125",
+      "attribute": "service_interval_km",
+      "label": "service interval",
+      "value": 6000,
+      "unit": "km",
+      "source_doc": "warranty_policy"
+    },
+    {
+      "id": "125_price_mumbai_inr",
+      "model": "Meridian Pulse 125",
+      "attribute": "price_mumbai_inr",
+      "label": "on-road price in Mumbai",
+      "value": 139900,
+      "unit": "INR",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_price_bengaluru_inr",
+      "model": "Meridian Pulse 125",
+      "attribute": "price_bengaluru_inr",
+      "label": "on-road price in Bengaluru",
+      "value": 136900,
+      "unit": "INR",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_price_delhi_inr",
+      "model": "Meridian Pulse 125",
+      "attribute": "price_delhi_inr",
+      "label": "on-road price in Delhi",
+      "value": 133900,
+      "unit": "INR",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_colours",
+      "model": "Meridian Pulse 125",
+      "attribute": "colours",
+      "label": "available colours",
+      "value": "Midnight Blue, Ember Red, Ivory",
+      "unit": null,
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "125_launch_year",
+      "model": "Meridian Pulse 125",
+      "attribute": "launch_year",
+      "label": "launch year",
+      "value": 2025,
+      "unit": null,
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_battery_kwh",
+      "model": "Meridian Volt X",
+      "attribute": "battery_kwh",
+      "label": "battery capacity",
+      "value": 4.6,
+      "unit": "kWh",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_range_km",
+      "model": "Meridian Volt X",
+      "attribute": "range_km",
+      "label": "certified range on a full charge",
+      "value": 152,
+      "unit": "km",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_top_speed_kmph",
+      "model": "Meridian Volt X",
+      "attribute": "top_speed_kmph",
+      "label": "top speed",
+      "value": 104,
+      "unit": "km/h",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_charge_time_hours",
+      "model": "Meridian Volt X",
+      "attribute": "charge_time_hours",
+      "label": "time for a full charge on the standard charger",
+      "value": 3.0,
+      "unit": "hours",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_fast_charge_minutes",
+      "model": "Meridian Volt X",
+      "attribute": "fast_charge_minutes",
+      "label": "time to reach 80 percent on the fast charger",
+      "value": 40,
+      "unit": "minutes",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_motor_kw",
+      "model": "Meridian Volt X",
+      "attribute": "motor_kw",
+      "label": "peak motor power",
+      "value": 6.1,
+      "unit": "kW",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_kerb_weight_kg",
+      "model": "Meridian Volt X",
+      "attribute": "kerb_weight_kg",
+      "label": "kerb weight",
+      "value": 131,
+      "unit": "kg",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_boot_litres",
+      "model": "Meridian Volt X",
+      "attribute": "boot_litres",
+      "label": "under-seat storage",
+      "value": 24,
+      "unit": "litres",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_warranty_years",
+      "model": "Meridian Volt X",
+      "attribute": "warranty_years",
+      "label": "vehicle warranty period",
+      "value": 5,
+      "unit": "years",
+      "source_doc": "warranty_policy"
+    },
+    {
+      "id": "x_battery_warranty_km",
+      "model": "Meridian Volt X",
+      "attribute": "battery_warranty_km",
+      "label": "battery warranty distance limit",
+      "value": 80000,
+      "unit": "km",
+      "source_doc": "warranty_policy"
+    },
+    {
+      "id": "x_service_interval_km",
+      "model": "Meridian Volt X",
+      "attribute": "service_interval_km",
+      "label": "service interval",
+      "value": 6000,
+      "unit": "km",
+      "source_doc": "warranty_policy"
+    },
+    {
+      "id": "x_price_mumbai_inr",
+      "model": "Meridian Volt X",
+      "attribute": "price_mumbai_inr",
+      "label": "on-road price in Mumbai",
+      "value": 184900,
+      "unit": "INR",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_price_bengaluru_inr",
+      "model": "Meridian Volt X",
+      "attribute": "price_bengaluru_inr",
+      "label": "on-road price in Bengaluru",
+      "value": 181400,
+      "unit": "INR",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_price_delhi_inr",
+      "model": "Meridian Volt X",
+      "attribute": "price_delhi_inr",
+      "label": "on-road price in Delhi",
+      "value": 177900,
+      "unit": "INR",
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_colours",
+      "model": "Meridian Volt X",
+      "attribute": "colours",
+      "label": "available colours",
+      "value": "Graphite, Pearl White, Signal Orange",
+      "unit": null,
+      "source_doc": "spec_sheet"
+    },
+    {
+      "id": "x_launch_year",
+      "model": "Meridian Volt X",
+      "attribute": "launch_year",
+      "label": "launch year",
+      "value": 2026,
+      "unit": null,
+      "source_doc": "spec_sheet"
+    }
+  ]
+}

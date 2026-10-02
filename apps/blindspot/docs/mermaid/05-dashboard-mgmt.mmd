@@ -1,0 +1,71 @@
+%% Blindspot — dashboard + management API. Hosted invite/project-key signup + session QA synced 2026-07-22.
+%% Management keeps bs_key server-only; invite signup is the explicit shown-once key-delivery boundary.
+%% files: apps/dashboard/lib/api.ts, apps/dashboard/lib/request-origin.ts, apps/dashboard/app/logout/route.ts, apps/dashboard/app/signup/SignupFlow.tsx, apps/dashboard/app/signup/session/route.ts, apps/dashboard/app/(app)/settings/SettingsView.tsx, apps/dashboard/app/(app)/routes/[name]/evals/page.tsx, apps/gateway/src/public/signup.ts, apps/gateway/src/manage/keys.ts, apps/gateway/src/manage/workflows.ts, packages/core/src/signup.ts
+%% granularity: full
+flowchart TD
+  U["Browser (client components)<br/>ENTRY · forms, toggles, drawers"]:::term
+  L{"Signed in?<br/>FUNCTION · httpOnly cookie bs_key present"}:::dec
+  SI["Current beta sign-in-with-project-key screen<br/>FUNCTION · exact origin or browser-proven same-origin form<br/>validates via GET /v1/me · sets httpOnly cookie · not Supabase Auth"]:::fn
+  IV["Issue invite link<br/>FUNCTION · HMAC-signs email + project + expiry<br/>out: shown-once URL-fragment token"]:::fn
+  SU["Signup screen<br/>USER · confirms locked email/project<br/>out: same-origin creation request"]:::ask
+  VG["Public signup gate<br/>FUNCTION · signature + expiry + size checks<br/>out: verified claims"]:::fn
+  AK["Atomic project creation<br/>FUNCTION · pair lock + metadata default + 5-minute lost-response retry<br/>out: recovery key + application key"]:::fn
+  SK["Save keys and continue<br/>USER · recovery to password manager, app env copied<br/>out: signed-in Connect handoff"]:::ask
+  LO["Explicit sign out<br/>USER · same-origin POST navigation only<br/>out: bs_key cleared; GET/prefetch harmless"]:::ask
+  SC["Next.js server (RSC + server actions)<br/>FUNCTION · reads bs_key from cookie, never exposes it"]:::fn
+  API["Typed client lib/api.ts<br/>FUNCTION · Bearer bs_live_ key · fetch no-store"]:::fn
+  MW["Gateway auth<br/>FUNCTION · requireProject · key hash to project_id"]:::fn
+
+  subgraph MGMT["/v1 management surface (thin Hono handlers, logic in @blindspot/core)"]
+    ME["meta: /me /overview /settings<br/>FUNCTION · KPIs, cost-vs-quality, activity"]:::fn
+    RT["routes: GET/PATCH /routes[/:name]<br/>FUNCTION · policy + auto_approve, candidate pool"]:::fn
+    TR["traces: GET /traces<br/>FUNCTION · paginated, tenant-scoped"]:::fn
+    DR["drift: GET /drift-events<br/>FUNCTION · timeline linked to recs"]:::fn
+    KG["keys: POST/GET/DELETE /keys<br/>FUNCTION · mint shown-once, list prefixes, revoke<br/>final key protected from lockout"]:::fn
+    KP["provider-keys: GET/PUT/DELETE<br/>FUNCTION · AES-256-GCM · value NEVER returned"]:::fn
+    EV["eval-plans: estimate / inspect / confirm<br/>FUNCTION · paid legacy endpoint closed"]:::fn
+    EE["eval-evidence<br/>FUNCTION · per-example outputs, criteria, issues and reported cost"]:::fn
+    WF["workflows/context/replay<br/>FUNCTION · all node kinds, explicit context consent, encrypted callback secret"]:::fn
+  end
+
+  CORE["@blindspot/core services<br/>FUNCTION · every query scoped by project_id (tenant guard)"]:::fn
+  DB["Postgres (schema: blindspot)<br/>DATA · routes, eval_runs, recommendations, golden_*, traces, keys"]:::data
+  REUSE["Reused loop endpoints<br/>FUNCTION · golden CRUD, candidates+eval, approve/reject, drift-check, gate"]:::fn
+  DEC{"User decision on a Recommendation<br/>USER · approve / reject (evidence drawer)"}:::ask
+
+  U --> L
+  L -- "no" --> SI --> SC
+  L -- "yes" --> SC
+  IV --> SU --> VG --> AK --> SK --> SC
+  U -. "Sign out" .-> LO --> SI
+  SC --> API --> MW
+  MW --> ME
+  MW --> RT
+  MW --> TR
+  MW --> DR
+  MW --> KG
+  MW --> KP
+  MW --> EV
+  MW --> EE
+  MW --> WF
+  MW --> REUSE
+  ME --> CORE
+  RT --> CORE
+  TR --> CORE
+  DR --> CORE
+  KG --> CORE
+  KP --> CORE
+  EV --> CORE
+  EE --> CORE
+  WF --> CORE
+  REUSE --> CORE
+  CORE --> DB
+  AK --> DB
+  U -.-> DEC
+  DEC -.-> REUSE
+
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;

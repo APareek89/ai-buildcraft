@@ -1,0 +1,5 @@
+# Python 3.10+; transformers is used only for tokenizers. No training framework.
+pandas==2.3.3
+pyarrow==22.0.0
+transformers==4.57.6
+jinja2==3.1.6

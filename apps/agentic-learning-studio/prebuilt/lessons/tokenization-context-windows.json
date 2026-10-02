@@ -1,0 +1,1788 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Tokenization and Context Windows",
+    "title": "Tokenization and Context Windows",
+    "generatedAt": "2026-06-22",
+    "estTotalMinutes": 32,
+    "thesis": "A language model never sees your words — it sees tokens, and it can only hold a fixed number of them at once (the context window). Understanding both explains model cost, why long inputs get truncated, and how to budget what you send."
+  },
+  "learnerProfile": {
+    "level": "beginner",
+    "depth": "conceptual",
+    "examples": "functional",
+    "topic": "Tokenization and Context Windows",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Tokenization and Context Windows: mental map",
+    "caption": "Start with the blocks, then open each one for detail.",
+    "oneLineThesis": "Text becomes tokens, tokens fill a fixed context window, and that window's size drives cost, truncation, and what you can send.",
+    "structureType": "conceptual",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "What a token is",
+        "orient": "Why models split text into tokens instead of words or letters.",
+        "sub": "The unit a model actually reads — not words, not characters.",
+        "what": "A token is the chunk of text a model encodes; usually a word-piece, not a whole word.",
+        "relevance": "Everything else (cost, limits, truncation) is measured in tokens, so this is the base unit.",
+        "moduleId": "m1",
+        "layer": "Foundations",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m2",
+        "label": "The context window",
+        "orient": "The fixed budget of tokens a model can hold in one request.",
+        "sub": "How many tokens the model can attend to at once.",
+        "what": "The context window is the maximum number of tokens (prompt plus reply) a model processes per call.",
+        "relevance": "It sets a hard ceiling on how much you can send and how long a reply can be.",
+        "moduleId": "m2",
+        "layer": "Foundations",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m3",
+        "label": "Counting and budgeting",
+        "orient": "How to estimate token counts and split the window between input and output.",
+        "sub": "Decide what gets in, what to trim, and how much room to leave for the reply.",
+        "what": "Budgeting means measuring tokens and choosing what to include so the request fits the window.",
+        "relevance": "Tokens cost money and the window is finite, so every prompt is a budgeting decision.",
+        "moduleId": "m3",
+        "layer": "Working with it",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m4",
+        "label": "Counting in code",
+        "orient": "A tiny tokenizer call that turns text into a real token count.",
+        "sub": "Connect the idea to a small, runnable check.",
+        "what": "A minimal code sketch encodes text with a tokenizer and reports the count before you send it.",
+        "relevance": "Estimating tokens by eye is unreliable; a quick count prevents over-limit errors and surprise cost.",
+        "moduleId": "m4",
+        "layer": "Working with it",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m5",
+        "label": "When it breaks, and a check",
+        "orient": "The classic failures — truncation, lost middle, runaway cost — plus active recall.",
+        "sub": "Spot the failure modes and lock the ideas in with self-check.",
+        "what": "Long inputs silently truncate, important text in the middle gets ignored, and token sprawl inflates cost.",
+        "relevance": "Knowing how the window fails is what turns the concept into a reliable habit.",
+        "moduleId": "m5",
+        "layer": "Failure and recall",
+        "emphasis": "spine"
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "tokens fill"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "so you budget"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "measured by"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "watch for"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "What a token is",
+      "sub": "Starts the spine: the unit a model actually reads.",
+      "summary": "A model never sees your characters or words directly — it sees tokens, small word-pieces produced by a tokenizer. This module explains what a token is and why models work this way before we count them.",
+      "objectives": [
+        "Explain what a token is and how it differs from a word or a character.",
+        "Describe why models use sub-word tokens instead of whole words.",
+        "Estimate roughly how many tokens a short English passage uses."
+      ],
+      "termIds": [
+        "token",
+        "tokenization",
+        "llm",
+        "prompt"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_why",
+          "kind": "note",
+          "tone": "info",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Why this exists: ",
+                  "strong": true
+                },
+                {
+                  "text": "a model can only do math on numbers, not letters. Tokenization is the step that turns your text into a sequence of numbered pieces the model can process. Almost every practical limit you hit — cost, length caps, truncation — is counted in those pieces, so it pays to know what they are."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: ",
+                  "strong": true
+                },
+                {
+                  "em": true,
+                  "text": "if you typed the word \"unbelievable\", do you think the model reads it as one piece, or several? Hold your guess."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "tokenization"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "A token is a piece of text, not a word",
+          "analogy": "Think of tokens like LEGO bricks for language: common words are one brick, but a rarer word like \"unbelievable\" gets built from a few bricks (\"un\", \"bel\", \"iev\", \"able\").",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When you send text to an "
+                },
+                {
+                  "text": "LLM",
+                  "term": "llm"
+                },
+                {
+                  "text": ", it is first split by a "
+                },
+                {
+                  "text": "tokenizer",
+                  "term": "tokenization"
+                },
+                {
+                  "text": " into a list of "
+                },
+                {
+                  "text": "tokens",
+                  "term": "token"
+                },
+                {
+                  "text": ". A token is usually a common word or a word-piece — not always a whole word, and not a single letter."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Common words are usually one token: ",
+                    "strong": true
+                  },
+                  {
+                    "text": "\"the\", \"cat\", and \"run\" are each a single token."
+                  }
+                ],
+                [
+                  {
+                    "text": "Rare or long words split into several: ",
+                    "strong": true
+                  },
+                  {
+                    "text": "\"unbelievable\" may become \"un\" + \"believ\" + \"able\"."
+                  }
+                ],
+                [
+                  {
+                    "text": "Spaces and punctuation count too: ",
+                    "strong": true
+                  },
+                  {
+                    "text": "a leading space is often part of the token, and \".\" or \",\" can be their own token."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A useful rule of thumb for English: about "
+                },
+                {
+                  "text": "1 token ≈ 4 characters ≈ ¾ of a word",
+                  "strong": true
+                },
+                {
+                  "text": ". So 100 words is roughly 130 tokens. (The answer to the prediction above: \"unbelievable\" is usually several tokens, not one.)"
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "token",
+            "tokenization",
+            "llm"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_visual",
+          "kind": "interactiveSlider",
+          "title": "Granularity: characters → tokens → words",
+          "caption": "Slide to see the unit a model could split text on, and why sub-word tokens are the practical middle ground.",
+          "min": 1,
+          "max": 3,
+          "unit": "granularity",
+          "stops": [
+            {
+              "at": 1,
+              "label": "Characters",
+              "note": "Every letter is a unit. The vocabulary is tiny, but sequences get extremely long and the model loses word-level meaning."
+            },
+            {
+              "at": 2,
+              "label": "Sub-word tokens (what models use)",
+              "note": "Common words stay whole; rare words split into reusable pieces. Balances a manageable vocabulary with short sequences. This is the real choice."
+            },
+            {
+              "at": 3,
+              "label": "Whole words",
+              "note": "Short sequences, but the vocabulary explodes and any unseen word (a typo, a name) has no token at all."
+            }
+          ],
+          "termIds": [
+            "token",
+            "tokenization"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_example",
+          "kind": "functionalExample",
+          "title": "Worked example: tokenizing a sentence",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Take the sentence: "
+                },
+                {
+                  "em": true,
+                  "text": "\"Tokenizers split unbelievable words.\""
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A typical tokenizer might break it into these eight tokens (a leading space is shown as ·):"
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "code": true,
+                    "text": "\"Token\""
+                  },
+                  {
+                    "text": " · "
+                  },
+                  {
+                    "code": true,
+                    "text": "\"izers\""
+                  },
+                  {
+                    "text": " — even a common-looking word can split into a stem plus an ending."
+                  }
+                ],
+                [
+                  {
+                    "code": true,
+                    "text": "\" split\""
+                  },
+                  {
+                    "text": " — one token, with its leading space attached."
+                  }
+                ],
+                [
+                  {
+                    "code": true,
+                    "text": "\" un\""
+                  },
+                  {
+                    "text": " · "
+                  },
+                  {
+                    "code": true,
+                    "text": "\"believ\""
+                  },
+                  {
+                    "text": " · "
+                  },
+                  {
+                    "code": true,
+                    "text": "\"able\""
+                  },
+                  {
+                    "text": " — the rare word \"unbelievable\" becomes three pieces."
+                  }
+                ],
+                [
+                  {
+                    "code": true,
+                    "text": "\" words\""
+                  },
+                  {
+                    "text": " · "
+                  },
+                  {
+                    "code": true,
+                    "text": "\".\""
+                  },
+                  {
+                    "text": " — the period is its own token."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Five English words became eight tokens. That gap is exactly why you should count tokens rather than words when a limit matters."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "token",
+            "tokenization"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_technical",
+          "kind": "technical",
+          "title": "How the tokenizer learns its pieces",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Modern tokenizers use an algorithm such as Byte-Pair Encoding (BPE). It starts from individual bytes and repeatedly merges the most frequently adjacent pair into a new token, building a fixed vocabulary (often 50,000–100,000 tokens)."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Practical consequence: the same tokenizer is used to encode AND decode, so the model and your token-counting tool must use the model's own tokenizer. Counting with the wrong one gives wrong numbers."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "token",
+            "tokenization"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Which statement best describes what a token is?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Always exactly one English word.",
+              "correct": false
+            },
+            {
+              "text": "A piece of text — often a word or a word-fragment — that the model encodes as a number.",
+              "correct": true
+            },
+            {
+              "text": "A single character of text.",
+              "correct": false
+            }
+          ],
+          "explanation": "Tokens are sub-word pieces. Common words are usually one token; rare or long words split into several. They are not characters and not always whole words.",
+          "termIds": [
+            "token",
+            "tokenization"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "The context window",
+      "sub": "Follows tokens: how many of them the model can hold at once.",
+      "summary": "Now that text is tokens, the next question is how many the model can process in a single call. That ceiling is the context window — and it counts both your prompt and the model's reply.",
+      "objectives": [
+        "Define the context window as a fixed token budget per request.",
+        "Explain that the window holds the prompt AND the generated reply together.",
+        "Recognize what happens when input exceeds the window."
+      ],
+      "termIds": [
+        "context_window",
+        "token",
+        "prompt",
+        "llm"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_recall",
+          "kind": "note",
+          "tone": "info",
+          "body": [
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Quick recall from module 1: ",
+                  "strong": true
+                },
+                {
+                  "em": true,
+                  "text": "before reading on, what is the rough rule of thumb for English — about how many tokens is one word?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer: roughly "
+                },
+                {
+                  "text": "1 word ≈ 1.3 tokens",
+                  "strong": true
+                },
+                {
+                  "text": " (or 1 token ≈ ¾ of a word). Hold that number — you will use it in a moment to check whether text fits the window."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "token"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The window is a fixed token budget",
+          "analogy": "The context window is like a whiteboard of a fixed size: you can write a lot, but once it's full, nothing more fits — and whatever the model writes back has to share the same board.",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A "
+                },
+                {
+                  "text": "context window",
+                  "term": "context_window"
+                },
+                {
+                  "text": " is the maximum number of "
+                },
+                {
+                  "text": "tokens",
+                  "term": "token"
+                },
+                {
+                  "text": " a model can take in for a single request. It is a hard limit set by the model, commonly 8K, 128K, or up to ~1M tokens depending on the model."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The crucial part beginners miss: ",
+                  "strong": true
+                },
+                {
+                  "text": "the window holds the "
+                },
+                {
+                  "text": "prompt",
+                  "term": "prompt"
+                },
+                {
+                  "text": " AND the reply together. If the window is 8,000 tokens and your prompt is 7,500, the model has at most 500 tokens left to answer in."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Input tokens: ",
+                    "strong": true
+                  },
+                  {
+                    "text": "your instructions, the conversation history, any documents you paste in."
+                  }
+                ],
+                [
+                  {
+                    "text": "Output tokens: ",
+                    "strong": true
+                  },
+                  {
+                    "text": "everything the model generates back."
+                  }
+                ],
+                [
+                  {
+                    "text": "Both share one budget: ",
+                    "strong": true
+                  },
+                  {
+                    "text": "input + output must fit inside the window."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "context_window",
+            "token",
+            "prompt"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_visual",
+          "kind": "interactiveSlider",
+          "title": "Filling the window",
+          "caption": "Slide to see how much of an 8K-token window the prompt uses — and how little room is left for the reply.",
+          "min": 0,
+          "max": 8000,
+          "unit": "prompt tokens",
+          "stops": [
+            {
+              "at": 1000,
+              "label": "Plenty of room",
+              "note": "Prompt uses 1,000 tokens; about 7,000 remain for the reply. Comfortable for long answers."
+            },
+            {
+              "at": 6000,
+              "label": "Getting tight",
+              "note": "Prompt uses 6,000 tokens; ~2,000 left. A long reply may get cut off mid-sentence."
+            },
+            {
+              "at": 7900,
+              "label": "Almost no output room",
+              "note": "Prompt uses 7,900 tokens; only ~100 left for the reply. The model can barely answer."
+            }
+          ],
+          "termIds": [
+            "context_window",
+            "token"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_example",
+          "kind": "functionalExample",
+          "title": "Worked example: does this document fit?",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "You want to summarize a 10,000-word report using a model with an 8,000-token window."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Estimate the input: ",
+                    "strong": true
+                  },
+                  {
+                    "text": "10,000 words × 1.3 ≈ 13,000 tokens."
+                  }
+                ],
+                [
+                  {
+                    "text": "Compare to the window: ",
+                    "strong": true
+                  },
+                  {
+                    "text": "13,000 > 8,000 — it does not fit, even before leaving room for the summary."
+                  }
+                ],
+                [
+                  {
+                    "text": "The fix: ",
+                    "strong": true
+                  },
+                  {
+                    "text": "split the report into chunks that each fit, summarize each, then summarize the summaries (a \"map-reduce\" approach)."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The window is why \"just paste the whole thing in\" stops working past a certain size — and why chunking exists."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "context_window",
+            "token",
+            "prompt"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_technical",
+          "kind": "technical",
+          "title": "Window size vs. attention cost",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Bigger windows are not free. The transformer's attention compares tokens against each other, so cost grows steeply as the window grows. A larger window also means more input tokens to pay for and slower responses."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "So \"use the biggest window\" is rarely the right default — match the window to the job, and keep the prompt lean."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "context_window",
+            "token"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "A model has an 8,000-token context window. Your prompt is 7,800 tokens. What is the main problem?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The prompt is rejected because prompts can use at most half the window.",
+              "correct": false
+            },
+            {
+              "text": "Only about 200 tokens are left for the reply, so the answer will be very short or cut off.",
+              "correct": true
+            },
+            {
+              "text": "Nothing — the reply gets its own separate window.",
+              "correct": false
+            }
+          ],
+          "explanation": "The window is shared by input and output. A 7,800-token prompt leaves only ~200 tokens for the reply, so the model cannot produce a full answer.",
+          "termIds": [
+            "context_window",
+            "token",
+            "prompt"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Counting and budgeting tokens",
+      "sub": "Follows the window: choose what to send so it fits and stays cheap.",
+      "summary": "The window is finite and tokens cost money, so every request is a budgeting decision. This module is about estimating token counts and choosing how to split the window between input and output.",
+      "objectives": [
+        "Estimate token counts for a prompt before sending it.",
+        "Reserve output room so the reply isn't truncated.",
+        "Choose a strategy when content is too big for the window."
+      ],
+      "termIds": [
+        "token",
+        "context_window",
+        "prompt",
+        "schema"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Every prompt is a budget",
+          "analogy": "Budgeting tokens is like packing a fixed-size suitcase: you can't bring everything, so you decide what's essential, what to compress, and how much space to leave for what you'll buy on the trip (the reply).",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Because the "
+                },
+                {
+                  "text": "context window",
+                  "term": "context_window"
+                },
+                {
+                  "text": " is fixed and you usually pay per "
+                },
+                {
+                  "text": "token",
+                  "term": "token"
+                },
+                {
+                  "text": ", building a "
+                },
+                {
+                  "text": "prompt",
+                  "term": "prompt"
+                },
+                {
+                  "text": " means answering three questions:"
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "How many tokens does my input use?",
+                    "strong": true
+                  },
+                  {
+                    "text": " Estimate (words × 1.3) or count exactly with the model's tokenizer."
+                  }
+                ],
+                [
+                  {
+                    "text": "How many tokens does the reply need?",
+                    "strong": true
+                  },
+                  {
+                    "text": " Reserve that room up front — set a max-output limit."
+                  }
+                ],
+                [
+                  {
+                    "text": "What do I cut if it doesn't fit?",
+                    "strong": true
+                  },
+                  {
+                    "text": " Trim history, summarize, or retrieve only the relevant passages instead of pasting everything."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "context_window",
+            "token",
+            "prompt"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_walk",
+          "kind": "walkthrough",
+          "title": "How to budget a request, step by step",
+          "steps": [
+            {
+              "label": "Measure the fixed parts",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Count the tokens in your system instructions and any required context. These are non-negotiable and come out of the budget first."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Reserve output room",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Decide the longest reply you need (e.g. 800 tokens) and subtract it from the window. The rest is what's left for variable input."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Fit the variable input",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Fill the remaining budget with the highest-value content. If it overflows, summarize or retrieve only the relevant pieces rather than truncating blindly."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "context_window",
+            "token"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionMatrix",
+          "title": "What to do when content is too big for the window",
+          "criteria": [
+            "Fit",
+            "Effort",
+            "Risk of losing information"
+          ],
+          "options": [
+            {
+              "name": "Truncate (cut the overflow)",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Always fits — you just drop tokens past the limit.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Effort",
+                  "text": "Almost none.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk of losing information",
+                  "text": "High — you may cut the most important part without noticing.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Only for clearly-trailing, low-value text (e.g. boilerplate footers).",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Summarize then send",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Fits, since the summary is far smaller.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Effort",
+                  "text": "Extra model calls to produce summaries.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk of losing information",
+                  "text": "Medium — detail is compressed but the gist survives.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "When you need the overall meaning of a large document, not exact wording.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Retrieve only relevant chunks",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Fits — you send only the passages that match the question.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Effort",
+                  "text": "Needs a search/retrieval step over chunks.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk of losing information",
+                  "text": "Low for the question at hand, if retrieval is good.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "When the answer lives in a small part of a large corpus (the typical RAG case).",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "howToRead": "Pick the smallest-effort option whose information-loss risk you can accept for THIS task. Default to retrieval when exact details matter.",
+          "termIds": [
+            "context_window",
+            "token"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "You need exact figures from one section of a 200-page manual. Which budgeting strategy fits best?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Truncate the manual to the first 8K tokens.",
+              "correct": false
+            },
+            {
+              "text": "Retrieve only the relevant section and send that.",
+              "correct": true
+            },
+            {
+              "text": "Summarize the whole manual into a paragraph.",
+              "correct": false
+            }
+          ],
+          "explanation": "When you need exact details from a small part of a large source, retrieval keeps the relevant text intact while fitting the window. Truncation risks cutting the section; summarizing loses the exact figures.",
+          "termIds": [
+            "context_window",
+            "token"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "When content exceeds the window, choose how to fit it: truncate, summarize, or retrieve only the relevant chunks."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Counting tokens in code",
+      "sub": "Follows budgeting: turn the estimate into a real, checkable number.",
+      "summary": "Eyeballing token counts is unreliable. This module shows a tiny, runnable sketch that counts tokens with the model's own tokenizer before you send a request, and how to sanity-check AI-generated counting code.",
+      "objectives": [
+        "Read a minimal token-counting snippet and explain each line.",
+        "Predict the token count of a short string before running it.",
+        "Verify AI-generated counting code uses the correct tokenizer."
+      ],
+      "termIds": [
+        "token",
+        "tokenization",
+        "context_window",
+        "schema"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Count, don't guess",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The (words × 1.3) rule is fine for a quick gut-check, but it's wrong for code, non-English text, and unusual formatting. To know for sure, run the text through the model's "
+                },
+                {
+                  "text": "tokenizer",
+                  "term": "tokenization"
+                },
+                {
+                  "text": " and read the real "
+                },
+                {
+                  "text": "token",
+                  "term": "token"
+                },
+                {
+                  "text": " count."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading the code, predict: ",
+                  "strong": true
+                },
+                {
+                  "em": true,
+                  "text": "how many tokens do you think the string \"Hello, world!\" is — 1, 3, or 4?"
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "tokenization",
+            "token"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Minimal token counter",
+          "language": "python",
+          "code": "import tiktoken\n\n# Load the tokenizer that matches your model.\nenc = tiktoken.encoding_for_model(\"gpt-4o\")\n\ntext = \"Hello, world!\"\ntokens = enc.encode(text)        # text -> list of token ids\nprint(len(tokens))               # how many tokens this text uses\n\n# Fits a budget?\nMAX_INPUT = 7000\nassert len(tokens) <= MAX_INPUT, \"Prompt too long for the window!\"",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This loads the model's own tokenizer, encodes the text into token ids, and reports the count. The "
+                },
+                {
+                  "code": true,
+                  "text": "assert"
+                },
+                {
+                  "text": " line is the cheap guardrail: it fails loudly before you spend a request on an over-limit prompt."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "How many tokens is \"Hello, world!\" — and which characters become their own tokens?",
+            "answer": "Four tokens: \"Hello\", \",\", \" world\", \"!\". The comma and exclamation mark are separate tokens, and \" world\" carries its leading space."
+          },
+          "syntax": [
+            {
+              "part": "encoding_for_model(\"gpt-4o\")",
+              "explains": "Picks the exact tokenizer that model uses — the count is only correct if this matches."
+            },
+            {
+              "part": "enc.encode(text)",
+              "explains": "Turns the string into the list of integer token ids the model would see."
+            },
+            {
+              "part": "len(tokens)",
+              "explains": "The token count — what you compare against the window and what you're billed on."
+            },
+            {
+              "part": "assert ... <= MAX_INPUT",
+              "explains": "A guardrail that stops the request early if the prompt won't fit."
+            }
+          ],
+          "termIds": [
+            "tokenization",
+            "token",
+            "context_window"
+          ],
+          "sources": [
+            "canon1",
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "note",
+          "tone": "warn",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Verify AI-generated counting code before you trust its numbers. ",
+                  "strong": true
+                },
+                {
+                  "text": "When an assistant writes token-counting code for you, check these four things:"
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Right tokenizer? ",
+                    "strong": true
+                  },
+                  {
+                    "text": "It must match your actual model. Counting GPT text with a Llama tokenizer gives wrong numbers."
+                  }
+                ],
+                [
+                  {
+                    "text": "Counts input AND output? ",
+                    "strong": true
+                  },
+                  {
+                    "text": "A budget check that ignores the reply will still overflow the window."
+                  }
+                ],
+                [
+                  {
+                    "text": "Handles the leading space / special tokens? ",
+                    "strong": true
+                  },
+                  {
+                    "text": "Chat models add hidden formatting tokens per message; a raw string count undercounts."
+                  }
+                ],
+                [
+                  {
+                    "text": "Fails loudly, not silently? ",
+                    "strong": true
+                  },
+                  {
+                    "text": "There should be an assert or check, not a comment that says \"should be fine\"."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "tokenization",
+            "token",
+            "context_window"
+          ],
+          "sources": [
+            "canon1",
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "An assistant gives you token-counting code that uses a different model's tokenizer than the one you'll call. What's the risk?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "None — all tokenizers produce the same counts.",
+              "correct": false
+            },
+            {
+              "text": "The counts can be off, so a prompt you think fits may actually exceed the window.",
+              "correct": true
+            },
+            {
+              "text": "The code will refuse to run.",
+              "correct": false
+            }
+          ],
+          "explanation": "Different models tokenize differently, so the same text yields different token counts. Using the wrong tokenizer gives a misleading number and you can still overflow the real window.",
+          "termIds": [
+            "tokenization",
+            "token"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "When it breaks, and a check",
+      "sub": "Closes the spine: the failure modes, then active recall.",
+      "summary": "Knowing the happy path isn't enough. This module covers the classic ways tokenization and context windows bite in practice — silent truncation, the lost middle, and runaway cost — then a short self-check to lock it in.",
+      "objectives": [
+        "Name the three most common context-window failure modes.",
+        "Explain why long inputs can be ignored even when they technically fit.",
+        "Recall the token rule of thumb and the shared-budget idea from earlier modules."
+      ],
+      "termIds": [
+        "token",
+        "context_window",
+        "prompt",
+        "schema"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "note",
+          "tone": "info",
+          "body": [
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict from memory: ",
+                  "strong": true
+                },
+                {
+                  "em": true,
+                  "text": "in module 2 we said the context window holds two things that share one budget. What are they?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer: the "
+                },
+                {
+                  "text": "prompt",
+                  "term": "prompt"
+                },
+                {
+                  "text": " (input) and the reply (output) share the same window. Keep that in mind — the first failure mode below is exactly what happens when you forget it."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "context_window",
+            "prompt"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m5_failure",
+          "kind": "conceptual",
+          "title": "How tokens and windows break in practice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "These three failures cause most real-world surprises with "
+                },
+                {
+                  "text": "context windows",
+                  "term": "context_window"
+                },
+                {
+                  "text": "."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "1. Silent truncation (the output gets cut)"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The prompt is so large that almost no room is left for the reply. The model stops mid-sentence and the answer looks complete but isn't. Fix: reserve output tokens up front."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "2. Lost in the middle (it fits but gets ignored)"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Even when a long input fits, models attend most strongly to the beginning and end. Information buried in the middle of a very long prompt is often effectively ignored — so \"it fit\" does not mean \"it was used\". Fix: put the most important text near the start or end, and don't over-stuff the window."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "3. Runaway cost (token sprawl)"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "In a chat loop, the whole history is re-sent every turn, so "
+                },
+                {
+                  "text": "token",
+                  "term": "token"
+                },
+                {
+                  "text": " usage — and cost — grows with each message. A long conversation quietly becomes expensive. Fix: trim or summarize old turns instead of carrying everything."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "warn",
+              "spans": [
+                {
+                  "text": "Diagnostic signal: ",
+                  "strong": true
+                },
+                {
+                  "text": "if a model ignores an instruction you definitely included, suspect either truncation (it was cut) or lost-in-the-middle (it was buried), not that the model \"can't follow directions\"."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "context_window",
+            "token",
+            "prompt"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "useWhen": "A conversation or input is growing long and you must decide what to keep in the window each turn.",
+          "avoidWhen": "The whole input is small and comfortably under the window — trimming then just adds complexity for no benefit.",
+          "ruleOfThumb": "Keep the system instructions and the most recent, most relevant turns; summarize or drop the rest. Always leave headroom for the reply.",
+          "termIds": [
+            "context_window",
+            "token"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "You pasted a long instruction into the middle of a very large prompt that fit the window, but the model ignored it. What is the most likely cause?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The instruction was truncated because the prompt didn't fit.",
+              "correct": false
+            },
+            {
+              "text": "\"Lost in the middle\" — the model attends most to the start and end, so buried text gets ignored.",
+              "correct": true
+            },
+            {
+              "text": "The model can't follow instructions at all.",
+              "correct": false
+            }
+          ],
+          "explanation": "If the prompt fit but a middle instruction was ignored, the cause is usually lost-in-the-middle. Move critical instructions toward the start or end, and avoid over-stuffing the window.",
+          "termIds": [
+            "context_window",
+            "prompt"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "As a conversation grows, decide what to keep in the window each turn: full history, trimmed history, or a running summary."
+    }
+  ],
+  "glossary": {
+    "llm": {
+      "id": "llm",
+      "label": "LLM",
+      "laymanDefinition": "A model trained to predict and generate sequences of tokens, used for text tasks.",
+      "technicalNote": "In this lesson, the LLM is the consumer of tokens: it reads a token sequence (the context) and generates more tokens.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Large language model"
+    },
+    "token": {
+      "id": "token",
+      "label": "Token",
+      "laymanDefinition": "A small piece of text — usually a word or word-fragment — that a model encodes as a number.",
+      "technicalNote": "Tokens are integer ids drawn from a fixed vocabulary; English averages about 1 token per ¾ word.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "tokenization": {
+      "id": "tokenization",
+      "label": "Tokenization",
+      "laymanDefinition": "The step that splits text into tokens before a model can process it.",
+      "technicalNote": "Commonly done with sub-word algorithms like Byte-Pair Encoding (BPE) that merge frequent character pairs into a fixed vocabulary.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "context_window": {
+      "id": "context_window",
+      "label": "Context window",
+      "laymanDefinition": "The maximum number of tokens a model can take in for a single request, shared by the prompt and the reply.",
+      "technicalNote": "A hard per-call limit (e.g. 8K–1M tokens); attention cost grows with the number of tokens in the window.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "prompt": {
+      "id": "prompt",
+      "label": "Prompt",
+      "laymanDefinition": "The input text you send to a model — instructions, history, and any pasted content.",
+      "technicalNote": "Prompt tokens are the input half of the context window; their count is subtracted from the budget before the reply is generated.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "schema": {
+      "id": "schema",
+      "label": "Schema",
+      "laymanDefinition": "A written description of the exact shape data must have.",
+      "technicalNote": "In this lesson, a budget check is a tiny schema-like constraint: token count must stay under the window limit.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "tool_call": {
+      "id": "tool_call",
+      "label": "Tool call",
+      "laymanDefinition": "A structured request from a model to run an external function.",
+      "technicalNote": "Not central to this lesson; included because tool definitions and their results also consume context-window tokens.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts",
+    "themes": [
+      {
+        "name": "Fitting the window",
+        "questions": [
+          {
+            "q": "Your content is larger than the model's context window. What do you do?",
+            "why": "Truncating blindly can silently drop the most important part of the input.",
+            "opts": [
+              "Truncate the overflow",
+              "Summarize then send",
+              "Retrieve only relevant chunks"
+            ],
+            "rot": "Prefer retrieval when exact details matter; summarize when only the gist matters."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Reconstruct the chain from memory before reading on: ",
+            "strong": true
+          },
+          {
+            "text": "text becomes ____, those fill a fixed ____ shared by prompt and reply, so every request is a ____ decision, which you verify by ____ the tokens, while watching for truncation, lost-in-the-middle, and runaway cost."
+          }
+        ]
+      },
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "The fill-ins: tokens → context window → budgeting → counting. If you can rebuild that sentence, you have the lesson."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Reference path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "What a token is",
+          "orient": "Why models split text into tokens instead of words or letters.",
+          "sub": "The unit a model actually reads.",
+          "what": "A token is the word-piece a model encodes as a number.",
+          "relevance": "It is the base unit cost and limits are measured in.",
+          "moduleId": "m1",
+          "layer": "Foundations",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m2",
+          "label": "The context window",
+          "orient": "The fixed budget of tokens a model can hold in one request.",
+          "sub": "How many tokens fit at once.",
+          "what": "The maximum tokens (prompt plus reply) per call.",
+          "relevance": "It caps how much you can send and how long the reply can be.",
+          "moduleId": "m2",
+          "layer": "Foundations",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m3",
+          "label": "Counting and budgeting",
+          "orient": "How to estimate token counts and split the window between input and output.",
+          "sub": "Decide what gets in and what to trim.",
+          "what": "Measure tokens and choose what to include so it fits.",
+          "relevance": "Tokens cost money and the window is finite.",
+          "moduleId": "m3",
+          "layer": "Working with it",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m4",
+          "label": "Counting in code",
+          "orient": "A tiny tokenizer call that turns text into a real token count.",
+          "sub": "A small, runnable check.",
+          "what": "Encode text with the model's tokenizer and report the count.",
+          "relevance": "Eyeballing token counts is unreliable.",
+          "moduleId": "m4",
+          "layer": "Working with it",
+          "emphasis": "normal"
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "tokens fill"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "so you budget"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "measured by"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "See text as tokens",
+        "detail": "Treat input as token pieces, not words — count in tokens whenever a limit matters."
+      },
+      {
+        "step": 2,
+        "label": "Know your window",
+        "detail": "Find the model's context window and remember the prompt and reply share it."
+      },
+      {
+        "step": 3,
+        "label": "Budget the request",
+        "detail": "Reserve output room, then fit the highest-value input into what's left."
+      },
+      {
+        "step": 4,
+        "label": "Count in code",
+        "detail": "Encode with the model's own tokenizer and assert the prompt fits before sending."
+      },
+      {
+        "step": 5,
+        "label": "Guard the failure modes",
+        "detail": "Watch for truncation, lost-in-the-middle, and runaway cost; trim or retrieve as the input grows."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_token",
+        "label": "Can you estimate a prompt's token count before sending it?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_window",
+        "label": "Did you leave room in the window for the reply, not just the prompt?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_fit",
+        "label": "When content was too big, did you choose truncate / summarize / retrieve deliberately?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_break",
+        "label": "Are you guarding against truncation, lost-in-the-middle, and runaway cost?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Solo build: write a short script that takes a long document and a target model, estimates its token count with the model's tokenizer, reports whether it fits the window with room for a 1,000-token reply, and — if not — picks one strategy (truncate, summarize, or retrieve) and explains why. NEXT rung: extend it into a chunking-and-summarization pipeline (map-reduce) for documents larger than the window.",
+      "scopedTo": "Tokenization and Context Windows"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Tokenization and Context Windows",
+      "url": "https://huggingface.co/docs/transformers/en/tokenizer_summary",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: How tokenizers and context windows work",
+      "url": "https://huggingface.co/learn/nlp-course/chapter6/1",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "OpenAI: Managing tokens and context length",
+      "url": "https://platform.openai.com/docs/advanced-usage",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://platform.openai.com/docs/advanced-usage",
+      "asOfDate": "2026-06-20"
+    }
+  }
+}

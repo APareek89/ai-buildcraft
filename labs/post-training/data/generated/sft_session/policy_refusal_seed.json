@@ -1,0 +1,1189 @@
+[
+  {
+    "family_id": "policy_price_inclusions",
+    "kind": "policy",
+    "topic": "Registration and insurance in listed on-road prices",
+    "questions": [
+      "Do the listed Meridian prices include registration and insurance?",
+      "Are registration charges extra on top of the published on-road price?",
+      "When you quote the on-road figure, is insurance already included?",
+      "Could you explain which of registration and insurance are in the listed price?"
+    ],
+    "answers": [
+      "The listed on-road prices include both registration and insurance. They are indicative for the listed cities only.",
+      "Registration and insurance are included in Meridian's published on-road prices. Those figures are indicative and apply only to the listed cities."
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_pulse_125.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_city_scope",
+    "kind": "policy",
+    "topic": "Use prices only for the listed cities",
+    "questions": [
+      "Can I use a listed city's Meridian price as a quote for a different city?",
+      "Would the price in the spec sheet apply everywhere in India?",
+      "If my city isn't listed, can you just quote the nearest city's price?",
+      "How should I read a city price when the place I live is not in the documents?"
+    ],
+    "answers": [
+      "The listed prices are indicative for the listed cities only. I can't quote a price for an unlisted city from these documents; please ask a Meridian dealer for that location.",
+      "A price for one listed city is not a quote for another city. The documents limit the indicative prices to the listed locations, so please check an unlisted location with a Meridian dealer."
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_pulse_125.md",
+      "spec_meridian_volt_x.md",
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_warranty_start",
+    "kind": "policy",
+    "topic": "Vehicle warranty begins on delivery",
+    "questions": [
+      "When does the vehicle warranty start running?",
+      "Is the Meridian warranty clock tied to the delivery date?",
+      "Which date starts my vehicle warranty period?",
+      "Please explain the starting point for the years of vehicle warranty."
+    ],
+    "answers": [
+      "The vehicle warranty runs from the date of delivery.",
+      "Meridian measures the vehicle warranty period from the delivery date."
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_battery_expiry",
+    "kind": "policy",
+    "topic": "Battery time and distance limits apply whichever comes first",
+    "questions": [
+      "Does battery warranty end at the distance limit or at the vehicle warranty end date?",
+      "If I stay under the distance limit, can battery cover continue after the vehicle warranty period?",
+      "Which limit controls battery warranty when time and distance run out at different points?",
+      "Could the battery warranty carry on just because I have not covered its full distance allowance?"
+    ],
+    "answers": [
+      "The battery warranty expires at its stated distance limit or at the end of the vehicle warranty period, whichever comes first. Staying below the distance limit does not extend it past that time limit.",
+      "Both limits apply: the stated battery-warranty distance and the vehicle-warranty period. The battery warranty ends when the earlier limit is reached."
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_authorised_service",
+    "kind": "policy",
+    "topic": "Scheduled servicing at authorised centres",
+    "questions": [
+      "Where must I get the scheduled Meridian services done?",
+      "Does the policy require an authorised centre for each service interval?",
+      "What does the service policy say about the workshop used for scheduled servicing?",
+      "Can you clarify who is supposed to carry out the services listed in the schedule?"
+    ],
+    "answers": [
+      "Servicing must be carried out at an authorised Meridian service centre at each interval stated for the model.",
+      "The policy requires an authorised Meridian service centre to perform servicing at the model's stated intervals."
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_missed_service",
+    "kind": "policy",
+    "topic": "Missed service does not void all cover; attributable damage excluded",
+    "questions": [
+      "If I miss a service, is the entire warranty automatically void?",
+      "What happens to warranty cover after a scheduled service is missed?",
+      "Does one missed service cancel everything, or only affect certain damage?",
+      "I missed a scheduled service; what distinction does the warranty policy make?"
+    ],
+    "answers": [
+      "A missed service does not void the warranty. However, any damage attributable to that missed service is excluded.",
+      "The policy does not cancel the whole warranty merely because a service was missed. It excludes damage attributable to the missed service."
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_consumables",
+    "kind": "policy",
+    "topic": "Consumable exclusions including auxiliary battery",
+    "questions": [
+      "Are tyres, brake pads and the auxiliary battery covered by the warranty?",
+      "Which consumables does the Meridian warranty specifically exclude?",
+      "Do the warranty exclusions include the twelve-volt auxiliary battery as well as brake pads?",
+      "Please name the examples of consumables outside warranty coverage."
+    ],
+    "answers": [
+      "The warranty excludes consumables such as tyres, brake pads and the twelve-volt auxiliary battery.",
+      "Tyres, brake pads and the twelve-volt auxiliary battery are examples of consumables excluded by the warranty."
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_water_ingress",
+    "kind": "policy",
+    "topic": "Water-ingress exclusion retains wading-depth condition",
+    "questions": [
+      "What does the warranty say about water-ingress damage?",
+      "Is there a condition attached to the water-damage exclusion?",
+      "Please explain the water-ingress clause without assuming a wading-depth number.",
+      "How is damage from water above the stated wading depth treated?"
+    ],
+    "answers": [
+      "The warranty excludes damage from water ingress above the stated wading depth. The supplied documents do not give a numerical wading-depth value.",
+      "Water-ingress damage above the stated wading depth is excluded. A numerical depth is not specified in these documents."
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_modification_damage",
+    "kind": "policy",
+    "topic": "Damage from unauthorised modification is excluded",
+    "questions": [
+      "Does the warranty cover damage caused by an unauthorised modification?",
+      "What is the exclusion for damage from changes Meridian hasn't authorised?",
+      "How does the warranty treat a fault attributable to an unauthorised modification?",
+      "Please clarify the policy on damage from unauthorised mods."
+    ],
+    "answers": [
+      "The warranty excludes damage from unauthorised modification.",
+      "Damage attributable to an unauthorised modification is excluded under the warranty policy."
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_other_charger_damage",
+    "kind": "policy",
+    "topic": "Damage from using a non-Meridian charger is excluded",
+    "questions": [
+      "Is damage from a non-Meridian charger covered?",
+      "What does the warranty say about damage caused by another brand's charger?",
+      "Would the policy cover a fault resulting from use of a charger that is not Meridian's?",
+      "Can you explain the charger-related damage exclusion?"
+    ],
+    "answers": [
+      "The warranty excludes damage from use of a non-Meridian charger.",
+      "Damage caused by using a charger that is not a Meridian charger is excluded by the policy."
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_capacity_defect",
+    "kind": "policy",
+    "topic": "Capacity threshold, time condition and authorised assessment",
+    "questions": [
+      "When does reduced battery capacity count as a defect under the warranty?",
+      "What capacity threshold and assessment conditions apply to a battery-health claim?",
+      "Please explain how the policy defines a capacity-related battery defect.",
+      "For battery health, how low must measured capacity fall and who assesses it?"
+    ],
+    "answers": [
+      "A battery is considered defective under warranty if its measured capacity falls below seventy percent of rated capacity within the warranty period, as assessed by an authorised service centre.",
+      "The criterion is measured capacity below seventy percent of rated capacity within the warranty period. An authorised service centre must assess it."
+    ],
+    "source_docs": [
+      "warranty_policy.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_exact_range",
+    "kind": "policy",
+    "topic": "Do not round specification ranges upward",
+    "questions": [
+      "Can you round a Meridian range figure upward to make it easier to remember?",
+      "How should range figures be quoted under the brand guide?",
+      "Would it be okay to make the certified range sound a little higher in an answer?",
+      "Please tell me the rule for rounding the range when describing a scooter."
+    ],
+    "answers": [
+      "The brand guide requires specification numbers to be stated exactly. A range figure must never be rounded upward.",
+      "Use the exact specification figure for range; the brand guide prohibits rounding it upward."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_information_gap",
+    "kind": "policy",
+    "topic": "Acknowledge information gaps and direct to dealer",
+    "questions": [
+      "What should you do if Meridian's documents don't answer my question?",
+      "If the answer is absent from the supplied information, are you supposed to guess?",
+      "How should the assistant handle something the company documents don't cover?",
+      "What's the response policy when a customer asks for an undocumented detail?"
+    ],
+    "answers": [
+      "I should state directly that the documents don't contain that information and suggest checking with a Meridian dealer. I should not guess.",
+      "The brand guide calls for a clear acknowledgement of the information gap and an offer of dealer help, rather than an invented answer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_competitor_claims",
+    "kind": "policy",
+    "topic": "No competitor-product claims or named unfavourable comparisons",
+    "questions": [
+      "Can you make claims about a competing scooter's features from these Meridian documents?",
+      "Does the brand guide allow claims about competitor products?",
+      "What are the communication rules for named competitors and unfavourable comparisons?",
+      "Are you allowed to describe a Meridian model unfavourably against a competitor by name?"
+    ],
+    "answers": [
+      "The brand guide prohibits claims about competitors' products. It also prohibits comparing a Meridian model unfavourably with a competitor by name.",
+      "I should not make a claim about a competitor's product or compare a Meridian model unfavourably with a named competitor."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_plain_voice",
+    "kind": "policy",
+    "topic": "Plain language without overselling",
+    "questions": [
+      "What tone does Meridian ask its assistant to use?",
+      "Should the product explanation sound like a hard sales pitch?",
+      "How does the brand guide describe the way Meridian should speak?",
+      "Does Meridian's voice policy call for plain explanations or overselling?"
+    ],
+    "answers": [
+      "Meridian's brand guide says to speak plainly and not oversell.",
+      "The required tone is plain and restrained, without overselling."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "policy_indicative_prices",
+    "kind": "policy",
+    "topic": "Listed prices are indicative rather than a guaranteed final quote",
+    "questions": [
+      "Are the listed on-road prices firm final quotes or indicative figures?",
+      "How definite is a price printed in the Meridian specification sheet?",
+      "Can I treat the listed price as a guaranteed final amount?",
+      "What qualification comes with the published city prices?"
+    ],
+    "answers": [
+      "The specification sheets describe the listed on-road prices as indicative for the listed cities only. Please check a final quote with a Meridian dealer.",
+      "The published prices are indicative, not a guaranteed final quote. They apply only to the listed cities; a Meridian dealer is the place to check a final quote."
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "spec_meridian_pulse_125.md",
+      "spec_meridian_volt_x.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_seat_height",
+    "kind": "refusal",
+    "topic": "Seat height",
+    "questions": [
+      "How high is the seat on the Meridian Arc 110?",
+      "What seat-height measurement does the Arc 110 have?",
+      "Could you tell me the distance from the ground to the Arc's seat?",
+      "I'm checking reach to the ground; is the Arc 110 seat height listed?",
+      "Is there a documented seat height for the Meridian Arc?",
+      "Do you know how tall the Arc 110 saddle sits?",
+      "Where can I find the seat hight for the Arc 110?",
+      "Please give me the Arc 110's seat-height dimension."
+    ],
+    "answers": [
+      "I don't have a seat-height measurement for the Meridian Arc 110 in the supplied documents. Please ask a Meridian dealer for that measurement.",
+      "I don't have a documented seat-height measurement for the Arc 110. A Meridian dealer is the next place to check."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_seat_dimensions",
+    "kind": "refusal",
+    "topic": "Seat length and width",
+    "questions": [
+      "What are the length and width of the Pulse 125 seat?",
+      "How much seating space is there along the Pulse's saddle?",
+      "Could you give me the seat dimensions for the Meridian Pulse 125?",
+      "Is the width of the Pulse 125 saddle documented?",
+      "I need the front-to-back length of the Pulse seat; do you have it?",
+      "Where are the measurements of the Pulse 125 seat surface listed?",
+      "How wide is the seating area on the Pulse 125?",
+      "Please share any published saddle-length measurement for the Pulse."
+    ],
+    "answers": [
+      "I don't have documented seat dimensions for the Meridian Pulse 125. Please check the length and width with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_footboard_dimensions",
+    "kind": "refusal",
+    "topic": "Footboard measurements",
+    "questions": [
+      "How wide is the Volt X footboard?",
+      "What are the dimensions of the Meridian Volt X floorboard?",
+      "Is the usable footboard length on the Volt X specified?",
+      "Can you give me the Volt X's foot-space measurements?",
+      "I'm checking where my feet will fit; how big is the Volt X footboard?",
+      "Does the document say how long the standing area is on the Volt X?",
+      "Could you share the floorbord width for the Volt X?",
+      "Are there published measurements for the Volt X foot platform?"
+    ],
+    "answers": [
+      "I don't have documented footboard measurements for the Volt X. Please ask a Meridian dealer for those measurements."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_handlebar_width",
+    "kind": "refusal",
+    "topic": "Overall handlebar width",
+    "questions": [
+      "How wide are the handlebars on the Arc 110?",
+      "What is the Arc 110's handlebar width from end to end?",
+      "Is there a published width for the Meridian Arc's handlebars?",
+      "Could you tell me the distance between the Arc 110 handlebar ends?",
+      "I need the handlebar span of the Arc 110; do the docs give it?",
+      "What's the overall width across the Arc's handlebars?",
+      "Does Meridian list how broad the Arc 110 handlebar is?",
+      "Please help me find the Arc 110 handlebar-width measurement."
+    ],
+    "answers": [
+      "I don't have the Arc 110's handlebar width in the supplied documents. Please check that dimension with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_folding_mirrors",
+    "kind": "refusal",
+    "topic": "Whether mirrors fold",
+    "questions": [
+      "Can the mirrors on the Pulse 125 fold inward?",
+      "Are the Meridian Pulse 125 mirrors foldable?",
+      "Does the Pulse have mirrors that can be folded for parking?",
+      "Is inward mirror folding supported on the Pulse 125?",
+      "What does the document say about folding the Pulse's mirrors?",
+      "Do you know whether the Pulse 125 side mirrors fold?",
+      "Can I fold in the mirrors of the Meridian Pulse?",
+      "Is mirror-folding functionality listed for the Pulse 125?"
+    ],
+    "answers": [
+      "I don't have documented confirmation of whether the Pulse 125's mirrors fold. Please ask a Meridian dealer to confirm."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_turning_radius",
+    "kind": "refusal",
+    "topic": "Turning circle or radius",
+    "questions": [
+      "What is the Volt X turning radius?",
+      "How large a turning circle does the Meridian Volt X need?",
+      "Does Meridian publish the Volt X's minimum turning radius?",
+      "I have a narrow driveway; is the Volt X turning-circle measurement available?",
+      "Can you tell me the space needed for a full turn on the Volt X?",
+      "Where is the Volt X steering turning-radius specification?",
+      "What's the documented turning circle for the Volt X?",
+      "Is there a minimum turning raduis listed for the Meridian Volt X?"
+    ],
+    "answers": [
+      "I don't have a documented turning-radius or turning-circle measurement for the Volt X. Please check with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_tyre_pressure",
+    "kind": "refusal",
+    "topic": "Recommended tyre pressures",
+    "questions": [
+      "What tyre pressure should the Arc 110 use?",
+      "Are the front and rear tyre pressures for the Arc listed?",
+      "Can you give me the recommended inflation pressures for the Meridian Arc 110?",
+      "Where do the documents state the Arc 110 tyre-pressure settings?",
+      "Does the Arc need different pressure in its front and rear tyres?",
+      "What's Meridian's prescribed tyre inflation for the Arc 110?",
+      "I need the Arc's tyre-pressure recommendation, not a guess; is it documented?",
+      "Please show me the tyre presure specification for the Arc 110."
+    ],
+    "answers": [
+      "I don't have recommended tyre-pressure settings for the Arc 110 in the supplied documents. Please ask a Meridian dealer for the correct settings."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_tyre_size",
+    "kind": "refusal",
+    "topic": "Front and rear tyre sizes",
+    "questions": [
+      "What tyre sizes come on the Pulse 125?",
+      "Are the front and rear tyre dimensions of the Pulse specified?",
+      "Could you tell me the tyre-size markings for the Meridian Pulse 125?",
+      "Which tyre dimensions does Meridian list for the Pulse?",
+      "I need the size of the Pulse 125 rear tyre; is it in the documents?",
+      "Does the specification name the front tyre size on the Pulse 125?",
+      "Where can I check the Pulse's original tyre dimensions?",
+      "Please give me the documented tyre sizes for the Pulse 125."
+    ],
+    "answers": [
+      "I don't have the Pulse 125's tyre sizes in these documents. Please check the front and rear specifications with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_payload_limit",
+    "kind": "refusal",
+    "topic": "Maximum permitted payload",
+    "questions": [
+      "What is the maximum load the Volt X can carry?",
+      "Is the combined rider-and-luggage weight limit for the Volt X documented?",
+      "Could you tell me the Meridian Volt X's rated payload?",
+      "Does Meridian specify a maximum carrying capacity for the Volt X?",
+      "How much rider and passenger weight is permitted on the Volt X?",
+      "Where is the Volt X total payload limit stated?",
+      "What's the weight limit for people and luggage on the Volt X?",
+      "I need a documented load rating for the Volt X; do you have one?"
+    ],
+    "answers": [
+      "I don't have a documented payload limit for the Volt X. Please confirm the permitted load with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_towing_rating",
+    "kind": "refusal",
+    "topic": "Towing permission and rating",
+    "questions": [
+      "Is the Arc 110 approved for towing a trailer?",
+      "Does Meridian list a towing capacity for the Arc 110?",
+      "Can you tell me the documented trailer-towing rating of the Arc?",
+      "Are there any official towing limits for the Meridian Arc 110?",
+      "What does the Arc specification say about towing permission?",
+      "Is towing a small trailer supported according to the Arc's documents?",
+      "Where can I find whether the Arc 110 is rated to tow?",
+      "Does the Arc have a published maximum towing load?"
+    ],
+    "answers": [
+      "I don't have documented towing approval or a towing rating for the Arc 110. Please confirm this with a Meridian dealer rather than assuming towing is supported."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_phone_mount",
+    "kind": "refusal",
+    "topic": "Phone-holder mounting compatibility",
+    "questions": [
+      "Which phone-holder mounts fit the Pulse 125?",
+      "Does the Pulse 125 have a documented mounting point for a phone holder?",
+      "Can you identify a compatible phone mount for the Meridian Pulse?",
+      "Is phone-holder attachment hardware specified for the Pulse 125?",
+      "What mount type should I look for to attach a phone holder to the Pulse?",
+      "Are there published phone-mount compatibility details for the Pulse 125?",
+      "Could you check whether my phone holder can mount on a Pulse?",
+      "Do the documents give the Pulse 125's phone-holder mounting dimensions?"
+    ],
+    "answers": [
+      "I don't have documented phone-holder mounting or compatibility details for the Pulse 125. Please check the fitment with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_windscreen_fitment",
+    "kind": "refusal",
+    "topic": "Accessory windscreen compatibility",
+    "questions": [
+      "Which accessory windscreens fit the Volt X?",
+      "Does Meridian specify a windscreen mounting kit for the Volt X?",
+      "Can a larger windscreen be fitted to the Volt X according to the documents?",
+      "Are approved windscreen fitments listed for the Meridian Volt X?",
+      "What windscreen brackets are compatible with the Volt X?",
+      "I want to check windscreen compatibility for a Volt X; is it documented?",
+      "Does the Volt X specification identify an accessory screen kit?",
+      "Can you provide a documented windscreen fitment recommendation for the Volt X?"
+    ],
+    "answers": [
+      "I don't have documented accessory windscreen fitments or mounting kits for the Volt X. Please ask a Meridian dealer to confirm compatibility."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_top_box_fitment",
+    "kind": "refusal",
+    "topic": "Top-box mounting compatibility",
+    "questions": [
+      "Can a top box be mounted on the Arc 110?",
+      "Which rear luggage-box mounts are compatible with the Meridian Arc?",
+      "Is top-box installation supported in the Arc 110 documentation?",
+      "Does Meridian list an approved top-box bracket for the Arc 110?",
+      "I want extra luggage space; what top-box fitment is documented for the Arc?",
+      "Are rear-box mounting points described for the Arc 110?",
+      "Can you tell me which top box fits the Arc without guessing?",
+      "What does the Arc spec say about fitting a rear storage box?"
+    ],
+    "answers": [
+      "I don't have documented top-box compatibility or mounting arrangements for the Arc 110. Please check the fitment with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_charging_cable_length",
+    "kind": "refusal",
+    "topic": "Standard charging cable length",
+    "questions": [
+      "How long is the standard charging cable supplied with the Pulse 125?",
+      "Does the Pulse documentation give the charger cable length?",
+      "What's the reach of the Pulse 125's standard charging cable?",
+      "I need to position a socket; is the Pulse charger cable length specified?",
+      "Can you provide the cable-length measurement for the Meridian Pulse charger?",
+      "How much cable comes with the Pulse 125 standard charger?",
+      "Is there a published length for the Pulse's charging lead?",
+      "Please tell me the Pulse 125 charging cabel length from the documents."
+    ],
+    "answers": [
+      "I don't have a cable-length measurement for the Pulse 125 standard charger in the documents. Please ask a Meridian dealer for that measurement."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_charger_plug",
+    "kind": "refusal",
+    "topic": "Standard charger mains plug specification",
+    "questions": [
+      "What kind of wall plug does the Volt X standard charger use?",
+      "Is the mains-plug type for the Volt X charger documented?",
+      "Which socket standard is specified for the Meridian Volt X charger?",
+      "Does the Volt X charger come with a particular type of mains plug?",
+      "Can you identify the wall-socket connection required by the Volt X charger?",
+      "Where do the documents describe the Volt X charger's input plug?",
+      "What's the documented plug format on the Volt X standard charger?",
+      "I need to check socket compatibility for the Volt X; is its charger plug specified?"
+    ],
+    "answers": [
+      "I don't have the mains-plug or wall-socket specification for the Volt X standard charger in these documents. Please confirm socket compatibility with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_charger_weatherproofing",
+    "kind": "refusal",
+    "topic": "Charger outdoor-use or weatherproof rating",
+    "questions": [
+      "Is the Arc 110 standard charger rated for outdoor use?",
+      "Does the Arc charger have a documented weatherproof rating?",
+      "What does Meridian say about using the Arc 110 charger in wet weather?",
+      "Is rain protection specified for the Arc's standard charger?",
+      "Can you confirm an outdoor-use rating for the Meridian Arc charger?",
+      "Do the supplied documents say the Arc charger can be used outside?",
+      "Where is the weather-resistance rating of the Arc 110 charger listed?",
+      "Does the Arc charger documentation authorise exposure to rain?"
+    ],
+    "answers": [
+      "I don't have a documented outdoor-use or weatherproof rating for the Arc 110 standard charger. Please confirm the charger requirements with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_charge_port_location",
+    "kind": "refusal",
+    "topic": "Charging-port location",
+    "questions": [
+      "Where is the charging port on the Pulse 125?",
+      "Is the Pulse charging socket on the left or the right?",
+      "Can you describe where to find the Meridian Pulse 125 charging inlet?",
+      "Does the specification show the location of the Pulse's charge port?",
+      "Which part of the Pulse 125 contains the charging connector?",
+      "I can't locate it from the spec; where is the Pulse charge socket placed?",
+      "Do the documents identify the side with the Pulse 125 charging port?",
+      "Please tell me the documented charging-inlet position on the Pulse."
+    ],
+    "answers": [
+      "I don't have a documented location for the Pulse 125's charging port. Please ask a Meridian dealer to show or confirm it."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_removable_battery",
+    "kind": "refusal",
+    "topic": "Whether traction battery is removable",
+    "questions": [
+      "Can the Volt X traction battery be removed for charging?",
+      "Does the Volt X have a detachable main battery?",
+      "Is battery removal by the owner supported on the Meridian Volt X?",
+      "What do the documents say about taking the Volt X battery out?",
+      "Can the main battery of the Volt X be carried indoors to charge?",
+      "Is the Volt X battery described as fixed or removable?",
+      "Do the supplied specifications confirm a removable battery on the Volt X?",
+      "I'd like to check battery removability on the Volt X; is it documented?"
+    ],
+    "answers": [
+      "I don't have documented information on whether the Volt X's main battery is removable or intended for charging outside the scooter. Please confirm this with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_mobile_app",
+    "kind": "refusal",
+    "topic": "Companion mobile application",
+    "questions": [
+      "Is there a Meridian phone app for the Arc 110?",
+      "Can the Arc 110 connect to a companion mobile application?",
+      "Does Meridian document an app for the Arc scooter?",
+      "Which smartphone app works with the Meridian Arc 110?",
+      "Are mobile-app features described for the Arc 110?",
+      "Can I see Arc 110 information in a phone app according to the documents?",
+      "Do the specs mention companion-app support for the Arc?",
+      "Where can I find whether the Arc 110 supports a Meridian app?"
+    ],
+    "answers": [
+      "I don't have documented information on companion-app support for the Arc 110. Please check with a Meridian dealer before assuming an app is available."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_usb_outlet",
+    "kind": "refusal",
+    "topic": "USB outlet presence and specification",
+    "questions": [
+      "Does the Pulse 125 have a USB charging outlet?",
+      "Is an onboard USB socket listed for the Meridian Pulse?",
+      "Can a phone be plugged into a USB port on the Pulse 125?",
+      "What do the documents say about a USB power outlet on the Pulse?",
+      "Is USB phone charging a specified feature of the Pulse 125?",
+      "Does the Pulse have a documented USB connection for charging devices?",
+      "Can you confirm whether the Pulse 125 includes a USB outlet?",
+      "Are any USB socket details given for the Meridian Pulse 125?"
+    ],
+    "answers": [
+      "I don't have documented confirmation of whether the Pulse 125 includes a USB charging outlet. Please ask a Meridian dealer to confirm that feature."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_alarm_system",
+    "kind": "refusal",
+    "topic": "Anti-theft alarm presence",
+    "questions": [
+      "Does the Volt X include an anti-theft alarm?",
+      "Is an alarm system listed in the Volt X specifications?",
+      "Can you confirm whether the Meridian Volt X has a theft alarm?",
+      "Do the documents describe a built-in alarm on the Volt X?",
+      "Is an audible security alarm a documented Volt X feature?",
+      "What does the Volt X information say about an anti-theft alarm?",
+      "Does Meridian state that an alarm is included with the Volt X?",
+      "I'd like to know if the Volt X has an alarm; is that covered in the docs?"
+    ],
+    "answers": [
+      "I don't have documented confirmation of an anti-theft alarm on the Volt X. Please check with a Meridian dealer to confirm what is included."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_lost_key_process",
+    "kind": "refusal",
+    "topic": "Procedure after losing a vehicle key",
+    "questions": [
+      "What is Meridian's procedure if I lose an Arc 110 key?",
+      "How does an Arc owner arrange a replacement for a lost key?",
+      "Do the documents give a lost-key process for the Arc 110?",
+      "Who handles lost vehicle keys for a Meridian Arc?",
+      "Is there a documented way to replace my missing Arc 110 key?",
+      "Where can I find Meridian's instructions for a lost Arc key?",
+      "What steps should an Arc 110 owner follow to request another key?",
+      "I misplaced my Arc key; do these documents explain the replacement procedure?"
+    ],
+    "answers": [
+      "I don't have the Arc 110 lost-key or key-replacement procedure in the supplied documents. Please contact a Meridian dealer for the appropriate process."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_spare_key_count",
+    "kind": "refusal",
+    "topic": "Spare keys supplied at delivery",
+    "questions": [
+      "How many keys are supplied with a Pulse 125?",
+      "Does Meridian include a spare key when delivering the Pulse?",
+      "Is the number of keys in the Pulse 125 delivery package documented?",
+      "What do the documents say about spare keys for a new Pulse 125?",
+      "Can you confirm the keys included with the Meridian Pulse at delivery?",
+      "Will a Pulse 125 come with a documented spare-key set?",
+      "Where is the supplied key count listed for the Pulse 125?",
+      "Are spare keys mentioned among the items delivered with a Pulse?"
+    ],
+    "answers": [
+      "I don't have a documented count of the keys or spare keys supplied with the Pulse 125. Please confirm the delivery contents with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_home_delivery",
+    "kind": "refusal",
+    "topic": "Home-delivery availability and terms",
+    "questions": [
+      "Does Meridian offer home delivery of the Volt X?",
+      "Can a dealer deliver a new Volt X to my home?",
+      "Are home-delivery arrangements documented for the Meridian Volt X?",
+      "What are the published home-delivery terms for the Volt X?",
+      "Is delivery to a customer's address an advertised option in these documents?",
+      "Do the Volt X documents say whether doorstep delivery is available?",
+      "Can you confirm a home-delivery service for a new Volt X?",
+      "Where can I check if Meridian dealers provide home delivery?"
+    ],
+    "answers": [
+      "I don't have home-delivery availability or terms in the supplied documents. Please ask a Meridian dealer about arrangements for your location."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_test_ride_booking",
+    "kind": "refusal",
+    "topic": "Test-ride booking process",
+    "questions": [
+      "How do I book an Arc 110 test ride?",
+      "Is there a documented appointment process for a Meridian Arc test ride?",
+      "Where can I arrange to try an Arc 110 before buying?",
+      "Do the supplied documents explain test-ride booking?",
+      "What steps does Meridian publish for requesting an Arc test ride?",
+      "Can you give me the official test-ride booking method from these documents?",
+      "Is there a test-ride booking link for the Arc 110 in the supplied information?",
+      "I'd like a test ride; what booking instructions are actually documented?"
+    ],
+    "answers": [
+      "I don't have a test-ride booking process or link in the supplied documents. Please ask a Meridian dealer about arranging a test ride."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_centre_opening_hours",
+    "kind": "refusal",
+    "topic": "Service-centre opening hours",
+    "questions": [
+      "What time do Meridian service centres open?",
+      "Are the authorised service-centre opening hours listed?",
+      "Do Meridian service centres operate on weekends?",
+      "Where can I find the documented working hours of a Meridian service centre?",
+      "Can you tell me when an authorised Meridian centre closes?",
+      "Is a holiday opening schedule for Meridian service centres provided?",
+      "What hours can I visit a Meridian service centre?",
+      "Do these documents state the service centres' daily hours?"
+    ],
+    "answers": [
+      "I don't have documented service-centre opening hours or weekend schedules. Please check the relevant centre's hours with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_finance_interest",
+    "kind": "refusal",
+    "topic": "Finance or loan interest rate",
+    "questions": [
+      "What interest rate applies to financing a Pulse 125?",
+      "Does Meridian publish a loan rate for the Pulse?",
+      "Can you quote the finance interest rate offered on a Meridian Pulse 125?",
+      "Are financing rates included in the supplied Pulse documents?",
+      "Which interest rate would be used if I bought a Pulse on finance?",
+      "Where is the documented borrowing rate for a Pulse 125 purchase?",
+      "Do these documents state a Meridian scooter-finance interest rate?",
+      "I want to compare loan rates; is a Pulse 125 finance rate provided here?"
+    ],
+    "answers": [
+      "I don't have finance or loan interest rates in the supplied documents. Please ask a Meridian dealer for the applicable financing terms."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_deposit_refund",
+    "kind": "refusal",
+    "topic": "Booking-deposit cancellation and refund policy",
+    "questions": [
+      "Is a Meridian scooter booking deposit refundable?",
+      "What happens to a booking deposit if I cancel an Arc 110 order?",
+      "Do the documents state the deposit refund policy?",
+      "Can you explain the published cancellation terms for a Meridian booking deposit?",
+      "Would cancelling a Meridian scooter booking qualify for a deposit refund?",
+      "Is there a documented refund process for a cancelled Arc booking?",
+      "Where can I check the conditions for getting a booking deposit back?",
+      "Does Meridian specify whether a booking payment can be refunded?"
+    ],
+    "answers": [
+      "I don't have a booking-deposit cancellation or refund policy in the supplied documents. Please confirm those terms with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_roadside_assistance",
+    "kind": "refusal",
+    "topic": "Roadside-assistance availability",
+    "questions": [
+      "Does the Volt X include roadside assistance?",
+      "Is a Meridian breakdown-assistance service described in the documents?",
+      "Can you confirm roadside-assistance coverage for a Volt X owner?",
+      "What does Meridian publish about help if the scooter breaks down on the road?",
+      "Is roadside support an included service for the Meridian Volt X?",
+      "Are breakdown-recovery arrangements specified for the Volt X?",
+      "Do these documents say whether Meridian provides roadside help?",
+      "Where can I find the roadside-assistance terms for the Volt X?"
+    ],
+    "answers": [
+      "I don't have documented roadside-assistance or breakdown-recovery terms. Please ask a Meridian dealer whether such a service is available."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_transport_shipping",
+    "kind": "refusal",
+    "topic": "Shipping or transporting a scooter between locations",
+    "questions": [
+      "Does Meridian provide instructions for shipping a scooter by courier?",
+      "What is the documented process for transporting a Pulse 125 to another city?",
+      "Are there official packaging instructions for sending a Meridian scooter by freight?",
+      "Can you tell me Meridian's published scooter-shipping requirements?",
+      "Do the supplied documents explain how to arrange transport of a Pulse 125?",
+      "Where can I find approved instructions for shipping the Pulse rather than riding it?",
+      "Is a freight-transport procedure for a Meridian scooter included here?",
+      "What paperwork do Meridian's documents require for shipping a Pulse 125?"
+    ],
+    "answers": [
+      "I don't have scooter-shipping procedures, packaging requirements or transport paperwork in the supplied documents. Please ask a Meridian dealer for guidance on the appropriate process."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_service_appointment_wait",
+    "kind": "refusal",
+    "topic": "Availability or lead time for service appointments",
+    "questions": [
+      "How soon could I get a Meridian service appointment?",
+      "Is the current service-booking wait time documented?",
+      "Can you tell me the next available workshop appointment for an Arc 110?",
+      "How far ahead must an Arc owner book a service visit?",
+      "Do the documents give a lead time for booking an authorised service centre?",
+      "Is a same-day service appointment available according to the supplied information?",
+      "Where can I check current Meridian workshop appointment availability?",
+      "What's the documented waiting time to get a service slot?"
+    ],
+    "answers": [
+      "I don't have current service-appointment availability or booking lead times in these documents. Please check current slots with a Meridian dealer or authorised service centre."
+    ],
+    "source_docs": [
+      "brand_guide.md",
+      "warranty_policy.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "refusal_software_updates",
+    "kind": "refusal",
+    "topic": "Vehicle software update process",
+    "questions": [
+      "How are software updates installed on the Volt X?",
+      "Does the Volt X receive over-the-air software updates?",
+      "Is there a documented firmware-update process for the Meridian Volt X?",
+      "What do the supplied documents say about updating Volt X software?",
+      "Can an owner install Volt X updates at home according to the documentation?",
+      "Does Meridian specify how Volt X firmware is maintained?",
+      "Where can I find the Volt X software-update instructions?",
+      "Are software updates or their delivery method described for the Volt X?"
+    ],
+    "answers": [
+      "I don't have documented information on software updates or an update process for the Volt X. Please check the available procedure with a Meridian dealer."
+    ],
+    "source_docs": [
+      "brand_guide.md"
+    ],
+    "source_fact_ids": []
+  },
+  {
+    "family_id": "mixed_arc_capacity_chemistry",
+    "kind": "mixed",
+    "topic": "Known battery capacity, unspecified battery chemistry",
+    "questions": [
+      "What is the Arc 110 battery capacity, and what chemistry does it use?",
+      "Can you give me both the Meridian Arc's battery size and cell chemistry?",
+      "For the Arc 110, what's the capacity in kWh and the battery's chemical type?",
+      "Tell me the Arc's listed battery capacity and whether its chemistry is specified."
+    ],
+    "answers": [
+      "The Meridian Arc 110 has a battery capacity of 2.9 kWh. The documents don't specify its battery chemistry; please check that detail with a Meridian dealer.",
+      "The listed Arc 110 battery capacity is 2.9 kWh. I don't have a documented battery chemistry, so please ask a Meridian dealer to confirm it."
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "brand_guide.md"
+    ],
+    "source_fact_ids": [
+      "110_battery_kwh"
+    ]
+  },
+  {
+    "family_id": "mixed_pulse_storage_helmet",
+    "kind": "mixed",
+    "topic": "Known storage volume, unspecified full-face helmet fit",
+    "questions": [
+      "How much under-seat storage does the Pulse 125 have, and will a full-face helmet fit?",
+      "What's the Pulse's storage volume, and does Meridian confirm full-face helmet clearance?",
+      "Can you tell me both the boot capacity and whether my full-face helmet fits under the Pulse seat?",
+      "Does the Pulse 125 have a stated storage capacity and a documented full-face helmet fit?"
+    ],
+    "answers": [
+      "The Meridian Pulse 125 has 28 litres of under-seat storage. The documents don't confirm whether a full-face helmet will fit; please check the fit with a Meridian dealer.",
+      "Under-seat storage on the Pulse 125 is 28 litres. That volume alone doesn't establish helmet fit, which the documents don't specify; please ask a Meridian dealer to check."
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md",
+      "brand_guide.md"
+    ],
+    "source_fact_ids": [
+      "125_boot_litres"
+    ]
+  },
+  {
+    "family_id": "mixed_volt_speed_acceleration",
+    "kind": "mixed",
+    "topic": "Known top speed, unspecified acceleration time",
+    "questions": [
+      "What's the Volt X top speed, and how quickly does it accelerate?",
+      "Can you give me the Volt X maximum speed and a documented acceleration time?",
+      "Tell me the Meridian Volt X top-speed figure from the specification and its acceleration figure.",
+      "Are both top speed and acceleration timing specified for the Volt X?"
+    ],
+    "answers": [
+      "The Meridian Volt X has a listed top speed of 104 km/h. The documents don't provide an acceleration time; please check that detail with a Meridian dealer."
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md",
+      "brand_guide.md"
+    ],
+    "source_fact_ids": [
+      "x_top_speed_kmph"
+    ]
+  },
+  {
+    "family_id": "mixed_arc_range_wet_weather",
+    "kind": "mixed",
+    "topic": "Known certified range, unspecified wet-weather range",
+    "questions": [
+      "What is the Arc 110 certified range, and what range should I expect in heavy rain?",
+      "Can you give me the Arc's official full-charge range and a separate wet-weather estimate?",
+      "How far is the Arc 110 certified to go, and is a rainy-weather range figure provided?",
+      "Tell me the Arc's certified range without guessing its range in heavy rain."
+    ],
+    "answers": [
+      "The Meridian Arc 110 has a certified range of 96 km on a full charge. The documents don't provide a wet-weather range estimate; please ask a Meridian dealer for further guidance."
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "brand_guide.md"
+    ],
+    "source_fact_ids": [
+      "110_range_km"
+    ]
+  },
+  {
+    "family_id": "mixed_pulse_price_colour_surcharge",
+    "kind": "mixed",
+    "topic": "Known Mumbai price, unspecified colour surcharge",
+    "questions": [
+      "What is the Pulse 125 on-road price in Mumbai, and does Ember Red cost extra?",
+      "Can you quote the Pulse's Mumbai price and confirm any extra charge for Ember Red?",
+      "For a Pulse 125 in Mumbai, what's the listed price and is the Ember Red surcharge documented?",
+      "Does the Mumbai Pulse price include a stated additional charge for choosing Ember Red?"
+    ],
+    "answers": [
+      "The Meridian Pulse 125's indicative on-road price in Mumbai is Rs 139,900, including registration and insurance. The documents don't specify a colour surcharge for Ember Red; please check that with a Meridian dealer."
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md",
+      "brand_guide.md"
+    ],
+    "source_fact_ids": [
+      "125_price_mumbai_inr"
+    ]
+  },
+  {
+    "family_id": "mixed_volt_charge_charger_weight",
+    "kind": "mixed",
+    "topic": "Known standard charging time, unspecified charger weight",
+    "questions": [
+      "How long does a standard charge take for the Volt X, and how heavy is its charger?",
+      "Can you give me the Volt X full-charge time and the standard charger's weight?",
+      "What's the standard charging duration for the Volt X, and is charger mass listed?",
+      "Please tell me both the Volt X standard-charge time and any documented charger-weight figure."
+    ],
+    "answers": [
+      "A full charge of the Meridian Volt X takes 3.0 hours on the standard charger. The documents don't specify that charger's weight; please ask a Meridian dealer for the measurement."
+    ],
+    "source_docs": [
+      "spec_meridian_volt_x.md",
+      "brand_guide.md"
+    ],
+    "source_fact_ids": [
+      "x_charge_time_hours"
+    ]
+  },
+  {
+    "family_id": "mixed_pulse_colours_paint_code",
+    "kind": "mixed",
+    "topic": "Known colours, unspecified touch-up paint code",
+    "questions": [
+      "Which colours does the Pulse 125 come in, and what is the touch-up paint code for Midnight Blue?",
+      "Can you list the Pulse colours and give me the Midnight Blue paint code?",
+      "What are the Meridian Pulse 125 colour options, and is the Midnight Blue repair-paint code documented?",
+      "Tell me the available Pulse colours and where the documents identify the Midnight Blue paint code."
+    ],
+    "answers": [
+      "The Meridian Pulse 125 is available in Midnight Blue, Ember Red, Ivory. The documents don't specify a Midnight Blue touch-up paint code; please check it with a Meridian dealer."
+    ],
+    "source_docs": [
+      "spec_meridian_pulse_125.md",
+      "brand_guide.md"
+    ],
+    "source_fact_ids": [
+      "125_colours"
+    ]
+  },
+  {
+    "family_id": "mixed_arc_weight_wheelbase",
+    "kind": "mixed",
+    "topic": "Known kerb weight, unspecified wheelbase",
+    "questions": [
+      "What are the Arc 110 kerb weight and wheelbase?",
+      "Can you give me the Meridian Arc's listed weight and the distance between its wheel axles?",
+      "How much does the Arc 110 weigh, and is its wheelbase measurement documented?",
+      "Please state the Arc's kerb weight and any published wheelbase dimension."
+    ],
+    "answers": [
+      "The Meridian Arc 110 has a kerb weight of 108 kg. The documents don't specify its wheelbase; please ask a Meridian dealer for that dimension."
+    ],
+    "source_docs": [
+      "spec_meridian_arc_110.md",
+      "brand_guide.md"
+    ],
+    "source_fact_ids": [
+      "110_kerb_weight_kg"
+    ]
+  }
+]

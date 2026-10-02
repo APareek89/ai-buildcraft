@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Security — Agentic Learning Studio</title>
+  <link rel="canonical" href="https://prathibhax.com/security" />
+  <meta name="description" content="Security practices for Agentic Learning Studio — an early free beta. What's in place today, in accurate and general terms." />
+  <link rel="icon" type="image/png" href="/wizbit-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/policy.css" />
+</head>
+<body>
+  <header class="policy-top"><div class="in">
+    <a class="policy-brand" href="/"><img src="/wizbit-logo.png" alt="Agentic Learning Studio" /> Agentic Learning Studio</a>
+    <a class="policy-back" href="/">← Back</a>
+  </div></header>
+
+  <main class="policy-wrap">
+    <h1>Security</h1>
+    <p class="policy-meta">Last updated: 27 June 2026</p>
+
+    <p>Agentic Learning Studio is an <strong>early free beta</strong>, so our security practices are evolving. This page describes, in general terms, what is in place today. If you find a security issue, please email <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a> (or use <a href="/report-issue">Report issue / complaint</a>).</p>
+
+    <h2>What's in place today</h2>
+    <ul>
+      <li><strong>Encrypted in transit</strong> — the app is served over HTTPS.</li>
+      <li><strong>Standard security headers</strong> are applied to responses.</li>
+      <li><strong>Restricted API access</strong> — the API only accepts requests from our own site.</li>
+      <li><strong>Sign-in via an authentication provider</strong> — we never see your password.</li>
+      <li><strong>Server-mediated data access</strong> — your data is reached through our server, not directly from the browser.</li>
+      <li><strong>Rate limits</strong> on requests to reduce abuse.</li>
+      <li><strong>Caps on uploads and repository imports</strong> — bounded file counts, sizes, and time.</li>
+      <li><strong>Generated lessons run in a sandboxed iframe</strong>, separated from the main app.</li>
+      <li><strong>Uploaded content is processed on our server</strong> to ground your lesson, and is not stored as files.</li>
+      <li><strong>No third-party advertising or analytics trackers.</strong></li>
+    </ul>
+
+    <h2>An honest limitation</h2>
+    <p>A strict Content-Security-Policy is <strong>intentionally off today</strong>, because generated lessons include inline scripts and styles that a strict policy would break. A stricter, nonce-based policy is planned.</p>
+
+    <p>If we become aware of a security incident, we act to contain it and will notify affected users and the relevant authorities where the law requires.</p>
+
+    <footer class="policy-foot">
+      <div class="links"><a href="/security">Security</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/report-issue">Report issue / complaint</a></div>
+      <p>Agentic Learning Studio is operated by Anand Pareek, an individual resident in India. Security contact: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
+    </footer>
+  </main>
+</body>
+</html>

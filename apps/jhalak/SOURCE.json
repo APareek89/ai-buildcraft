@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/APareek89/jhalak",
+  "commit": "d9da9a2ebd1c8e8ffca393a33b300e1af8e2cb93",
+  "snapshot": "Tracked application source exported without Git history, operational handoffs, live state or credentials.",
+  "changes": "Direct Gemini media API migration, private-review documentation and synthetic setup. See BUILDCRAFT.md for verification and limits."
+}

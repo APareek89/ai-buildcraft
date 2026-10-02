@@ -1,0 +1,1821 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Planning and Reflection",
+    "title": "Planning and Reflection",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 34,
+    "thesis": "Planning lets an agent commit to a sequence of steps before acting; reflection lets it critique its own output and revise. Together they turn a reactive turn-by-turn loop into a goal-directed agent that catches its own mistakes."
+  },
+  "learnerProfile": {
+    "level": "advanced",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Planning and Reflection",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": false,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Planning and Reflection: mental map",
+    "caption": "Start with why these two loops exist, then open each block for the mechanism and where it breaks.",
+    "oneLineThesis": "Planning commits an agent to a sequence before it acts; reflection critiques the result and revises — two control loops layered on the basic agent loop.",
+    "structureType": "conceptual",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Why plan and reflect",
+        "sub": "The failure of pure react-and-respond, and what these loops add.",
+        "orient": "Why a reactive agent loop stalls on multi-step goals, and what planning plus reflection fix.",
+        "what": "Frames the problem: a turn-by-turn agent has no commitment and no self-check, so it drifts and ships errors.",
+        "relevance": "Without this framing, planning and reflection look like optional extras instead of answers to concrete failure modes.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m2",
+        "label": "How planning works",
+        "sub": "Decompose the goal into steps before executing any of them.",
+        "orient": "How an agent turns a goal into an ordered plan of subtasks before acting on the first one.",
+        "what": "The planning mechanism: decomposition, ordering, and storing the plan so the agent can track progress.",
+        "relevance": "Planning is what gives the agent foresight — it is the half of the pair that prevents aimless wandering.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m3",
+        "label": "How reflection works",
+        "sub": "Critique the output, then decide to accept, retry, or replan.",
+        "orient": "How an agent inspects its own result, scores it against the goal, and chooses to revise or stop.",
+        "what": "The reflection mechanism: generate, critique against criteria, then revise — the self-correction loop.",
+        "relevance": "Reflection is the half that catches errors the plan could not foresee, turning a draft into a checked answer.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m4",
+        "label": "Wiring them together",
+        "sub": "A minimal plan-execute-reflect loop you can read in one screen.",
+        "orient": "How plan, execute, and reflect combine into one control loop with a bounded revision budget.",
+        "what": "A tiny implementation that decomposes, executes step by step, reflects, and revises within a budget.",
+        "relevance": "Seeing the loop in code makes the control flow — and where the budget guard goes — concrete.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m5",
+        "label": "Where it breaks",
+        "sub": "Failure modes, the cost tradeoff, and a self-check.",
+        "orient": "When planning and reflection backfire — stale plans, reflection loops, sycophantic self-critique — and how to bound them.",
+        "what": "The late-module failure modes plus a decision on how much planning and reflection a task actually warrants.",
+        "relevance": "Knowing the failure modes is what separates adding these loops blindly from using them where they pay off.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine"
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Why plan and reflect",
+      "sub": "Starts the spine: the failures of a purely reactive agent.",
+      "summary": "A bare agent loop reacts one turn at a time with no commitment and no self-check. Planning adds foresight; reflection adds self-correction. This module names the concrete failures each one answers.",
+      "objectives": [
+        "Explain the two failures of a purely reactive agent loop that planning and reflection address.",
+        "Distinguish planning (commit before acting) from reflection (critique after acting).",
+        "Name when adding these loops is worth the extra cost and latency."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "memory",
+        "mcp"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The problem these loops solve",
+          "body": [
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: "
+                },
+                {
+                  "text": "what goes wrong when an agent decides each step only after seeing the previous result, with no plan and no review of its own output?",
+                  "em": true
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A bare "
+                },
+                {
+                  "text": "agent",
+                  "term": "agent"
+                },
+                {
+                  "text": " runs a reactive loop: observe, decide one action, act, repeat. That is enough for short tasks, but it fails two ways on real goals. First, with no commitment to a sequence, the agent loses the thread on multi-step work — it re-derives the goal every turn and wanders. Second, with no review of its own output, a confident-but-wrong answer ships straight to the user."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Planning",
+                  "strong": true
+                },
+                {
+                  "text": " answers the first failure: the agent decomposes the goal into an ordered sequence "
+                },
+                {
+                  "text": "before"
+                },
+                {
+                  "text": " acting, so each turn advances a known plan. "
+                },
+                {
+                  "text": "Reflection",
+                  "strong": true
+                },
+                {
+                  "text": " answers the second: the agent critiques its own result against the goal and revises before committing. They are two distinct control loops layered on top of the basic agent loop — foresight and hindsight."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Reactive only: cheap and fast, but drifts on long goals and ships unchecked output."
+                  }
+                ],
+                [
+                  {
+                    "text": "Planning: commitment before action — fixes drift, costs an up-front planning call."
+                  }
+                ],
+                [
+                  {
+                    "text": "Reflection: critique after action — catches errors, costs one or more extra revision passes."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_visual",
+          "kind": "steppedFlow",
+          "title": "Click through the plan-execute-reflect loop",
+          "caption": "Where planning and reflection sit relative to the basic act step.",
+          "steps": [
+            {
+              "label": "Plan",
+              "detail": "Decompose the goal into an ordered list of subtasks before any tool runs."
+            },
+            {
+              "label": "Execute",
+              "detail": "Carry out the next step in the plan, usually a tool call, and capture the result."
+            },
+            {
+              "label": "Reflect",
+              "detail": "Critique the result against the goal: is it correct, complete, and on-plan?"
+            },
+            {
+              "label": "Revise or advance",
+              "detail": "If the critique fails, retry or replan; if it passes, advance to the next step or finish."
+            }
+          ],
+          "min": 1,
+          "max": 5,
+          "unit": "level",
+          "stops": [
+            {
+              "at": 1,
+              "label": "Reactive",
+              "note": "No plan, no reflection — one decision per turn."
+            },
+            {
+              "at": 3,
+              "label": "Plan-then-act",
+              "note": "Commit to a sequence, but trust each result."
+            },
+            {
+              "at": 5,
+              "label": "Plan + reflect",
+              "note": "Add a bounded self-critique loop on top of the plan."
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_walk",
+          "kind": "walkthrough",
+          "title": "Diagnose which loop a failure needs",
+          "steps": [
+            {
+              "label": "Spot the symptom",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Did the agent wander off-goal or repeat work across turns, or did it confidently return a wrong answer? The first is a planning gap; the second is a reflection gap."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Pick the matching loop",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Drift and lost context call for planning — decompose and commit to a sequence. Unchecked, plausible-but-wrong output calls for reflection — add a critique pass before committing."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Bound the cost",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Both loops add model calls. Decide the budget up front: how many plan revisions and how many reflection passes a task is worth before it must ship or stop."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_example",
+          "kind": "functionalExample",
+          "title": "Concrete use case: a research-and-write agent",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "An agent asked to \"write a competitive brief on three vendors\" fails reactively: it answers about one vendor, forgets the other two, and never checks coverage. With planning it commits to a four-step plan (research A, research B, research C, synthesize)."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "With reflection it then critiques the draft — \"does this cover all three vendors and cite a source for each claim?\" — and revises the gaps before returning. Planning kept it on-goal; reflection caught the missing citation."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_technical",
+          "kind": "technical",
+          "title": "Planning vs reflection in one table",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Planning runs once up front and writes a plan into "
+                },
+                {
+                  "text": "state",
+                  "term": "state"
+                },
+                {
+                  "text": "; reflection runs after each result and reads the goal plus the latest output. Planning is foresight over future steps; reflection is hindsight over the step just taken. They are independent — you can ship either alone — but they reinforce each other: reflection can trigger a replan."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "Treat the plan as mutable state, not a fixed script: reflection's most powerful move is to invalidate a step and ask the planner to revise."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "An agent keeps returning fluent answers that are subtly wrong, but it never loses track of the goal. Which loop does it need?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Planning — it needs to commit to a sequence of steps.",
+              "correct": false
+            },
+            {
+              "text": "Reflection — it needs to critique and revise its own output before committing.",
+              "correct": true
+            },
+            {
+              "text": "Neither — a larger model would fix it without changing the loop.",
+              "correct": false
+            }
+          ],
+          "explanation": "Staying on-goal means planning is not the gap; shipping confident-but-wrong output is exactly the failure reflection (self-critique then revise) addresses.",
+          "termIds": [
+            "agent",
+            "tool"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "How planning works",
+      "sub": "Follows m1: zoom into the foresight loop — decomposition.",
+      "summary": "Planning turns a goal into an ordered list of subtasks before execution. This module covers decomposition, the plan as mutable state, and the choice between planning once versus replanning as you go.",
+      "objectives": [
+        "Describe how an agent decomposes a goal into an ordered plan.",
+        "Explain why the plan must live in state, not just in the prompt.",
+        "Choose between plan-once and interleaved replanning for a given task."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "memory",
+        "mcp"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Decomposition: goal to ordered plan",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Planning starts with "
+                },
+                {
+                  "text": "decomposition"
+                },
+                {
+                  "text": ": the agent prompts the model to break a goal into an ordered list of subtasks, each small enough to map to a single "
+                },
+                {
+                  "text": "tool",
+                  "term": "tool"
+                },
+                {
+                  "text": " call or short action. The output is a plan — a data structure, not prose — that the agent stores in "
+                },
+                {
+                  "text": "state",
+                  "term": "state"
+                },
+                {
+                  "text": " and walks through one step at a time."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Keeping the plan in state (not just in the conversation) is what lets the agent track which step it is on, mark steps done, and survive a context-window trim. The plan is the agent's working memory of intent."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "There are two timing strategies:"
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Plan-once: build the whole plan up front, then execute. Cheap and predictable, but brittle if reality differs from the plan."
+                  }
+                ],
+                [
+                  {
+                    "text": "Interleaved replanning: plan a step, execute, then re-plan the remainder using the result. Robust to surprises, but costs a planning call per step."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_walk",
+          "kind": "walkthrough",
+          "title": "Write a plan that the agent can execute",
+          "steps": [
+            {
+              "label": "Ask for structure, not prose",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Prompt the model to emit the plan as a list of steps with an id, a description, and the tool each step expects — so the runtime can index it, not just read it."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Size each step to one action",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "A step that needs three tool calls is two steps too big. Right-sized steps make progress legible and reflection (next module) able to score one thing at a time."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Store and track it",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Persist the plan in state with a status per step. The agent reads the first unfinished step each turn — this is what keeps it from re-deriving the goal."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_example",
+          "kind": "functionalExample",
+          "title": "Concrete use case: plan-once vs replan",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Booking travel with fixed dates suits plan-once: search flights, search hotel, book both. The steps rarely surprise you. Debugging a failing test suite suits interleaved replanning: you cannot know step three until step two tells you which assertion broke."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The rule of thumb: plan-once when the environment is predictable; replan when each result reshapes what is possible next."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_technical",
+          "kind": "technical",
+          "title": "The plan is mutable state",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Represent the plan as a list of step records with status fields (pending, active, done, failed). The agent's turn becomes: read the active step, execute it, write back its status. Because the structure is data, reflection or replanning can rewrite remaining steps without touching completed ones."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "Never bury the plan only inside the prompt history. If the context window is trimmed, an in-prompt-only plan vanishes; a plan in state survives."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Why store the plan in state rather than only in the conversation prompt?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "State is faster for the model to read than the prompt.",
+              "correct": false
+            },
+            {
+              "text": "A plan in state survives context trimming and lets the agent track per-step status reliably.",
+              "correct": true
+            },
+            {
+              "text": "Putting the plan in state means you no longer need any tools.",
+              "correct": false
+            }
+          ],
+          "explanation": "The prompt history can be trimmed and offers no structured status; state gives the agent a durable, indexable record of which step is active.",
+          "termIds": [
+            "agent",
+            "tool"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "How reflection works",
+      "sub": "Follows m2: after the plan executes, critique the result.",
+      "summary": "Reflection is generate, then critique against criteria, then revise. This module covers what makes a critique useful, the strategies for it, and how to choose how much reflection a task warrants.",
+      "objectives": [
+        "Explain the generate-critique-revise loop and what makes a critique signal useful.",
+        "Compare reflection strategies by quality gain, cost, and risk.",
+        "Choose how much reflection to apply based on the task's error cost."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "memory",
+        "mcp"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Generate, critique, revise",
+          "body": [
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: "
+                },
+                {
+                  "text": "if an agent critiques its own work using the same model and the same prompt, what kind of error will it systematically miss?",
+                  "em": true
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Reflection is a three-beat loop: "
+                },
+                {
+                  "text": "generate"
+                },
+                {
+                  "text": " an output, "
+                },
+                {
+                  "text": "critique"
+                },
+                {
+                  "text": " it against explicit criteria, then "
+                },
+                {
+                  "text": "revise"
+                },
+                {
+                  "text": " based on the critique. The whole loop hinges on the critique producing a real signal — a specific, actionable judgement, not a vague \"looks good.\""
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A useful critique is grounded in something the generator did not already optimize for: a checklist of acceptance criteria, an external check (a unit test, a "
+                },
+                {
+                  "text": "tool",
+                  "term": "tool"
+                },
+                {
+                  "text": " result, a retrieved source), or a different model. Self-critique with the same model and prompt tends to rubber-stamp — it shares the generator's blind spots."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Criteria-based: score the output against an explicit rubric. Cheap, catches omissions and format errors."
+                  }
+                ],
+                [
+                  {
+                    "text": "Tool-grounded: run a test, re-query a source, or execute the code. Strongest signal, needs an external check to exist."
+                  }
+                ],
+                [
+                  {
+                    "text": "Cross-model or fresh-context critique: a separate reviewer reduces shared blind spots, at the cost of an extra call."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m3_walk",
+          "kind": "walkthrough",
+          "title": "Design a critique that actually catches errors",
+          "steps": [
+            {
+              "label": "Write the acceptance criteria",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Before generating, list what a correct output must satisfy — coverage, format, cited claims, no banned actions. The critic scores against this list, not its own taste."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Ground the critique externally where you can",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "If a test, schema, or source can check the output, run it and feed the result into the critique. External signal beats the model judging itself."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Make the critique actionable",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "A useful critique names the specific defect and the fix, so the revise step has something to act on. \"Improve clarity\" is not actionable; \"add a source for the claim about vendor B\" is."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionMatrix",
+          "title": "Choosing a reflection strategy",
+          "criteria": [
+            "Fit",
+            "Operational burden",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "No reflection",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Fine for low-stakes, easily-verified output.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Nothing extra — one generate call.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Confident wrong answers ship unchecked.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use when errors are cheap to spot or cheap to absorb downstream.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Criteria self-critique",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Catches omissions and format errors well.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "One extra critique call per pass.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Shares the generator's blind spots.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use as the default when there is no external check available.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Tool-grounded reflection",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Strongest signal — a test or source decides.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Needs a real external check to exist.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Low when the check is trustworthy.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Use when output is verifiable: code, math, anything a tool can confirm.",
+              "cost": "High",
+              "complexity": "High"
+            }
+          ],
+          "howToRead": "Pick the cheapest strategy whose critique signal is strong enough for the task's error cost. Prefer tool-grounded whenever a real check exists.",
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_technical",
+          "kind": "technical",
+          "title": "Why same-model self-critique rubber-stamps",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When the same model critiques its own output with no new information, it tends to agree with itself — the critique inherits the same priors that produced the error. This shows up as sycophancy: the reviewer praises plausible-but-wrong work. The fix is to inject information the generator did not have: an external check, a fresh-context reviewer, or a rubric that forces it to look at specific dimensions."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "A critique is only worth its cost if it can change the verdict. If it can never say \"reject,\" it is theater — drop it or strengthen the signal."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Which reflection setup gives the strongest error signal for an agent writing code?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Asking the same model \"does this look correct?\" with the same prompt.",
+              "correct": false
+            },
+            {
+              "text": "Running the code against a test suite and feeding failures into the critique.",
+              "correct": true
+            },
+            {
+              "text": "Generating the answer twice and keeping the longer version.",
+              "correct": false
+            }
+          ],
+          "explanation": "Tool-grounded reflection — executing the code and using real test results — provides an external signal the generator cannot rubber-stamp away.",
+          "termIds": [
+            "agent",
+            "tool"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Choose a reflection strategy for the task: no reflection, criteria self-critique, or tool-grounded reflection, sized to the cost of an error."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Wiring them together",
+      "sub": "Follows m3: combine plan, execute, and reflect into one loop.",
+      "summary": "A minimal plan-execute-reflect loop in code, with a revision budget so reflection cannot run forever. This module also covers how to verify an AI-written version of this loop before trusting it.",
+      "objectives": [
+        "Trace control flow through a combined plan-execute-reflect loop.",
+        "Identify where the revision budget guard must sit to bound reflection.",
+        "Verify an AI-generated planning loop before running it."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "memory",
+        "mcp"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "The combined loop",
+          "body": [
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Recall from module 2: "
+                },
+                {
+                  "text": "why did we insist the plan live in state rather than only in the prompt?",
+                  "em": true
+                },
+                {
+                  "text": " That same plan-in-state is what the reflect step now reads and rewrites."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Putting it together, one turn of a plan-execute-reflect "
+                },
+                {
+                  "text": "agent",
+                  "term": "agent"
+                },
+                {
+                  "text": " looks like: if there is no plan, build one and store it in "
+                },
+                {
+                  "text": "state",
+                  "term": "state"
+                },
+                {
+                  "text": "; otherwise execute the active step, reflect on the result, and either mark the step done or spend a revision from the budget to retry or replan."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The one piece that cannot be skipped is the "
+                },
+                {
+                  "text": "revision budget"
+                },
+                {
+                  "text": ": a hard cap on how many times reflection may send work back. Without it, a critic that is never satisfied loops forever, burning calls. With it, the loop degrades gracefully — it ships the best attempt when the budget runs out."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_walk",
+          "kind": "walkthrough",
+          "title": "Trace one turn of the loop",
+          "steps": [
+            {
+              "label": "Read the plan",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "If state holds no plan, call the planner and store the step list. Otherwise find the first step whose status is not done."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Execute and reflect",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Run the active step, then critique its result against the goal. The critique returns pass or fail with a reason."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Advance or spend budget",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "On pass, mark the step done and move on. On fail, decrement the revision budget and retry or replan — unless the budget is exhausted, in which case ship the best attempt."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "note",
+          "tone": "warn",
+          "title": "Verify an AI-generated planning loop before you trust it",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When an AI writes this loop for you, check these specific things before running it:"
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Is there a hard revision/turn budget, and does the loop actually exit when it hits zero? (The most common bug is an unbounded reflect loop.)"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does the critique have a path to return \"fail\"? If it can only ever pass, reflection does nothing."
+                  }
+                ],
+                [
+                  {
+                    "text": "Is the plan stored in state and updated per step, or silently re-derived each turn (which loses progress)?"
+                  }
+                ],
+                [
+                  {
+                    "text": "On budget exhaustion, does it return the best attempt — not crash and not loop?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Are tool calls inside execute guarded for failure, so a bad result becomes a reflectable signal rather than an exception?"
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Completion problem: the plan-execute-reflect loop",
+          "language": "python",
+          "code": "def run(goal, max_revisions=2):\n    plan = make_plan(goal)          # ordered list of steps, stored as state\n    for step in plan:\n        result = execute(step)\n        revisions = 0\n        while revisions < max_revisions:\n            verdict = reflect(goal, step, result)   # returns ('pass'|'fail', reason)\n            if verdict[0] == \"pass\":\n                break\n            # TODO: a critique failed and we still have budget.\n            #       Spend one revision and produce a new result.\n            result = ???\n            revisions += 1\n        step[\"output\"] = result     # ship best attempt even if budget ran out\n    return [s[\"output\"] for s in plan]",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The plan comes from the planner (module 2); reflect is the critique (module 3). The while loop is the reflection budget guard from this module — it caps retries so a never-satisfied critic cannot loop forever. The missing line must re-do the work using the critique's reason."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the missing line: a critique failed and budget remains. What should `result` become?",
+            "answer": "result = execute(step, feedback=verdict[1]) — re-run the step, passing the critique's reason as feedback so the retry addresses the specific defect rather than blindly repeating."
+          },
+          "syntax": [
+            {
+              "part": "for step in plan",
+              "explains": "Walks the ordered plan one step at a time — this is the planning half."
+            },
+            {
+              "part": "while revisions < max_revisions",
+              "explains": "The reflection budget: bounds how many times a failing step may be retried."
+            },
+            {
+              "part": "reflect(goal, step, result)",
+              "explains": "The critique — scores the result against the goal and returns a pass/fail verdict with a reason."
+            },
+            {
+              "part": "step[\"output\"] = result",
+              "explains": "Ships the best attempt even when the budget is exhausted, so the loop degrades gracefully."
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "canon1",
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "In the combined loop, what does the revision budget (max_revisions) protect against?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The plan being stored in state instead of the prompt.",
+              "correct": false
+            },
+            {
+              "text": "A critic that is never satisfied looping forever and burning calls.",
+              "correct": true
+            },
+            {
+              "text": "The planner producing steps that are too small.",
+              "correct": false
+            }
+          ],
+          "explanation": "Reflection can reject indefinitely; the budget caps retries so the loop always terminates and ships its best attempt.",
+          "termIds": [
+            "agent",
+            "tool"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Where it breaks",
+      "sub": "Closes the spine: the failure modes and the cost decision.",
+      "summary": "Planning and reflection have characteristic failure modes — stale plans, runaway reflection, sycophantic self-critique. This module names them, then decides how much of each loop a task actually warrants.",
+      "objectives": [
+        "Name the three failure modes of planning and reflection and how to bound each.",
+        "Decide how much planning and reflection a given task warrants.",
+        "Recall the plan-execute-reflect loop from memory as a self-check."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "memory",
+        "mcp"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "How planning and reflection break in practice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Both loops fail in characteristic ways. Knowing them is what separates adding these loops by reflex from using them where they pay off."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Stale plan: the agent commits to a plan-once sequence, the world changes mid-run (a step fails, a price moves), and it keeps executing dead steps. Fix: let reflection invalidate steps and trigger a replan; prefer interleaved replanning in volatile environments."
+                  }
+                ],
+                [
+                  {
+                    "text": "Runaway reflection: a critic that always finds something to fix loops until the budget runs out, multiplying cost and latency for marginal gains. Fix: a hard revision budget plus a quality threshold — stop when good enough, not when perfect."
+                  }
+                ],
+                [
+                  {
+                    "text": "Sycophantic self-critique: the same model reviewing its own output rubber-stamps it, so reflection adds cost but catches nothing. Fix: ground the critique in an external check or a fresh-context reviewer."
+                  }
+                ],
+                [
+                  {
+                    "text": "Over-planning trivial tasks: a one-step task gets a five-step plan and three reflection passes. Fix: gate the loops on task complexity and error cost — most calls should skip both."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m5_walk",
+          "kind": "walkthrough",
+          "title": "Recall the whole loop, then match each failure to its fix",
+          "steps": [
+            {
+              "label": "Reconstruct the loop from memory",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Without looking back, name the steps in order: plan, execute, reflect, revise-or-advance. Then say which step the revision budget guards."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Match symptom to loop",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Agent drifts off-goal across turns → planning gap. Agent ships confident-but-wrong output → reflection gap. (This is the diagnosis from module 1, now applied to a live trace.)"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Match failure to fix",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Stale plan → replan on reflection. Runaway reflection → revision budget. Sycophantic critique → external or fresh-context check. Over-planning → gate on complexity."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionMatrix",
+          "title": "How much planning and reflection does this task warrant?",
+          "criteria": [
+            "Fit",
+            "Operational burden",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Neither (reactive)",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Short, single-step, low-stakes tasks.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "One call, no extra machinery.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Drifts on long goals; ships unchecked.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use for one-shot lookups and trivial actions where over-engineering costs more than errors.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Planning only",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Multi-step goals with verifiable steps.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "One planning call plus tracking.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Stays on-goal but still trusts each result.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the failure is drift, not correctness — each step is easy to verify on its own.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Planning + reflection",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "High-stakes, multi-step, error-costly work.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Extra critique and revision calls per step.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Lowest, if reflection is grounded and bounded.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Use when both drift and wrong answers are costly — and you can afford the extra calls.",
+              "cost": "High",
+              "complexity": "High"
+            }
+          ],
+          "howToRead": "Match the loops to the failure you actually have. Add planning for drift, reflection for correctness; pay for both only when both errors are costly.",
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_technical",
+          "kind": "technical",
+          "title": "Make the loops observable",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "To catch these failures in production, log the plan at creation and after every replan, and log each critique verdict with its reason and the revision count. A trace that shows reflection always passing, or revision counts pinned at the budget cap, is the early warning that the loops are misbehaving."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "If you cannot see how many revisions each step took, you cannot tell whether reflection is earning its cost."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "An agent's traces show every reflection step returning \"pass\" on the first try, yet users still report wrong answers. What is the likely failure?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Runaway reflection — the budget is too high.",
+              "correct": false
+            },
+            {
+              "text": "Sycophantic self-critique — the critic rubber-stamps its own output and needs an external signal.",
+              "correct": true
+            },
+            {
+              "text": "A stale plan — the plan was built once and never revised.",
+              "correct": false
+            }
+          ],
+          "explanation": "Always-pass critiques with wrong outputs is the signature of self-critique that shares the generator's blind spots; ground it in a test, source, or fresh-context reviewer.",
+          "termIds": [
+            "agent",
+            "tool"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Decide how much planning and reflection this task warrants: neither, planning only, or both — matched to whether the failure is drift, correctness, or both."
+    }
+  ],
+  "glossary": {
+    "agent": {
+      "id": "agent",
+      "label": "Agent",
+      "laymanDefinition": "Agent is a core building block in this lesson.",
+      "technicalNote": "In this lesson, Agent is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "tool": {
+      "id": "tool",
+      "label": "Tool",
+      "laymanDefinition": "Tool is a core building block in this lesson.",
+      "technicalNote": "In this lesson, Tool is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "state": {
+      "id": "state",
+      "label": "State",
+      "laymanDefinition": "State is a core building block in this lesson.",
+      "technicalNote": "In this lesson, State is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "memory": {
+      "id": "memory",
+      "label": "Memory",
+      "laymanDefinition": "Memory is a core building block in this lesson.",
+      "technicalNote": "In this lesson, Memory is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "mcp": {
+      "id": "mcp",
+      "label": "MCP",
+      "laymanDefinition": "A protocol for exposing tools and context.",
+      "technicalNote": "In this lesson, MCP is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Model Context Protocol"
+    },
+    "sandbox": {
+      "id": "sandbox",
+      "label": "Sandbox",
+      "laymanDefinition": "Sandbox is a core building block in this lesson.",
+      "technicalNote": "In this lesson, Sandbox is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts",
+    "themes": [
+      {
+        "name": "Adoption check",
+        "questions": [
+          {
+            "q": "What decision does Planning and Reflection change in your build?",
+            "why": "A lesson is useful only when it changes what you do next.",
+            "opts": [
+              "Use now",
+              "Prototype first",
+              "Defer"
+            ],
+            "rot": "Prefer the smallest testable version."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct the loop: name the two failures a reactive agent has, then the four steps of the plan-execute-reflect loop in order. Say which step the revision budget guards, and match each of the three failure modes — stale plan, runaway reflection, sycophantic critique — to its fix."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Reference path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Why plan and reflect",
+          "sub": "The failure of pure react-and-respond, and what these loops add.",
+          "what": "Frames the two failures of a reactive agent that planning and reflection answer.",
+          "relevance": "Grounds the rest of the lesson in concrete failures rather than abstract technique.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m2",
+          "label": "How planning works",
+          "sub": "Decompose the goal into steps before executing any of them.",
+          "what": "The planning mechanism: decomposition, plan-in-state, plan-once vs replan.",
+          "relevance": "Planning is the foresight half that keeps the agent on-goal.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal"
+        },
+        {
+          "id": "n_m3",
+          "label": "How reflection works",
+          "sub": "Critique the output, then decide to accept, retry, or replan.",
+          "what": "The reflection mechanism: generate, critique against criteria, revise.",
+          "relevance": "Reflection is the self-correction half that catches errors the plan could not foresee.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m4",
+          "label": "Wiring them together",
+          "sub": "A minimal plan-execute-reflect loop you can read in one screen.",
+          "what": "Combines plan, execute, and reflect into one bounded control loop.",
+          "relevance": "Makes the control flow and the revision-budget guard concrete in code.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal"
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Frame the failure",
+        "detail": "Decide whether the agent's problem is drift (planning) or wrong output (reflection), or both."
+      },
+      {
+        "step": 2,
+        "label": "Build the plan",
+        "detail": "Decompose the goal into ordered steps and store the plan in state."
+      },
+      {
+        "step": 3,
+        "label": "Add reflection",
+        "detail": "Critique each result against explicit criteria, grounded externally where possible."
+      },
+      {
+        "step": 4,
+        "label": "Wire and bound the loop",
+        "detail": "Combine plan, execute, and reflect with a hard revision budget."
+      },
+      {
+        "step": 5,
+        "label": "Watch for the failure modes",
+        "detail": "Log plans and critiques; tune the loops away from stale plans and runaway reflection."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_failure",
+        "label": "Have you named whether the problem is drift, wrong output, or both?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_plan",
+        "label": "Is the plan stored in state with per-step status?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_critique",
+        "label": "Can your critique ever return 'fail', grounded in something external?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_budget",
+        "label": "Is there a hard revision budget so reflection always terminates?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_observe",
+        "label": "Can you see per-step revision counts to tell if reflection earns its cost?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Build a plan-execute-reflect agent for a goal of your choice: a planner that writes an ordered plan to state, an executor, and a critique grounded in at least one external check, all bounded by a revision budget. Run it on one task where reflection should reject the first attempt and confirm it revises. NEXT: swap the same-model critic for a fresh-context or cross-model reviewer and measure whether the always-pass rate drops.",
+      "scopedTo": "Agents"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Model Context Protocol docs",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-20"
+    }
+  }
+}

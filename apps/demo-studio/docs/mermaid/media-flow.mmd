@@ -1,0 +1,6 @@
+flowchart LR
+  Source[Local source bytes or text prompt] --> Validate[Bound input size and aspect ratio]
+  Validate --> Gemini[Gemini generateContent with server key]
+  Gemini --> Gate{Safety and image validation}
+  Gate -->|accepted| Cache[PNG plus provider metadata]
+  Gate -->|refused or failed| Local[Keep original or local art]

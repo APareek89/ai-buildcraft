@@ -1,0 +1,44 @@
+/* AI Buildcraft concept atlas.
+   Diagram SVGs also carry inline attributes as a rendering fallback. */
+
+:root{
+  color-scheme: light;
+  --ink:#101828;        /* title */
+  --kicker:#667085;     /* category kicker */
+  --label:#1d2939;      /* node label on soft fills */
+  --annotation:#475467; /* edge / sub annotations */
+  --caption:#475467;
+  --panel:#ffffff;
+  --hairline:#e6eaf0;
+  --line:#94a3b8;       /* connectors */
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{
+  display:grid;place-items:center;background:#ffffff;
+  font-family:Inter,"Inter Tight",ui-sans-serif,system-ui,-apple-system,
+              BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:var(--ink);
+}
+.board{width:min(100vmin,940px);height:min(100vmin,940px);aspect-ratio:1/1;overflow:hidden}
+svg{width:100%;height:100%;display:block}
+
+/* type ramp */
+.title{font-size:34px;font-weight:800;fill:var(--ink);letter-spacing:-.4px}
+.kicker{font-size:13px;font-weight:700;fill:var(--kicker);letter-spacing:1.4px;text-transform:uppercase}
+.label{font-size:19px;font-weight:700;fill:var(--label)}
+.label-on{font-size:19px;font-weight:700;fill:#ffffff}       /* on solid fills */
+.sub{font-size:13px;font-weight:600;fill:var(--annotation)}
+.sub-on{font-size:13px;font-weight:600;fill:#ffffff;fill-opacity:.86}
+.annotation{font-size:13px;font-weight:600;fill:var(--annotation)}
+.caption{font-size:15px;font-weight:600;fill:var(--caption)}
+.tag{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase}
+.example-text{font-size:15px;font-weight:600;fill:#344054}
+
+/* connectors */
+.conn{stroke:var(--line);stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.conn-dashed{stroke:var(--line);stroke-width:2.5;fill:none;stroke-linecap:round;stroke-dasharray:2 7}
+
+/* node surfaces (border + radius + shadow); fills/strokes set inline per accent */
+.node{rx:14}

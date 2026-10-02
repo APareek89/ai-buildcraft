@@ -1,0 +1,1022 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Build an Agent with LangGraph",
+    "title": "Build an Agent with LangGraph",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 46,
+    "thesis": "Build an Agent with LangGraph is practical when learners can apply it to this concrete case: A LangGraph ticket triage agent routes issues to billing, technical support, or human review. By the end, they should be able to build or review state graph with router, tool node, validator, and stop condition, measure correct route plus trace completeness, and catch the failure where the graph loops because the state never records that retrieval already happened."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Build an Agent with LangGraph",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Build an Agent with LangGraph: mental map",
+    "caption": "Build a LangGraph agent by defining state, nodes, edges, checkpoints, interrupts, tests, and traces.",
+    "oneLineThesis": "LangGraph works best when each agent step is an explicit state transition that can be routed, resumed, reviewed, and tested.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "State schema is the contract for the agent",
+        "sub": "Start with the data that must survive across steps.",
+        "what": "Learners anchor the graph in explicit state instead of hidden conversation variables.",
+        "relevance": "This prevents graph state from becoming an untestable junk drawer.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Define the minimal state carried through a refund-assistant graph.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Nodes do one state transition each",
+        "sub": "Each node should have a clear input, output, and owner.",
+        "what": "Learners design graph nodes that can be tested in isolation.",
+        "relevance": "This reduces opaque agent behavior and makes failures local.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Turn the refund workflow into single-purpose graph nodes.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Edges encode routing, retries, and termination",
+        "sub": "Control flow belongs in conditional edges, not in wishful prompting.",
+        "what": "Learners make the agent topology visible.",
+        "relevance": "This catches wrong routes that silently bypass validation or approval.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Route graph execution through validation, review, retry, and termination.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Checkpoints and interrupts make runs resumable",
+        "sub": "Persistence and human review are first-class graph behavior.",
+        "what": "Learners see the concrete LangGraph mechanics for resumable agent work.",
+        "relevance": "This avoids agents that lose context after approval or repeat side effects on resume.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Code the graph skeleton with checkpointed state and a review pause.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Tests and traces harden the graph",
+        "sub": "A LangGraph agent should prove its routes before users do.",
+        "what": "Learners turn a working graph into a reviewable product component.",
+        "relevance": "This prevents graph edits from silently skipping validation or review.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Gate the graph with route tests, resume tests, and trace evidence.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "routes through"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "persists with"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "hardens into"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "State schema is the contract for the agent",
+      "sub": "Start with the data that must survive across steps.",
+      "summary": "A LangGraph build begins with typed state, not a prompt loop.",
+      "objectives": [
+        "Define graph state for a concrete support agent.",
+        "Keep state small and intentionally merged.",
+        "Separate durable state from temporary model chatter."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The state type says what the agent is allowed to remember",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: you need a refund-policy agent that retrieves policy, checks account status, drafts an answer, and pauses for review before offering an exception. A plain loop hides all of that in messages. LangGraph asks you to name the state: goal, messages, retrieved_sources, account_status, draft, needs_review, approved, and status."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is the first design decision. If source IDs are not in state, citation validation cannot run. If approval is not in state, resume logic cannot know whether the human accepted the risky action."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langgraph_overview",
+            "kb_langgraph"
+          ]
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "State contract for the refund assistant",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "State fields: goal: string; messages: list; retrieved_sources: list of source IDs; account_status: enum; draft_answer: string; citation_errors: list; approval_request: object or null; approved: boolean or null; status: drafting, review, done, cancelled."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Keep: facts needed by later nodes and tests."
+                  }
+                ],
+                [
+                  {
+                    "text": "Avoid: raw tool credentials, giant retrieved documents, and every scratchpad token."
+                  }
+                ],
+                [
+                  {
+                    "text": "Add: thread_id in runtime config so checkpointed runs can resume."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langgraph_overview",
+            "canon_langgraph_persistence",
+            "kb_langgraph"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "State design",
+          "prompt": "Why should retrieved source IDs be in LangGraph state?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "They make the model more creative.",
+              "correct": false
+            },
+            {
+              "text": "Later validation and tests need to know what evidence the draft used.",
+              "correct": true
+            },
+            {
+              "text": "They replace the need for retrieval.",
+              "correct": false
+            }
+          ],
+          "explanation": "State carries the data that downstream nodes and checks depend on.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_langgraph"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langgraph_overview",
+        "kb_langgraph",
+        "canon_langgraph_persistence"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Nodes do one state transition each",
+      "sub": "Each node should have a clear input, output, and owner.",
+      "summary": "LangGraph nodes are inspectable transformations of shared state.",
+      "objectives": [
+        "Split retrieval, drafting, validation, and review into distinct nodes.",
+        "Describe what each node returns as a partial state update.",
+        "Avoid nodes that both decide and perform too much."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "A node is not a whole agent; it is one transition",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "retrieve_policy reads goal and messages, then returns retrieved_sources and context_summary. draft_answer reads retrieved_sources and account_status, then returns draft_answer. validate_citations reads draft_answer and retrieved_sources, then returns citation_errors. request_review reads risk and errors, then returns an approval_request or lets the graph continue."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This shape gives you two framings: product teams can review the workflow as a process map, while engineers can unit-test each transition."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langgraph_overview",
+            "kb_langgraph"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Case study: fixing the wrong node",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If the agent gives a refund with no citation, a single-loop design says the agent failed. The graph design asks which node failed. retrieve_policy may have returned no source; draft_answer may have ignored source IDs; validate_citations may have allowed an empty citation; request_review may have skipped risky cases. Different node, different fix."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_langgraph"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langgraph_overview",
+        "kb_langgraph"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Edges encode routing, retries, and termination",
+      "sub": "Control flow belongs in conditional edges, not in wishful prompting.",
+      "summary": "LangGraph edges make route decisions explicit and testable.",
+      "objectives": [
+        "Choose direct and conditional edges for the support graph.",
+        "Explain how retry, review, and END conditions are represented.",
+        "Name edge failure modes that skip safeguards."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Edges are the graph's safety rails",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "After draft_answer, the graph should not always end. A conditional edge can route to validate_citations. If errors exist, route back to draft_answer with repair instructions. If the answer proposes an exception or external action, route to human_review. If approved, route to final_response. If rejected, route to cancelled."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Prompt text can ask the model to be careful, but the edge function enforces the topology. Test edge functions like ordinary code."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langgraph_overview",
+            "kb_langgraph"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Route table for the refund assistant",
+          "criteria": [
+            "Condition",
+            "Next node",
+            "Failure prevented"
+          ],
+          "options": [
+            {
+              "name": "No retrieved source",
+              "cells": [
+                {
+                  "criterion": "Condition",
+                  "text": "retrieve_policy retry or safe refusal",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Next node",
+                  "text": "unsupported answer",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure prevented",
+                  "text": "No retrieved source",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the no retrieved source row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Citation errors",
+              "cells": [
+                {
+                  "criterion": "Condition",
+                  "text": "draft_answer with repair note",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Next node",
+                  "text": "uncited policy claim",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure prevented",
+                  "text": "Citation errors",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the citation errors row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Exception requested",
+              "cells": [
+                {
+                  "criterion": "Condition",
+                  "text": "human_review",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Next node",
+                  "text": "unauthorized commitment",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure prevented",
+                  "text": "Exception requested",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the exception requested row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Approved and validated",
+              "cells": [
+                {
+                  "criterion": "Condition",
+                  "text": "final_response",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Next node",
+                  "text": "endless loop or duplicate tool call",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure prevented",
+                  "text": "Approved and validated",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the approved and validated row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langgraph_overview",
+            "kb_langgraph"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langgraph_overview",
+        "kb_langgraph"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Checkpoints and interrupts make runs resumable",
+      "sub": "Persistence and human review are first-class graph behavior.",
+      "summary": "LangGraph checkpointers and interrupts let agents pause and continue with state.",
+      "objectives": [
+        "Write a minimal LangGraph snippet using state, nodes, edges, and interrupt.",
+        "Predict the route when citation validation fails.",
+        "Verify generated graph code for idempotent review behavior."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 10,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "LangGraph skeleton with validation route and review interrupt",
+          "language": "python",
+          "code": "from typing import TypedDict, Literal\nfrom langgraph.graph import StateGraph, START, END\nfrom langgraph.types import interrupt\n\nclass RefundState(TypedDict, total=False):\n    goal: str\n    retrieved_sources: list[str]\n    draft_answer: str\n    citation_errors: list[str]\n    approved: bool\n    status: str\n\ndef retrieve_policy(state: RefundState):\n    return {\"retrieved_sources\": [\"refund-policy#45\"]}\n\ndef draft_answer(state: RefundState):\n    return {\"draft_answer\": \"Policy says no automatic refund after 30 days. [refund-policy#45]\"}\n\ndef validate_citations(state: RefundState):\n    has_source = bool(state.get(\"retrieved_sources\")) and \"[refund-policy#45]\" in state.get(\"draft_answer\", \"\")\n    return {\"citation_errors\": [] if has_source else [\"missing refund-policy citation\"]}\n\ndef human_review(state: RefundState):\n    approved = interrupt({\"reason\": \"exception or sensitive refund answer\", \"draft\": state[\"draft_answer\"]})\n    return {\"approved\": bool(approved)}\n\ndef route_after_validation(state: RefundState) -> Literal[\"draft_answer\", \"human_review\"]:\n    return \"draft_answer\" if state.get(\"citation_errors\") else \"human_review\"\n\ndef route_after_review(state: RefundState) -> Literal[\"final\", \"cancelled\"]:\n    return \"final\" if state.get(\"approved\") else \"cancelled\"\n\ndef final(state: RefundState):\n    return {\"status\": \"done\"}\n\ndef cancelled(state: RefundState):\n    return {\"status\": \"cancelled\"}\n\ngraph = StateGraph(RefundState)\ngraph.add_node(\"retrieve_policy\", retrieve_policy)\ngraph.add_node(\"draft_answer\", draft_answer)\ngraph.add_node(\"validate_citations\", validate_citations)\ngraph.add_node(\"human_review\", human_review)\ngraph.add_node(\"final\", final)\ngraph.add_node(\"cancelled\", cancelled)\ngraph.add_edge(START, \"retrieve_policy\")\ngraph.add_edge(\"retrieve_policy\", \"draft_answer\")\ngraph.add_edge(\"draft_answer\", \"validate_citations\")\ngraph.add_conditional_edges(\"validate_citations\", route_after_validation)\ngraph.add_conditional_edges(\"human_review\", route_after_review)\ngraph.add_edge(\"final\", END)\ngraph.add_edge(\"cancelled\", END)\n\napp = graph.compile()  # add a checkpointer for resumable production runs",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This snippet shows the topology. In production you would compile with a checkpointer and invoke with a thread_id so the interrupt can resume the same state."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the next node if validate_citations returns citation_errors with one item.",
+            "answer": "The route_after_validation function returns draft_answer. The graph repairs the draft before reaching human_review, so review is not asked to approve an uncited answer."
+          },
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langgraph_overview",
+            "canon_langgraph_interrupts",
+            "kb_langgraph"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify the AI-generated LangGraph code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: state type contains every field used by nodes; each node returns partial state, not a mutated hidden global; conditional edge names match real node names; END is reachable; interrupt happens before side effects that cannot be repeated; production compile uses a checkpointer; resume uses a stable thread_id."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langgraph_persistence",
+            "canon_langgraph_interrupts",
+            "kb_langgraph"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langgraph_overview",
+        "canon_langgraph_interrupts",
+        "kb_langgraph",
+        "canon_langgraph_persistence"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Tests and traces harden the graph",
+      "sub": "A LangGraph agent should prove its routes before users do.",
+      "summary": "The build finishes by testing nodes, route functions, resume behavior, and observability.",
+      "objectives": [
+        "Create tests for route functions and safeguard nodes.",
+        "Add trace fields that explain graph execution.",
+        "Plan the next rung after the single-agent graph works."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Graph tests should target the topology",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Test nodes with fixed state fixtures. Test route functions with edge cases: no sources, citation errors, sensitive exception, approved review, rejected review. Test resume behavior by pausing at human_review and continuing with approval=false. Add trace metadata for graph_name, node_name, thread_id, route_decision, checkpoint_id, and release SHA."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The most important failure modes are graph-state bloat, conditional edges that skip safeguards, non-idempotent side effects before interrupts, and checkpoints that store private data without retention rules."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langgraph_overview",
+            "canon_langgraph_persistence",
+            "kb_langgraph"
+          ]
+        },
+        {
+          "id": "m5_capstone_case",
+          "kind": "functionalExample",
+          "title": "Mini test plan for the refund graph",
+          "body": [
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Fixture: retrieved source exists and citation is present -> route to human_review."
+                  }
+                ],
+                [
+                  {
+                    "text": "Fixture: no citation -> route back to draft_answer."
+                  }
+                ],
+                [
+                  {
+                    "text": "Fixture: approval false -> final status cancelled."
+                  }
+                ],
+                [
+                  {
+                    "text": "Fixture: resume after interrupt -> no duplicate account lookup or refund action."
+                  }
+                ],
+                [
+                  {
+                    "text": "Trace assertion: each node emits node_name and route_decision."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langgraph_persistence",
+            "kb_langgraph"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "LangGraph hardening",
+          "prompt": "Which test most directly catches a graph that skips citation validation?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A screenshot of the final chat answer.",
+              "correct": false
+            },
+            {
+              "text": "A route test proving draft_answer always goes through validate_citations before final_response.",
+              "correct": true
+            },
+            {
+              "text": "A token-cost comparison across models.",
+              "correct": false
+            }
+          ],
+          "explanation": "LangGraph makes routes explicit, so route tests are core product tests.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_langgraph"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langgraph_overview",
+        "canon_langgraph_persistence",
+        "kb_langgraph"
+      ]
+    }
+  ],
+  "glossary": {
+    "prototype": {
+      "id": "prototype",
+      "label": "Prototype",
+      "laymanDefinition": "A narrow build slice that proves one behavior before full production hardening.",
+      "technicalNote": "A prototype should include the smallest runnable path, its failure test, and the evidence needed to decide the next build step.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langgraph_overview"
+      ]
+    },
+    "retriever": {
+      "id": "retriever",
+      "label": "Retriever",
+      "laymanDefinition": "A component that selects candidate context or records for a question.",
+      "technicalNote": "Retrievers need source IDs, filters, top-k choices, and evaluation because missing evidence changes every downstream answer.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langgraph_overview"
+      ]
+    },
+    "validator": {
+      "id": "validator",
+      "label": "Validator",
+      "laymanDefinition": "A deterministic or model-assisted check that accepts, rejects, or repairs an output.",
+      "technicalNote": "Validators protect contracts such as schema, citations, allowed tools, approval rules, and safety policy.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langgraph_overview"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A structured record of one run, including spans, inputs, outputs, metadata, and scores.",
+      "technicalNote": "Traces make failures diagnosable by showing which retrieval, model, tool, or scoring step produced the result.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langgraph_overview"
+      ]
+    },
+    "deployment": {
+      "id": "deployment",
+      "label": "Deployment",
+      "laymanDefinition": "A released runtime configuration with model, prompt, data, infrastructure, monitoring, and rollback decisions.",
+      "technicalNote": "Deployment quality depends on observability, eval gates, ownership, and privacy controls, not only code running.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langgraph_overview"
+      ]
+    },
+    "acceptance_test": {
+      "id": "acceptance_test",
+      "label": "Acceptance test",
+      "laymanDefinition": "A test that proves a feature meets its release contract.",
+      "technicalNote": "Acceptance tests should be tied to user-visible behavior and include critical failure cases, not just happy paths.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langgraph_overview"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Build an Agent with LangGraph",
+    "themes": [
+      {
+        "name": "Graph design gate",
+        "questions": [
+          {
+            "q": "Which agent decisions deserve explicit graph state and edges?",
+            "why": "LangGraph pays off when routing, retries, checkpointing, or human interrupts must be visible and testable.",
+            "opts": [
+              "Typed graph with checkpoints",
+              "One hidden while-loop",
+              "Stateless prompt chain"
+            ],
+            "rot": "Model the unstable or risky steps as graph nodes and keep state small enough to inspect."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: rebuild the LangGraph agent by naming the state schema, node responsibilities, conditional edges, checkpoint thread ID, interrupt point, trace fields, and tests that prove the graph cannot skip safeguards."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "LangGraph build path from state contract to tested agent",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "State schema is the contract for the agent",
+          "sub": "Start with the data that must survive across steps.",
+          "what": "Learners anchor the graph in explicit state instead of hidden conversation variables.",
+          "relevance": "This prevents graph state from becoming an untestable junk drawer.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Define the minimal state carried through a refund-assistant graph.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Nodes do one state transition each",
+          "sub": "Each node should have a clear input, output, and owner.",
+          "what": "Learners design graph nodes that can be tested in isolation.",
+          "relevance": "This reduces opaque agent behavior and makes failures local.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Turn the refund workflow into single-purpose graph nodes.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Edges encode routing, retries, and termination",
+          "sub": "Control flow belongs in conditional edges, not in wishful prompting.",
+          "what": "Learners make the agent topology visible.",
+          "relevance": "This catches wrong routes that silently bypass validation or approval.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Route graph execution through validation, review, retry, and termination.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Checkpoints and interrupts make runs resumable",
+          "sub": "Persistence and human review are first-class graph behavior.",
+          "what": "Learners see the concrete LangGraph mechanics for resumable agent work.",
+          "relevance": "This avoids agents that lose context after approval or repeat side effects on resume.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Code the graph skeleton with checkpointed state and a review pause.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Tests and traces harden the graph",
+          "sub": "A LangGraph agent should prove its routes before users do.",
+          "what": "Learners turn a working graph into a reviewable product component.",
+          "relevance": "This prevents graph edits from silently skipping validation or review.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Gate the graph with route tests, resume tests, and trace evidence.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "constrains"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "routes"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "resumes"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "tests"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "State schema is the contract for the agent",
+        "detail": "A LangGraph build begins with typed state, not a prompt loop."
+      },
+      {
+        "step": 2,
+        "label": "Nodes do one state transition each",
+        "detail": "LangGraph nodes are inspectable transformations of shared state."
+      },
+      {
+        "step": 3,
+        "label": "Edges encode routing, retries, and termination",
+        "detail": "LangGraph edges make route decisions explicit and testable."
+      },
+      {
+        "step": 4,
+        "label": "Checkpoints and interrupts make runs resumable",
+        "detail": "LangGraph checkpointers and interrupts let agents pause and continue with state."
+      },
+      {
+        "step": 5,
+        "label": "Tests and traces harden the graph",
+        "detail": "The build finishes by testing nodes, route functions, resume behavior, and observability."
+      }
+    ],
+    "capstone": {
+      "prompt": "Build a LangGraph refund assistant with state fields for goal, messages, retrieved sources, draft answer, approval, and status. Add nodes for retrieval, drafting, citation validation, and human review; use a checkpointer; write tests for route decisions and resume behavior. Next rung: add long-term memory or multi-agent handoff.",
+      "scopedTo": "Build Projects",
+      "checks": [
+        "State schema is typed and minimal.",
+        "Every node returns a partial state update.",
+        "Conditional edges cover success, retry, review, and end.",
+        "Checkpoint and interrupt behavior is tested."
+      ]
+    },
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"State schema is the contract for the agent\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Checkpoints and interrupts make runs resumable\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Tests and traces harden the graph\" define the release or production gate?",
+        "fromModuleId": "m5"
+      }
+    ]
+  },
+  "citations": {
+    "canon_langgraph_overview": {
+      "id": "canon_langgraph_overview",
+      "kind": "canonical",
+      "title": "LangGraph overview",
+      "url": "https://docs.langchain.com/oss/python/langgraph/overview",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_langgraph_persistence": {
+      "id": "canon_langgraph_persistence",
+      "kind": "canonical",
+      "title": "LangGraph persistence",
+      "url": "https://docs.langchain.com/oss/python/langgraph/persistence",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_langgraph_interrupts": {
+      "id": "canon_langgraph_interrupts",
+      "kind": "canonical",
+      "title": "LangGraph interrupts",
+      "url": "https://docs.langchain.com/oss/python/langgraph/interrupts",
+      "asOfDate": "2026-06-22"
+    },
+    "kb_langgraph": {
+      "id": "kb_langgraph",
+      "kind": "kb",
+      "title": "KB: LangGraph",
+      "url": "https://docs.langchain.com/oss/python/langgraph/overview",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

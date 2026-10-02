@@ -1,0 +1,18 @@
+{
+  "name": "agentlane",
+  "version": "0.1.0",
+  "description": "Map an agentic repository into an interactive Agentlane Diagram with source-backed prompt/code inspection and optional multi-agent simulation.",
+  "author": {
+    "name": "Anand Pareek"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agentlane Diagram",
+    "shortDescription": "Map workflows and inspect prompts, code, and simulated node outputs.",
+    "longDescription": "Create a standalone HTML swimlane map from the current repository. Inspect actual source-backed prompts and code, then optionally use native coding-agent subagents to simulate the workflow without application API calls.",
+    "developerName": "Anand Pareek",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "Use $agentlane to map this repository into an interactive Agentlane Diagram and offer an optional simulation."
+  }
+}

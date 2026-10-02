@@ -1,0 +1,1219 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "LlamaIndex for RAG",
+    "title": "LlamaIndex for RAG",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "LlamaIndex for RAG is practical when learners can apply it to this concrete case: A team builds a LlamaIndex RAG assistant for onboarding docs and needs traceable sources. By the end, they should be able to build or review LlamaIndex RAG pipeline with loaders, nodes, retriever, and response synthesis, measure answers include correct source nodes, and catch the failure where documents load correctly but metadata is stripped before retrieval."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "LlamaIndex for RAG",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "LlamaIndex for RAG: mental map",
+    "caption": "Build RAG around LlamaIndex data objects: readers, nodes, indexes, retrievers, query engines, and evaluators.",
+    "oneLineThesis": "LlamaIndex is most valuable when the hard part is preparing, indexing, and querying private data rather than merely calling an LLM.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Data objects come before agents",
+        "sub": "LlamaIndex starts with documents, nodes, and indexes.",
+        "what": "Learners map source data into LlamaIndex vocabulary.",
+        "relevance": "This keeps RAG quality work separate from model personality work.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Name the data unit each RAG step manipulates.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Readers and node parsers set the ceiling",
+        "sub": "Garbage in still becomes garbage retrieval.",
+        "what": "Learners treat parsing as a quality gate.",
+        "relevance": "Parsing mistakes create broken citations and missing context downstream.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Inspect parsed nodes before tuning models.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Retrievers and postprocessors shape context",
+        "sub": "Similarity top-k is only the first retrieval decision.",
+        "what": "Learners configure retrieval rather than accepting default context.",
+        "relevance": "Defaults can overpack noisy nodes or miss exact source constraints.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use retrievers, filters, and rerankers as explicit context controls.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Build the query engine slice",
+        "sub": "A small runnable slice should expose retrieved nodes.",
+        "what": "Learners connect index and query engine with inspection.",
+        "relevance": "Evidence inspection catches bad retrieval before user-facing polish.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Create a minimal RAG path and print its evidence.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Evaluate before adding an agent loop",
+        "sub": "A query engine should pass retrieval tests on its own.",
+        "what": "Learners delay agent complexity until retrieval is trustworthy.",
+        "relevance": "Agents amplify retrieval failures by making more steps with bad context.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Gate LlamaIndex RAG with evidence-focused evaluation.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Data objects come before agents",
+      "sub": "LlamaIndex starts with documents, nodes, and indexes.",
+      "summary": "A query engine is only as good as the nodes and index behind it.",
+      "objectives": [
+        "Define documents, nodes, indexes, retrievers, and query engines.",
+        "Explain why metadata belongs on nodes.",
+        "Choose LlamaIndex when data work dominates."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk",
+        "reranker"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "LlamaIndex is data-centric RAG plumbing",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a lesson assistant must answer from curated KB notes with citations. The risky part is not the final sentence style; it is loading notes, preserving headings, creating nodes, retrieving the right context, and proving citations support claims."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "LlamaIndex gives names to those steps: readers load data, parsers create nodes, indexes organize nodes, retrievers select nodes, and query engines synthesize answers."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If you cannot point to the node that supports a sentence, the RAG app is not debuggable."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ],
+          "analogy": "LlamaIndex is a workshop for shaping source material before the model writes."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Worked map: five course notes to a query engine",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The app reads five Markdown notes, stores category and source URL as metadata, parses heading-based nodes, builds a vector index, and exposes a query engine with similarity_top_k=6."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A learner question about reranking retrieves nodes with heading breadcrumbs. The answer includes source titles rather than anonymous passages."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Load documents with source metadata."
+                  }
+                ],
+                [
+                  {
+                    "text": "Parse into nodes using structure-aware settings."
+                  }
+                ],
+                [
+                  {
+                    "text": "Build or connect a vector index."
+                  }
+                ],
+                [
+                  {
+                    "text": "Expose a query engine and inspect retrieved nodes."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ],
+          "personalizedFor": "LlamaIndex for RAG"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Object vocabulary",
+          "prompt": "Which object is closest to a retrievable chunk with metadata?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A model temperature setting.",
+              "correct": false
+            },
+            {
+              "text": "A node.",
+              "correct": true
+            },
+            {
+              "text": "A final answer string.",
+              "correct": false
+            }
+          ],
+          "explanation": "Nodes are the units that indexes and retrievers work with.",
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "canon4"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Readers and node parsers set the ceiling",
+      "sub": "Garbage in still becomes garbage retrieval.",
+      "summary": "RAG quality often fails before the index exists.",
+      "objectives": [
+        "Attach metadata during loading.",
+        "Choose parser settings for document shape.",
+        "Preview nodes before embedding."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk",
+        "reranker"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Parsing decides what the index can know",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A PDF with headers, a Markdown note, and a table export need different parsing care. If boilerplate, nav text, or fragmented tables become nodes, retrieval quality suffers no matter which model generates the final answer."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The loader should preserve source URL, document title, heading path, date, and permissions. The parser should keep definitions with caveats and code with prerequisites."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Print ten sample nodes and ask whether each could support a cited answer."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ],
+          "analogy": "The index is downstream of the parser; it cannot recover missing source structure."
+        },
+        {
+          "id": "m2_worked",
+          "kind": "functionalExample",
+          "title": "Case study: citation drift from weak nodes",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A query engine cites a note titled “Limitations,” but the displayed source title gives no topic. The fix is not a better answer prompt; it is heading metadata and node text that includes the parent title."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "After metadata and parser changes, the same retrieval result becomes “RAG Evaluation > Limitations,” and reviewers can verify the claim."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Load with source metadata."
+                  }
+                ],
+                [
+                  {
+                    "text": "Parse by headings or semantic boundaries."
+                  }
+                ],
+                [
+                  {
+                    "text": "Preview node text and metadata together."
+                  }
+                ],
+                [
+                  {
+                    "text": "Add eval questions for parser-sensitive cases."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ],
+          "personalizedFor": "LlamaIndex for RAG"
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Parser failure",
+          "prompt": "What should you inspect when LlamaIndex returns vague “Limitations” citations?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only the chat model’s persona.",
+              "correct": false
+            },
+            {
+              "text": "Node metadata and heading breadcrumbs from the parsing step.",
+              "correct": true
+            },
+            {
+              "text": "The color of the citation badge.",
+              "correct": false
+            }
+          ],
+          "explanation": "Citation clarity often depends on metadata attached before indexing.",
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "canon4"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Retrievers and postprocessors shape context",
+      "sub": "Similarity top-k is only the first retrieval decision.",
+      "summary": "The query engine assembles context from several configurable choices.",
+      "objectives": [
+        "Tune similarity_top_k with eval.",
+        "Use metadata filters for eligibility.",
+        "Add reranking when candidates are present but misordered."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk",
+        "reranker"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Retrieval is not a black box",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A LlamaIndex query engine can hide several choices: which retriever, how many nodes, which metadata filters, and which postprocessors or rerankers. Each choice changes what the model sees."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For exact product versions or categories, metadata filters should narrow eligible nodes. For noisy top-k, reranking or node postprocessing can improve packed evidence."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Log retrieved node IDs, scores, metadata, and final prompt context for every evaluation query."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ],
+          "analogy": "A query engine is a context assembly line, not a magic answer slot."
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "LlamaIndex retrieval choices",
+          "criteria": [
+            "Choice",
+            "Use when",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Higher top-k",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Retrieve more nodes before synthesis.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Expected evidence is just below the cutoff.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Can pack noise and raise cost.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use with measured recall gaps.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Metadata filters",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Restrict nodes by category, tenant, date, or source.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Eligibility matters.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Bad metadata hides valid nodes.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use in most production apps.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Reranker/postprocessor",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Reorder or trim retrieved nodes.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Right nodes appear but rank poorly.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Adds latency and another eval surface.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use after candidate recall is healthy.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Context control",
+          "prompt": "Why should metadata filters be applied before answer synthesis?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "They make embeddings unnecessary for every question.",
+              "correct": false
+            },
+            {
+              "text": "They prevent ineligible nodes from entering the model context.",
+              "correct": true
+            },
+            {
+              "text": "They force the model to write JSON.",
+              "correct": false
+            }
+          ],
+          "explanation": "Filters are part of retrieval safety and relevance.",
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "canon4"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Build the query engine slice",
+      "sub": "A small runnable slice should expose retrieved nodes.",
+      "summary": "The first useful app returns both answer and sources.",
+      "objectives": [
+        "Write a minimal LlamaIndex query flow.",
+        "Predict which node answers a question.",
+        "Inspect sources before trusting the answer."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk",
+        "reranker"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "The useful demo shows sources",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A RAG demo that only prints the final answer is incomplete. The development slice should print retrieved node text, scores, and metadata so you can debug failures."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from structured outputs, the model is not the validator. Your app should verify source support and output shape outside the model call."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Add one question whose correct response is “not enough evidence.”"
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Minimal LlamaIndex RAG skeleton",
+          "language": "python",
+          "code": "from llama_index.core import Document, VectorStoreIndex\n\nnotes = [\n    Document(text=\"Reranking reorders retrieved candidates before answer synthesis.\", metadata={\"source\": \"retrieval-eval.md\"}),\n    Document(text=\"Chunking preserves answer evidence with headings and metadata.\", metadata={\"source\": \"chunking.md\"}),\n]\n\nindex = VectorStoreIndex.from_documents(notes)\nquery_engine = index.as_query_engine(similarity_top_k=2)\nresponse = query_engine.query(\"What does reranking do in a RAG system?\")\n\nprint(response)\nfor node in response.source_nodes:\n    print(node.metadata, node.score, node.text[:80])",
+          "explanation": "The code builds an index, queries it, and prints source nodes so the developer can verify grounding.",
+          "predictThenReveal": {
+            "prompt": "Before running it with a real LlamaIndex install, predict which source should appear for the reranking question.",
+            "answer": "The retrieval-eval note should be selected; if chunking.md dominates, inspect embeddings, top-k, or node text."
+          },
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Useful demo",
+          "prompt": "What should a minimal RAG demo print besides the answer?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only total package install time.",
+              "correct": false
+            },
+            {
+              "text": "Retrieved source nodes, scores, and metadata.",
+              "correct": true
+            },
+            {
+              "text": "Only the model provider name.",
+              "correct": false
+            }
+          ],
+          "explanation": "Source inspection is the fastest way to debug RAG quality.",
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "canon4"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Evaluate before adding an agent loop",
+      "sub": "A query engine should pass retrieval tests on its own.",
+      "summary": "A reliable query engine is the foundation for RAG-backed agents.",
+      "objectives": [
+        "Create retrieval eval questions.",
+        "Measure whether expected nodes appear in packed context.",
+        "Verify answer faithfulness to source nodes."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk",
+        "reranker"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Do not hide weak retrieval inside an agent",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If a query engine cannot reliably retrieve the right nodes for direct questions, wrapping it as an agent tool will not fix the evidence problem. It will make traces longer."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Evaluation should include direct lookup, paraphrase, exact identifiers, negative cases, and stale-source cases. The target is not just a plausible answer; it is answer text supported by retrieved nodes."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Promote recurring failed questions into the eval set before tuning the next setting."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output from LlamaIndex RAG",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use this review when reading generated answers."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The retrieved nodes contain the facts used in the answer."
+                  }
+                ],
+                [
+                  {
+                    "text": "Node metadata gives usable citations and source titles."
+                  }
+                ],
+                [
+                  {
+                    "text": "The query engine refuses or qualifies answers when evidence is absent."
+                  }
+                ],
+                [
+                  {
+                    "text": "Parser and chunk settings are recorded with the eval results."
+                  }
+                ],
+                [
+                  {
+                    "text": "Any reranker or postprocessor improves packed top-k on known failures."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Next complexity",
+          "prompt": "When should you expose the query engine as an agent tool?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Before loading documents.",
+              "correct": false
+            },
+            {
+              "text": "After direct retrieval and faithfulness checks are reliable for representative questions.",
+              "correct": true
+            },
+            {
+              "text": "Only after removing all source citations.",
+              "correct": false
+            }
+          ],
+          "explanation": "Agent loops should build on trustworthy retrieval, not conceal missing evidence.",
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "canon4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "canon4"
+      ]
+    }
+  ],
+  "glossary": {
+    "rag": {
+      "id": "rag",
+      "label": "RAG",
+      "laymanDefinition": "Retrieving relevant evidence before generation so answers can be grounded in sources.",
+      "technicalNote": "RAG quality depends on corpus freshness, chunking, embeddings, filters, ranking, citation handling, and faithfulness evaluation.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Retrieval-augmented generation"
+    },
+    "embedding": {
+      "id": "embedding",
+      "label": "Embedding",
+      "laymanDefinition": "A numeric vector representation of text used for semantic comparison.",
+      "technicalNote": "Embedding choices fix dimension, distance metric, query/passage formatting, model version, and migration requirements for retrieval.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "vector_search": {
+      "id": "vector_search",
+      "label": "Vector search",
+      "laymanDefinition": "Finding nearby vectors to retrieve semantically related chunks.",
+      "technicalNote": "Vector search needs metadata filters, recall tests, index tuning, and fallback for exact terms, IDs, and rare phrases.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "chunk": {
+      "id": "chunk",
+      "label": "Chunk",
+      "laymanDefinition": "A source text segment stored and retrieved as a unit.",
+      "technicalNote": "Chunk design balances semantic completeness, citation accuracy, token budget, overlap, metadata, and update/delete behavior.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "reranker": {
+      "id": "reranker",
+      "label": "Reranker",
+      "laymanDefinition": "A second-stage model or method that reorders retrieved candidates by relevance.",
+      "technicalNote": "Rerankers improve top-result precision when candidate recall is adequate, but add latency, cost, and evaluation complexity.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "rrf": {
+      "id": "rrf",
+      "label": "RRF",
+      "laymanDefinition": "A rank-fusion method that merges multiple result lists by reciprocal rank.",
+      "technicalNote": "RRF is useful for hybrid retrieval because it combines lexical and vector rankings without requiring comparable raw scores.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Reciprocal rank fusion"
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for LlamaIndex for RAG",
+    "themes": [
+      {
+        "name": "LlamaIndex RAG design",
+        "questions": [
+          {
+            "q": "Which LlamaIndex object should own each step from raw data to answer?",
+            "why": "Clear object boundaries make ingestion, retrieval, and answer synthesis easier to test.",
+            "opts": [
+              "Reader -> nodes -> index -> retriever -> query engine",
+              "One prompt with all documents",
+              "Agent tool before any index"
+            ],
+            "rot": "Use LlamaIndex when document preparation and retrieval quality are central to the product."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: name the document reader, node parser, index, retriever, postprocessor, query engine, and evaluation signal for a grounded LlamaIndex app."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "LlamaIndex RAG path from documents to query engine",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Data objects come before agents",
+          "sub": "LlamaIndex starts with documents, nodes, and indexes.",
+          "what": "Learners map source data into LlamaIndex vocabulary.",
+          "relevance": "This keeps RAG quality work separate from model personality work.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Name the data unit each RAG step manipulates.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Readers and node parsers set the ceiling",
+          "sub": "Garbage in still becomes garbage retrieval.",
+          "what": "Learners treat parsing as a quality gate.",
+          "relevance": "Parsing mistakes create broken citations and missing context downstream.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Inspect parsed nodes before tuning models.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Retrievers and postprocessors shape context",
+          "sub": "Similarity top-k is only the first retrieval decision.",
+          "what": "Learners configure retrieval rather than accepting default context.",
+          "relevance": "Defaults can overpack noisy nodes or miss exact source constraints.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use retrievers, filters, and rerankers as explicit context controls.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Build the query engine slice",
+          "sub": "A small runnable slice should expose retrieved nodes.",
+          "what": "Learners connect index and query engine with inspection.",
+          "relevance": "Evidence inspection catches bad retrieval before user-facing polish.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Create a minimal RAG path and print its evidence.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Evaluate before adding an agent loop",
+          "sub": "A query engine should pass retrieval tests on its own.",
+          "what": "Learners delay agent complexity until retrieval is trustworthy.",
+          "relevance": "Agents amplify retrieval failures by making more steps with bad context.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Gate LlamaIndex RAG with evidence-focused evaluation.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "shapes"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "proves"
+        }
+      ]
+    },
+    "capstone": {
+      "prompt": "Build a small LlamaIndex plan for five docs: loader, metadata, chunk/node settings, index type, similarity_top_k, reranker choice, citation rule, and three retrieval eval questions. Next rung: build the app end to end.",
+      "scopedTo": "LlamaIndex for RAG"
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Data objects come before agents",
+        "detail": "A query engine is only as good as the nodes and index behind it."
+      },
+      {
+        "step": 2,
+        "label": "Readers and node parsers set the ceiling",
+        "detail": "RAG quality often fails before the index exists."
+      },
+      {
+        "step": 3,
+        "label": "Retrievers and postprocessors shape context",
+        "detail": "The query engine assembles context from several configurable choices."
+      },
+      {
+        "step": 4,
+        "label": "Build the query engine slice",
+        "detail": "The first useful app returns both answer and sources."
+      },
+      {
+        "step": 5,
+        "label": "Evaluate before adding an agent loop",
+        "detail": "A reliable query engine is the foundation for RAG-backed agents."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_problem_anchor",
+        "label": "Can you explain why “Data objects come before agents” matters for the running case?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_design_choice",
+        "label": "Did you make the design choice from “Retrievers and postprocessors shape context” explicit?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_evidence_gate",
+        "label": "Can the capstone be reviewed using “Evaluate before adding an agent loop”?",
+        "fromModuleId": "m5"
+      }
+    ]
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Retrieval-Augmented Generation & Vector Search",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Retrieval-Augmented Generation & Vector Search",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LlamaIndex RAG documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    },
+    "kb3": {
+      "id": "kb3",
+      "kind": "kb",
+      "title": "KB: RAG Fundamentals",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-22"
+    },
+    "kb4": {
+      "id": "kb4",
+      "kind": "kb",
+      "title": "KB: Chunking, hybrid retrieval, Graph RAG, and retrieval evaluation notes",
+      "url": "kb/RAG-tooling",
+      "asOfDate": "2026-06-22"
+    },
+    "canon3": {
+      "id": "canon3",
+      "kind": "canonical",
+      "title": "LangChain retrieval concepts",
+      "url": "https://docs.langchain.com/oss/python/langchain/retrieval",
+      "asOfDate": "2026-06-22"
+    },
+    "canon4": {
+      "id": "canon4",
+      "kind": "canonical",
+      "title": "LlamaIndex RAG guide",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

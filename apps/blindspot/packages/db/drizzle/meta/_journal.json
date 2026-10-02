@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1784190302606,
+      "tag": "0000_oval_gorgon",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784379382471,
+      "tag": "0001_panoramic_reptil",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784382595785,
+      "tag": "0002_moaning_sinister_six",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784385810223,
+      "tag": "0003_nice_jigsaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784617629875,
+      "tag": "0004_blushing_nick_fury",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784618167242,
+      "tag": "0005_amazing_plazm",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784623737702,
+      "tag": "0006_black_justice",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784704439455,
+      "tag": "0007_thankful_rage",
+      "breakpoints": true
+    }
+  ]
+}

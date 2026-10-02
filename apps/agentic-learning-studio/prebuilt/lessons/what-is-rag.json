@@ -1,0 +1,1985 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "What is RAG?",
+    "title": "What is RAG?",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 30,
+    "thesis": "RAG (retrieval-augmented generation) fetches relevant text from your own documents and pastes it into the prompt so the language model answers from that evidence instead of guessing from memory."
+  },
+  "learnerProfile": {
+    "level": "beginner",
+    "depth": "conceptual",
+    "examples": "functional",
+    "topic": "What is RAG?",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "What is RAG?: mental map",
+    "caption": "Start with the big picture, then open each block for detail.",
+    "oneLineThesis": "RAG retrieves relevant text from your documents and feeds it to the model so answers stay grounded in evidence.",
+    "structureType": "conceptual",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "What RAG is",
+        "sub": "The one-sentence idea and the problem it fixes.",
+        "orient": "What RAG means and the hallucination problem it was built to solve.",
+        "what": "RAG looks things up first, then lets the model answer from what it found.",
+        "relevance": "It matters because grounding answers in your own text is the whole point of RAG.",
+        "moduleId": "m1",
+        "layer": "Concept",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m2",
+        "label": "How retrieval works",
+        "sub": "Embeddings and vector search turn a question into matches.",
+        "orient": "How embeddings and vector search find the chunks that match a question.",
+        "what": "Text is turned into vectors so similar meanings sit close together and can be matched.",
+        "relevance": "It matters because retrieval quality decides whether the model sees the right evidence.",
+        "moduleId": "m2",
+        "layer": "Mechanism",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m3",
+        "label": "Chunking and reranking",
+        "sub": "Choices that change retrieval quality, cost, and risk.",
+        "orient": "Design choices like chunk size and rerankers that shape what gets retrieved.",
+        "what": "How you split documents and reorder results changes which evidence reaches the model.",
+        "relevance": "It matters because these are the knobs that make or break a real RAG system.",
+        "moduleId": "m3",
+        "layer": "Choices",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m4",
+        "label": "A tiny RAG pipeline",
+        "sub": "The smallest runnable index-and-query sketch.",
+        "orient": "A minimal code sketch that loads docs, builds an index, and answers a query.",
+        "what": "A few lines that load documents, build a vector index, and answer a grounded question.",
+        "relevance": "It matters because seeing the smallest working shape makes the concept concrete.",
+        "moduleId": "m4",
+        "layer": "Build",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m5",
+        "label": "When RAG breaks, and checking it",
+        "sub": "Failure modes plus a decision and validation checklist.",
+        "orient": "How RAG fails in practice and how to validate retrieval before trusting answers.",
+        "what": "The common ways RAG goes wrong and the checks that catch them before users do.",
+        "relevance": "It matters because knowing the failure modes is what separates a demo from production.",
+        "moduleId": "m5",
+        "layer": "Check",
+        "emphasis": "spine"
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "What RAG is and why it exists",
+      "sub": "Starts the spine: the problem RAG was built to solve.",
+      "summary": "A plain language model answers from memory and can confidently make things up. RAG fixes this by looking up relevant text first, then answering from it. This module frames the idea before we open the machinery.",
+      "objectives": [
+        "After this you'll be able to say in one sentence what RAG does.",
+        "After this you'll be able to explain the hallucination problem RAG was built to fix.",
+        "After this you'll be able to name the two phases: retrieve, then generate."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk",
+        "reranker"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Why RAG exists: the problem it solves",
+          "analogy": "A language model with no retrieval is like a smart friend answering from memory. RAG is like letting that friend open the relevant page of the manual before they reply.",
+          "body": [
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: "
+                },
+                {
+                  "em": true,
+                  "text": "if you ask a chatbot about a fact that is not in its training data — like a detail buried in your company handbook — what is it likely to do?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A plain language model answers from what it memorized during training. Ask it something outside that knowledge and it often "
+                },
+                {
+                  "text": "guesses confidently",
+                  "strong": true
+                },
+                {
+                  "text": " — a behavior called hallucination. It cannot see your private documents, and its training data has a cutoff date."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "",
+                  "term": "rag"
+                },
+                {
+                  "text": "RAG",
+                  "strong": true
+                },
+                {
+                  "text": " fixes this with a simple move: before the model answers, the system "
+                },
+                {
+                  "text": "looks up relevant text",
+                  "strong": true
+                },
+                {
+                  "text": " from a document collection and pastes it into the prompt. The model then answers from that evidence instead of from memory."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "So RAG always has two phases:"
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Retrieve",
+                    "strong": true
+                  },
+                  {
+                    "text": " — find the chunks of text most relevant to the question."
+                  }
+                ],
+                [
+                  {
+                    "text": "Generate",
+                    "strong": true
+                  },
+                  {
+                    "text": " — give those chunks to the model and ask it to answer using them."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Reach for RAG when answers must reflect "
+                },
+                {
+                  "text": "your own, changing, or private data",
+                  "strong": true
+                },
+                {
+                  "text": " — support docs, policies, a product catalog — rather than whatever the model happened to memorize."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_visual",
+          "kind": "steppedFlow",
+          "title": "Click through one RAG request",
+          "caption": "The smallest useful sequence: a question becomes a grounded answer.",
+          "steps": [
+            {
+              "label": "Question",
+              "detail": "The user asks something, e.g. 'What is our refund window?'"
+            },
+            {
+              "label": "Retrieve",
+              "detail": "The system searches the document collection and pulls the most relevant chunks."
+            },
+            {
+              "label": "Augment",
+              "detail": "Those chunks are pasted into the prompt alongside the question."
+            },
+            {
+              "label": "Generate",
+              "detail": "The model answers using the retrieved text — grounded in evidence, not memory."
+            }
+          ],
+          "min": 1,
+          "max": 4,
+          "unit": "step",
+          "stops": [
+            {
+              "at": 1,
+              "label": "Just the question",
+              "note": "No grounding yet — this is where a plain chatbot would guess."
+            },
+            {
+              "at": 2,
+              "label": "Evidence in hand",
+              "note": "Relevant chunks have been retrieved from your documents."
+            },
+            {
+              "at": 4,
+              "label": "Grounded answer",
+              "note": "The model answers from the retrieved evidence."
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_walk",
+          "kind": "walkthrough",
+          "title": "RAG vs. a plain chatbot, side by side",
+          "steps": [
+            {
+              "label": "Same question, no retrieval",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Ask a plain chatbot 'What is our refund window?' It has never seen your policy, so it invents a plausible-sounding number like '30 days' — which may be wrong."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Add a retrieval step",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "RAG first searches your policy documents, finds the paragraph that says '14 days for unopened items', and attaches it to the prompt."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "The model answers from evidence",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Now the model replies '14 days for unopened items' and can even cite the source paragraph. Same model, very different reliability."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_example",
+          "kind": "functionalExample",
+          "title": "Concrete use case: a support assistant",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A company builds a help assistant over its 500-page support knowledge base. A customer asks: "
+                },
+                {
+                  "em": true,
+                  "text": "\"Does the Pro plan include API access?\""
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The system retrieves the two paragraphs about Pro-plan features, hands them to the model, and the model answers using only that text — quoting the exact entitlement. If the docs change next month, the answers change automatically, with no retraining."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "That is the pattern to copy: retrieve the right evidence, then let the model speak from it."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_technical",
+          "kind": "technical",
+          "title": "Technical note: RAG changes the prompt, not the model",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "RAG does not fine-tune or retrain the model. It only changes what goes into the prompt at request time: the retrieved chunks are inserted as context, usually with an instruction like 'Answer using only the passages below.'"
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "Because nothing is retrained, updating the system is just updating the documents — re-index and the next answer reflects the change."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "What is the core idea of RAG?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Retrain the model on your documents every time they change.",
+              "correct": false
+            },
+            {
+              "text": "Retrieve relevant text first, then have the model answer from that text.",
+              "correct": true
+            },
+            {
+              "text": "Always use the largest available model so it memorizes more facts.",
+              "correct": false
+            }
+          ],
+          "explanation": "RAG retrieves relevant passages and feeds them to the model, so the answer is grounded in evidence rather than the model's memory. No retraining is involved.",
+          "termIds": [
+            "rag",
+            "embedding"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "How retrieval actually works",
+      "sub": "Follows module 1: opens up the 'retrieve' phase.",
+      "summary": "Module 1 said RAG retrieves text first. This module shows how: embeddings turn text into vectors, and vector search finds the chunks whose meaning is closest to the question.",
+      "objectives": [
+        "After this you'll be able to explain what an embedding is in plain terms.",
+        "After this you'll be able to describe how vector search finds relevant chunks.",
+        "After this you'll be able to explain why semantic matching beats keyword matching."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk",
+        "reranker"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_recall",
+          "kind": "note",
+          "tone": "info",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Quick recall from module 1: ",
+                  "strong": true
+                },
+                {
+                  "em": true,
+                  "text": "RAG has two phases. What are they, in order?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "em": true,
+                  "text": "Answer: retrieve, then generate. This module zooms into the first phase — how retrieval finds the right text."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Embeddings and vector search",
+          "analogy": "An embedding is like giving every sentence a set of map coordinates by meaning. Vector search is finding the nearest neighbors on that map.",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "How does the system know which chunks are 'relevant'? It can't just match keywords — a user might ask about 'time off' when the policy says 'leave'. RAG matches by "
+                },
+                {
+                  "text": "meaning",
+                  "strong": true
+                },
+                {
+                  "text": ", using two pieces."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "",
+                    "term": "embedding"
+                  },
+                  {
+                    "text": "Embedding",
+                    "strong": true
+                  },
+                  {
+                    "text": " — a model converts a piece of text into a list of numbers (a vector). Texts with similar meaning get vectors that sit close together."
+                  }
+                ],
+                [
+                  {
+                    "text": "",
+                    "term": "vector_search"
+                  },
+                  {
+                    "text": "Vector search",
+                    "strong": true
+                  },
+                  {
+                    "text": " — at query time the question is also embedded, then the system finds the stored vectors nearest to it. Those are the most relevant chunks."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "So 'time off' and 'leave policy' land near each other even though they share no words. That semantic match is why vector search beats plain keyword search for grounding answers."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_walk",
+          "kind": "walkthrough",
+          "title": "Tracing one retrieval, step by step",
+          "steps": [
+            {
+              "label": "Index the documents (once, ahead of time)",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Every chunk of every document is embedded into a vector and stored in a vector database. This is the one-time setup cost."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Embed the question (at query time)",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "When the user asks 'How much time off do I get?', that question is embedded with the same model into one vector."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Find the nearest vectors",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Vector search returns the top few chunks closest to the question's vector — likely the 'annual leave' section, even though it never says 'time off'."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_example",
+          "kind": "functionalExample",
+          "title": "Why semantic match beats keyword match",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A user asks an HR bot: "
+                },
+                {
+                  "em": true,
+                  "text": "\"Can I work from home on Fridays?\""
+                },
+                {
+                  "text": " The handbook never uses the phrase 'work from home' — it says 'remote work arrangements'."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Keyword search would miss it entirely. But the embeddings for 'work from home' and 'remote work arrangements' sit close together, so vector search retrieves the right section and the model answers correctly."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "embedding",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_technical",
+          "kind": "technical",
+          "title": "Technical note: same embedder, both sides",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Documents and queries must be embedded with the same embedding model. If you index with one model and query with another, the vectors live in different spaces and 'nearest' becomes meaningless."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "Distance is usually measured by cosine similarity — the angle between vectors. Closer angle, more similar meaning."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "embedding",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Why can vector search find a passage that shares no words with the question?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It compares meaning via embeddings, so similar concepts sit close even with different words.",
+              "correct": true
+            },
+            {
+              "text": "It matches the exact keywords typed in the question.",
+              "correct": false
+            },
+            {
+              "text": "It asks the language model to rewrite the document first.",
+              "correct": false
+            }
+          ],
+          "explanation": "Embeddings place text in a space organized by meaning. 'Work from home' and 'remote work arrangements' land near each other, so vector search retrieves the right chunk despite no shared keywords.",
+          "termIds": [
+            "embedding",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Chunking and reranking: the choices that matter",
+      "sub": "Follows module 2: the knobs that shape retrieval quality.",
+      "summary": "Retrieval is only as good as what you index and what you keep. This module covers two high-impact choices: how you split documents into chunks, and whether you add a reranker to reorder the matches before they reach the model.",
+      "objectives": [
+        "After this you'll be able to explain why chunk size is a tradeoff.",
+        "After this you'll be able to say what a reranker adds and what it costs.",
+        "After this you'll be able to pick a starting design for a new RAG system."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk",
+        "reranker"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Chunking: how you split the documents",
+          "analogy": "Chunking is like deciding whether to photocopy a book page by page or paragraph by paragraph — too big and you grab clutter, too small and you cut sentences in half.",
+          "body": [
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: "
+                },
+                {
+                  "em": true,
+                  "text": "if you split documents into very large chunks, what could go wrong? What about very small chunks?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Before indexing, each document is split into "
+                },
+                {
+                  "text": "",
+                  "term": "chunk"
+                },
+                {
+                  "text": "chunks",
+                  "strong": true
+                },
+                {
+                  "text": " — the units that get embedded and retrieved. Chunk size is a real tradeoff:"
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Chunks too large",
+                    "strong": true
+                  },
+                  {
+                    "text": " — each one mixes several topics, so its embedding is blurry and retrieval pulls in irrelevant text alongside the answer."
+                  }
+                ],
+                [
+                  {
+                    "text": "Chunks too small",
+                    "strong": true
+                  },
+                  {
+                    "text": " — a fact gets split across two chunks, so neither one contains the full answer and the model sees a fragment."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A common starting point is a few hundred tokens per chunk with some overlap between neighbors, then tune based on what retrieval actually returns."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m3_walk",
+          "kind": "walkthrough",
+          "title": "Reranking: a second pass over the matches",
+          "steps": [
+            {
+              "label": "Retrieve a wide net",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Vector search is fast but approximate. So first retrieve more chunks than you need — say the top 20 — to make sure the right one is somewhere in the set."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Score them with a reranker",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "A ",
+                      "strong": false
+                    },
+                    {
+                      "text": "",
+                      "term": "reranker"
+                    },
+                    {
+                      "text": "reranker",
+                      "strong": true
+                    },
+                    {
+                      "text": " is a more careful (slower) model that scores each chunk against the question directly, producing a sharper relevance ranking than raw vector distance."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Keep the top few",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Pass only the best 3–5 reranked chunks to the model. This trims noise from the prompt and usually lifts answer quality — at the cost of an extra model call per query."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "reranker",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionMatrix",
+          "title": "Which retrieval design should you start with?",
+          "criteria": [
+            "Answer quality",
+            "Operational burden",
+            "Cost per query"
+          ],
+          "options": [
+            {
+              "name": "Plain vector search",
+              "cells": [
+                {
+                  "criterion": "Answer quality",
+                  "text": "Good enough for clean, well-separated docs.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "One embed + one search; very few moving parts.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Cost per query",
+                  "text": "Lowest — a single vector lookup.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Start here for a prototype or when documents are short and distinct.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Vector search + reranker",
+              "cells": [
+                {
+                  "criterion": "Answer quality",
+                  "text": "Sharper top results; fewer irrelevant chunks reach the model.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Adds a reranker model to host and tune.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Cost per query",
+                  "text": "Higher — an extra scoring model call.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when plain search returns the right chunk but not at the top.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Hybrid (keyword + vector + rerank)",
+              "cells": [
+                {
+                  "criterion": "Answer quality",
+                  "text": "Best for exact terms (IDs, codes) plus meaning.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Two indexes to maintain and fuse, e.g. with RRF.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Cost per query",
+                  "text": "Highest — two searches plus reranking.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use only after measurements show pure vector search misses exact-match queries.",
+              "cost": "High",
+              "complexity": "High"
+            }
+          ],
+          "howToRead": "Pick the simplest row that meets your answer-quality bar; add reranking or hybrid only when retrieval evals show you need it.",
+          "termIds": [
+            "rag",
+            "vector_search",
+            "reranker",
+            "rrf"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_technical",
+          "kind": "technical",
+          "title": "Technical note: hybrid retrieval and RRF",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Hybrid retrieval runs a keyword search and a vector search in parallel, then merges the two ranked lists. A common merge method is "
+                },
+                {
+                  "text": "",
+                  "term": "rrf"
+                },
+                {
+                  "text": "reciprocal rank fusion (RRF)",
+                  "strong": true
+                },
+                {
+                  "text": ", which scores each result by its rank position in each list — so a chunk that ranks high in either list bubbles up."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "Keyword search shines for exact tokens like order IDs or error codes; vector search shines for meaning. Hybrid gets both."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rrf",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Why is chunk size a tradeoff rather than 'bigger is better'?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Chunks that are too large blur the embedding; chunks that are too small split a fact across pieces.",
+              "correct": true
+            },
+            {
+              "text": "Larger chunks always retrieve faster, so there is no downside.",
+              "correct": false
+            },
+            {
+              "text": "Chunk size only affects storage, never answer quality.",
+              "correct": false
+            }
+          ],
+          "explanation": "Too-large chunks mix topics and produce vague embeddings that pull in irrelevant text. Too-small chunks fragment a single answer across multiple chunks. You tune to the sweet spot for your documents.",
+          "termIds": [
+            "chunk",
+            "embedding"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Pick a retrieval design: plain vector search, add a reranker, or go hybrid with RRF."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "A tiny RAG pipeline you can read",
+      "sub": "Follows module 3: the pieces assembled into runnable code.",
+      "summary": "Now we put the pieces together. A handful of lines loads documents, builds a vector index, and answers a grounded question. Seeing the smallest working shape makes the whole concept concrete.",
+      "objectives": [
+        "After this you'll be able to read a minimal RAG pipeline end to end.",
+        "After this you'll be able to map each line to retrieve-then-generate.",
+        "After this you'll be able to check AI-generated RAG code before trusting it."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk",
+        "reranker"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "The four lines every RAG pipeline has",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Strip RAG down and almost every pipeline does the same four things, in order:"
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Load",
+                    "strong": true
+                  },
+                  {
+                    "text": " the source documents."
+                  }
+                ],
+                [
+                  {
+                    "text": "Index",
+                    "strong": true
+                  },
+                  {
+                    "text": " — chunk and embed them into a vector store."
+                  }
+                ],
+                [
+                  {
+                    "text": "Retrieve",
+                    "strong": true
+                  },
+                  {
+                    "text": " the chunks closest to the question."
+                  }
+                ],
+                [
+                  {
+                    "text": "Generate",
+                    "strong": true
+                  },
+                  {
+                    "text": " — hand those chunks to the model and ask it to answer."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Libraries like LlamaIndex collapse load-and-index into a couple of calls, but the four steps are still there."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_walk",
+          "kind": "walkthrough",
+          "title": "Reading the sketch, line by line",
+          "steps": [
+            {
+              "label": "Load + index",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "SimpleDirectoryReader loads files; VectorStoreIndex.from_documents chunks and embeds them. That's the one-time setup."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Build a query engine",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "index.as_query_engine() wires retrieval to generation: it will embed the question, fetch the nearest chunks, and pass them to the model."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Ask a grounded question",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "query(...) runs the full retrieve-then-generate path and returns an answer grounded in the loaded documents."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "note",
+          "tone": "warn",
+          "title": "Verify AI-generated RAG code before trusting it",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If an AI assistant writes RAG code for you, it will look plausible but can hide quiet bugs. Check these before you trust an answer:"
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Same embedder both sides? ",
+                    "strong": true
+                  },
+                  {
+                    "text": "Confirm documents and queries use the same embedding model — mismatches make 'nearest' meaningless."
+                  }
+                ],
+                [
+                  {
+                    "text": "Is anything retrieved? ",
+                    "strong": true
+                  },
+                  {
+                    "text": "Print the retrieved chunks. An empty or irrelevant set means the answer is ungrounded even if it sounds confident."
+                  }
+                ],
+                [
+                  {
+                    "text": "Grounding instruction present? ",
+                    "strong": true
+                  },
+                  {
+                    "text": "Check the prompt tells the model to answer only from the passages, and to say 'I don't know' when they don't cover it."
+                  }
+                ],
+                [
+                  {
+                    "text": "Spot-check one answer against the source. ",
+                    "strong": true
+                  },
+                  {
+                    "text": "Open the cited chunk and confirm the answer actually appears there."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Minimal working sketch",
+          "language": "python",
+          "code": "from llama_index.core import VectorStoreIndex, SimpleDirectoryReader\ndocs = SimpleDirectoryReader(\"data\").load_data()\nindex = VectorStoreIndex.from_documents(docs)\nquery_engine = index.as_query_engine()\nprint(query_engine.query(\"What does this corpus say?\"))",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Treat this as the smallest runnable shape. The retrieve-then-generate path is hidden inside as_query_engine(): it embeds the question, fetches the nearest chunks, and feeds them to the model. Add reranking, citations, and tests before production."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Before running it, predict: which single line turns the loaded documents into something searchable by meaning?",
+            "answer": "VectorStoreIndex.from_documents(docs) — it chunks each document and embeds the chunks into a vector store, which is what later makes semantic retrieval possible."
+          },
+          "syntax": [
+            {
+              "part": "SimpleDirectoryReader",
+              "explains": "Loads files."
+            },
+            {
+              "part": "VectorStoreIndex",
+              "explains": "Creates the retrieval index."
+            },
+            {
+              "part": "query_engine",
+              "explains": "Runs grounded questions."
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search"
+          ],
+          "sources": [
+            "canon1",
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "In the sketch, what does index.as_query_engine() set up?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It fine-tunes the language model on the loaded documents.",
+              "correct": false
+            },
+            {
+              "text": "It wires retrieval to generation, so a query embeds, fetches nearest chunks, then answers from them.",
+              "correct": true
+            },
+            {
+              "text": "It deletes the vector index to save memory.",
+              "correct": false
+            }
+          ],
+          "explanation": "The query engine performs the full retrieve-then-generate path: embed the question, find the closest chunks in the index, and pass them to the model to answer. No retraining happens.",
+          "termIds": [
+            "rag",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "When RAG breaks, and how to check it",
+      "sub": "Closes the spine: failure modes and the validation habit.",
+      "summary": "A demo that works once is not a system you can trust. This module covers the common ways RAG fails in practice, then the validation habit and decision that keep it honest before users see the answers.",
+      "objectives": [
+        "After this you'll be able to name the main ways a RAG system fails.",
+        "After this you'll be able to choose a validation check that catches a real failure.",
+        "After this you'll be able to decide when RAG is the wrong tool."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk",
+        "reranker"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "note",
+          "tone": "info",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Before reading on, predict from memory: ",
+                  "strong": true
+                },
+                {
+                  "em": true,
+                  "text": "back in module 2 you saw how retrieval matches by meaning. If retrieval pulls the wrong chunks, what happens to the final answer?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "em": true,
+                  "text": "Answer: the model answers from the wrong evidence and produces a confident but wrong response. That makes retrieval the first thing to inspect when RAG fails — which is exactly the theme of this module."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "How RAG breaks in practice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Most RAG failures are retrieval failures wearing a generation costume. Here are the four that bite most often."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Retrieval misses the answer.",
+                    "strong": true
+                  },
+                  {
+                    "text": " The relevant chunk was never indexed, or chunking split it apart, so the model answers from whatever it got — often wrong."
+                  }
+                ],
+                [
+                  {
+                    "text": "Right chunk, but buried.",
+                    "strong": true
+                  },
+                  {
+                    "text": " The answer is in the retrieved set but ranked low and crowded out by noise. This is exactly what a reranker fixes."
+                  }
+                ],
+                [
+                  {
+                    "text": "Ignored context.",
+                    "strong": true
+                  },
+                  {
+                    "text": " The right chunk is in the prompt, but the model still answers from memory and contradicts it. A grounding instruction and citations help."
+                  }
+                ],
+                [
+                  {
+                    "text": "Stale index (non-obvious).",
+                    "strong": true
+                  },
+                  {
+                    "text": " The documents changed but the vector store was not re-indexed, so retrieval serves outdated evidence with full confidence."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "warn",
+              "spans": [
+                {
+                  "text": "Diagnostic order: ",
+                  "strong": true
+                },
+                {
+                  "text": "when an answer is wrong, look at the retrieved chunks first. If the right chunk isn't there, fix retrieval before touching the prompt or model."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "vector_search",
+            "reranker",
+            "chunk"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_walk",
+          "kind": "walkthrough",
+          "title": "The validation habit for RAG",
+          "steps": [
+            {
+              "label": "Log what was retrieved",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "For every answer, record the chunks that were retrieved and their scores. You can't debug what you can't see."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Build a small eval set",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Collect 20–50 real questions with known-correct source passages. Measure whether the right chunk is retrieved at all (recall) and whether the answer is grounded."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "Require citations",
+              "detail": [
+                {
+                  "t": "p",
+                  "spans": [
+                    {
+                      "text": "Have the model cite the chunk it used. A claim with no supporting chunk is a red flag a reviewer can catch immediately."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionMatrix",
+          "title": "Is RAG the right tool for this problem?",
+          "criteria": [
+            "Fit",
+            "Effort",
+            "Failure risk"
+          ],
+          "options": [
+            {
+              "name": "Use RAG",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Answers must reflect private, large, or changing documents.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Effort",
+                  "text": "Index + retrieve pipeline, but no model training.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure risk",
+                  "text": "Wrong answers usually traceable to retrieval and fixable.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Use when the facts live in documents you control and update over time.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Just prompt the model",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Fine for general knowledge already in training data.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Effort",
+                  "text": "Lowest — no index, no retrieval to build.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Failure risk",
+                  "text": "High for private or fresh facts — it will hallucinate.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use when the answer doesn't depend on your own or recent data.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Fine-tune the model",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Good for fixed style or skills, poor for facts that change.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Effort",
+                  "text": "High — training data, training runs, redo on every change.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Failure risk",
+                  "text": "Stale facts bake in; hard to trace a wrong answer.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use for changing how the model behaves, not for keeping facts current.",
+              "cost": "High",
+              "complexity": "High"
+            }
+          ],
+          "howToRead": "If the facts live in your own changing documents, RAG usually wins: it keeps answers current without retraining and makes wrong answers traceable.",
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_technical",
+          "kind": "technical",
+          "title": "Technical note: measure retrieval, not just answers",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "It's tempting to grade only the final answer, but that hides where things break. Track retrieval separately: for each eval question, did the correct chunk appear in the retrieved set (recall), and how highly was it ranked?"
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "good",
+              "spans": [
+                {
+                  "text": "If retrieval recall is low, no amount of prompt tuning will help — the right evidence never reaches the model."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "A RAG answer is wrong. What should you inspect first?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Swap to a bigger language model and retry.",
+              "correct": false
+            },
+            {
+              "text": "The chunks that were retrieved — check whether the correct evidence was there at all.",
+              "correct": true
+            },
+            {
+              "text": "Rewrite the answer by hand and move on.",
+              "correct": false
+            }
+          ],
+          "explanation": "Most RAG failures are retrieval failures. If the correct chunk was never retrieved, fixing the prompt or model won't help — you fix indexing, chunking, or ranking first.",
+          "termIds": [
+            "rag",
+            "vector_search"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Decide whether to use RAG, just prompt the model, or fine-tune for this problem."
+    }
+  ],
+  "glossary": {
+    "rag": {
+      "id": "rag",
+      "label": "RAG",
+      "laymanDefinition": "Retrieving evidence before generation.",
+      "technicalNote": "In this lesson, RAG is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Retrieval-augmented generation"
+    },
+    "embedding": {
+      "id": "embedding",
+      "label": "Embedding",
+      "laymanDefinition": "Embedding is a core building block in this lesson.",
+      "technicalNote": "In this lesson, Embedding is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "vector_search": {
+      "id": "vector_search",
+      "label": "Vector search",
+      "laymanDefinition": "Vector search is a core building block in this lesson.",
+      "technicalNote": "In this lesson, Vector search is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "chunk": {
+      "id": "chunk",
+      "label": "Chunk",
+      "laymanDefinition": "Chunk is a core building block in this lesson.",
+      "technicalNote": "In this lesson, Chunk is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "reranker": {
+      "id": "reranker",
+      "label": "Reranker",
+      "laymanDefinition": "Reranker is a core building block in this lesson.",
+      "technicalNote": "In this lesson, Reranker is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "rrf": {
+      "id": "rrf",
+      "label": "RRF",
+      "laymanDefinition": "A rank-based method for merging retrieval results.",
+      "technicalNote": "In this lesson, RRF is treated as a boundary that needs evidence, tests, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Reciprocal rank fusion"
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts",
+    "themes": [
+      {
+        "name": "Adoption check",
+        "questions": [
+          {
+            "q": "Do the answers you need depend on your own, private, or frequently-changing documents?",
+            "why": "That is exactly the case RAG is built for; if not, a plain prompt may be enough.",
+            "opts": [
+              "Yes — use RAG",
+              "Partly — prototype first",
+              "No — just prompt the model"
+            ],
+            "rot": "Prefer the smallest retrieval setup that grounds the answers you actually need."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Reconstruct the lesson from memory before you read this. ",
+            "strong": true
+          },
+          {
+            "em": true,
+            "text": "In one breath: what does RAG do, what are its two phases, how does retrieval find the right text, and what's the first thing you check when an answer is wrong?"
+          }
+        ]
+      },
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "If you can answer that, you have it: RAG retrieves relevant chunks (via embeddings + vector search), then the model generates an answer from them. Chunking and reranking tune retrieval quality. When an answer is wrong, inspect the retrieved chunks first — most failures are retrieval failures."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Reference path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "What RAG is",
+          "sub": "Retrieve relevant text, then answer from it.",
+          "what": "RAG looks things up first, then lets the model answer from what it found.",
+          "relevance": "It matters because grounding answers in your own text is the whole point of RAG.",
+          "moduleId": "m1",
+          "layer": "Concept",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m2",
+          "label": "How retrieval works",
+          "sub": "Embeddings + vector search match by meaning.",
+          "what": "Text becomes vectors so similar meanings sit close and can be matched.",
+          "relevance": "It matters because retrieval quality decides whether the model sees the right evidence.",
+          "moduleId": "m2",
+          "layer": "Mechanism",
+          "emphasis": "normal"
+        },
+        {
+          "id": "n_m3",
+          "label": "Chunking and reranking",
+          "sub": "Knobs that shape retrieval quality and cost.",
+          "what": "How you split documents and reorder results changes which evidence reaches the model.",
+          "relevance": "It matters because these are the choices that make or break a real RAG system.",
+          "moduleId": "m3",
+          "layer": "Choices",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m4",
+          "label": "A tiny RAG pipeline",
+          "sub": "Load, index, retrieve, generate in a few lines.",
+          "what": "A few lines that load documents, build a vector index, and answer a grounded question.",
+          "relevance": "It matters because seeing the smallest working shape makes the concept concrete.",
+          "moduleId": "m4",
+          "layer": "Build",
+          "emphasis": "normal"
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Frame the problem (module 1)",
+        "detail": "Confirm the answer must come from your own or changing documents — the case for RAG."
+      },
+      {
+        "step": 2,
+        "label": "Set up retrieval (module 2)",
+        "detail": "Embed the documents and index them so questions can be matched by meaning."
+      },
+      {
+        "step": 3,
+        "label": "Tune chunking and ranking (module 3)",
+        "detail": "Choose a chunk size and decide whether you need a reranker or hybrid search."
+      },
+      {
+        "step": 4,
+        "label": "Wire the pipeline (module 4)",
+        "detail": "Load, index, retrieve, and generate — get the smallest path answering end to end."
+      },
+      {
+        "step": 5,
+        "label": "Validate before trusting (module 5)",
+        "detail": "Log retrieved chunks, build a small eval set, require citations, and watch the failure modes."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_case",
+        "label": "Can you name why this problem needs RAG rather than a plain prompt?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_retrieval",
+        "label": "Did you choose the simplest retrieval design that meets your quality bar?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_validate",
+        "label": "Can you see which chunks were retrieved and check the answer against them?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Build a tiny RAG demo over 5–10 of your own documents: load and index them, retrieve for three real questions, and inspect the retrieved chunks for each answer. Write down one failure you saw and how you'd fix it. Next rung: add a reranker or citations and re-run your three questions to measure the difference.",
+      "scopedTo": "RAG"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Retrieval-Augmented Generation & Vector Search",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Retrieval-Augmented Generation & Vector Search",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LlamaIndex RAG documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "jhalak",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test:media": "node --test tests/gemini-media.test.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.5",
+    "bcryptjs": "^3.0.3",
+    "lucide-react": "^1.25.0",
+    "next": "16.2.11",
+    "pdf-parse": "^1.1.1",
+    "pg": "^8.22.0",
+    "qrcode": "^1.5.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pg": "^8.20.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

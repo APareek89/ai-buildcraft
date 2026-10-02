@@ -1,0 +1,73 @@
+%% Blindspot — BUILD DECISIONS LOG (not a runtime flow)
+%% Records WHAT was chosen at each phase and WHY. Hosted-beta + takeover sync: 2026-07-22.
+%% files: Blindspot-PRD.md, Handoff.MD, packages/core/src/model-registry.ts, packages/core/src/eval/queue.ts, packages/core/src/recommend.ts, apps/dashboard/package.json
+%% granularity: summary
+flowchart TD
+  P0["Phase 0 · Monorepo skeleton — DONE"]:::done
+  P0c["pnpm + Turborepo · Hono gateway · tsx dev · internal packages export raw .ts<br/>WHY: one toolchain, no dev build step, instant HMR; Hono is tiny and edge-portable so the<br/>gateway can later run as N stateless instances (PRD §8)"]:::why
+  P0d["Worker: BullMQ on Redis, runs in-process for local dev until Phase 8<br/>WHY: keep the queue interface from day one so nothing changes later, but no second process to run yet"]:::why
+
+  P05["Phase 0.5 · Postgres schema — DONE"]:::done
+  P05c["Drizzle pg-core · uuid PKs · jsonb for policy_json + evidence_json · pgEnum for statuses<br/>WHY: typed SQL where one schema file drives BOTH migrations and TS types; jsonb keeps<br/>policy/evidence flexible without a migration per tweak"]:::why
+  P05d["Zod lives in packages/shared as the SINGLE source of truth; db imports the inferred types<br/>WHY: gateway validates requests + db shapes rows from the SAME definitions (no drift)"]:::why
+  P05e["Added api_keys (hash + shown-once prefix) beyond §9<br/>WHY: the gateway must map an incoming bs_live_ key → project; never store raw keys"]:::why
+
+  P1["Phase 1 · Gateway routing + adapters + trace — DONE"]:::done
+  P1a["OpenAI-compatible POST /v1/chat/completions; model = route:name<br/>WHY: users just repoint base_url + swap the model string — zero SDK change to adopt (PRD §4)"]:::why
+  P1b["Auth: bs_live_ key → sha256 hash lookup → project; raw key shown once at bootstrap<br/>WHY: a leaked DB never exposes usable keys; standard API-key hygiene"]:::why
+  P1c["BYO provider keys AES-256-GCM at rest; decrypted in-memory per call only<br/>WHY: PRD §5 non-negotiable — user controls spend, zero markup, keys never logged"]:::why
+  P1d["Adapters via Vercel AI SDK v4 — anthropic/openai/google/groq native, HF via OpenAI-compatible baseURL<br/>WHY: one interface for every provider (PRD stack); adding a provider = one switch case"]:::why
+  P1e["Auto-create route from traffic, seed default model as first candidate; NEVER switch an existing<br/>route's live model here<br/>WHY: routes appear automatically (PRD §4 step 2); swaps are approval-gated only (§3)"]:::why
+  P1f["Trace every call: cost (cents) · latency · output<br/>WHY: this is the Observe step; every later eval/drig decision reads these rows (PRD §6)"]:::why
+
+  P2["Phase 2 · Golden sets (upload + agent) — DONE"]:::done
+  P2a["New @blindspot/core package holds domain services (golden, later eval/policy)<br/>WHY: gateway + worker + dashboard all reuse ONE implementation, no logic in HTTP handlers"]:::why
+  P2b["Seed two ways: upload CSV/JSONL (csv-parse + Zod) OR Golden Set Agent via generateObject<br/>WHY: PRD §7 upload-optional — schema-validated agent output means no brittle JSON parsing"]:::why
+  P2c["Versioned sets (nextVersion), full CRUD, promote-a-trace; grow-from-production deferred<br/>WHY: score history stays comparable across versions; curate is the human-in-the-loop control"]:::why
+
+  P3["Phase 3 · Eval engine (LLM-as-judge) — DONE"]:::done
+  P3a["judgeOutput via generateObject (schema-validated verdict); runEval scores every active<br/>golden example then persists an eval_runs row<br/>WHY: reproducible, structured scores; the aggregate row is what policy + drift read"]:::why
+  P3b["enqueueEval: BLINDSPOT_EVAL_MODE=inline explicitly bypasses Redis; otherwise BullMQ<br/>when REDIS_URL is set, inline when absent<br/>WHY: local work can pause Redis without changing production queue wiring"]:::why
+
+  P4["Phase 4 · Recommendations + approvals — DONE"]:::done
+  P4a["Policy = cheapest candidate with latest score >= bar AND cheaper than live; emits a<br/>Recommendation with evidence (scores + cost/latency deltas)<br/>WHY: PRD §3 — evidence-backed proposal, dedup pending recs per target"]:::why
+  P4b["Approve applies only on managed connections; observe-only becomes awaiting rollout;<br/>Reject stores status + reason; auto_approve remains managed-only and default OFF<br/>WHY: Blindspot must not claim it changed a model still owned by the application"]:::why
+  P4c["Phase 7C closed the evidence gap: every evaluated example stores candidate output,<br/>score, criteria, reasoning, issues, latency and candidate/judge cost<br/>WHY: Recommendations and route debugging must show the proof, not only an average"]:::done
+
+  P3fix["🐞 FIX (found via live smoke test): eval scores were ~0.15 because the Golden Set Agent<br/>emitted BARE passages; runEval sent them with no instruction so candidates never did the task<br/>WHY the fix: golden inputs must be SELF-CONTAINED prompts (instruction embedded) — matches a<br/>real app call / promoted trace. After fix: 8B 0.16 → 0.89, and an approved swap flipped the live model"]:::why
+
+  P5["Phase 5 · Drift + CI gate — DONE"]:::done
+  P5a["Drift lanes: operational signals are collected (threshold alerts Phase 8), consented live semantic is planned,<br/>and comparable workflow-replay golden eval is active; simulations are quarantined<br/>WHY: synthetic demo numbers must never become customer decisions"]:::why
+  P5b["Legacy paid drift + CI endpoints return 409 until Phase 8 can consume an approved queued plan<br/>WHY: a second endpoint must never bypass Phase 7C spend authorization"]:::why
+
+  DONE["✅ Historical backend loop VERIFIED LIVE end-to-end; current evidence rules are stricter:<br/>model-only runs shortlist, while production Recommendations require complete protected workflow replay"]:::done
+  P7["Phase 7 · Dashboard (Next.js §10) — DONE"]:::done
+  P7A["Phase 7A · Connect + Observe — DONE"]:::done
+  P7Aa["Observe-only TypeScript SDK + authenticated batch ingestion; metadata-only default<br/>WHY: connect an existing agent without forcing it through Blindspot routing or retaining content"]:::why
+  P7Ab["Observed workflow/node hierarchy links generation nodes to existing Routes; user selects workflows<br/>WHY: ingest proves executed instrumentation, not unobserved static topology or permission to change"]:::why
+  P7Ac["Claude Sonnet 4.6 vs Haiku 4.5 first; HF + Fireworks adapters remain pluggable<br/>WHY: prove the end-to-end decision with gstpilot before widening the catalog"]:::why
+  P7B["Phase 7B · Registry + Compatibility — DONE"]:::done
+  P7Ba["Read-only provider catalog sync stores project-scoped account availability + normalized<br/>capabilities; listing consumes zero inference tokens<br/>WHY: expose only models the user's own account can actually access"]:::why
+  P7Bb["Observed node requirements deterministically gate Sonnet/Haiku; excluded models carry reasons<br/>WHY: technical fit permits an experiment, while quality and spend remain separate later gates"]:::why
+  P7Bc["Adding a compatible candidate does not run an eval or change live_model<br/>WHY: Phase 7C must estimate cost and obtain explicit spend approval before paid work"]:::why
+  P7C["Phase 7C · Quality + Experiment — BUILT + DEPLOYED"]:::done
+  P7Ca["Immutable 30-minute eval plan: full estimate or disclosed SHA-seeded stratified sample;<br/>selected + omitted cases, calls, cost, safety and confidence shown before confirm<br/>WHY: the user owns eval spend and must know exactly what a smaller budget changes"]:::why
+  P7Cb["Confirmation locks the plan once; every real eval requires its route/model/example authorization;<br/>per-example evidence is persisted immediately and incomplete runs cannot recommend<br/>WHY: budget, retry safety and evidence integrity are server-enforced, not UI conventions"]:::why
+  P7Cc["Local mode runs inline with Redis bypassed; Phase 8 owns queued plan handoff, crash recovery,<br/>rate limits, observability and plan-aware CI/drift jobs<br/>WHY: preserve the approved scale architecture without depending on Redis for this prototype"]:::why
+  QA["2026-07-18 · Power Coding QA hardening<br/>Recommendations now require complete same-plan live + candidate evidence; unknown price cannot auto-approve;<br/>critical/high dependency advisories removed without changing the approved stack"]:::done
+  P7D["Phase 7D · Truthful evidence loop — BUILT + DEPLOYED 2026-07-22<br/>observe-only vs managed, protected replay, visible criterion mean, evidence table,<br/>consent-aware golden wizard, real drift lanes and revocable gateway keys"]:::done
+  AUTH["Hosted beta access — BUILT + QA<br/>signed invite, separate recovery/application keys, one secure project-key session<br/>WHY: smooth private beta now; Supabase human identity remains an explicit future decision"]:::done
+  GAP["Next product truth gap<br/>declared topology + dev/production coverage + deterministic node instrumentation<br/>WHY: observed node count must never be mistaken for the complete source workflow"]:::wip
+
+  P0 --> P0c --> P0d --> P05
+  P05 --> P05c --> P05d --> P05e --> P1
+  P1 --> P1a --> P1b --> P1c --> P1d --> P1e --> P1f --> P2
+  P2 --> P2a --> P2b --> P2c --> P3
+  P3 --> P3a --> P3b --> P3fix --> P4
+  P4 --> P4a --> P4b --> P4c --> P5
+  P5 --> P5a --> P5b --> DONE --> P7 --> P7A --> P7Aa --> P7Ab --> P7Ac --> P7B --> P7Ba --> P7Bb --> P7Bc --> P7C --> P7Ca --> P7Cb --> P7Cc --> QA --> P7D --> AUTH --> GAP
+
+  classDef done fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef wip fill:#fef9c3,stroke:#ca8a04,color:#3f2d00;
+  classDef todo fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef why fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;

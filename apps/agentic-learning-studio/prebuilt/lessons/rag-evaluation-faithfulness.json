@@ -1,0 +1,1145 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "RAG Evaluation and Faithfulness",
+    "title": "RAG Evaluation and Faithfulness",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "RAG Evaluation and Faithfulness is practical when learners can apply it to this concrete case: A RAG answer sounds fluent but may include claims not supported by retrieved chunks. By the end, they should be able to build or review faithfulness evaluation rubric with claim-level support checks, measure unsupported claim rate per answer, and catch the failure where the answer is relevant to the question but adds facts outside the evidence."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "RAG Evaluation and Faithfulness",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "RAG Evaluation and Faithfulness: mental map",
+    "caption": "Evaluate retrieval, context support, and final answer faithfulness as separate signals.",
+    "oneLineThesis": "RAG faithfulness means the answer’s claims are supported by the retrieved context; it is not the same as fluency or topical relevance.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Faithfulness is support, not confidence",
+        "sub": "An answer is faithful only if context proves it.",
+        "what": "Learners define faithfulness precisely.",
+        "relevance": "This prevents citation-looking answers from passing without support.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Judge the relationship between generated claims and retrieved evidence.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Evaluate retrieval before generation",
+        "sub": "The answer cannot be faithful to missing evidence.",
+        "what": "Learners measure retrieval separately from final response quality.",
+        "relevance": "This avoids prompt-tuning a system whose retriever missed the source.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Check whether expected sources enter the packed context.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Use judges carefully and keep raw evidence",
+        "sub": "LLM metrics help, but traces keep them honest.",
+        "what": "Learners understand Ragas-style metrics without outsourcing judgment.",
+        "relevance": "Judge scores can drift or hide category-specific failures.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Combine automated scoring with reviewable examples.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Implement a small retrieval eval loop",
+        "sub": "A few cases can catch major regressions.",
+        "what": "Learners write a runnable eval harness.",
+        "relevance": "Code-level evals make RAG changes reviewable and repeatable.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Compute source hit and reciprocal rank before judging prose.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Close the loop with regression thresholds",
+        "sub": "Evaluation matters only if it changes release decisions.",
+        "what": "Learners define release thresholds and failure review.",
+        "relevance": "Without gates, eval reports become decorative and regressions ship.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Turn metrics and examples into gates for RAG changes.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Faithfulness is support, not confidence",
+      "sub": "An answer is faithful only if context proves it.",
+      "summary": "A fluent answer with weak citations is still a RAG failure.",
+      "objectives": [
+        "Define answer faithfulness.",
+        "Separate relevance from support.",
+        "Identify unsupported claims."
+      ],
+      "termIds": [
+        "rag"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Citations are not automatically evidence",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a RAG assistant answers “Enterprise refunds require finance approval,” cites the refund page, but the retrieved chunk only covers standard plans. The citation is real, but it does not support the claim."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Faithfulness asks whether the answer can be derived from the provided context. It is stricter than “the answer sounds right” and different from “the retrieved chunk is on the same topic.”"
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Highlight every factual claim in the answer, then point to the exact retrieved sentence or table cell that supports it."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ],
+          "analogy": "A citation is a receipt only if it lists the item you claim to bought."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Worked claim audit",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer sentence: “Enterprise refunds after 30 days need finance approval.” Retrieved context A says “standard refunds within 30 days.” Context B says “enterprise exceptions require finance approval after 30 days.”"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Only context B supports the sentence. If context B is absent, the faithful answer should say the evidence is insufficient or restrict itself to standard refunds."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Break the answer into factual claims."
+                  }
+                ],
+                [
+                  {
+                    "text": "Map each claim to a retrieved source span."
+                  }
+                ],
+                [
+                  {
+                    "text": "Mark unsupported, contradicted, or overgeneralized claims."
+                  }
+                ],
+                [
+                  {
+                    "text": "Feed failures back to retrieval, prompting, or refusal logic."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ],
+          "personalizedFor": "RAG Evaluation and Faithfulness"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Faithfulness check",
+          "prompt": "A citation is on-topic but lacks the fact stated in the answer. How should it be judged?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Faithful because the URL exists.",
+              "correct": false
+            },
+            {
+              "text": "Unfaithful or unsupported for that claim.",
+              "correct": true
+            },
+            {
+              "text": "Correct because the model sounded confident.",
+              "correct": false
+            }
+          ],
+          "explanation": "Faithfulness depends on support in retrieved context.",
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Evaluate retrieval before generation",
+      "sub": "The answer cannot be faithful to missing evidence.",
+      "summary": "Retrieval metrics diagnose evidence supply.",
+      "objectives": [
+        "Use hit rate, recall at k, MRR, and context precision.",
+        "Measure packed top-k, not only candidate top-k.",
+        "Create expected-source labels."
+      ],
+      "termIds": [
+        "rag"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Retrieval is the evidence supply chain",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A generated answer can fail because the retriever missed the document, ranked it too low, packed noisy context above it, or supplied stale evidence. These are retrieval failures even if the model behaves normally."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Source-based eval cases are powerful: for each query, record which source or fact should appear. Then measure whether it appears inside the actual context window used for generation."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If the correct source appears at rank 18 but the prompt packs 6 chunks, count that as a failure for the shipped app."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ],
+          "analogy": "Do not grade the chef before checking whether the ingredients arrived."
+        },
+        {
+          "id": "m2_worked",
+          "kind": "functionalExample",
+          "title": "Case study: top-20 success, top-6 failure",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A retrieval report shows 92% hit@20, but answers remain wrong. The prompt only packs top 6, and expected sources appear between rank 9 and 15 for policy exception questions."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The fix is reranking or chunking, not a friendlier answer prompt. The metric changes to packed-context hit rate."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Record expected source IDs for each query."
+                  }
+                ],
+                [
+                  {
+                    "text": "Run the production retriever and prompt packer."
+                  }
+                ],
+                [
+                  {
+                    "text": "Measure source presence within packed top-k."
+                  }
+                ],
+                [
+                  {
+                    "text": "Bucket misses by chunking, filters, stale index, or ranking."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ],
+          "personalizedFor": "RAG Evaluation and Faithfulness"
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Retrieval metric",
+          "prompt": "Why can hit@20 overstate quality?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Hit@20 only works for images.",
+              "correct": false
+            },
+            {
+              "text": "The generator may only receive the top few chunks, so rank 20 evidence is invisible.",
+              "correct": true
+            },
+            {
+              "text": "The model automatically reads the whole database.",
+              "correct": false
+            }
+          ],
+          "explanation": "Measure the context the model actually sees.",
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Use judges carefully and keep raw evidence",
+      "sub": "LLM metrics help, but traces keep them honest.",
+      "summary": "Automated evaluation is useful when paired with examples and thresholds.",
+      "objectives": [
+        "Name context precision, recall, response relevancy, and faithfulness.",
+        "Spot judge inconsistency risks.",
+        "Keep traces for manual review."
+      ],
+      "termIds": [
+        "rag"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Metrics are diagnostics, not verdicts from the sky",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Tools such as Ragas provide metrics for context quality, response relevancy, and faithfulness. These metrics are useful for regression checks, especially when paired with a stable evaluation set."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "However, LLM-as-judge scores can vary and may miss policy-sensitive nuance. Keep raw question, retrieved context, answer, references, and judge rationale so humans can inspect high-impact failures."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Track aggregate scores by category; overall improvement can hide regressions in exact-identifier or compliance queries."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ],
+          "analogy": "A judge score is a dashboard light; you still need to open the hood for serious failures."
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "RAG evaluation signals",
+          "criteria": [
+            "Signal",
+            "Best for",
+            "Blind spot"
+          ],
+          "options": [
+            {
+              "name": "Source hit metrics",
+              "cells": [
+                {
+                  "criterion": "Signal",
+                  "text": "Expected source appears in packed top-k.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Best for",
+                  "text": "Retrieval regression.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Blind spot",
+                  "text": "Does not prove the answer used it correctly.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for every retriever change.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Faithfulness judge",
+              "cells": [
+                {
+                  "criterion": "Signal",
+                  "text": "Answer claims supported by context.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Best for",
+                  "text": "Generation grounding.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Blind spot",
+                  "text": "Judge inconsistency and subtle policy nuance.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use with spot checks.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Manual review",
+              "cells": [
+                {
+                  "criterion": "Signal",
+                  "text": "Human checks claim-source support.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Best for",
+                  "text": "High-risk or ambiguous cases.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Blind spot",
+                  "text": "Slower and harder to scale.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for release samples and failures.",
+              "cost": "High",
+              "complexity": "Low"
+            }
+          ],
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Judge caution",
+          "prompt": "What should you keep when using LLM-based faithfulness scoring?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only the final average score.",
+              "correct": false
+            },
+            {
+              "text": "The raw question, retrieved context, answer, references, and rationale for review.",
+              "correct": true
+            },
+            {
+              "text": "Only model latency.",
+              "correct": false
+            }
+          ],
+          "explanation": "Reviewable traces make automated metrics trustworthy.",
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Implement a small retrieval eval loop",
+      "sub": "A few cases can catch major regressions.",
+      "summary": "Start with exact expected-source checks.",
+      "objectives": [
+        "Compute hit@k and reciprocal rank.",
+        "Predict which test fails from retrieved IDs.",
+        "Turn failures into buckets."
+      ],
+      "termIds": [
+        "rag"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "The first eval can be simple",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Before adding complex judges, write a loop that runs production retrieval for known questions and checks expected source IDs. This catches many chunking, filtering, and ranking regressions."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from reranking, compare original and reranked ranks. Evaluation should reveal whether the reranker moved expected evidence into the packed context."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Include negative cases where no source should answer the question."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Source-based retrieval eval",
+          "language": "python",
+          "code": "eval_set = [\n    {\"query\": \"enterprise refund after 30 days\", \"expected\": {\"refund-enterprise\"}},\n    {\"query\": \"how to rotate an API token\", \"expected\": {\"api-token-rotation\"}},\n]\n\nretrieved = {\n    \"enterprise refund after 30 days\": [\"refund-standard\", \"refund-enterprise\", \"billing-faq\"],\n    \"how to rotate an API token\": [\"auth-overview\", \"api-token-rotation\"],\n}\n\ndef reciprocal_rank(hits, expected):\n    for i, source_id in enumerate(hits, start=1):\n        if source_id in expected:\n            return 1 / i\n    return 0\n\nfor case in eval_set:\n    hits = retrieved[case[\"query\"]]\n    print(case[\"query\"], {\n        \"hit_at_3\": bool(set(hits[:3]) & case[\"expected\"]),\n        \"mrr\": reciprocal_rank(hits, case[\"expected\"]),\n    })",
+          "explanation": "This checks whether expected evidence appears and how early it appears, before any model answer is judged.",
+          "predictThenReveal": {
+            "prompt": "Before running it, predict which query has the lower reciprocal rank.",
+            "answer": "The API-token query has MRR 0.5 because the expected source is second; the refund query also has 0.5 in this toy data."
+          },
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Eval harness",
+          "prompt": "What does reciprocal rank capture that hit@k does not?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Whether the answer uses rhyming language.",
+              "correct": false
+            },
+            {
+              "text": "How early the first expected source appears.",
+              "correct": true
+            },
+            {
+              "text": "The number of GPUs in the database.",
+              "correct": false
+            }
+          ],
+          "explanation": "Earlier evidence is more likely to fit into prompt context.",
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Close the loop with regression thresholds",
+      "sub": "Evaluation matters only if it changes release decisions.",
+      "summary": "Faithfulness evaluation should block unsafe retrieval and generation changes.",
+      "objectives": [
+        "Set thresholds for retrieval and faithfulness.",
+        "Review failures by category.",
+        "Use evals after document and model changes."
+      ],
+      "termIds": [
+        "rag"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "A RAG eval is a release contract",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Set thresholds that reflect product risk: packed-context hit rate, faithfulness pass rate, unsupported-claim count, negative-case behavior, and category-specific regressions. Do not rely only on a single average."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Run the suite after source updates, chunking changes, embedding migrations, reranker changes, prompt edits, and framework upgrades. A small, stable suite is better than an impressive report nobody reruns."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every failed eval should point to a fix owner: ingestion, retrieval, generation, validation, or source content."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output with faithfulness evaluation",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Before release, sample answers against these checks."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Each factual claim maps to a retrieved source span."
+                  }
+                ],
+                [
+                  {
+                    "text": "Expected sources appear inside the packed context, not only deep in candidates."
+                  }
+                ],
+                [
+                  {
+                    "text": "Negative cases refuse or qualify instead of inventing facts."
+                  }
+                ],
+                [
+                  {
+                    "text": "Judge scores are spot-checked with raw traces."
+                  }
+                ],
+                [
+                  {
+                    "text": "Failures are bucketed with an owner and rerun after fixes."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Release gate",
+          "prompt": "A prompt edit improves response tone but increases unsupported claims. What should happen?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Ship because tone improved.",
+              "correct": false
+            },
+            {
+              "text": "Block or revise the prompt because faithfulness regressed.",
+              "correct": true
+            },
+            {
+              "text": "Delete the eval suite.",
+              "correct": false
+            }
+          ],
+          "explanation": "Groundedness is a core RAG requirement, not a nice-to-have metric.",
+          "termIds": [
+            "rag"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4"
+      ]
+    }
+  ],
+  "glossary": {
+    "rag": {
+      "id": "rag",
+      "label": "RAG",
+      "laymanDefinition": "Retrieving relevant evidence before generation so answers can be grounded in sources.",
+      "technicalNote": "RAG quality depends on corpus freshness, chunking, embeddings, filters, ranking, citation handling, and faithfulness evaluation.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Retrieval-augmented generation"
+    },
+    "embedding": {
+      "id": "embedding",
+      "label": "Embedding",
+      "laymanDefinition": "A numeric vector representation of text used for semantic comparison.",
+      "technicalNote": "Embedding choices fix dimension, distance metric, query/passage formatting, model version, and migration requirements for retrieval.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "vector_search": {
+      "id": "vector_search",
+      "label": "Vector search",
+      "laymanDefinition": "Finding nearby vectors to retrieve semantically related chunks.",
+      "technicalNote": "Vector search needs metadata filters, recall tests, index tuning, and fallback for exact terms, IDs, and rare phrases.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "chunk": {
+      "id": "chunk",
+      "label": "Chunk",
+      "laymanDefinition": "A source text segment stored and retrieved as a unit.",
+      "technicalNote": "Chunk design balances semantic completeness, citation accuracy, token budget, overlap, metadata, and update/delete behavior.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "reranker": {
+      "id": "reranker",
+      "label": "Reranker",
+      "laymanDefinition": "A second-stage model or method that reorders retrieved candidates by relevance.",
+      "technicalNote": "Rerankers improve top-result precision when candidate recall is adequate, but add latency, cost, and evaluation complexity.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "rrf": {
+      "id": "rrf",
+      "label": "RRF",
+      "laymanDefinition": "A rank-fusion method that merges multiple result lists by reciprocal rank.",
+      "technicalNote": "RRF is useful for hybrid retrieval because it combines lexical and vector rankings without requiring comparable raw scores.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Reciprocal rank fusion"
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for RAG Evaluation and Faithfulness",
+    "themes": [
+      {
+        "name": "RAG evaluation plan",
+        "questions": [
+          {
+            "q": "Which metric or review catches the failure you actually fear?",
+            "why": "Retrieval misses, noisy context, and unsupported generation require different fixes.",
+            "opts": [
+              "Separate retrieval and faithfulness eval",
+              "Judge only final answer tone",
+              "Trust citations if present"
+            ],
+            "rot": "Measure source presence, context support, and answer claims separately before changing the system."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct evaluation by naming query set, expected evidence, retrieval metrics, faithfulness check, negative cases, and regression threshold."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "RAG evaluation path from query to supported answer",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Faithfulness is support, not confidence",
+          "sub": "An answer is faithful only if context proves it.",
+          "what": "Learners define faithfulness precisely.",
+          "relevance": "This prevents citation-looking answers from passing without support.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Judge the relationship between generated claims and retrieved evidence.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Evaluate retrieval before generation",
+          "sub": "The answer cannot be faithful to missing evidence.",
+          "what": "Learners measure retrieval separately from final response quality.",
+          "relevance": "This avoids prompt-tuning a system whose retriever missed the source.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Check whether expected sources enter the packed context.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Use judges carefully and keep raw evidence",
+          "sub": "LLM metrics help, but traces keep them honest.",
+          "what": "Learners understand Ragas-style metrics without outsourcing judgment.",
+          "relevance": "Judge scores can drift or hide category-specific failures.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Combine automated scoring with reviewable examples.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Implement a small retrieval eval loop",
+          "sub": "A few cases can catch major regressions.",
+          "what": "Learners write a runnable eval harness.",
+          "relevance": "Code-level evals make RAG changes reviewable and repeatable.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Compute source hit and reciprocal rank before judging prose.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Close the loop with regression thresholds",
+          "sub": "Evaluation matters only if it changes release decisions.",
+          "what": "Learners define release thresholds and failure review.",
+          "relevance": "Without gates, eval reports become decorative and regressions ship.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Turn metrics and examples into gates for RAG changes.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "shapes"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "proves"
+        }
+      ]
+    },
+    "capstone": {
+      "prompt": "Create an eval sheet with 12 queries: expected source IDs, required facts, negative cases, and a faithfulness review column. Run it before and after one retrieval change. Next rung: add prompt regression tests.",
+      "scopedTo": "RAG Evaluation and Faithfulness"
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Faithfulness is support, not confidence",
+        "detail": "A fluent answer with weak citations is still a RAG failure."
+      },
+      {
+        "step": 2,
+        "label": "Evaluate retrieval before generation",
+        "detail": "Retrieval metrics diagnose evidence supply."
+      },
+      {
+        "step": 3,
+        "label": "Use judges carefully and keep raw evidence",
+        "detail": "Automated evaluation is useful when paired with examples and thresholds."
+      },
+      {
+        "step": 4,
+        "label": "Implement a small retrieval eval loop",
+        "detail": "Start with exact expected-source checks."
+      },
+      {
+        "step": 5,
+        "label": "Close the loop with regression thresholds",
+        "detail": "Faithfulness evaluation should block unsafe retrieval and generation changes."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_problem_anchor",
+        "label": "Can you explain why “Faithfulness is support, not confidence” matters for the running case?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_design_choice",
+        "label": "Did you make the design choice from “Use judges carefully and keep raw evidence” explicit?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_evidence_gate",
+        "label": "Can the capstone be reviewed using “Close the loop with regression thresholds”?",
+        "fromModuleId": "m5"
+      }
+    ]
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Retrieval-Augmented Generation & Vector Search",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Retrieval-Augmented Generation & Vector Search",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LlamaIndex RAG documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    },
+    "kb3": {
+      "id": "kb3",
+      "kind": "kb",
+      "title": "KB: RAG Fundamentals",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-22"
+    },
+    "kb4": {
+      "id": "kb4",
+      "kind": "kb",
+      "title": "KB: Chunking, hybrid retrieval, Graph RAG, and retrieval evaluation notes",
+      "url": "kb/RAG-tooling",
+      "asOfDate": "2026-06-22"
+    },
+    "canon3": {
+      "id": "canon3",
+      "kind": "canonical",
+      "title": "LangChain retrieval concepts",
+      "url": "https://docs.langchain.com/oss/python/langchain/retrieval",
+      "asOfDate": "2026-06-22"
+    },
+    "canon4": {
+      "id": "canon4",
+      "kind": "canonical",
+      "title": "LlamaIndex RAG guide",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-22"
+    },
+    "canon10": {
+      "id": "canon10",
+      "kind": "canonical",
+      "title": "Ragas metrics documentation",
+      "url": "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

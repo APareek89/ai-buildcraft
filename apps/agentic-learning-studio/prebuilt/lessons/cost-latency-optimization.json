@@ -1,0 +1,1150 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Cost and Latency Optimization",
+    "title": "Cost and Latency Optimization",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Cost and Latency Optimization is practical when learners can apply it to this concrete case: A support chatbot must keep p95 latency under two seconds while reducing model spend. By the end, they should be able to build or review cost-latency budget with routing, caching, and fallback rules, measure cost per resolved ticket at target p95 latency, and catch the failure where a cheaper model saves money but triggers retries that cost more overall."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Cost and Latency Optimization",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Cost and Latency Optimization: mental map",
+    "caption": "Compare routing, caching, model choice, and retry policy against one measurable product budget.",
+    "oneLineThesis": "Cost and latency optimization is a release discipline: improve unit economics only when p95 latency, quality, and failure behavior remain inside the budget.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Budget the workflow before touching models",
+        "sub": "Turn a vague spend complaint into a measurable cost, latency, and quality budget.",
+        "what": "A support workflow can only be optimized after the team names the unit of value, the user-visible latency target, and the quality floor.",
+        "relevance": "Define cost per resolved task instead of cost per token alone.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Translate product cost goals into measurable latency and quality constraints."
+      },
+      {
+        "id": "n_m2",
+        "label": "Break latency into queues, cache, and decode",
+        "sub": "Trace the path from request arrival to final answer so the bottleneck has a name.",
+        "what": "Latency optimization starts by decomposing the serving path into route selection, queueing, prefill/cache behavior, decode, tools, and fallback.",
+        "relevance": "Name the moving parts that produce p95 latency.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Decompose user wait time into route, queue, cache, and generation stages."
+      },
+      {
+        "id": "n_m3",
+        "label": "Choose routes, caches, and fallbacks deliberately",
+        "sub": "Compare optimization strategies by quality risk, governance burden, and observability.",
+        "what": "The best route policy is the simplest one that saves money without hiding quality, privacy, or incident-debugging risk.",
+        "relevance": "Compare direct calls, gateways, caches, and self-hosted serving.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Compare optimization choices by savings, quality risk, and auditability."
+      },
+      {
+        "id": "n_m4",
+        "label": "Instrument a policy before celebrating savings",
+        "sub": "Make a small runnable policy check that exposes retries, cache hits, tokens, and p95 latency.",
+        "what": "A cost optimization is not real until a test can show cheaper, fast-enough, still-correct behavior on representative traffic.",
+        "relevance": "Write a minimal routing simulation with trace fields.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Make the optimization measurable with traces, budgets, and failure checks."
+      },
+      {
+        "id": "n_m5",
+        "label": "Ship the savings as a controlled release",
+        "sub": "Turn the lesson into a solo route-policy review and a next-step monitoring habit.",
+        "what": "The synthesis is a release playbook: budget, decompose, choose levers, instrument, compare, and roll back if quality or latency moves.",
+        "relevance": "Recall the optimization loop without notes.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Reconstruct the optimization loop and apply it to a new workflow."
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "comparative"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Budget the workflow before touching models",
+      "sub": "Turn a vague spend complaint into a measurable cost, latency, and quality budget.",
+      "summary": "A support workflow can only be optimized after the team names the unit of value, the user-visible latency target, and the quality floor.",
+      "objectives": [
+        "Define cost per resolved task instead of cost per token alone.",
+        "Separate user wait time from internal retry and fallback work.",
+        "State the quality floor that cost savings are not allowed to cross."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The budget is a product contract",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a support assistant handles billing questions, password resets, and refund edge cases. Finance wants a 35 percent reduction in monthly model spend, but product has promised that 95 percent of answered tickets show the first useful token within two seconds and keep the same resolution quality."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The tempting shortcut is to swap every request to a cheaper model. The disciplined approach is to optimize cost per resolved ticket at the latency target. That metric includes the first attempt, retries, fallback calls, retrieval, tool calls, and any human escalation caused by a weak answer."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Predict before reading on: if the cheap model lowers first-attempt cost but doubles retries, did the system become cheaper or just noisier?"
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Product framing: the budget protects user trust, not just provider invoices."
+                  }
+                ],
+                [
+                  {
+                    "text": "Engineering framing: the budget constrains route policy, cache keys, max tokens, timeouts, and trace fields."
+                  }
+                ],
+                [
+                  {
+                    "text": "Operational framing: every optimization must leave an audit trail showing selected model, cache status, fallback chain, tokens, and latency."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Worked artifact: a support cost budget",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For the running case, write the release budget as a small contract: billing and refund tickets may use the strong model; password resets and status lookups should use a fast small model; repeated policy explanations may use a cache only when tenant, prompt version, policy version, and locale match."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Unit of value: resolved ticket that passes rubric review, not raw response."
+                  }
+                ],
+                [
+                  {
+                    "text": "Latency target: p95 time to first token under two seconds for interactive chat, with batch summaries allowed to queue."
+                  }
+                ],
+                [
+                  {
+                    "text": "Cost guardrail: total cost includes retries, fallbacks, retrieval calls, tool calls, and cache misses."
+                  }
+                ],
+                [
+                  {
+                    "text": "Quality floor: no route can ship unless it passes the same golden set on factuality, tone, escalation behavior, and safety refusals."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ],
+          "personalizedFor": "Support assistant cost review"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Find the real unit cost",
+          "prompt": "Which metric is most useful for the running support assistant?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Average price per million output tokens only.",
+              "correct": false
+            },
+            {
+              "text": "Cost per resolved ticket that meets the latency and quality budget.",
+              "correct": true
+            },
+            {
+              "text": "GPU utilization without ticket outcomes.",
+              "correct": false
+            }
+          ],
+          "explanation": "Token price matters, but the product pays for successful work. Retries and bad escalations can make a cheap token path expensive.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Break latency into queues, cache, and decode",
+      "sub": "Trace the path from request arrival to final answer so the bottleneck has a name.",
+      "summary": "Latency optimization starts by decomposing the serving path into route selection, queueing, prefill/cache behavior, decode, tools, and fallback.",
+      "objectives": [
+        "Name the moving parts that produce p95 latency.",
+        "Explain why cache hits and fallbacks must appear in traces.",
+        "Connect KV or semantic cache behavior to correctness boundaries."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The slow part is rarely just the model",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A single chat turn can cross a gateway, a retrieval service, a model server, a tool, and a fallback provider. The user sees one delay, but the trace should show queue time, route choice, cache lookup, prefill, decode, tool time, and retry time as separate spans."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Two framings help. The product framing asks, \"Where did the user wait?\" The systems framing asks, \"Which resource was saturated or repeated?\" If queue age is high, adding a cheaper model will not help. If decode is slow, shorter answers or smaller models may help. If prefill dominates, prompt caching or context trimming may help."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "warn",
+              "spans": [
+                {
+                  "text": "KV cache accelerates token processing inside a serving engine; semantic cache reuses prior answers. Confusing the two leads to unsafe cache policy."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Latency levers and the failure they hide",
+          "criteria": [
+            "Lever",
+            "What it improves",
+            "Failure to test"
+          ],
+          "options": [
+            {
+              "name": "Route tiering",
+              "cells": [
+                {
+                  "criterion": "Lever",
+                  "text": "Route easy requests to cheaper or faster models",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it improves",
+                  "text": "Cost and median latency",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure to test",
+                  "text": "Misrouted hard tickets or weaker policy handling",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use after labeling request types with a golden set.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Prefix or prompt cache",
+              "cells": [
+                {
+                  "criterion": "Lever",
+                  "text": "Reuse stable prompt prefixes or exact responses",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it improves",
+                  "text": "Prefill time and repeated-call cost",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure to test",
+                  "text": "Stale, cross-tenant, or wrong-policy answers",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when prompts share stable system and document prefixes.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Retry budget",
+              "cells": [
+                {
+                  "criterion": "Lever",
+                  "text": "Limit automatic retries and fallback chains",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it improves",
+                  "text": "Tail latency and runaway spend",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure to test",
+                  "text": "Provider blips turn into user-visible failures too quickly",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use whenever agent loops or tools can trigger repeated calls.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_trace",
+          "kind": "functionalExample",
+          "title": "Trace slice from one slow ticket",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A refund question misses semantic cache, waits 620 ms in the gateway queue, spends 900 ms in retrieval and reranking, then streams from the strong model after 1.7 seconds. The answer is good, but the first useful token arrives late. The fix is not \"use a cheaper model\"; first split refund traffic from batch jobs, cap retrieval top-k, and test whether stable policy text can be prefix cached."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This repeats the earlier budget idea: optimize the path that violates the product contract, not the component with the most visible bill."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2",
+            "canon2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb2",
+        "canon2",
+        "kb1",
+        "canon1"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Choose routes, caches, and fallbacks deliberately",
+      "sub": "Compare optimization strategies by quality risk, governance burden, and observability.",
+      "summary": "The best route policy is the simplest one that saves money without hiding quality, privacy, or incident-debugging risk.",
+      "objectives": [
+        "Compare direct calls, gateways, caches, and self-hosted serving.",
+        "Identify when fallbacks change product behavior.",
+        "Design cache keys that respect tenant and policy boundaries."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Savings are not interchangeable",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A gateway policy, a semantic cache, and a self-hosted vLLM endpoint can all reduce cost, but they move risk to different places. The gateway centralizes model choice and budgets. The cache adds correctness and privacy questions. Self-hosting trades provider margin for GPU operations and utilization risk."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The useful question is not \"Which is cheapest?\" It is \"Which lever saves money on this workload while preserving evidence?\" For support, a cache may work for stable policy explanations; route tiering may work for password resets; strong-model fallback may remain necessary for refunds and legal language."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m3_policy",
+          "kind": "functionalExample",
+          "title": "Worked route policy for three ticket classes",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Password reset: small fast model, max 250 output tokens, no fallback unless the tool call fails. Billing status: small model plus account lookup, fallback to strong model only when the tool response is ambiguous. Refund exception: strong model first, retrieval over current policy, and no semantic cache because the answer depends on customer state."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The same policy records `route_version=2026-06-support-v3`, selected provider, cache hit, retry count, and final model. During review, finance can see savings and support leads can inspect quality regressions by ticket class."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ],
+          "personalizedFor": "Gateway policy review"
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Choose the cheapest path that still produces reviewable evidence for the same task class.",
+          "useWhen": "Use route tiering when request classes are stable, eval coverage is strong, and traces can prove which route answered.",
+          "avoidWhen": "Avoid semantic cache or fallback chains when prompts contain tenant-specific facts, legal commitments, or untested policy changes.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Cost and Latency Optimization: baseline, production design, or advanced optimization."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Instrument a policy before celebrating savings",
+      "sub": "Make a small runnable policy check that exposes retries, cache hits, tokens, and p95 latency.",
+      "summary": "A cost optimization is not real until a test can show cheaper, fast-enough, still-correct behavior on representative traffic.",
+      "objectives": [
+        "Write a minimal routing simulation with trace fields.",
+        "Predict how retries can erase savings.",
+        "Use a checklist to verify AI-generated optimization plans."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Simulate route cost with retry penalties",
+          "language": "python",
+          "code": "requests = [\n    {\"kind\": \"reset\", \"tokens\": 500, \"needs_strong\": False},\n    {\"kind\": \"refund\", \"tokens\": 1600, \"needs_strong\": True},\n    {\"kind\": \"policy\", \"tokens\": 900, \"needs_strong\": False},\n]\nprice = {\"small\": 0.15, \"strong\": 2.50}  # dollars per 1M tokens\nretry_rate = {\"small\": 0.18, \"strong\": 0.03}\n\ndef route(req):\n    if req[\"needs_strong\"]:\n        return \"strong\"\n    return \"small\"\n\ntotal = 0\nfor req in requests:\n    model = route(req)\n    first_try = req[\"tokens\"] * price[model] / 1_000_000\n    expected_retry = first_try * retry_rate[model]\n    total += first_try + expected_retry\n    print(req[\"kind\"], {\"model\": model, \"expected_cost\": round(first_try + expected_retry, 6)})\nprint({\"expected_batch_cost\": round(total, 6)})",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This toy calculation is not a production cost model; it forces the missing question into view. A route that looks cheap on first attempt can become expensive when retry probability and fallback tokens are counted."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "If the small model has a very high retry rate on policy questions, what changes first: token price, route policy, or trace fields?",
+            "answer": "Route policy changes first. Trace fields should already expose the retry problem; token price alone cannot fix a path that often fails and repeats work."
+          },
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify an AI-generated optimization plan",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When an AI assistant proposes a cost plan, review it like a release artifact. It should identify the user-visible latency budget, the traffic classes, the quality metric, the expected savings, and the measurements that prove retries did not erase the savings."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Does every route record requested model, response model, provider, tenant, cache status, retry count, token usage, and latency?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Do cache keys include tenant, model family, prompt version, policy version, locale, and user-specific data boundaries?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does the eval compare old and new policies on the same examples, including hard refusals and escalation cases?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Is there a rollback switch for route policy and cache policy separately?"
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Catch the fake saving",
+          "prompt": "A cheaper route cuts first-attempt cost by 40 percent but doubles retries and escalations. What should the team do?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Ship because token price went down.",
+              "correct": false
+            },
+            {
+              "text": "Count retries and quality failures in the budget before shipping the route.",
+              "correct": true
+            },
+            {
+              "text": "Disable tracing to avoid noisy data.",
+              "correct": false
+            }
+          ],
+          "explanation": "Cost optimization is valid only when total workflow cost and quality stay inside the release budget.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "kb2",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Ship the savings as a controlled release",
+      "sub": "Turn the lesson into a solo route-policy review and a next-step monitoring habit.",
+      "summary": "The synthesis is a release playbook: budget, decompose, choose levers, instrument, compare, and roll back if quality or latency moves.",
+      "objectives": [
+        "Recall the optimization loop without notes.",
+        "Write a retrieval prompt that reconstructs the lesson.",
+        "Plan a small capstone route-policy experiment."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "conceptual",
+          "title": "Retrieval prompt for the whole lesson",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Close the lesson by answering this from memory: \"For a support assistant with a fixed p95 target, how do I reduce cost without hiding worse quality?\" A strong answer should mention unit-of-value budgeting, latency decomposition, route tiers, cache boundaries, retry budgets, traces, and rollback."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: connect this back to module 1. The budget was not dollars alone; it was cost per resolved ticket at an agreed latency and quality floor. Every later lever exists to protect that first sentence."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Treat cost savings as a release candidate, not a spreadsheet victory.",
+          "useWhen": "Use the new policy when evals pass, traces show the right route evidence, and p95 latency plus total cost improve together.",
+          "avoidWhen": "Avoid shipping if savings depend on hidden fallbacks, unsafe cache reuse, missing tenant labels, or a quality metric that excludes hard cases.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m5_capstone",
+          "kind": "functionalExample",
+          "title": "Capstone: route one real workflow",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Pick one workflow with at least 30 representative examples. Label each request class, propose a small/strong/cache route, define the rollback switch, and run old policy versus new policy on the same examples. Report cost per resolved task, p95 time to first token, failure rate, and the three worst regressions."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Next rung: connect this release habit to monitoring model drift and quality, where the question becomes whether the optimized policy stays good after traffic changes."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ],
+          "personalizedFor": "Solo cost policy review"
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Cost and Latency Optimization: baseline, production design, or advanced optimization."
+    }
+  ],
+  "glossary": {
+    "gpu": {
+      "id": "gpu",
+      "label": "GPU",
+      "laymanDefinition": "The accelerator that runs the expensive model path.",
+      "technicalNote": "In cost work, GPU time is a budget line tied to queue depth, batch shape, cache reuse, and tokens generated, not just instance price.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Graphics processing unit"
+    },
+    "serving": {
+      "id": "serving",
+      "label": "Serving",
+      "laymanDefinition": "The runtime path that turns requests into model outputs.",
+      "technicalNote": "Serving choices such as hosted API, vLLM, TGI, or local endpoints determine warmup, batching, model limits, and cost attribution.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "gateway": {
+      "id": "gateway",
+      "label": "Gateway",
+      "laymanDefinition": "The policy layer that decides which model path each request uses.",
+      "technicalNote": "A gateway is where routing tiers, retries, fallbacks, semantic cache policy, virtual keys, and tenant budgets can be enforced consistently.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "latency": {
+      "id": "latency",
+      "label": "Latency",
+      "laymanDefinition": "The waiting time users feel from request to useful answer.",
+      "technicalNote": "Split latency into queue time, time to first token, decode time, tool time, and fallback time so optimization targets the real bottleneck.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "throughput": {
+      "id": "throughput",
+      "label": "Throughput",
+      "laymanDefinition": "How much useful work the system completes per unit time.",
+      "technicalNote": "Throughput is only a win when it preserves the interactive p95 target and does not increase retries, truncation, or low-quality answers.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "versioning": {
+      "id": "versioning",
+      "label": "Versioning",
+      "laymanDefinition": "Pinning the prompt, route, cache policy, and model mix used for a release.",
+      "technicalNote": "Cost experiments need versioned policies so a cheaper month can be traced back to the route, fallback, and cache settings that produced it.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Cost and Latency Optimization",
+    "themes": [
+      {
+        "name": "Release-readiness check",
+        "questions": [
+          {
+            "q": "What decision does Cost and Latency Optimization change for this case?",
+            "why": "A good lesson changes how the learner builds, reviews, or ships cost-latency budget with routing, caching, and fallback rules.",
+            "opts": [
+              "Thin slice",
+              "Production path",
+              "Advanced optimization"
+            ],
+            "rot": "Choose the smallest option that catches: a cheaper model saves money but triggers retries that cost more overall."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct the cost-and-latency release loop: define cost per resolved task, split latency into traceable stages, choose routes and caches by risk, instrument retries and fallbacks, then ship only when quality and p95 latency stay inside budget."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Cost and Latency Optimization operating path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Budget the workflow before touching models",
+          "sub": "Turn a vague spend complaint into a measurable cost, latency, and quality budget.",
+          "what": "A support workflow can only be optimized after the team names the unit of value, the user-visible latency target, and the quality floor.",
+          "relevance": "Define cost per resolved task instead of cost per token alone.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Translate product cost goals into measurable latency and quality constraints."
+        },
+        {
+          "id": "n_m2",
+          "label": "Break latency into queues, cache, and decode",
+          "sub": "Trace the path from request arrival to final answer so the bottleneck has a name.",
+          "what": "Latency optimization starts by decomposing the serving path into route selection, queueing, prefill/cache behavior, decode, tools, and fallback.",
+          "relevance": "Name the moving parts that produce p95 latency.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Decompose user wait time into route, queue, cache, and generation stages."
+        },
+        {
+          "id": "n_m3",
+          "label": "Choose routes, caches, and fallbacks deliberately",
+          "sub": "Compare optimization strategies by quality risk, governance burden, and observability.",
+          "what": "The best route policy is the simplest one that saves money without hiding quality, privacy, or incident-debugging risk.",
+          "relevance": "Compare direct calls, gateways, caches, and self-hosted serving.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Compare optimization choices by savings, quality risk, and auditability."
+        },
+        {
+          "id": "n_m4",
+          "label": "Instrument a policy before celebrating savings",
+          "sub": "Make a small runnable policy check that exposes retries, cache hits, tokens, and p95 latency.",
+          "what": "A cost optimization is not real until a test can show cheaper, fast-enough, still-correct behavior on representative traffic.",
+          "relevance": "Write a minimal routing simulation with trace fields.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Make the optimization measurable with traces, budgets, and failure checks."
+        },
+        {
+          "id": "n_m5",
+          "label": "Ship the savings as a controlled release",
+          "sub": "Turn the lesson into a solo route-policy review and a next-step monitoring habit.",
+          "what": "The synthesis is a release playbook: budget, decompose, choose levers, instrument, compare, and roll back if quality or latency moves.",
+          "relevance": "Recall the optimization loop without notes.",
+          "moduleId": "m5",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Reconstruct the optimization loop and apply it to a new workflow."
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Budget the workflow before touching models",
+        "detail": "Turn a vague spend complaint into a measurable cost, latency, and quality budget."
+      },
+      {
+        "step": 2,
+        "label": "Break latency into queues, cache, and decode",
+        "detail": "Trace the path from request arrival to final answer so the bottleneck has a name."
+      },
+      {
+        "step": 3,
+        "label": "Choose routes, caches, and fallbacks deliberately",
+        "detail": "Compare optimization strategies by quality risk, governance burden, and observability."
+      },
+      {
+        "step": 4,
+        "label": "Instrument a policy before celebrating savings",
+        "detail": "Make a small runnable policy check that exposes retries, cache hits, tokens, and p95 latency."
+      },
+      {
+        "step": 5,
+        "label": "Ship the savings as a controlled release",
+        "detail": "Turn the lesson into a solo route-policy review and a next-step monitoring habit."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_contract",
+        "label": "Can you name the unit of value, latency target, quality floor, and total workflow cost?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_flow",
+        "label": "Can the trace separate route choice, queue time, cache behavior, generation, tools, retries, and fallback?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_choice",
+        "label": "Does each route or cache rule state where it is allowed and where it is unsafe?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_verify",
+        "label": "Can the eval prove that cheaper paths did not increase retries, escalations, or policy failures?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_next",
+        "label": "Is rollback possible for route policy and cache policy independently?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a one-page release-ready plan for cost-latency budget with routing, caching, and fallback rules. Include: the user problem, realistic input, mechanism, design choice, runnable or reviewable check, metric (cost per resolved ticket at target p95 latency), failure case (a cheaper model saves money but triggers retries that cost more overall), owner, and the next rung after this lesson.",
+      "scopedTo": "Cost and Latency Optimization"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: LLM Gateways and Routing: LiteLLM and OpenRouter",
+      "url": "https://docs.litellm.ai/docs/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB: Deployment, Scaling, KV Cache, and Semantic Caching",
+      "url": "https://github.com/open-telemetry/semantic-conventions-genai",
+      "asOfDate": "2026-06-22"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LiteLLM routing, caching, and cost tracking docs",
+      "url": "https://docs.litellm.ai/docs/",
+      "asOfDate": "2026-06-23"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "OpenTelemetry GenAI semantic conventions",
+      "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

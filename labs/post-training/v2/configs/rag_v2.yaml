@@ -1,0 +1,86 @@
+# v2 copy of ../configs/rag.yaml. Only cache.directory and max_uncached_batches differ. Used by v2/scripts only.
+index_name: meridian_bge_small_v1
+corpus:
+  paths: [data/raw/*.md]
+  fact_labels: data/raw/facts.json
+chunking:
+  strategy: heading
+  chunk_tokens: 220
+  overlap_tokens: 40
+  add_context_header: true
+  approximation_tokenizer: null   # null = the base model from configs/config.yaml
+embedding:
+  model_id: BAAI/bge-small-en-v1.5
+  revision: 5c38ec7c405ec4b44b94cc5a9bb96e735b38267a
+  dimensions: 384
+  normalize: true
+  pooling: cls
+  query_instruction: 'Represent this sentence for searching relevant passages: '
+  max_input_tokens: 512
+  limit_doc_url: https://huggingface.co/BAAI/bge-small-en-v1.5
+  batch_size: 16
+  device: auto
+rerank:
+  enabled: true
+  model_id: BAAI/bge-reranker-base
+  revision: 2cfc18c9415c912f9d8155881c133215df768a70
+  max_input_tokens: 512
+  query_token_reserve: 64
+  limit_doc_url: https://huggingface.co/BAAI/bge-reranker-base
+  batch_size: 8
+  device: auto
+database:
+  dsn: postgresql:///meridian_rag
+  hnsw:
+    m: 16
+    ef_construction: 64
+    ef_search: 100
+retrieval:
+  top_n_candidates: 10
+  top_k: 3
+  min_rerank_score: null
+  hybrid:
+    enabled: false
+    rrf_k: 60
+cache:
+  directory: v2/runs/rag_cache   # relative to the repository root
+  max_uncached_batches: 60000
+  tag: local-bge-v1
+adapter_merge:
+  # Notebook 12 folds both independent LoRA deltas into a fresh copy of the base.
+  # Each delta is included once (coefficient 1); this does not train SFT after CPT.
+  enabled: true
+  target_model: cpt_sft_merged
+  source_models: [cpt, sft]
+evaluation:
+  registry_path: configs/model_comparison.yaml
+  selected_models: [base, cpt, sft, cpt_sft_merged]
+  # RAG-only entry: a full base + CPT + SFT additive merge built by notebook 12.
+  model_overrides:
+    cpt_sft_merged:
+      kind: local_merged
+      label: 'Base + CPT + SFT (additive merge)'
+      base_path: models/cpt_sft_additive
+      tokenizer_path: models/cpt_sft_additive
+      composition: 'W_base + delta_CPT + delta_SFT; independently trained adapters'
+  named_model_runs:
+    cpt: '12_RAG+CPT'
+    sft: '13_RAG+SFT'
+    cpt_sft_merged: '14_RAG+CPT+SFT'
+  conditions: [all_docs, rag_similarity, rag_rerank, oracle]
+  max_questions: null
+  run: false
+  max_api_calls: 500
+  max_new_tokens: 160
+  max_input_tokens: 3072
+  # Historical settings differ or are missing; display separately from matched deltas.
+  historical_all_docs:
+    base: runs/03_stock_with_docs.json
+    cpt: runs/06_cpt_session_eval_with_docs.json
+  reuse_verified_history: true
+  cache_tag: bge-rag-v1
+  output_prefix: '12_rag'
+prices:
+  # Local embedding/reranking have no provider request charge. Hardware/electricity excluded.
+  api_input_per_million: null
+  api_output_per_million: null

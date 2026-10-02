@@ -1,0 +1,962 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Build an Evaluation Harness with promptfoo",
+    "title": "Build an Evaluation Harness with promptfoo",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Build an Evaluation Harness with promptfoo is practical when learners can apply it to this concrete case: A policy-answering bot changed prompts and the team needs to catch regressions before release. By the end, they should be able to build or review Promptfoo-style eval suite with golden cases and assertions, measure regression failures caught before deployment, and catch the failure where a prompt update improves tone but drops required policy citations."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Build an Evaluation Harness with promptfoo",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Build an Evaluation Harness with promptfoo: mental map",
+    "caption": "Build a promptfoo harness around the real app path: contract, target, cases, assertions, CI, and triage.",
+    "oneLineThesis": "A promptfoo harness is useful when it tests the system users will hit, not a toy prompt path beside it.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Write the harness contract and file layout",
+        "sub": "Make the eval target reviewable before adding cases.",
+        "what": "Learners create a concrete harness artifact instead of an eval idea.",
+        "relevance": "This prevents scattered tests that nobody can rerun.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Lay out the promptfoo project and the release question it answers.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Connect promptfoo to the real app path",
+        "sub": "Test the same routing, retrieval, and formatting users rely on.",
+        "what": "Learners connect promptfoo to product behavior.",
+        "relevance": "This catches regressions that a standalone prompt test would miss.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Wire the harness target to the policy-answering endpoint or function.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Encode golden cases and assertions",
+        "sub": "Cases should make expected behavior machine-checkable.",
+        "what": "Learners create cases that are clear enough for CI and humans.",
+        "relevance": "This prevents vague evals that cannot explain failures.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Translate policy scenarios into cases with assertions and metadata.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Run, inspect, and fail CI on regressions",
+        "sub": "The harness should produce a clear failure story.",
+        "what": "Learners implement the part that turns eval cases into release behavior.",
+        "relevance": "This makes failures visible before deployment.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Run the harness and make missing citations fail the release.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Promote failures and tune thresholds",
+        "sub": "A harness stays useful only if the dataset evolves carefully.",
+        "what": "Learners maintain the promptfoo harness as product behavior changes.",
+        "relevance": "This prevents eval rot and baseline worship.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Close the build with promotion, waiver, and threshold rules.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "feeds"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "runs"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "maintains"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Write the harness contract and file layout",
+      "sub": "Make the eval target reviewable before adding cases.",
+      "summary": "The build starts with files, owners, and release questions.",
+      "objectives": [
+        "Define what the harness must prove.",
+        "Choose a small file layout for prompts, cases, and config.",
+        "Set pass/fail behavior before writing assertions."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "A harness is a release artifact",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a policy-answering bot changed prompts and now might drop required citations. The team needs a harness that can be run in a pull request, not a notebook owned by one engineer."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The first artifact is a small repository layout: promptfooconfig.yaml, prompts/policy_v1.txt, prompts/policy_v2.txt, cases/refunds.yaml, scripts/app_target.ts, and docs/eval-triage.md. The contract says what the harness proves: grounded answers, required citations, safe refusals, stable JSON, and acceptable cost."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_promptfoo_intro",
+            "kb_eval_frameworks",
+            "kb_regression_testing"
+          ]
+        },
+        {
+          "id": "m1_layout",
+          "kind": "functionalExample",
+          "title": "Worked file layout for the policy bot",
+          "body": [
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "prompts/ stores candidate prompt templates."
+                  }
+                ],
+                [
+                  {
+                    "text": "cases/ stores user inputs, fixtures, expected behavior, and slice metadata."
+                  }
+                ],
+                [
+                  {
+                    "text": "scripts/app_target.ts calls the real answer path with fixtures."
+                  }
+                ],
+                [
+                  {
+                    "text": "promptfooconfig.yaml declares providers, prompts, tests, and assertions."
+                  }
+                ],
+                [
+                  {
+                    "text": "docs/eval-triage.md says who owns failures and waivers."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_promptfoo_intro",
+            "kb_regression_testing"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Harness artifact",
+          "prompt": "What makes an eval harness reviewable?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A one-off notebook screenshot.",
+              "correct": false
+            },
+            {
+              "text": "A clear file layout, target behavior, owners, and rerunnable command.",
+              "correct": true
+            },
+            {
+              "text": "Only a vague helpfulness rubric.",
+              "correct": false
+            }
+          ],
+          "explanation": "A harness should be rerunnable by the team and tied to release decisions.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_regression_testing"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_promptfoo_intro",
+        "kb_eval_frameworks",
+        "kb_regression_testing"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Connect promptfoo to the real app path",
+      "sub": "Test the same routing, retrieval, and formatting users rely on.",
+      "summary": "The target should call the app boundary or a faithful fixture-backed slice.",
+      "objectives": [
+        "Choose between direct provider prompts and custom app targets.",
+        "Use fixtures for retrieval and account state.",
+        "Avoid testing a prompt path that production never uses."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The target is the realism dial",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "promptfoo can compare prompts directly, but a product harness often needs to call the real app path: route classification, retrieval fixtures, prompt rendering, model call, output parser, and citation validator. If production adds citations after the model call, a direct prompt-only eval may miss the broken formatter."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_promptfoo_intro",
+            "kb_eval_frameworks"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Fixture-backed target for repeatability",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For the policy bot, freeze retrieval to two markdown snippets and account_state=outside_refund_window. The target function receives the test vars, loads those fixtures, calls the same answer builder used by the app, and returns the final JSON. This preserves realism while avoiding live database drift during CI."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_regression_testing"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_promptfoo_intro",
+        "kb_eval_frameworks",
+        "kb_regression_testing"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Encode golden cases and assertions",
+      "sub": "Cases should make expected behavior machine-checkable.",
+      "summary": "The core harness is a set of golden cases with hard and semantic checks.",
+      "objectives": [
+        "Write golden cases with vars, fixtures, and metadata.",
+        "Pair each case with deterministic assertions.",
+        "Add one rubric for quality after hard checks."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Goldens are product expectations in miniature",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A golden case is not just an input. It states the setup, expected behavior, protected risk, and pass conditions. In the policy bot, a golden case can say: outside_refund_window, policy_source=refunds#45, expected_decision=deny, citation_required=true, escalation_allowed=true."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_regression_testing",
+            "canon_promptfoo_intro"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Golden case coverage plan",
+          "criteria": [
+            "Slice",
+            "Required assertion",
+            "Risk protected"
+          ],
+          "options": [
+            {
+              "name": "Eligible refund",
+              "cells": [
+                {
+                  "criterion": "Slice",
+                  "text": "Eligible refund",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Required assertion",
+                  "text": "decision approve plus citation",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk protected",
+                  "text": "overly cautious denial",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Happy path must still work.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Outside window",
+              "cells": [
+                {
+                  "criterion": "Slice",
+                  "text": "Outside window",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Required assertion",
+                  "text": "deny automatic refund and cite policy",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk protected",
+                  "text": "unauthorized promise",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Critical policy boundary.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Missing account state",
+              "cells": [
+                {
+                  "criterion": "Slice",
+                  "text": "Missing account state",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Required assertion",
+                  "text": "ask for review or tool result",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk protected",
+                  "text": "invented account facts",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Incomplete context.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Injection attempt",
+              "cells": [
+                {
+                  "criterion": "Slice",
+                  "text": "Injection attempt",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Required assertion",
+                  "text": "forbidden action absent",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk protected",
+                  "text": "user instruction overrides policy",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Untrusted user text.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_regression_testing"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_regression_testing",
+        "canon_promptfoo_intro"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Run, inspect, and fail CI on regressions",
+      "sub": "The harness should produce a clear failure story.",
+      "summary": "A CI eval needs deterministic output, budget limits, and actionable failure reports.",
+      "objectives": [
+        "Read a small assertion script used by promptfoo.",
+        "Predict a failing case from a missing citation.",
+        "Add a verify-AI checklist for generated harnesses."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Custom assertion helper for harness output",
+          "language": "javascript",
+          "code": "function assertPolicyAnswer(output, context) {\n  const parsed = typeof output === 'string' ? JSON.parse(output) : output;\n  const errors = [];\n\n  if (!['approve', 'deny', 'escalate'].includes(parsed.decision)) {\n    errors.push('decision must be approve, deny, or escalate');\n  }\n  if (context.vars.citation_required && (!parsed.citations || parsed.citations.length === 0)) {\n    errors.push('missing required citation');\n  }\n  if (context.vars.slice === 'outside_refund_window' && parsed.decision === 'approve') {\n    errors.push('outside-window case cannot approve automatic refund');\n  }\n\n  return errors.length === 0\n    ? { pass: true, score: 1 }\n    : { pass: false, score: 0, reason: errors.join('; ') };\n}\n\nmodule.exports = assertPolicyAnswer;",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This kind of helper can be referenced from a promptfoo assertion. It makes product rules explicit instead of hoping a broad rubric catches them."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the returned reason for an outside_refund_window case with decision=\"approve\" and no citations.",
+            "answer": "The helper fails with two reasons: missing required citation and outside-window case cannot approve automatic refund. That is the release-blocking behavior the harness exists to catch."
+          },
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_promptfoo_intro",
+            "kb_regression_testing"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify the AI-generated harness",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: the CI command uses the intended config; custom assertion files are committed with tests; fixture data is stable; failures include case ID and slice; model/provider names are pinned for the run; cost budget is explicit; and critical failures block release rather than only printing a report."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_regression_testing"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_promptfoo_intro",
+        "kb_regression_testing"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Promote failures and tune thresholds",
+      "sub": "A harness stays useful only if the dataset evolves carefully.",
+      "summary": "The maintenance loop turns incidents into cases and stale cases into reviewed changes.",
+      "objectives": [
+        "Promote production failures into goldens.",
+        "Update thresholds with dated rationale.",
+        "Avoid overfitting the prompt to the current test pack."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The harness is a living release gate",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When a production incident appears, add the smallest redacted case that would have caught it. When product policy changes, update expected behavior with date, owner, and rationale. When an LLM judge is flaky, tighten the rubric, add a hard check, or quarantine the case with an expiry date."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The harness should not overfit prompts to six examples. Keep slices broad enough to protect behavior, and rotate in production-derived cases so the suite keeps matching reality."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_regression_testing",
+            "canon_promptfoo_intro"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "A passing harness is evidence for this release, not proof of universal quality.",
+          "useWhen": "Use it to block known regressions, compare release candidates, and document risk acceptance.",
+          "avoidWhen": "Avoid treating a small golden set as a benchmark or ignoring failures because they are inconvenient.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_regression_testing"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Harness maintenance",
+          "prompt": "What should happen after a production failure that the harness missed?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Delete similar tests because they were incomplete.",
+              "correct": false
+            },
+            {
+              "text": "Add a minimal redacted case that would have caught the failure.",
+              "correct": true
+            },
+            {
+              "text": "Only increase the model temperature.",
+              "correct": false
+            }
+          ],
+          "explanation": "Missed incidents are raw material for better regression coverage.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_regression_testing"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_regression_testing",
+        "canon_promptfoo_intro"
+      ]
+    }
+  ],
+  "glossary": {
+    "prototype": {
+      "id": "prototype",
+      "label": "Prototype",
+      "laymanDefinition": "A narrow build slice that proves one behavior before full production hardening.",
+      "technicalNote": "A prototype should include the smallest runnable path, its failure test, and the evidence needed to decide the next build step.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_promptfoo_intro"
+      ]
+    },
+    "retriever": {
+      "id": "retriever",
+      "label": "Retriever",
+      "laymanDefinition": "A component that selects candidate context or records for a question.",
+      "technicalNote": "Retrievers need source IDs, filters, top-k choices, and evaluation because missing evidence changes every downstream answer.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_promptfoo_intro"
+      ]
+    },
+    "validator": {
+      "id": "validator",
+      "label": "Validator",
+      "laymanDefinition": "A deterministic or model-assisted check that accepts, rejects, or repairs an output.",
+      "technicalNote": "Validators protect contracts such as schema, citations, allowed tools, approval rules, and safety policy.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_promptfoo_intro"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A structured record of one run, including spans, inputs, outputs, metadata, and scores.",
+      "technicalNote": "Traces make failures diagnosable by showing which retrieval, model, tool, or scoring step produced the result.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_promptfoo_intro"
+      ]
+    },
+    "deployment": {
+      "id": "deployment",
+      "label": "Deployment",
+      "laymanDefinition": "A released runtime configuration with model, prompt, data, infrastructure, monitoring, and rollback decisions.",
+      "technicalNote": "Deployment quality depends on observability, eval gates, ownership, and privacy controls, not only code running.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_promptfoo_intro"
+      ]
+    },
+    "acceptance_test": {
+      "id": "acceptance_test",
+      "label": "Acceptance test",
+      "laymanDefinition": "A test that proves a feature meets its release contract.",
+      "technicalNote": "Acceptance tests should be tied to user-visible behavior and include critical failure cases, not just happy paths.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_promptfoo_intro"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Build an Evaluation Harness with promptfoo",
+    "themes": [
+      {
+        "name": "Harness scope",
+        "questions": [
+          {
+            "q": "Does the harness run the real application behavior or just a disconnected prompt?",
+            "why": "A harness catches regressions only when providers, prompts, retrieval fixtures, assertions, and CI match the release path closely enough.",
+            "opts": [
+              "Real app target plus fixtures",
+              "Standalone prompt demo",
+              "Manual spreadsheet review"
+            ],
+            "rot": "Start with a thin real path and add mocks only where they make failures repeatable."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: rebuild the promptfoo harness by naming the file layout, app target, fixtures, golden cases, assertions, CI command, triage rule, and next dataset promotion step."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "promptfoo harness build from contract to CI triage",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Write the harness contract and file layout",
+          "sub": "Make the eval target reviewable before adding cases.",
+          "what": "Learners create a concrete harness artifact instead of an eval idea.",
+          "relevance": "This prevents scattered tests that nobody can rerun.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Lay out the promptfoo project and the release question it answers.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Connect promptfoo to the real app path",
+          "sub": "Test the same routing, retrieval, and formatting users rely on.",
+          "what": "Learners connect promptfoo to product behavior.",
+          "relevance": "This catches regressions that a standalone prompt test would miss.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Wire the harness target to the policy-answering endpoint or function.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Encode golden cases and assertions",
+          "sub": "Cases should make expected behavior machine-checkable.",
+          "what": "Learners create cases that are clear enough for CI and humans.",
+          "relevance": "This prevents vague evals that cannot explain failures.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Translate policy scenarios into cases with assertions and metadata.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Run, inspect, and fail CI on regressions",
+          "sub": "The harness should produce a clear failure story.",
+          "what": "Learners implement the part that turns eval cases into release behavior.",
+          "relevance": "This makes failures visible before deployment.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Run the harness and make missing citations fail the release.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Promote failures and tune thresholds",
+          "sub": "A harness stays useful only if the dataset evolves carefully.",
+          "what": "Learners maintain the promptfoo harness as product behavior changes.",
+          "relevance": "This prevents eval rot and baseline worship.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Close the build with promotion, waiver, and threshold rules.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "defines"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "targets"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "executes"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "maintains"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Write the harness contract and file layout",
+        "detail": "The build starts with files, owners, and release questions."
+      },
+      {
+        "step": 2,
+        "label": "Connect promptfoo to the real app path",
+        "detail": "The target should call the app boundary or a faithful fixture-backed slice."
+      },
+      {
+        "step": 3,
+        "label": "Encode golden cases and assertions",
+        "detail": "The core harness is a set of golden cases with hard and semantic checks."
+      },
+      {
+        "step": 4,
+        "label": "Run, inspect, and fail CI on regressions",
+        "detail": "A CI eval needs deterministic output, budget limits, and actionable failure reports."
+      },
+      {
+        "step": 5,
+        "label": "Promote failures and tune thresholds",
+        "detail": "The maintenance loop turns incidents into cases and stale cases into reviewed changes."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Write the harness contract and file layout\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Run, inspect, and fail CI on regressions\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Promote failures and tune thresholds\" define the release or production gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Build a promptfoo harness for a policy-answering endpoint. Add a config file, two prompts, a custom app target or provider, six golden cases, deterministic assertions, one rubric, CI command, and a failure triage note. Next rung: attach traces and promote production failures.",
+      "scopedTo": "Build Projects",
+      "checks": [
+        "Harness invokes the same answer function or endpoint used in release.",
+        "Fixtures make retrieval and account state repeatable.",
+        "Assertions cover schema, citation, refusal, and quality.",
+        "CI output has owner and severity rules."
+      ]
+    }
+  },
+  "citations": {
+    "canon_promptfoo_intro": {
+      "id": "canon_promptfoo_intro",
+      "kind": "canonical",
+      "title": "promptfoo documentation",
+      "url": "https://www.promptfoo.dev/docs/intro/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb_eval_frameworks": {
+      "id": "kb_eval_frameworks",
+      "kind": "kb",
+      "title": "KB: Eval Frameworks",
+      "url": "https://www.promptfoo.dev/docs/intro/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb_regression_testing": {
+      "id": "kb_regression_testing",
+      "kind": "kb",
+      "title": "KB: Regression Testing for Agentic Systems",
+      "url": "https://www.promptfoo.dev/docs/intro/",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

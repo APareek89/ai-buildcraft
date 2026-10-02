@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Frameworks Crash Course — for people who already know LangGraph</title>
+<style>
+  :root{
+    --bg:#f7f8fb; --card:#ffffff; --ink:#101828; --muted:#475467; --line:#e4e7ec;
+    --accent:#4f46e5; --amber-bg:#fffaeb; --amber-line:#fedf89; --amber-ink:#93370d;
+    --green-bg:#ecfdf3; --green-ink:#067647; --red-bg:#fef3f2; --red-ink:#b42318;
+    --code-bg:#0d1117; --code-ink:#e6edf3;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+  header.top{padding:34px 0 10px}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .sub{color:var(--muted);margin-top:8px;max-width:820px;font-size:15px}
+  .youknow{display:inline-block;margin-top:14px;background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;font-weight:600;font-size:13px;padding:6px 12px;border-radius:999px}
+  nav.tabs{position:sticky;top:0;z-index:50;background:var(--bg);padding:14px 0 10px;display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line)}
+  nav.tabs button{border:1px solid var(--line);background:var(--card);color:var(--muted);font-family:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:999px;cursor:pointer;transition:.15s}
+  nav.tabs button:hover{border-color:#c7d2fe;color:var(--ink)}
+  nav.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  section.tab{display:none;padding-top:26px}
+  section.tab.on{display:block}
+  .hero{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:18px}
+  .hero .fw{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .hero h2{font-size:23px;font-weight:800;letter-spacing:-.01em}
+  .pill{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px}
+  .hero .tag{color:var(--muted);margin-top:6px;font-size:15px}
+  .anchor{margin-top:14px;background:#f0f9ff;border:1px solid #b9e6fe;border-radius:10px;padding:12px 14px;font-size:14px}
+  .anchor b{color:#026aa2}
+  h3{font-size:16px;font-weight:800;margin:26px 0 10px;letter-spacing:-.01em}
+  h3 .n{display:inline-block;background:var(--ink);color:#fff;border-radius:6px;font-size:11px;padding:2px 7px;margin-right:8px;vertical-align:2px}
+  p.body{color:var(--muted);font-size:14px;max-width:860px;margin-bottom:10px}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13.5px}
+  .tblwrap{overflow-x:auto;border-radius:12px}
+  th{background:#f9fafb;text-align:left;font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:top}
+  td b, td code{color:var(--ink)}
+  tr:last-child td{border-bottom:none}
+  code{font-family:"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;background:#eef1f6;padding:1px 5px;border-radius:5px}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:18px 20px;overflow-x:auto;font-size:13px;line-height:1.6;margin:8px 0 6px;font-family:"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+  pre code{background:none;padding:0;color:inherit;font-size:inherit}
+  .cap{font-size:12.5px;color:var(--muted);margin-bottom:16px}
+  .k{color:#ff7b72}.s{color:#a5d6ff}.c{color:#8b949e;font-style:italic}.d{color:#d2a8ff}.f{color:#79c0ff}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:780px){.grid2,.grid3{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .card h4{font-size:14px;font-weight:700;margin-bottom:6px}
+  .card p{font-size:13px;color:var(--muted)}
+  ul.tight{margin:6px 0 0 18px;font-size:13.5px;color:var(--muted)}
+  ul.tight li{margin-bottom:6px}
+  ul.tight b{color:var(--ink)}
+  .choose{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.choose{grid-template-columns:1fr}}
+  .choose .yes{background:var(--green-bg);border:1px solid #abefc6;border-radius:12px;padding:14px 16px}
+  .choose .no{background:var(--red-bg);border:1px solid #fecdca;border-radius:12px;padding:14px 16px}
+  .choose h4{font-size:13px;font-weight:800;margin-bottom:8px}
+  .choose .yes h4{color:var(--green-ink)}.choose .no h4{color:var(--red-ink)}
+  .choose ul{margin-left:16px;font-size:13.5px;color:#344054}
+  .choose li{margin-bottom:5px}
+  .gotcha{background:var(--amber-bg);border:1px solid var(--amber-line);border-radius:12px;padding:14px 16px;margin-top:14px}
+  .gotcha h4{color:var(--amber-ink);font-size:13px;font-weight:800;margin-bottom:8px}
+  .gotcha ul{margin-left:16px;font-size:13.5px;color:#7a5300}
+  .gotcha li{margin-bottom:5px}
+  .map{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+  @media(max-width:880px){.map{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.map{grid-template-columns:1fr}}
+  .para{border-radius:12px;border:1px solid var(--line);background:var(--card);padding:14px 16px}
+  .para h4{font-size:13px;font-weight:800;margin-bottom:4px}
+  .para p{font-size:12.5px;color:var(--muted);margin-bottom:9px}
+  .chip{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;margin:2px 3px 2px 0;border:1px solid var(--line);background:#f9fafb;color:#344054}
+  .chip.hot{background:#eef2ff;border-color:#c7d2fe;color:#3730a3}
+  .scen{border-left:4px solid var(--accent);background:var(--card);border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0 12px 12px 0;padding:12px 16px;margin-bottom:10px;font-size:14px}
+  .scen b{color:var(--accent)}
+  .qz{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+  .qz .q{font-size:14px;font-weight:600}
+  .qz button{margin-top:8px;border:1px solid var(--line);background:#f9fafb;font-family:inherit;font-size:12px;font-weight:600;padding:5px 12px;border-radius:8px;cursor:pointer;color:var(--muted)}
+  .qz .a{display:none;margin-top:10px;font-size:13.5px;color:var(--muted);background:var(--green-bg);border:1px solid #abefc6;border-radius:8px;padding:10px 12px}
+  .qz .a b{color:var(--green-ink)}
+  .qz.open .a{display:block}
+  footer{margin-top:44px;color:#98a2b3;font-size:12.5px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>Agent Frameworks Crash Course</h1>
+  <p class="sub">Seven frameworks, one sitting. Every section is anchored to what you already know: each framework's concepts are translated to their <b>LangChain / LangGraph equivalents</b>, then shown in real code with use cases, when-to-choose guidance, and gotchas. Read the Overview, then jump around.</p>
+  <span class="youknow">Assumed known: LangChain + LangGraph (StateGraph, nodes, edges, checkpointers, tools)</span>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-t="ov" class="on">Overview &amp; Rosetta Stone</button>
+  <button data-t="oai">OpenAI Agents SDK</button>
+  <button data-t="crew">CrewAI</button>
+  <button data-t="ag">AutoGen → MS Agent Framework</button>
+  <button data-t="pyd">PydanticAI</button>
+  <button data-t="smol">smolagents</button>
+  <button data-t="lli">LlamaIndex</button>
+  <button data-t="cas">Claude Agent SDK</button>
+  <button data-t="dec">Decide + Quiz</button>
+</nav>
+
+<!-- ============ OVERVIEW ============ -->
+<section class="tab on" id="t-ov">
+  <div class="hero">
+    <div class="fw"><h2>The landscape in one idea</h2></div>
+    <p class="tag">Every agent framework answers the same question — <b>“who decides what happens next?”</b> — differently. LangGraph's answer is: <i>you do, with an explicit graph</i>. The other frameworks move that decision somewhere else.</p>
+  </div>
+
+  <h3><span class="n">1</span>Six paradigms (where control flow lives)</h3>
+  <div class="map">
+    <div class="para"><h4>Explicit graph / workflow</h4><p>You draw the state machine; the LLM fills in the nodes. Deterministic skeleton, model-driven steps.</p>
+      <span class="chip hot">LangGraph (you know this)</span><span class="chip">LlamaIndex Workflows</span><span class="chip">MS Agent Framework workflows</span><span class="chip">CrewAI Flows</span></div>
+    <div class="para"><h4>LLM-routed handoffs</h4><p>Agents are peers; the <i>model</i> decides when to transfer control to another agent. Less wiring, less determinism.</p>
+      <span class="chip">OpenAI Agents SDK</span><span class="chip">AutoGen Swarm pattern</span></div>
+    <div class="para"><h4>Role-declarative teams</h4><p>You declare <i>who</i> the agents are (role, goal, backstory) and what tasks exist; the framework runs the play.</p>
+      <span class="chip">CrewAI</span></div>
+    <div class="para"><h4>Conversation-driven</h4><p>Control flow <i>is</i> a group chat: agents talk until a termination condition fires. Great for emergent behavior, research.</p>
+      <span class="chip">AutoGen / AG2</span></div>
+    <div class="para"><h4>Typed single-loop</h4><p>One agent, one loop, but everything is typed and validated — feels like FastAPI for agents.</p>
+      <span class="chip">PydanticAI</span></div>
+    <div class="para"><h4>Code-as-action / provided harness</h4><p>smolagents: the model <i>writes Python</i> as its action. Claude Agent SDK: the vendor ships the whole loop (context, tools, permissions) and you configure it.</p>
+      <span class="chip">smolagents</span><span class="chip">Claude Agent SDK</span></div>
+  </div>
+
+  <h3><span class="n">2</span>Rosetta Stone — LangGraph concepts translated</h3>
+  <p class="body">Scan your row of interest. If you can say “ah, that's just X in LangGraph,” you've learned 70% of the framework.</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Framework</th><th>“Agent” unit</th><th>Orchestration (≈ edges/router)</th><th>State &amp; memory (≈ State + checkpointer)</th><th>Tools</th><th>Structured output</th><th>Multi-agent pattern</th></tr>
+    <tr><td><b>LangGraph</b> (anchor)</td><td>Node functions around an LLM</td><td>Explicit <code>StateGraph</code> edges + conditional routers</td><td>Typed state dict + checkpointers (thread_id)</td><td><code>@tool</code> + ToolNode</td><td><code>with_structured_output</code></td><td>Subgraphs, supervisor patterns</td></tr>
+    <tr><td><b>OpenAI Agents SDK</b></td><td><code>Agent</code> (instructions + tools)</td><td><b>Handoffs</b> — the LLM routes by “calling” another agent</td><td><code>Session</code> (SQLite/Redis) auto-injects history</td><td><code>@function_tool</code></td><td><code>output_type=Model</code></td><td>Triage agent + specialist handoffs; agents-as-tools</td></tr>
+    <tr><td><b>CrewAI</b></td><td><code>Agent</code> (role/goal/backstory)</td><td><code>Process.sequential / hierarchical</code>; <b>Flows</b> for real graphs</td><td>Task outputs passed as context; built-in short/long-term memory</td><td>crewai-tools + custom <code>BaseTool</code></td><td><code>output_pydantic</code> on Task</td><td>The Crew itself (manager delegates in hierarchical)</td></tr>
+    <tr><td><b>AutoGen / MAF</b></td><td><code>AssistantAgent</code> / <code>ChatAgent</code></td><td>Team chat (<code>RoundRobinGroupChat</code>, <code>SelectorGroupChat</code>) or MAF graph workflows</td><td>Conversation history; MAF adds threads + checkpointing</td><td>Plain python functions</td><td><code>output_content_type</code></td><td>Group chat with termination conditions; writer–critic loops</td></tr>
+    <tr><td><b>PydanticAI</b></td><td><code>Agent[Deps, Output]</code></td><td>Mostly single loop; <code>pydantic-graph</code> for explicit graphs</td><td><code>message_history</code> you own; deps injected per run</td><td><code>@agent.tool</code> (typed, gets <code>RunContext</code>)</td><td><b>The whole point</b> — <code>output_type</code> validated, auto-retried</td><td>Agents calling agents as tools</td></tr>
+    <tr><td><b>smolagents</b></td><td><code>CodeAgent</code> / <code>ToolCallingAgent</code></td><td>ReAct loop where actions are <b>generated Python code</b></td><td>Execution state lives in the python session</td><td><code>@tool</code> functions (docstring = schema)</td><td>Weak — parse it yourself</td><td><code>managed_agents</code> (manager calls sub-agents)</td></tr>
+    <tr><td><b>LlamaIndex</b></td><td><code>FunctionAgent</code> / <code>ReActAgent</code></td><td><b>Workflows</b>: <code>@step</code> functions wired by typed <b>Events</b></td><td><code>Context</code> object (serializable, resumable)</td><td><code>FunctionTool</code> + <b>QueryEngineTool</b> (RAG-native)</td><td><code>structured_predict</code></td><td><code>AgentWorkflow</code> with agent handoffs</td></tr>
+    <tr><td><b>Claude Agent SDK</b></td><td>The harness itself (Claude Code loop)</td><td>SDK owns the loop: gather context → act → verify</td><td>Sessions, <code>CLAUDE.md</code>, auto-compaction</td><td>Built-ins (Read/Bash/Edit…) + MCP servers + <code>@tool</code></td><td>Prompt-level / tool schemas</td><td>Subagents (<code>AgentDefinition</code>)</td></tr>
+  </table>
+  </div>
+
+  <h3><span class="n">3</span>Also on the radar (know these exist)</h3>
+  <div class="grid3">
+    <div class="card"><h4>Google ADK</h4><p>Google's Agent Development Kit — code-first Python/Java, hierarchical agent trees, tight Vertex AI + A2A protocol alignment. Mental model closest to “OO class hierarchy of agents.”</p></div>
+    <div class="card"><h4>Mastra / Vercel AI SDK</h4><p>The TypeScript world. Vercel AI SDK = model access + streaming UI primitives; Mastra = full TS agent framework (workflows, memory, evals). Pick these when your team ships Next.js.</p></div>
+    <div class="card"><h4>Haystack &amp; DSPy</h4><p>Haystack: pipeline-first RAG framework (components + connections, very LangGraph-ish for retrieval). DSPy: not an agent framework — it <i>optimizes prompts/weights</i> against metrics; think “compiler for prompting.”</p></div>
+  </div>
+</section>
+
+<!-- ============ OPENAI ============ -->
+<section class="tab" id="t-oai">
+  <div class="hero">
+    <div class="fw"><h2>OpenAI Agents SDK</h2><span class="pill" style="background:#ecfdf3;color:#067647">prod-ready</span><span class="pill" style="background:#eef2ff;color:#3730a3">python + TS</span></div>
+    <p class="tag">Minimal, opinionated successor to Swarm: <b>Agents + Handoffs + Guardrails + Sessions</b>, with tracing built in. ~4 primitives total, by design.</p>
+    <div class="anchor"><b>vs LangGraph:</b> delete your graph. Routing happens through <b>handoffs</b> — a specialist agent is exposed to the LLM as something it can “transfer” to, so the <i>model</i> is your conditional edge. You trade explicit control for radically less wiring.</div>
+  </div>
+
+  <h3><span class="n">1</span>Primitives → LangGraph translation</h3>
+  <table>
+    <tr><th>OpenAI SDK</th><th>What it is</th><th>≈ in LangGraph</th></tr>
+    <tr><td><code>Agent</code></td><td>instructions + tools + handoffs + output_type</td><td>A node with its own prompt + bound tools</td></tr>
+    <tr><td><code>Runner.run()</code></td><td>The agent loop (tool calls, handoffs, retries)</td><td><code>graph.invoke()</code> + ToolNode plumbing you'd hand-write</td></tr>
+    <tr><td><code>handoff()</code></td><td>LLM-invoked transfer of control to another agent</td><td>Conditional edge, but decided by the model</td></tr>
+    <tr><td><code>@input_guardrail</code></td><td>Parallel check that can trip and halt the run</td><td>A validation node before your main flow</td></tr>
+    <tr><td><code>SQLiteSession</code></td><td>Auto-persisted conversation history</td><td>Checkpointer + thread_id</td></tr>
+  </table>
+
+  <h3><span class="n">2</span>Code — support triage with handoffs + a guardrail</h3>
+<pre><code class="py">from pydantic import BaseModel
+from agents import (Agent, Runner, function_tool, input_guardrail,
+                    GuardrailFunctionOutput, SQLiteSession)
+
+@function_tool
+def order_status(order_id: str) -> str:
+    """Look up shipping status for an order."""
+    return f"Order {order_id}: shipped, arriving Thursday"
+
+class RefundCheck(BaseModel):
+    is_abusive: bool
+    reasoning: str
+
+guard_agent = Agent(name="Abuse check", instructions="Flag abusive refund demands.",
+                    output_type=RefundCheck)
+
+@input_guardrail
+async def refund_guard(ctx, agent, user_input):
+    result = await Runner.run(guard_agent, user_input)
+    return GuardrailFunctionOutput(
+        output_info=result.final_output,
+        tripwire_triggered=result.final_output.is_abusive)
+
+refunds = Agent(name="Refunds agent",
+                instructions="Process refund requests. Max auto-refund $100.",
+                input_guardrails=[refund_guard])
+
+shipping = Agent(name="Shipping agent",
+                 instructions="Answer delivery questions.", tools=[order_status])
+
+triage = Agent(name="Triage",
+               instructions="Route to the right specialist. Never answer yourself.",
+               handoffs=[refunds, shipping])   # <- the LLM sees these as transfer options
+
+session = SQLiteSession("user_42")             # memory across turns, zero plumbing
+result = Runner.run_sync(triage, "Where is order 8121?", session=session)
+print(result.final_output)                     # ran: triage -> handoff -> shipping -> tool</code></pre>
+  <p class="cap">The loop, tool schemas, handoff mechanics, history injection and tracing are all handled by <code>Runner</code>. In LangGraph this file would be ~3× longer.</p>
+
+  <h3><span class="n">3</span>Use cases that fit it</h3>
+  <div class="grid3">
+    <div class="card"><h4>Support / triage systems</h4><p>Classic triage-agent → specialist handoffs; guardrails for policy; sessions per customer.</p></div>
+    <div class="card"><h4>Deep-research clones</h4><p>Planner agent hands off to search agents, then a writer agent; agents-as-tools for parallel fan-out.</p></div>
+    <div class="card"><h4>Voice agents</h4><p>Same Agent objects plug into the Realtime API for speech-to-speech pipelines.</p></div>
+  </div>
+
+  <h3><span class="n">4</span>Decision</h3>
+  <div class="choose">
+    <div class="yes"><h4>CHOOSE IT WHEN</h4><ul>
+      <li>You're on the OpenAI stack and want the shortest path to a multi-agent prod app</li>
+      <li>Routing decisions are genuinely judgment calls (LLM-routed is fine)</li>
+      <li>You want guardrails + tracing without extra vendors</li></ul></div>
+    <div class="no"><h4>SKIP IT WHEN</h4><ul>
+      <li>You need deterministic, auditable control flow → LangGraph / workflows</li>
+      <li>Multi-provider portability is a hard requirement (it works via LiteLLM, but it's OpenAI-first)</li>
+      <li>Heavy custom state beyond chat history</li></ul></div>
+  </div>
+  <div class="gotcha"><h4>GOTCHAS</h4><ul>
+    <li>Handoffs are model decisions — test them; a vague triage prompt = nondeterministic routing.</li>
+    <li>Traces upload to the OpenAI platform by default — disable/redirect for sensitive data.</li>
+    <li>Sessions append everything; long threads need pruning or you pay in tokens.</li></ul></div>
+</section>
+
+<!-- ============ CREWAI ============ -->
+<section class="tab" id="t-crew">
+  <div class="hero">
+    <div class="fw"><h2>CrewAI</h2><span class="pill" style="background:#fef0c7;color:#93370d">fast to demo</span><span class="pill" style="background:#eef2ff;color:#3730a3">python</span></div>
+    <p class="tag">Role-playing teams: declare <b>who</b> (Agents with role/goal/backstory) and <b>what</b> (Tasks), pick a <b>Process</b>, call <code>kickoff()</code>. Independent of LangChain — its own lightweight core.</p>
+    <div class="anchor"><b>vs LangGraph:</b> you stop writing control flow entirely. A Crew is a cast + a to-do list; the framework sequences it. When you miss determinism, CrewAI's newer <b>Flows</b> give you back an event-driven graph — think “LangGraph-lite with <code>@listen</code> decorators.”</div>
+  </div>
+
+  <h3><span class="n">1</span>Primitives → LangGraph translation</h3>
+  <table>
+    <tr><th>CrewAI</th><th>What it is</th><th>≈ in LangGraph</th></tr>
+    <tr><td><code>Agent(role, goal, backstory)</code></td><td>Persona-prompted worker; can delegate</td><td>Node + system prompt (persona auto-generated)</td></tr>
+    <tr><td><code>Task(description, expected_output)</code></td><td>Unit of work assigned to an agent</td><td>A node's input contract, written in prose</td></tr>
+    <tr><td><code>Crew(process=…)</code></td><td>sequential = pipeline; hierarchical = manager LLM delegates</td><td>Linear graph / supervisor pattern</td></tr>
+    <tr><td><code>Task(context=[…])</code></td><td>Pipe one task's output into another</td><td>State keys passed between nodes</td></tr>
+    <tr><td><code>Flow + @start/@listen</code></td><td>Event-driven deterministic orchestration w/ typed state</td><td>StateGraph, honestly</td></tr>
+  </table>
+
+  <h3><span class="n">2</span>Code — two-agent research crew</h3>
+<pre><code class="py">from crewai import Agent, Task, Crew, Process
+from crewai_tools import SerperDevTool
+
+researcher = Agent(
+    role="Market Research Analyst",
+    goal="Find recent, credible facts about {topic}",
+    backstory="Ex-consultant. Obsessive about primary sources.",
+    tools=[SerperDevTool()],          # web search
+    verbose=True)
+
+writer = Agent(
+    role="Briefing Writer",
+    goal="Turn research into a crisp exec brief",
+    backstory="Writes for CEOs. Allergic to fluff.")
+
+research_task = Task(
+    description="Research {topic}: market size, 3 key players, 2 risks.",
+    expected_output="Bulleted findings with source URLs",
+    agent=researcher)
+
+brief_task = Task(
+    description="Write a 300-word brief from the research.",
+    expected_output="Markdown brief: TL;DR, landscape, risks",
+    agent=writer,
+    context=[research_task])          # <- receives researcher's output
+
+crew = Crew(agents=[researcher, writer],
+            tasks=[research_task, brief_task],
+            process=Process.sequential)
+
+result = crew.kickoff(inputs={"topic": "AI video generation market"})
+print(result.raw)</code></pre>
+  <p class="cap">And when you need determinism, a Flow: <code>@start()</code> methods fire first, <code>@listen(step)</code> methods fire on completion, <code>self.state</code> is typed shared state. Crews can be embedded <i>inside</i> Flow steps — that combination (Flow skeleton, Crew muscles) is the recommended production shape.</p>
+
+  <h3><span class="n">3</span>Use cases that fit it</h3>
+  <div class="grid3">
+    <div class="card"><h4>Content pipelines</h4><p>Research → outline → draft → edit. The canonical Crew; excellent output-per-hour-of-dev.</p></div>
+    <div class="card"><h4>Lead enrichment / GTM ops</h4><p>Scrape → qualify → personalize outreach, one task each.</p></div>
+    <div class="card"><h4>Stakeholder demos</h4><p>Nothing produces a convincing multi-agent demo faster — great for PM prototyping.</p></div>
+  </div>
+
+  <h3><span class="n">4</span>Decision</h3>
+  <div class="choose">
+    <div class="yes"><h4>CHOOSE IT WHEN</h4><ul>
+      <li>The job decomposes into role-shaped sequential work (pipelines)</li>
+      <li>Speed-to-working-demo matters more than fine control</li>
+      <li>Team includes non-engineers who can read role/goal/task prose</li></ul></div>
+    <div class="no"><h4>SKIP IT WHEN</h4><ul>
+      <li>You need tight control of every LLM call → the persona layer adds hidden prompt text</li>
+      <li>Complex branching/looping state → you'll rebuild LangGraph inside Flows anyway</li>
+      <li>Token budget is tight (chatty by default)</li></ul></div>
+  </div>
+  <div class="gotcha"><h4>GOTCHAS</h4><ul>
+    <li>Role/goal/backstory get compiled into prompts you don't fully see — inspect with <code>verbose=True</code> before blaming the model.</li>
+    <li><code>Process.hierarchical</code> adds a manager LLM that can mis-delegate; give it an explicit <code>manager_llm</code> and tight task descriptions.</li>
+    <li><code>expected_output</code> is load-bearing — vague ones are the #1 cause of garbage results.</li></ul></div>
+</section>
+
+<!-- ============ AUTOGEN ============ -->
+<section class="tab" id="t-ag">
+  <div class="hero">
+    <div class="fw"><h2>AutoGen → Microsoft Agent Framework</h2><span class="pill" style="background:#f4f3ff;color:#5925dc">research → enterprise</span><span class="pill" style="background:#eef2ff;color:#3730a3">python + .NET</span></div>
+    <p class="tag">AutoGen pioneered <b>conversation as orchestration</b>: agents talk in a group chat until a termination condition fires. Microsoft has now folded AutoGen + Semantic Kernel into one product — the <b>Microsoft Agent Framework (MAF)</b>: AutoGen's agents + graph-based workflows + enterprise plumbing (Azure identity, observability, threads).</p>
+    <div class="anchor"><b>vs LangGraph:</b> AutoGen replaces your graph with a <i>conversation policy</i> — “round robin until someone says APPROVE” is the whole orchestration. MAF's workflow layer, meanwhile, is a direct LangGraph competitor: typed data flowing through explicit executor nodes with checkpointing and human-in-the-loop.</div>
+  </div>
+
+  <h3><span class="n">1</span>Primitives → LangGraph translation</h3>
+  <table>
+    <tr><th>AutoGen / MAF</th><th>What it is</th><th>≈ in LangGraph</th></tr>
+    <tr><td><code>AssistantAgent</code></td><td>LLM agent with system message + tools</td><td>Node + prompt + bound tools</td></tr>
+    <tr><td><code>RoundRobinGroupChat</code></td><td>Agents take turns in fixed order</td><td>A cyclic graph with a static router</td></tr>
+    <tr><td><code>SelectorGroupChat</code></td><td>An LLM picks who speaks next</td><td>Supervisor pattern</td></tr>
+    <tr><td><code>TextMentionTermination</code></td><td>Stop when a token like APPROVE appears</td><td>Conditional edge to END</td></tr>
+    <tr><td>MAF <code>WorkflowBuilder</code></td><td>Typed graph of executors, fan-out/fan-in, checkpoints</td><td>StateGraph (closest cousin in this whole document)</td></tr>
+  </table>
+
+  <h3><span class="n">2</span>Code — writer–critic reflection loop (AutoGen AgentChat)</h3>
+<pre><code class="py">import asyncio
+from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.teams import RoundRobinGroupChat
+from autogen_agentchat.conditions import TextMentionTermination
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+model = OpenAIChatCompletionClient(model="gpt-5")
+
+writer = AssistantAgent("writer", model_client=model,
+    system_message="Write marketing copy. Revise when the critic gives feedback.")
+
+critic = AssistantAgent("critic", model_client=model,
+    system_message="Critique for clarity and punch. Reply APPROVE when it's good.")
+
+# orchestration = a conversation policy, not a graph
+team = RoundRobinGroupChat([writer, critic],
+    termination_condition=TextMentionTermination("APPROVE"))
+
+async def main():
+    result = await team.run(task="Landing-page hero copy for an AI photo editor")
+    print(result.messages[-2].content)   # last writer draft before APPROVE
+
+asyncio.run(main())</code></pre>
+  <p class="cap">The same shape in MAF: <code>ChatAgent</code>s created from an <code>AzureOpenAIChatClient</code>, composed either into group chats <i>or</i> into an explicit <code>WorkflowBuilder</code> graph when you need LangGraph-style determinism. If you're starting fresh on Microsoft's stack, start with MAF, not classic AutoGen.</p>
+
+  <h3><span class="n">3</span>Use cases that fit it</h3>
+  <div class="grid3">
+    <div class="card"><h4>Reflection loops</h4><p>Writer–critic, coder–reviewer, analyst–skeptic. Conversation is the natural shape for iterative refinement.</p></div>
+    <div class="card"><h4>Research prototyping</h4><p>Emergent multi-agent behavior studies; AutoGen remains a favorite in papers.</p></div>
+    <div class="card"><h4>Azure-native enterprise agents</h4><p>MAF + Azure AI Foundry: identity, compliance, observability out of the box; .NET support your bank will love.</p></div>
+  </div>
+
+  <h3><span class="n">4</span>Decision</h3>
+  <div class="choose">
+    <div class="yes"><h4>CHOOSE IT WHEN</h4><ul>
+      <li>The task is naturally iterative debate/refinement between roles</li>
+      <li>You're a Microsoft/Azure/.NET shop (MAF is the obvious default there)</li>
+      <li>You want one framework spanning simple chat agents → typed workflows</li></ul></div>
+    <div class="no"><h4>SKIP IT WHEN</h4><ul>
+      <li>You need tight cost control — group chats burn tokens fast</li>
+      <li>Non-Azure prod stack and you already have LangGraph muscle</li>
+      <li>You dislike platform churn (AutoGen 0.2 → 0.4 → MAF migrations were real)</li></ul></div>
+  </div>
+  <div class="gotcha"><h4>GOTCHAS</h4><ul>
+    <li>API history matters when googling: 0.2-era (<code>UserProxyAgent</code>, <code>initiate_chat</code>) vs 0.4+ async API vs MAF — check which docs you're reading. AG2 is a community fork of the old API.</li>
+    <li>Always set termination conditions; two polite LLMs will thank each other forever.</li>
+    <li>Group-chat transcripts are your only “state” in classic AutoGen — export/persist them deliberately.</li></ul></div>
+</section>
+
+<!-- ============ PYDANTIC AI ============ -->
+<section class="tab" id="t-pyd">
+  <div class="hero">
+    <div class="fw"><h2>PydanticAI</h2><span class="pill" style="background:#ecfdf3;color:#067647">production DX</span><span class="pill" style="background:#eef2ff;color:#3730a3">python</span></div>
+    <p class="tag">From the Pydantic team: “FastAPI feeling, but for agents.” One typed <code>Agent</code> class, validated structured outputs with automatic retry, dependency injection, model-agnostic, Logfire observability.</p>
+    <div class="anchor"><b>vs LangGraph:</b> LangChain gives you <code>with_structured_output</code>; PydanticAI makes the validated output <i>the contract of the whole agent</i> — if the model returns junk, the framework re-prompts with the validation error until it type-checks. Deps replace LangGraph's config/state threading with real dependency injection you can swap in tests.</div>
+  </div>
+
+  <h3><span class="n">1</span>Primitives → LangGraph translation</h3>
+  <table>
+    <tr><th>PydanticAI</th><th>What it is</th><th>≈ in LangGraph</th></tr>
+    <tr><td><code>Agent("provider:model", …)</code></td><td>Typed agent, generic over deps + output</td><td>Compiled graph (single-node loop)</td></tr>
+    <tr><td><code>output_type=Model</code></td><td>Validated result schema, auto-retried</td><td><code>with_structured_output</code> + retry loop you'd write</td></tr>
+    <tr><td><code>deps_type</code> + <code>RunContext</code></td><td>Injected dependencies (db, http, user)</td><td>config["configurable"] / state, but type-safe</td></tr>
+    <tr><td><code>@agent.tool</code></td><td>Tool receiving <code>ctx.deps</code></td><td><code>@tool</code>, minus manual wiring of context</td></tr>
+    <tr><td><code>message_history=…</code></td><td>You own persistence explicitly</td><td>Checkpointer (but bring-your-own storage)</td></tr>
+  </table>
+
+  <h3><span class="n">2</span>Code — bank support agent with typed risk output</h3>
+<pre><code class="py">from dataclasses import dataclass
+from pydantic import BaseModel, Field
+from pydantic_ai import Agent, RunContext
+
+@dataclass
+class Deps:                      # injected, swappable in tests
+    customer_id: int
+    db: "DatabaseConn"
+
+class SupportOutput(BaseModel):  # the agent's CONTRACT
+    advice: str = Field(description="Plain-English advice for the customer")
+    block_card: bool
+    risk: int = Field(ge=0, le=10)
+
+agent = Agent(
+    "anthropic:claude-sonnet-5",
+    deps_type=Deps,
+    output_type=SupportOutput,
+    instructions="You are first-line support at a bank.")
+
+@agent.tool
+async def customer_balance(ctx: RunContext[Deps]) -> float:
+    """Current account balance for this customer."""
+    return await ctx.deps.db.balance(ctx.deps.customer_id)
+
+deps = Deps(customer_id=123, db=DatabaseConn())
+result = await agent.run("I just lost my card!", deps=deps)
+
+result.output              # SupportOutput — GUARANTEED valid or the run failed
+if result.output.block_card:
+    freeze_card(deps.customer_id)      # downstream code trusts the types</code></pre>
+  <p class="cap">Invalid model output → PydanticAI feeds the validation error back and retries automatically. Your business logic never sees malformed data.</p>
+
+  <h3><span class="n">3</span>Use cases that fit it</h3>
+  <div class="grid3">
+    <div class="card"><h4>Agents inside real backends</h4><p>Anything where agent output feeds code, not humans: risk scoring, routing decisions, CRM updates.</p></div>
+    <div class="card"><h4>Extraction APIs</h4><p>Documents/emails → validated schemas, deployed like any FastAPI endpoint.</p></div>
+    <div class="card"><h4>Test-heavy teams</h4><p>Deps injection + <code>TestModel</code> = agents you can actually unit-test in CI without API calls.</p></div>
+  </div>
+
+  <h3><span class="n">4</span>Decision</h3>
+  <div class="choose">
+    <div class="yes"><h4>CHOOSE IT WHEN</h4><ul>
+      <li>Structured, validated output is the product</li>
+      <li>You want Python-engineer DX: types, DI, testability, mypy passing</li>
+      <li>Model-agnostic single agents with tools (most real apps!)</li></ul></div>
+    <div class="no"><h4>SKIP IT WHEN</h4><ul>
+      <li>You need rich multi-agent orchestration today (pydantic-graph is young)</li>
+      <li>You lean on LangChain's huge integration catalog (loaders, retrievers, stores)</li></ul></div>
+  </div>
+  <div class="gotcha"><h4>GOTCHAS</h4><ul>
+    <li>API renamed as it matured: <code>result_type</code> → <code>output_type</code>, <code>result.data</code> → <code>result.output</code> — old blog posts will bite you.</li>
+    <li>Conversation memory is manual: pass <code>message_history</code> yourself; there's no checkpointer magic.</li>
+    <li>Strict schemas + weak models = retry loops; keep output models as flat as you can.</li></ul></div>
+</section>
+
+<!-- ============ SMOLAGENTS ============ -->
+<section class="tab" id="t-smol">
+  <div class="hero">
+    <div class="fw"><h2>smolagents</h2><span class="pill" style="background:#fef0c7;color:#93370d">~1k LOC core</span><span class="pill" style="background:#eef2ff;color:#3730a3">python · Hugging Face</span></div>
+    <p class="tag">One radical idea: instead of emitting JSON tool calls, the agent <b>writes Python code</b> as its action, which is executed and observed. Fewer round-trips, natural composition (loops, variables, chaining tools in one step). First-class support for open models.</p>
+    <div class="anchor"><b>vs LangGraph:</b> a LangGraph ToolNode executes <i>one declared tool per step</i>. A <code>CodeAgent</code> step might write a for-loop that calls three tools, aggregates with pandas, and returns a number — one model call instead of six. The tradeoff: you are now executing model-written code, so sandboxing becomes a real concern.</div>
+  </div>
+
+  <h3><span class="n">1</span>Primitives → LangGraph translation</h3>
+  <table>
+    <tr><th>smolagents</th><th>What it is</th><th>≈ in LangGraph</th></tr>
+    <tr><td><code>CodeAgent</code></td><td>ReAct loop; actions = generated Python</td><td>Agent node + ToolNode, collapsed into code execution</td></tr>
+    <tr><td><code>ToolCallingAgent</code></td><td>Classic JSON tool-calling variant</td><td>Standard tool-calling agent</td></tr>
+    <tr><td><code>@tool</code> functions</td><td>Docstring + type hints become the schema</td><td><code>@tool</code> (nearly identical)</td></tr>
+    <tr><td><code>InferenceClientModel / LiteLLMModel</code></td><td>Model adapters (HF Hub, any provider, local)</td><td>ChatModel classes</td></tr>
+    <tr><td><code>managed_agents=[…]</code></td><td>Manager agent can call sub-agents like functions</td><td>Supervisor + subgraphs</td></tr>
+  </table>
+
+  <h3><span class="n">2</span>Code — data-crunching agent</h3>
+<pre><code class="py">from smolagents import CodeAgent, InferenceClientModel, WebSearchTool, tool
+
+@tool
+def shipping_cost(weight_kg: float, zone: str) -> float:
+    """Compute shipping cost for a parcel.
+    Args:
+        weight_kg: parcel weight in kg
+        zone: 'domestic' or 'international'
+    """
+    return weight_kg * (4.0 if zone == "domestic" else 11.5)
+
+model = InferenceClientModel()          # default open model on HF; or LiteLLMModel(...)
+agent = CodeAgent(
+    tools=[WebSearchTool(), shipping_cost],
+    model=model,
+    additional_authorized_imports=["pandas"])   # allowlist, not open season
+
+agent.run("Price out shipping 3 parcels (2kg domestic, 5kg intl, 1.2kg domestic) "
+          "and give me the total and the average cost per kg.")
+
+# The agent's ACTION will literally be generated code like:
+#   costs = [shipping_cost(2, "domestic"), shipping_cost(5, "international"), ...]
+#   total = sum(costs); print(total, total / 8.2)
+# ...executed, observed, then answered. One step, three tool calls.</code></pre>
+  <p class="cap">For untrusted workloads, swap the local executor for a sandbox: <code>CodeAgent(..., executor_type="e2b")</code> (or Docker/WASM) — treat this as mandatory in production.</p>
+
+  <h3><span class="n">3</span>Use cases that fit it</h3>
+  <div class="grid3">
+    <div class="card"><h4>Data analysis agents</h4><p>Computation-shaped tasks (aggregation, math, transforms) where JSON tool-calling is painfully chatty.</p></div>
+    <div class="card"><h4>Open-model deployments</h4><p>Best-in-class ergonomics for Qwen/Llama-class models, local or HF Inference.</p></div>
+    <div class="card"><h4>Web research on a budget</h4><p>The GAIA-benchmark-style browse + compute combo, in ~20 lines.</p></div>
+  </div>
+
+  <h3><span class="n">4</span>Decision</h3>
+  <div class="choose">
+    <div class="yes"><h4>CHOOSE IT WHEN</h4><ul>
+      <li>Tasks are computational and multi-tool per step (code-as-action shines)</li>
+      <li>You want open/local models without fighting your framework</li>
+      <li>You value a core small enough to read in an afternoon</li></ul></div>
+    <div class="no"><h4>SKIP IT WHEN</h4><ul>
+      <li>Long multi-turn conversations with complex memory</li>
+      <li>Compliance forbids executing generated code, even sandboxed</li>
+      <li>You need rich structured outputs and typed contracts → PydanticAI</li></ul></div>
+  </div>
+  <div class="gotcha"><h4>GOTCHAS</h4><ul>
+    <li>Tool docstrings ARE the schema — missing an <code>Args:</code> section literally raises an error.</li>
+    <li>Local executor is restricted-but-not-a-sandbox; use E2B/Docker for anything internet-facing.</li>
+    <li>Weaker models sometimes write broken code and burn steps retrying; cap <code>max_steps</code>.</li></ul></div>
+</section>
+
+<!-- ============ LLAMAINDEX ============ -->
+<section class="tab" id="t-lli">
+  <div class="hero">
+    <div class="fw"><h2>LlamaIndex (Agents + Workflows)</h2><span class="pill" style="background:#ecfdf3;color:#067647">RAG-native</span><span class="pill" style="background:#eef2ff;color:#3730a3">python + TS</span></div>
+    <p class="tag">The data-framework-turned-agent-framework. Two layers you care about: <b>agents</b> (<code>FunctionAgent</code>/<code>ReActAgent</code>) whose superpower is treating <i>query engines over your documents</i> as tools, and <b>Workflows</b> — event-driven orchestration used across its ecosystem.</p>
+    <div class="anchor"><b>vs LangGraph:</b> Workflows invert the graph. In LangGraph you wire edges between nodes; in a Workflow each <code>@step</code> declares which <b>Event types</b> it consumes and emits, and the runtime wires the DAG for you. Same power (branches, loops, parallelism, checkpoints) — different ergonomics: you think in events, not edges.</div>
+  </div>
+
+  <h3><span class="n">1</span>Primitives → LangGraph translation</h3>
+  <table>
+    <tr><th>LlamaIndex</th><th>What it is</th><th>≈ in LangGraph</th></tr>
+    <tr><td><code>FunctionAgent</code></td><td>Tool-calling agent loop</td><td>create_react_agent equivalent</td></tr>
+    <tr><td><code>QueryEngineTool</code></td><td>An index/RAG pipeline exposed as a tool</td><td>A retriever tool, but industrial-grade</td></tr>
+    <tr><td><code>Workflow + @step</code></td><td>Steps consuming/emitting typed Events</td><td>Nodes + edges (edges inferred from event types)</td></tr>
+    <tr><td><code>Context</code></td><td>Serializable shared state across steps/runs</td><td>State + checkpointer</td></tr>
+    <tr><td><code>AgentWorkflow</code></td><td>Multi-agent system w/ handoffs over shared state</td><td>Supervisor/swarm patterns</td></tr>
+  </table>
+
+  <h3><span class="n">2</span>Code — agentic RAG over contracts</h3>
+<pre><code class="py">from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.anthropic import Anthropic
+
+# 1. Classic LlamaIndex: docs -> index -> query engine (3 lines)
+docs = SimpleDirectoryReader("./contracts").load_data()
+index = VectorStoreIndex.from_documents(docs)
+qe = index.as_query_engine(similarity_top_k=5)
+
+# 2. Expose RAG as a tool the agent can decide to use
+async def search_contracts(query: str) -> str:
+    """Answer questions from the contract corpus."""
+    return str(await qe.aquery(query))
+
+async def flag_for_legal(contract: str, reason: str) -> str:
+    """Escalate a contract to the legal team."""
+    return f"Flagged {contract}: {reason}"
+
+agent = FunctionAgent(
+    tools=[search_contracts, flag_for_legal],
+    llm=Anthropic(model="claude-sonnet-5"),
+    system_prompt="Contract analyst. Search before answering; escalate real risks.")
+
+resp = await agent.run("Which vendor contracts auto-renew in the next 60 days, "
+                       "and do any have non-standard liability caps?")
+print(resp)   # multi-hop: search -> reason -> search -> maybe flag -> answer</code></pre>
+  <p class="cap">Custom orchestration is the same mental model with events: define <code>class ChunksRetrieved(Event)</code>, write <code>@step</code> methods that take <code>StartEvent</code> → emit <code>ChunksRetrieved</code> → emit <code>StopEvent</code>; the runtime connects steps by matching event types.</p>
+
+  <h3><span class="n">3</span>Use cases that fit it</h3>
+  <div class="grid3">
+    <div class="card"><h4>Document-heavy agents</h4><p>Contracts, filings, research corpora — anywhere “the tool” is really “my documents.”</p></div>
+    <div class="card"><h4>Agentic RAG upgrades</h4><p>Existing RAG → agent that plans queries, retries retrieval, cross-checks sources.</p></div>
+    <div class="card"><h4>Ingestion + extraction pipelines</h4><p>LlamaParse for gnarly PDFs, Workflow steps for parse→chunk→index→verify.</p></div>
+  </div>
+
+  <h3><span class="n">4</span>Decision</h3>
+  <div class="choose">
+    <div class="yes"><h4>CHOOSE IT WHEN</h4><ul>
+      <li>Retrieval quality over private data is the core problem</li>
+      <li>You want one framework covering ingestion → index → agent</li>
+      <li>Event-driven style fits your team (or you stream a lot — events map to UI updates beautifully)</li></ul></div>
+    <div class="no"><h4>SKIP IT WHEN</h4><ul>
+      <li>No documents in sight — plain tool agents are simpler elsewhere</li>
+      <li>You want ONE obvious way to do things (LlamaIndex often has three)</li></ul></div>
+  </div>
+  <div class="gotcha"><h4>GOTCHAS</h4><ul>
+    <li>Old tutorials use deprecated <code>OpenAIAgent</code>/<code>AgentRunner</code>; current path is <code>FunctionAgent</code>/<code>AgentWorkflow</code> on Workflows.</li>
+    <li>Pass and persist <code>Context</code> explicitly for multi-turn memory — agents are stateless by default.</li>
+    <li>Big integration surface = version churn; pin versions and read release notes on upgrade.</li></ul></div>
+</section>
+
+<!-- ============ CLAUDE AGENT SDK ============ -->
+<section class="tab" id="t-cas">
+  <div class="hero">
+    <div class="fw"><h2>Claude Agent SDK</h2><span class="pill" style="background:#fdf2fa;color:#c11574">harness included</span><span class="pill" style="background:#eef2ff;color:#3730a3">python + TS</span></div>
+    <p class="tag">Anthropic's inversion of the framework idea: you don't build the agent loop — you get <b>Claude Code's production harness as a library</b>. Context gathering, file/bash/web tools, permissions, sessions, compaction, subagents, MCP: all shipped. You configure and extend it.</p>
+    <div class="anchor"><b>vs LangGraph:</b> LangGraph hands you a loom; this hands you the finished loop (<i>gather context → act → verify → repeat</i>) with batteries. You give up orchestration control and provider choice; you gain a hardened harness that already solved context management, tool safety and memory. Closer to “programmable Claude Code” than to a framework.</div>
+  </div>
+
+  <h3><span class="n">1</span>Primitives → LangGraph translation</h3>
+  <table>
+    <tr><th>Claude Agent SDK</th><th>What it is</th><th>≈ in LangGraph</th></tr>
+    <tr><td><code>query()</code> / <code>ClaudeSDKClient</code></td><td>One-shot vs interactive agent sessions</td><td><code>graph.invoke()</code> / streaming loop</td></tr>
+    <tr><td><code>ClaudeAgentOptions</code></td><td>System prompt, allowed tools, permission mode, CWD</td><td>Graph config + tool binding</td></tr>
+    <tr><td>Built-in tools (Read, Bash, Edit…)</td><td>Filesystem/shell/web actions, pre-hardened</td><td>Tools you'd write and secure yourself</td></tr>
+    <tr><td>MCP servers + <code>@tool</code></td><td>External capabilities via open protocol / in-process tools</td><td>LangChain tool integrations</td></tr>
+    <tr><td>Subagents (<code>AgentDefinition</code>)</td><td>Parallel workers with isolated contexts</td><td>Subgraphs / parallel branches</td></tr>
+    <tr><td>Hooks + permission modes</td><td>Intercept/gate every tool call deterministically</td><td>Guardrail nodes + interrupts</td></tr>
+  </table>
+
+  <h3><span class="n">2</span>Code — an ops agent with a custom tool</h3>
+<pre><code class="py">import asyncio
+from claude_agent_sdk import (query, ClaudeAgentOptions, tool,
+                              create_sdk_mcp_server)
+
+@tool("get_alerts", "Fetch active pager alerts", {"service": str})
+async def get_alerts(args):
+    alerts = await pagerduty.active(args["service"])
+    return {"content": [{"type": "text", "text": str(alerts)}]}
+
+ops_server = create_sdk_mcp_server(name="ops", tools=[get_alerts])
+
+options = ClaudeAgentOptions(
+    system_prompt="You are an SRE. Diagnose, propose a fix, apply it if safe.",
+    mcp_servers={"ops": ops_server},
+    allowed_tools=["Read", "Grep", "Bash", "Edit",       # built-ins, pre-hardened
+                   "mcp__ops__get_alerts"],
+    permission_mode="acceptEdits",     # auto-accept file edits; gate the rest
+    cwd="/srv/payments-service")
+
+async def main():
+    async for msg in query(
+        prompt="payments-service is alerting: high 5xx. Investigate and fix.",
+        options=options):
+        print(msg)          # streamed thinking, tool calls, diffs, final result
+
+asyncio.run(main())
+# The SDK handled: context gathering, tool schemas, permission gating,
+# retries, session state, context compaction. You wrote ~30 lines.</code></pre>
+  <p class="cap">Subagents are one more option away (<code>agents={"reviewer": AgentDefinition(...)}</code>); persistent memory = a <code>CLAUDE.md</code> in the working directory.</p>
+
+  <h3><span class="n">3</span>Use cases that fit it</h3>
+  <div class="grid3">
+    <div class="card"><h4>Coding & repo agents</h4><p>Code review bots, migration runners, test fixers — the harness was literally built for this.</p></div>
+    <div class="card"><h4>SRE / ops automation</h4><p>Agents that read logs, run commands, and edit configs with permission gates and audit hooks.</p></div>
+    <div class="card"><h4>“Computer-work” agents</h4><p>Anything shaped like “operate on files + shell + APIs in a loop” — research, data wrangling, CI chores.</p></div>
+  </div>
+
+  <h3><span class="n">4</span>Decision</h3>
+  <div class="choose">
+    <div class="yes"><h4>CHOOSE IT WHEN</h4><ul>
+      <li>The agent acts on real environments (files, shells, repos, tools)</li>
+      <li>You want production hardening (permissions, sandboxing, compaction) for free</li>
+      <li>You're all-in on Claude anyway</li></ul></div>
+    <div class="no"><h4>SKIP IT WHEN</h4><ul>
+      <li>Multi-provider flexibility is required (Anthropic-only)</li>
+      <li>You need lightweight embedded inference (it spawns the Claude Code runtime)</li>
+      <li>Fine-grained custom orchestration is the point → LangGraph</li></ul></div>
+  </div>
+  <div class="gotcha"><h4>GOTCHAS</h4><ul>
+    <li>Renamed from <code>claude-code-sdk</code> → <code>claude-agent-sdk</code>; old imports and defaults differ (notably: the SDK no longer inherits Claude Code's system prompt unless you ask).</li>
+    <li>Costs scale with the harness's thoroughness — scope <code>allowed_tools</code> and CWD tightly.</li>
+    <li>Design permission modes early; retrofitting <code>bypassPermissions</code> habits is how incidents happen.</li></ul></div>
+</section>
+
+<!-- ============ DECIDE ============ -->
+<section class="tab" id="t-dec">
+  <div class="hero">
+    <div class="fw"><h2>Choosing without a bake-off</h2></div>
+    <p class="tag">Frameworks are ~20% of an agent product's success (evals, data and UX are the rest) — so pick fast, pick boring, and move on. Use the matrix for constraints, the scenarios for instinct.</p>
+  </div>
+
+  <h3><span class="n">1</span>Decision matrix</h3>
+  <div class="tblwrap">
+  <table>
+    <tr><th>Framework</th><th>Core bet</th><th>Determinism</th><th>Multi-agent</th><th>Typed outputs</th><th>Provider lock-in</th><th>Prod story</th><th>Learning cost (for you)</th></tr>
+    <tr><td><b>LangGraph</b></td><td>Explicit graphs</td><td>★★★</td><td>★★★</td><td>★★</td><td>None</td><td>Strong (Platform, checkpoints)</td><td>— already paid</td></tr>
+    <tr><td><b>OpenAI Agents SDK</b></td><td>Minimal primitives + handoffs</td><td>★</td><td>★★</td><td>★★</td><td>OpenAI-first</td><td>Strong (tracing, guardrails)</td><td>~half a day</td></tr>
+    <tr><td><b>CrewAI</b></td><td>Role-played teams</td><td>★ (★★★ w/ Flows)</td><td>★★★</td><td>★★</td><td>None</td><td>Decent (AMP platform)</td><td>~half a day</td></tr>
+    <tr><td><b>AutoGen / MAF</b></td><td>Conversation / MS-grade workflows</td><td>★ chat / ★★★ workflows</td><td>★★★</td><td>★★</td><td>None (Azure-happiest)</td><td>Strong on Azure</td><td>~1 day</td></tr>
+    <tr><td><b>PydanticAI</b></td><td>Type-safe contracts</td><td>★★</td><td>★</td><td>★★★</td><td>None</td><td>Strong (Logfire, testing)</td><td>~2 hours</td></tr>
+    <tr><td><b>smolagents</b></td><td>Code-as-action</td><td>★</td><td>★★</td><td>★</td><td>None (open-model friendly)</td><td>DIY (sandbox!)</td><td>~2 hours</td></tr>
+    <tr><td><b>LlamaIndex</b></td><td>Data-first agents + events</td><td>★★★</td><td>★★</td><td>★★</td><td>None</td><td>Strong (LlamaCloud)</td><td>~1 day</td></tr>
+    <tr><td><b>Claude Agent SDK</b></td><td>Harness included</td><td>★★ (loop is fixed, hooks gate it)</td><td>★★ (subagents)</td><td>★★</td><td>Anthropic-only</td><td>Very strong for computer-work agents</td><td>~2 hours (you live in Claude Code)</td></tr>
+  </table>
+  </div>
+
+  <h3><span class="n">2</span>Scenario → pick</h3>
+  <div class="scen">“Agentic RAG over 10k internal PDFs, retrieval quality is everything.” → <b>LlamaIndex</b> (QueryEngineTool + AgentWorkflow), LangGraph if orchestration dominates.</div>
+  <div class="scen">“Agent output feeds production code paths — must be schema-valid, testable, CI-friendly.” → <b>PydanticAI</b>.</div>
+  <div class="scen">“Multi-agent content/research pipeline demo for stakeholders by Friday.” → <b>CrewAI</b>; harden later with Flows or port to LangGraph.</div>
+  <div class="scen">“Customer-facing support automation on the OpenAI stack with guardrails and tracing.” → <b>OpenAI Agents SDK</b>.</div>
+  <div class="scen">“Data-crunching agent, open models, minimal deps.” → <b>smolagents</b> (CodeAgent + sandbox).</div>
+  <div class="scen">“Enterprise Azure shop, .NET services, compliance reviews.” → <b>Microsoft Agent Framework</b>.</div>
+  <div class="scen">“Agent that operates on repos/shells/files — reviews, migrations, ops.” → <b>Claude Agent SDK</b>.</div>
+  <div class="scen">“Complex custom state machine, human approvals, replayable history.” → stay on <b>LangGraph</b>. You already own the best tool for this.</div>
+
+  <h3><span class="n">3</span>Check yourself (click to reveal)</h3>
+  <div class="qz"><div class="q">1. In the OpenAI Agents SDK, what plays the role of LangGraph's conditional edges — and what's the catch?</div><button>Reveal</button><div class="a"><b>Handoffs.</b> The LLM decides when to transfer control to another agent, so routing is a model judgment call — flexible, but nondeterministic; you test prompts instead of asserting edges.</div></div>
+  <div class="qz"><div class="q">2. Your CrewAI crew gives vague results. What's the first thing to fix?</div><button>Reveal</button><div class="a"><b><code>expected_output</code> on each Task.</b> It's the load-bearing prompt. Second: run <code>verbose=True</code> to see the hidden persona prompt compiled from role/goal/backstory.</div></div>
+  <div class="qz"><div class="q">3. What is orchestration in classic AutoGen, and what must you never forget to set?</div><button>Reveal</button><div class="a"><b>The conversation itself</b> (group chat policy like round-robin or LLM-selected speaker). Always set a <b>termination condition</b> — otherwise agents loop politely forever, at your expense.</div></div>
+  <div class="qz"><div class="q">4. What does PydanticAI do when the model's answer fails schema validation?</div><button>Reveal</button><div class="a"><b>Feeds the validation error back to the model and retries automatically</b> until it validates (or retries run out). Downstream code only ever sees the typed <code>result.output</code>.</div></div>
+  <div class="qz"><div class="q">5. Why can a smolagents CodeAgent solve in 1 step what takes a JSON tool-caller 6?</div><button>Reveal</button><div class="a">Its action is <b>generated Python</b>: one step can loop, call several tools, and aggregate with variables. Cost: you're executing model-written code — sandbox (E2B/Docker) in production.</div></div>
+  <div class="qz"><div class="q">6. In LlamaIndex Workflows, how do steps get connected if you never define edges?</div><button>Reveal</button><div class="a">By <b>event types</b>: each <code>@step</code> declares which Event it consumes and emits, and the runtime infers the wiring. Events ≈ edges, <code>Context</code> ≈ state + checkpointer.</div></div>
+  <div class="qz"><div class="q">7. What do you give up and gain by choosing the Claude Agent SDK over LangGraph?</div><button>Reveal</button><div class="a"><b>Give up:</b> orchestration control and provider choice (the loop is fixed, Anthropic-only). <b>Gain:</b> a hardened production harness — context management, safe file/bash tools, permissions, sessions, subagents, MCP — with near-zero code.</div></div>
+  <div class="qz"><div class="q">8. Team ships .NET on Azure and wants both quick chat agents and typed graph workflows. One framework?</div><button>Reveal</button><div class="a"><b>Microsoft Agent Framework</b> — the AutoGen + Semantic Kernel successor: ChatAgents for the simple cases, WorkflowBuilder graphs (very LangGraph-like) with checkpointing for the rest.</div></div>
+
+  <div class="anchor" style="margin-top:26px"><b>Retention plan (90 minutes total):</b> pick TWO — the one closest to your stack (likely Claude Agent SDK) and the one most unlike LangGraph (smolagents or CrewAI). Port one small thing you've already built in LangGraph to each. Translating a known artifact teaches more than any course.</div>
+</section>
+
+<footer>Agent Frameworks Crash Course · built for someone who already knows LangChain/LangGraph · APIs current as of early 2026 — check docs for exact signatures before shipping</footer>
+</div>
+
+<script>
+// tabs
+const tabs=document.querySelectorAll('#tabs button');
+tabs.forEach(b=>b.addEventListener('click',()=>{
+  tabs.forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('section.tab').forEach(s=>s.classList.remove('on'));
+  b.classList.add('on');
+  document.getElementById('t-'+b.dataset.t).classList.add('on');
+  window.scrollTo({top:0});
+}));
+// quiz reveal
+document.querySelectorAll('.qz button').forEach(b=>b.addEventListener('click',()=>b.parentElement.classList.toggle('open')));
+// tiny python highlighter
+const RE=/("""[\s\S]*?"""|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|#[^\n]*|@[\w.]+|\b(?:from|import|def|class|async|await|return|if|else|elif|for|in|not|and|or|while|with|as|try|except|raise|lambda|yield|pass|None|True|False)\b|\bself\b)/g;
+document.querySelectorAll('pre code').forEach(el=>{
+  const esc=el.textContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  el.innerHTML=esc.replace(RE,m=>{
+    let cls='k';
+    if(m[0]==='#')cls='c';
+    else if(m[0]==='"'||m[0]==="'")cls='s';
+    else if(m[0]==='@')cls='d';
+    else if(m==='self')cls='f';
+    return '<span class="'+cls+'">'+m+'</span>';
+  });
+});
+</script>
+</body>
+</html>

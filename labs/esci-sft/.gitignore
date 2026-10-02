@@ -1,0 +1,13 @@
+.venv/
+.cache/
+.tools/
+data/*
+!data/sft/
+data/sft/*
+!data/sft/README.md
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+*secrets*
+.DS_Store

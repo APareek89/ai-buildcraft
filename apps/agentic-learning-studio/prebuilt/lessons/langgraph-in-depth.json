@@ -1,0 +1,1224 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "LangGraph in Depth",
+    "title": "LangGraph in Depth",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "LangGraph in Depth is practical when learners can apply it to this concrete case: An incident triage agent needs explicit state, branching, retries, and human approval. By the end, they should be able to build or review LangGraph state machine with conditional edges and durable checkpoints, measure correct branch chosen after failed tool calls, and catch the failure where state updates are incomplete, so later nodes make decisions from stale data."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "LangGraph in Depth",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "LangGraph in Depth: mental map",
+    "caption": "Teach LangGraph as explicit state-machine control for agents: state schema, nodes, edges, checkpoints, interrupts, and tested routes.",
+    "oneLineThesis": "LangGraph is the right lesson when agent behavior must be modeled as inspectable, resumable control flow rather than an opaque loop.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "StateGraph makes control flow visible",
+        "sub": "Nodes and edges replace an opaque agent loop.",
+        "what": "Learners see LangGraph as explicit workflow modeling.",
+        "relevance": "This prevents using graph machinery without a state problem to solve.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Start with the state fields the graph must carry.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Reducers and state shape prevent junk drawers",
+        "sub": "Graph state needs typed ownership and merge rules.",
+        "what": "Learners design graph state safely.",
+        "relevance": "Unstructured state makes routes brittle and privacy harder.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Keep state small, typed, and intentionally merged.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Checkpoints and interrupts enable resume",
+        "sub": "Thread IDs and persisted state make human review practical.",
+        "what": "Learners understand persistence and interrupt flow.",
+        "relevance": "Approval gates break if state cannot resume safely.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use checkpoints before pausing for external input.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code a tiny conditional route",
+        "sub": "A small graph can make routing behavior testable.",
+        "what": "Learners see graph decisions in runnable code.",
+        "relevance": "Route bugs can silently skip safety nodes.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Implement route logic before adding many model calls.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Test graphs as workflows, not prompts",
+        "sub": "Production confidence comes from path coverage and traces.",
+        "what": "Learners define LangGraph release checks.",
+        "relevance": "A graph can render valid output while hiding skipped nodes or bad state merges.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Validate nodes, edges, checkpoints, and resume behavior.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "StateGraph makes control flow visible",
+      "sub": "Nodes and edges replace an opaque agent loop.",
+      "summary": "LangGraph gives agent apps named state transitions.",
+      "objectives": [
+        "Define StateGraph, nodes, edges, START, and END.",
+        "Explain partial state updates.",
+        "Choose graph control for branchy workflows."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "A graph is a contract for state movement",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a tutor must retrieve sources, answer, run a citation check, and ask for human review when the check fails. A single loop hides those stages. A graph names them."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "LangGraph nodes read and update shared state; edges decide the next node. The compiled graph runs until END, and checkpoints can persist thread state."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If every step is linear and deterministic, a simple chain may be enough."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ],
+          "analogy": "LangGraph is a subway map for agent state."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Worked graph: answer then review",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "State fields include question, evidence, draft, review_status, and final_answer. Nodes retrieve, draft, review, and either finish or request revision."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The graph makes the failure branch visible: unsupported citations route back to retrieval or revision instead of slipping into final output."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Define typed state."
+                  }
+                ],
+                [
+                  {
+                    "text": "Write one node per meaningful transformation."
+                  }
+                ],
+                [
+                  {
+                    "text": "Add direct and conditional edges."
+                  }
+                ],
+                [
+                  {
+                    "text": "Test every route."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Graph fit",
+          "prompt": "What makes LangGraph a good fit?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The app only needs one text completion.",
+              "correct": false
+            },
+            {
+              "text": "The app needs explicit state transitions, branching, checkpoints, or interrupts.",
+              "correct": true
+            },
+            {
+              "text": "The UI needs a landing page.",
+              "correct": false
+            }
+          ],
+          "explanation": "LangGraph is for control flow.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ]
+        }
+      ],
+      "citations": [
+        "kb6",
+        "kb7"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Reducers and state shape prevent junk drawers",
+      "sub": "Graph state needs typed ownership and merge rules.",
+      "summary": "State design is the heart of LangGraph.",
+      "objectives": [
+        "Choose state fields deliberately.",
+        "Use reducers or merge rules for accumulated data.",
+        "Avoid storing secrets or huge prompts."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Graph state is product data",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "It is tempting to put every message, scratch note, tool result, and prompt into state. That creates a junk drawer. Keep exact user requirements, durable decisions, needed evidence IDs, and route status; store bulky artifacts elsewhere by reference."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Reducers or merge rules matter when nodes append messages, evidence, or findings. Without them, later nodes may overwrite or duplicate data silently."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "For each field, name which node writes it and which node reads it."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ],
+          "analogy": "State is a shared workbench; label every tray."
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "LangGraph state fields",
+          "criteria": [
+            "Field type",
+            "Keep when",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Exact constraints",
+              "cells": [
+                {
+                  "criterion": "Field type",
+                  "text": "User requirements and approval decisions.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Keep when",
+                  "text": "Needed by later routes.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Summaries can erase them.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Keep in typed state.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Evidence IDs",
+              "cells": [
+                {
+                  "criterion": "Field type",
+                  "text": "Source IDs and snippets.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Keep when",
+                  "text": "Review/final answer needs grounding.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Too much text bloats state.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Store IDs plus compact snippets.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Secrets/full prompts",
+              "cells": [
+                {
+                  "criterion": "Field type",
+                  "text": "Credentials or giant prompt dumps.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Keep when",
+                  "text": "Almost never.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Privacy, retention, replay bloat.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use references or secure stores instead.",
+              "cost": "High",
+              "complexity": "High"
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "State owner",
+          "prompt": "What question should you ask for every state field?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Can it be made invisible forever?",
+              "correct": false
+            },
+            {
+              "text": "Which node writes it, which node reads it, and how it is merged or retained.",
+              "correct": true
+            },
+            {
+              "text": "Does it make the graph diagram colorful?",
+              "correct": false
+            }
+          ],
+          "explanation": "State needs ownership and lifecycle.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ]
+        }
+      ],
+      "citations": [
+        "kb6",
+        "kb7"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Checkpoints and interrupts enable resume",
+      "sub": "Thread IDs and persisted state make human review practical.",
+      "summary": "LangGraph interrupts turn waiting into resumable control flow.",
+      "objectives": [
+        "Explain checkpointers and thread_id.",
+        "Use interrupt for approval.",
+        "Avoid non-idempotent side effects before interrupt."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "An interrupt is a pause with state",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "With a checkpointer, a graph run can be associated with a `thread_id` and resumed later. Interrupts surface a JSON-serializable request to the caller and continue when the graph is invoked with a resume command."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Avoid irreversible side effects immediately before an interrupt, because resume semantics and retries can surprise you. Put side effects after approval or behind idempotent tools."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "The interrupt payload should contain exactly what the human needs to decide."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ],
+          "analogy": "A checkpoint is a save point before the boss fight."
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Case study: approval before publishing",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The graph drafts lesson content, runs a citation check, then interrupts with the draft, sources, and risk summary. The human approves or requests revision."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The resumed graph branches to publish only if approval is explicit."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Compile graph with checkpointer."
+                  }
+                ],
+                [
+                  {
+                    "text": "Invoke with stable thread_id."
+                  }
+                ],
+                [
+                  {
+                    "text": "Interrupt before risky action."
+                  }
+                ],
+                [
+                  {
+                    "text": "Resume with structured approval decision."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Interrupt rule",
+          "prompt": "What should happen before an irreversible publish action?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Publish first and ask later.",
+              "correct": false
+            },
+            {
+              "text": "Interrupt for approval with persisted state, then publish only after approval.",
+              "correct": true
+            },
+            {
+              "text": "Store approval only in hidden model text.",
+              "correct": false
+            }
+          ],
+          "explanation": "Interrupts protect side effects when paired with checkpoints.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ]
+        }
+      ],
+      "citations": [
+        "kb6",
+        "kb7"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code a tiny conditional route",
+      "sub": "A small graph can make routing behavior testable.",
+      "summary": "Conditional edges deserve unit tests.",
+      "objectives": [
+        "Write route logic from state.",
+        "Predict the next node.",
+        "Test both pass and fail paths."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Routing is application logic",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model may produce a draft, but route functions decide whether the graph ends, retries, or interrupts. Treat them like production code with tests."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from evaluation, hard assertions should catch missing citations or invalid schema before final output. Route based on those checks, not vibes."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every conditional edge should have at least one test case."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Toy LangGraph-style route function",
+          "language": "python",
+          "code": "def review_answer(state):\n    citations_ok = all(claim in state[\"evidence\"] for claim in state[\"claims\"])\n    return {**state, \"review_status\": \"pass\" if citations_ok else \"needs_revision\"}\n\ndef route(state):\n    if state[\"review_status\"] == \"pass\":\n        return \"final\"\n    return \"revise\"\n\nstate = {\"claims\": [\"LangGraph uses nodes\"], \"evidence\": [\"LangGraph uses nodes\"], \"review_status\": None}\nreviewed = review_answer(state)\nprint(route(reviewed))\n",
+          "explanation": "The code isolates review and routing so both can be tested without a full framework run.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict the route.",
+            "answer": "It prints `final` because every claim appears in the evidence list."
+          },
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Route test",
+          "prompt": "Why test conditional routes?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Routes are never application logic.",
+              "correct": false
+            },
+            {
+              "text": "A wrong route can skip review, approval, or revision without obvious errors.",
+              "correct": true
+            },
+            {
+              "text": "Testing routes prevents all model drift.",
+              "correct": false
+            }
+          ],
+          "explanation": "Routing controls safety and completion paths.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ]
+        }
+      ],
+      "citations": [
+        "kb6",
+        "kb7"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Test graphs as workflows, not prompts",
+      "sub": "Production confidence comes from path coverage and traces.",
+      "summary": "LangGraph eval includes topology behavior.",
+      "objectives": [
+        "Assert required nodes run.",
+        "Test resume and interruption.",
+        "Trace state updates and tool calls."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The graph trace is the lesson artifact",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Trace representative runs and assert that retrieval, review, approval, and final nodes appear when expected. Compare graph outcomes against a simpler baseline to justify complexity."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Failure modes include junk-drawer state, wrong conditional routes, non-idempotent side effects before interrupts, stale checkpoints, and overlong state histories."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "A release run should show path, state diff, tool calls, interrupt payload, and final output."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output from LangGraph",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review the graph trace with final answer."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "State schema fields have owners, readers, and retention rules."
+                  }
+                ],
+                [
+                  {
+                    "text": "Every conditional route has pass and fail tests."
+                  }
+                ],
+                [
+                  {
+                    "text": "Checkpoints and thread IDs resume the intended run."
+                  }
+                ],
+                [
+                  {
+                    "text": "Interrupts happen before risky side effects with reviewable payloads."
+                  }
+                ],
+                [
+                  {
+                    "text": "Final claims are supported by evidence carried through state."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Graph release",
+          "prompt": "What should block release of a LangGraph agent?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A clear state schema.",
+              "correct": false
+            },
+            {
+              "text": "A trace showing a safety or review node was skipped on a route that needed it.",
+              "correct": true
+            },
+            {
+              "text": "A checkpointed approval path.",
+              "correct": false
+            }
+          ],
+          "explanation": "Topology correctness is part of answer correctness.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb6",
+            "kb7"
+          ]
+        }
+      ],
+      "citations": [
+        "kb6",
+        "kb7"
+      ]
+    }
+  ],
+  "glossary": {
+    "framework": {
+      "id": "framework",
+      "label": "Framework",
+      "laymanDefinition": "A library or platform that provides agent building blocks and conventions.",
+      "technicalNote": "Framework choice affects state handling, tools, tracing, deployment model, ecosystem fit, and how much control the application keeps.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "graph": {
+      "id": "graph",
+      "label": "Graph",
+      "laymanDefinition": "A workflow shape where nodes and edges define how work moves between steps.",
+      "technicalNote": "Graph-based agents make branching, retries, checkpoints, and human review more explicit than a single loose loop.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "checkpoint": {
+      "id": "checkpoint",
+      "label": "Checkpoint",
+      "laymanDefinition": "A saved workflow state that lets execution resume or be inspected later.",
+      "technicalNote": "Checkpoints are essential for durable agents because retries, approvals, and debugging need the exact state at a step boundary.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "handoff": {
+      "id": "handoff",
+      "label": "Handoff",
+      "laymanDefinition": "Passing work from one agent, tool, or human role to another.",
+      "technicalNote": "Handoffs need a typed payload, ownership transfer, stop condition, and audit trail so context does not vanish between actors.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "sdk": {
+      "id": "sdk",
+      "label": "SDK",
+      "laymanDefinition": "A software development kit with APIs and helpers for building applications.",
+      "technicalNote": "Agent SDKs encode assumptions about models, tools, sessions, tracing, and deployment, so evaluate those assumptions against the product architecture.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Software development kit"
+    },
+    "orchestration": {
+      "id": "orchestration",
+      "label": "Orchestration",
+      "laymanDefinition": "Coordinating steps, agents, tools, state, and decisions in a workflow.",
+      "technicalNote": "Orchestration owns sequencing, parallelism, retries, timeouts, approvals, and failure visibility across the agent system.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for LangGraph in Depth",
+    "themes": [
+      {
+        "name": "LangGraph design choice",
+        "questions": [
+          {
+            "q": "Does the workflow need explicit branches, checkpointed state, interrupts, or resumable tool steps?",
+            "why": "LangGraph adds graph design work, so use it when control flow itself matters.",
+            "opts": [
+              "StateGraph with checkpoints",
+              "LangChain create_agent only",
+              "Durable workflow engine underneath"
+            ],
+            "rot": "Use LangGraph when branch/control structure is the core app logic; add a durable engine when long external orchestration dominates."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct LangGraph by naming state schema, nodes, updates, edges, conditional routing, checkpointer, thread_id, interrupt, and route tests."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "LangGraph path from state schema to checked route",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "StateGraph makes control flow visible",
+          "sub": "Nodes and edges replace an opaque agent loop.",
+          "what": "Learners see LangGraph as explicit workflow modeling.",
+          "relevance": "This prevents using graph machinery without a state problem to solve.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Start with the state fields the graph must carry.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Reducers and state shape prevent junk drawers",
+          "sub": "Graph state needs typed ownership and merge rules.",
+          "what": "Learners design graph state safely.",
+          "relevance": "Unstructured state makes routes brittle and privacy harder.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Keep state small, typed, and intentionally merged.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Checkpoints and interrupts enable resume",
+          "sub": "Thread IDs and persisted state make human review practical.",
+          "what": "Learners understand persistence and interrupt flow.",
+          "relevance": "Approval gates break if state cannot resume safely.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use checkpoints before pausing for external input.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code a tiny conditional route",
+          "sub": "A small graph can make routing behavior testable.",
+          "what": "Learners see graph decisions in runnable code.",
+          "relevance": "Route bugs can silently skip safety nodes.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Implement route logic before adding many model calls.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Test graphs as workflows, not prompts",
+          "sub": "Production confidence comes from path coverage and traces.",
+          "what": "Learners define LangGraph release checks.",
+          "relevance": "A graph can render valid output while hiding skipped nodes or bad state merges.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Validate nodes, edges, checkpoints, and resume behavior.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "StateGraph makes control flow visible",
+        "detail": "LangGraph gives agent apps named state transitions."
+      },
+      {
+        "step": 2,
+        "label": "Reducers and state shape prevent junk drawers",
+        "detail": "State design is the heart of LangGraph."
+      },
+      {
+        "step": 3,
+        "label": "Checkpoints and interrupts enable resume",
+        "detail": "LangGraph interrupts turn waiting into resumable control flow."
+      },
+      {
+        "step": 4,
+        "label": "Code a tiny conditional route",
+        "detail": "Conditional edges deserve unit tests."
+      },
+      {
+        "step": 5,
+        "label": "Test graphs as workflows, not prompts",
+        "detail": "LangGraph eval includes topology behavior."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_fit",
+        "label": "Can you justify the fit described in \"StateGraph makes control flow visible\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_impl",
+        "label": "Can you inspect the implementation surface in \"Code a tiny conditional route\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Test graphs as workflows, not prompts\" define production checks?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Sketch a LangGraph tutor workflow with plan, retrieve, answer, review, and interrupt-before-publish nodes. Define state fields, routes, checkpoint key, tests, and what must stay out of state. Next rung: build agent workflows with LangGraph.",
+      "scopedTo": "LangGraph in Depth"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LangGraph documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "kb6": {
+      "id": "kb6",
+      "kind": "kb",
+      "title": "KB: LangGraph",
+      "url": "https://docs.langchain.com/oss/python/langgraph/overview",
+      "asOfDate": "2026-06-22"
+    },
+    "kb7": {
+      "id": "kb7",
+      "kind": "kb",
+      "title": "KB: LlamaIndex",
+      "url": "https://developers.llamaindex.ai/python/framework/",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

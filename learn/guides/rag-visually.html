@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>RAG, Visually — from a raw document to a grounded answer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --accent:#605bff;--accent-2:#4b46d6;--accent-weak:#eef0ff;
+  --ink:#0f1222;--ink-soft:#2b2f44;--muted:#5b6172;--faint:#8a90a6;
+  --bg:#f6f7fc;--surface:#fff;--surface-2:#fbfbfe;
+  --border:#e7e9f2;--border-strong:#d6d9e8;
+  --ok:#1d9e75;--ok-weak:#e6f6ef;--warn:#b9770a;--warn-weak:#fbf1de;
+  --danger:#d2433a;--danger-weak:#fcebea;--info:#2f74d0;--info-weak:#e8f1fb;
+  --code-bg:#0f1326;--code-ink:#e7ebff;--code-dim:#7f88b3;--code-key:#8ab4ff;--code-str:#9be7a6;--code-num:#ffcf8a;
+  --radius:16px;--radius-sm:10px;--measure:920px;
+  --shadow:0 1px 2px rgba(16,18,34,.05),0 12px 34px rgba(16,18,34,.08);
+}
+[data-theme="dark"]{
+  --ink:#eef0fb;--ink-soft:#cfd3ea;--muted:#a3a9c2;--faint:#7e85a3;
+  --bg:#0b0d18;--surface:#13162a;--surface-2:#171a31;
+  --border:#262a44;--border-strong:#343a5c;--accent-weak:#1d2150;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 14px 38px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.62;font-size:16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+.wrap{max-width:var(--measure);margin:0 auto;padding:0 22px 120px}
+h1,h2,h3,h4{line-height:1.22;letter-spacing:-.01em;color:var(--ink);margin:.2em 0 .4em}
+p{margin:.6em 0;color:var(--ink-soft)}
+.eyebrow{color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.07em;text-transform:uppercase}
+.muted{color:var(--muted)}
+a{color:var(--accent);text-decoration:none}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--accent-weak);color:var(--accent-2);padding:1px 6px;border-radius:6px}
+
+/* topbar */
+.topbar{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:var(--measure);margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:14px}
+.brand{font-weight:800;font-size:15px;display:flex;align-items:center;gap:9px}
+.dot{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-weak)}
+.spacer{flex:1}
+.tbtn{border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;padding:6px 12px;border-radius:8px;cursor:pointer}
+.tbtn:hover{border-color:var(--accent)}
+
+/* hero */
+.hero{padding:46px 0 8px}
+.hero h1{font-size:40px;font-weight:800;margin:.1em 0 .2em}
+.hero .lede{font-size:19px;color:var(--ink-soft);max-width:680px}
+.tagrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.tag{font-size:12px;font-weight:600;color:var(--accent-2);background:var(--accent-weak);border-radius:99px;padding:5px 12px}
+
+/* analogy callout */
+.analogy{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:26px 0}
+.analogy .card{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:18px 20px;box-shadow:var(--shadow)}
+.analogy .card h3{font-size:16px;margin:0 0 6px}
+.analogy .closed h3{color:var(--danger)}
+.analogy .open h3{color:var(--ok)}
+.analogy .lab{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+
+/* section */
+section{padding:34px 0 8px;scroll-margin-top:70px;border-top:1px solid var(--border)}
+section.nobord{border-top:none}
+.sec-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.sec-num{font-size:13px;font-weight:800;color:#fff;background:var(--accent);width:30px;height:30px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.sec-h h2{font-size:25px;margin:0}
+.lead{font-size:17px;color:var(--ink-soft)}
+
+/* mental map */
+.map{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);padding:20px;margin:18px 0}
+.map .pipe{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
+.mnode{flex:1 1 110px;min-width:110px;border:1px solid var(--border-strong);background:var(--surface-2);border-radius:12px;padding:11px 12px;cursor:pointer;transition:.12s;text-align:left;font:inherit;color:var(--ink)}
+.mnode:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow)}
+.mnode .mi{font-size:18px}
+.mnode .mt{font-weight:700;font-size:13px;margin-top:3px}
+.mnode .ms{font-size:11px;color:var(--muted);margin-top:2px}
+.marrow{display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:18px;padding:0 4px;flex:none}
+.map .legend{margin-top:14px;font-size:12.5px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap}
+.map .legend b{color:var(--ink)}
+@media(max-width:760px){.marrow{transform:rotate(90deg)}.analogy{grid-template-columns:1fr}}
+
+/* cards */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.box{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:16px 18px;box-shadow:var(--shadow)}
+.box h4{font-size:14px;margin:0 0 8px;display:flex;align-items:center;gap:7px}
+.box h4 .pill{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:6px}
+.pill.concept{background:var(--info-weak);color:var(--info)}
+.pill.example{background:var(--ok-weak);color:var(--ok)}
+.pill.tech{background:var(--accent-weak);color:var(--accent-2)}
+.callout{border-left:3px solid var(--info);background:var(--info-weak);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:12px 15px;margin:14px 0;font-size:14.5px}
+.callout.good{border-color:var(--ok);background:var(--ok-weak)}
+.callout.warn{border-color:var(--warn);background:var(--warn-weak)}
+
+/* code */
+pre{margin:12px 0;background:var(--code-bg);color:var(--code-ink);padding:15px 16px;border-radius:var(--radius-sm);overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.7px;line-height:1.65}
+pre .c{color:var(--code-dim)} pre .k{color:var(--code-key)} pre .s{color:var(--code-str)} pre .n{color:var(--code-num)}
+.codecap{font-size:11px;color:var(--faint);font-family:ui-monospace,monospace;margin:12px 0 -6px}
+
+/* (i) term */
+.term{border:none;background:transparent;color:inherit;font:inherit;cursor:pointer;border-bottom:1.6px dotted var(--accent);padding:0;white-space:nowrap}
+.term sup{font-size:9px;font-weight:800;color:#fff;background:var(--accent);border-radius:50%;width:13px;height:13px;display:inline-flex;align-items:center;justify-content:center;margin-left:2px}
+#pop{position:fixed;z-index:80;max-width:300px;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);box-shadow:var(--shadow);padding:12px 14px;font-size:13px;display:none}
+#pop.on{display:block}
+#pop .pt{font-weight:700;margin-bottom:3px}
+#pop .pn{color:var(--ink-soft)}
+
+/* demos */
+.demo{border:1px dashed var(--border-strong);border-radius:var(--radius);background:var(--surface-2);padding:18px;margin:16px 0}
+.demo .dh{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-2);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.demo .dh .play{font-size:10px;background:var(--accent);color:#fff;border-radius:5px;padding:1px 6px}
+.btn{border:none;background:var(--accent);color:#fff;font:inherit;font-size:13px;font-weight:600;padding:8px 15px;border-radius:9px;cursor:pointer}
+.btn:hover{background:var(--accent-2)}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--border-strong)}
+.btn.ghost.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+input[type=range]{accent-color:var(--accent);width:200px}
+.readout{font-size:13px;color:var(--muted)}
+.readout b{color:var(--ink)}
+
+/* embedding scatter */
+.scatterwrap{display:grid;grid-template-columns:1fr 220px;gap:16px;align-items:start}
+@media(max-width:680px){.scatterwrap{grid-template-columns:1fr}}
+.simbar{height:10px;border-radius:99px;background:var(--border);overflow:hidden;margin-top:6px}
+.simbar > i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+
+/* chunk demo */
+.chunkbox{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.chk{border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;background:var(--surface);position:relative}
+.chk .lab{font-size:10px;font-weight:700;color:var(--accent-2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.ov{background:var(--warn-weak);color:var(--warn);border-radius:4px;padding:0 2px;font-weight:600}
+
+/* rrf demo */
+.rrf{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:12px;margin-top:10px}
+@media(max-width:680px){.rrf{grid-template-columns:1fr}}
+.rcol h5{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.rrow{font-size:12.5px;border:1px solid var(--border);border-radius:8px;padding:6px 9px;margin:5px 0;background:var(--surface);display:flex;justify-content:space-between;gap:8px}
+.rrow.hot{border-color:var(--accent);background:var(--accent-weak)}
+.rrow .sc{color:var(--accent-2);font-weight:700;font-variant-numeric:tabular-nums}
+.rrow .rk{color:var(--faint)}
+
+/* schema table */
+table.t{border-collapse:collapse;width:100%;font-size:12.7px;margin:12px 0}
+table.t th,table.t td{border:1px solid var(--border);padding:7px 10px;text-align:left;vertical-align:top}
+table.t th{background:var(--surface-2);font-weight:700}
+table.t td code{font-size:12px}
+
+/* numbers strip */
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+.stat{flex:1 1 130px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);padding:12px 14px}
+.stat .v{font-size:22px;font-weight:800;color:var(--accent-2)}
+.stat .l{font-size:11.5px;color:var(--muted)}
+
+/* footer map */
+.filemap{font-size:13px}
+.filemap li{margin:5px 0}
+.filemap code{font-size:12px}
+hr.soft{border:none;border-top:1px solid var(--border);margin:30px 0}
+.foot{color:var(--faint);font-size:12.5px;text-align:center;margin-top:40px}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="topbar-in">
+  <span class="brand"><span class="dot"></span>RAG, Visually</span>
+  <span class="spacer"></span>
+  <button class="tbtn" id="theme">☾ Dark</button>
+</div></div>
+
+<div class="wrap">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="eyebrow">Retrieval-Augmented Generation · for beginners</div>
+  <h1>From a raw document to a grounded answer</h1>
+  <p class="lede">An <span class="term" data-t="llm">LLM<sup>i</sup></span> only knows what it learned during training. <b>RAG</b> lets it look things up in <i>your</i> documents first — so answers are current, specific, and citable. This page walks the whole pipeline with live, clickable demos, using the real numbers from your Agentic Learning Studio app.</p>
+  <div class="tagrow">
+    <span class="tag">bge-small · 384-dim</span>
+    <span class="tag">Supabase + pgvector</span>
+    <span class="tag">HNSW + tsvector</span>
+    <span class="tag">Hybrid + RRF</span>
+    <span class="tag">260 chunks live</span>
+  </div>
+</div>
+
+<!-- ANALOGY -->
+<div class="analogy">
+  <div class="card closed">
+    <div class="lab" style="color:var(--danger)">Without RAG</div>
+    <h3>Closed-book exam</h3>
+    <p>You ask the model a question and it answers purely from memory. If the topic is new, niche, or changed after training, it guesses — and can sound confident while being wrong (<span class="term" data-t="halluc">hallucination<sup>i</sup></span>).</p>
+  </div>
+  <div class="card open">
+    <div class="lab" style="color:var(--ok)">With RAG</div>
+    <h3>Open-book exam</h3>
+    <p>Before answering, the system <b>retrieves</b> the most relevant pages from <i>your</i> notes and hands them to the model with the question. The model answers <b>grounded</b> in those pages and can cite them.</p>
+  </div>
+</div>
+
+<!-- MENTAL MAP -->
+<div class="map">
+  <div class="eyebrow" style="margin-bottom:10px">Mental map · click any block to jump</div>
+  <div class="pipe" id="pipe">
+    <button class="mnode" data-go="s1"><div class="mi">📄</div><div class="mt">1 · Documents</div><div class="ms">raw files</div></button>
+    <div class="marrow">→</div>
+    <button class="mnode" data-go="s2"><div class="mi">✂️</div><div class="mt">2 · Chunks</div><div class="ms">small slices</div></button>
+    <div class="marrow">→</div>
+    <button class="mnode" data-go="s3"><div class="mi">🔢</div><div class="mt">3 · Embeddings</div><div class="ms">text → vectors</div></button>
+    <div class="marrow">→</div>
+    <button class="mnode" data-go="s4"><div class="mi">🗄️</div><div class="mt">4 · Store + Index</div><div class="ms">pgvector</div></button>
+    <div class="marrow">→</div>
+    <button class="mnode" data-go="s5"><div class="mi">❓</div><div class="mt">5 · Query</div><div class="ms">the question</div></button>
+    <div class="marrow">→</div>
+    <button class="mnode" data-go="s6"><div class="mi">🔎</div><div class="mt">6 · Retrieve</div><div class="ms">hybrid + RRF</div></button>
+    <div class="marrow">→</div>
+    <button class="mnode" data-go="s7"><div class="mi">✨</div><div class="mt">7 · Augment + Generate</div><div class="ms">cited answer</div></button>
+  </div>
+  <div class="legend">
+    <span><b>Build once (offline):</b> steps 1–4 — ingest your documents into a searchable store.</span>
+    <span><b>Every request (live):</b> steps 5–7 — search the store and answer.</span>
+  </div>
+</div>
+
+<div class="callout">
+  <b>The one-sentence version:</b> turn documents into <span class="term" data-t="vector">vectors<sup>i</sup></span> once, then for each question turn the question into a vector too and grab the nearest document vectors — those are your "open-book" pages.
+</div>
+
+<!-- STAGE 1 -->
+<section id="s1" class="nobord">
+  <div class="sec-h"><span class="sec-num">1</span><h2>Documents — the raw material</h2></div>
+  <p class="lead">RAG starts with your source material: PDFs, Word docs, Markdown, web pages, or structured data (JSON/CSV). The first job is to <b>normalize</b> everything into plain text plus useful metadata.</p>
+
+  <div class="grid2">
+    <div class="box">
+      <h4><span class="pill concept">concept</span> Two shapes of input</h4>
+      <p><b>Prose</b> — long free text (a guide, a research plan). Will be sliced into windows.<br><b>Records</b> — a catalog where each row is already one self-contained item (e.g. a list of tools). Each row becomes one chunk, no slicing.</p>
+    </div>
+    <div class="box">
+      <h4><span class="pill example">example</span> Your live KB</h4>
+      <p>Your app ingested <b>4 documents → 260 chunks</b>: a 247-row tool catalog (records), a research-plan <code>.docx</code> (prose, 11 chunks), and two small JSON files.</p>
+    </div>
+  </div>
+
+  <div class="box">
+    <h4><span class="pill example">example</span> One raw record (from <code>17_Open_Source_Candidate_List.json</code>)</h4>
+<pre><span class="c">// raw JSON, one of 247 array items</span>
+{
+  <span class="k">"name"</span>: <span class="s">"langflow"</span>,
+  <span class="k">"category"</span>: <span class="s">"Agent UIs / chat frontends"</span>,
+  <span class="k">"one_line"</span>: <span class="s">"Visual framework for agentic and RAG apps"</span>,
+  <span class="k">"verdict"</span>: <span class="s">"Production-ready"</span>,
+  <span class="k">"github_url"</span>: <span class="s">"https://github.com/langflow-ai/langflow"</span>,
+  <span class="k">"as_of_date"</span>: <span class="s">"2026-06-17"</span>
+}</pre>
+  </div>
+
+  <div class="callout">A loader flattens that record into one <b>searchable sentence</b> (only the fields that exist), keeping the rest as filterable metadata:</div>
+  <div class="codecap">src/rag/loaders.ts · recordToText()</div>
+<pre><span class="s">"langflow (Agent UIs / chat frontends) — Visual framework for agentic</span>
+<span class="s"> and RAG apps. Verdict: Production-ready."</span>   <span class="c">// ← this text gets embedded</span></pre>
+</section>
+
+<!-- STAGE 2 -->
+<section id="s2">
+  <div class="sec-h"><span class="sec-num">2</span><h2>Chunks — why we slice documents</h2></div>
+  <p class="lead">You can't embed a whole 50-page document as one vector — meaning gets blurred and retrieval returns way too much. So prose is cut into small overlapping <span class="term" data-t="chunk">chunks<sup>i</sup></span> (~a few paragraphs each). Records are already chunk-sized, so they're left whole.</p>
+
+  <div class="grid2">
+    <div class="box">
+      <h4><span class="pill concept">concept</span> Why overlap?</h4>
+      <p>If a sentence is split across two chunks, neither chunk fully contains the idea. A small <b>overlap</b> (the tail of one chunk repeats at the head of the next) means the idea survives in at least one chunk.</p>
+    </div>
+    <div class="box">
+      <h4><span class="pill tech">technical</span> Your settings</h4>
+      <p>~<b>320 words</b> per chunk, <b>60-word overlap</b>, split on paragraph boundaries. (~450 / ~80 tokens.)</p>
+      <div class="codecap" style="margin-top:8px">src/rag/chunkers.ts</div>
+<pre>const TARGET_WORDS = <span class="n">320</span>;
+const OVERLAP_WORDS = <span class="n">60</span>;</pre>
+    </div>
+  </div>
+
+  <div class="demo">
+    <div class="dh"><span class="play">DEMO</span> Watch a paragraph become overlapping chunks</div>
+    <p class="muted" style="font-size:13px;margin:0 0 4px">Tiny numbers for visibility (8 words/chunk, 3-word overlap). The <span class="ov">highlighted</span> words are the overlap shared between neighbours.</p>
+    <div class="controls">
+      <button class="btn" id="chunkRun">Chunk it →</button>
+      <button class="btn ghost" id="chunkReset">Reset</button>
+    </div>
+    <div id="chunkSrc" style="font-size:13.5px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 13px"></div>
+    <div class="chunkbox" id="chunkOut"></div>
+  </div>
+</section>
+
+<!-- STAGE 3 -->
+<section id="s3">
+  <div class="sec-h"><span class="sec-num">3</span><h2>Embeddings — turning text into numbers</h2></div>
+  <p class="lead">An <span class="term" data-t="embedding">embedding<sup>i</sup></span> is a list of numbers (a <span class="term" data-t="vector">vector<sup>i</sup></span>) that captures the <i>meaning</i> of a piece of text. Texts about similar things get vectors that point in similar directions. Your app uses <b>bge-small-en-v1.5</b>, which outputs <b>384 numbers</b> per text, running locally (free, no API).</p>
+
+  <div class="grid2">
+    <div class="box">
+      <h4><span class="pill concept">concept</span> Meaning becomes geometry</h4>
+      <p>Think of every text as an arrow in a 384-dimensional space. "LangGraph" and "CrewAI" land close together (both agent frameworks); "banana bread recipe" lands far away. <b>Closeness = similar meaning.</b></p>
+    </div>
+    <div class="box">
+      <h4><span class="pill tech">technical</span> One subtle gotcha: queries ≠ passages</h4>
+      <p>BGE is <b>asymmetric</b> — a search <i>query</i> must be prefixed with a special instruction; stored <i>passages</i> are not. Mixing this up quietly hurts results, so the code has two separate functions.</p>
+      <div class="codecap" style="margin-top:8px">src/rag/embed.ts</div>
+<pre><span class="k">embedQuery</span>(t)   <span class="c">// "Represent this sentence…: " + t</span>
+<span class="k">embedPassages</span>(t) <span class="c">// t, raw (no prefix)</span></pre>
+    </div>
+  </div>
+
+  <div class="callout">A real embedding is 384 numbers. Here's the first few of what <code>"langflow …"</code> becomes — just to make it concrete:</div>
+<pre><span class="c">// 384 floats, normalized to unit length (so cosine == dot product)</span>
+[ <span class="n">-0.013</span>, <span class="n">0.058</span>, <span class="n">-0.041</span>, <span class="n">0.092</span>, <span class="n">0.007</span>, <span class="n">-0.066</span>, <span class="n">0.024</span>, … ]
+                                              <span class="c">↑ 384 of these</span></pre>
+
+  <div class="demo">
+    <div class="dh"><span class="play">DEMO</span> Embedding space (a 2-D cartoon of the 384-D space)</div>
+    <p class="muted" style="font-size:13px;margin:0 0 4px">Each dot is a stored chunk, placed by meaning. Pick a query — the ⭐ is its vector, and the 3 nearest chunks (most similar) light up.</p>
+    <div class="controls">
+      <span class="readout">Search for:</span>
+      <button class="btn ghost qbtn sel" data-q="frame">"agent framework to build with"</button>
+      <button class="btn ghost qbtn" data-q="store">"how to store vectors"</button>
+      <button class="btn ghost qbtn" data-q="food">"dessert recipe"</button>
+    </div>
+    <div class="scatterwrap">
+      <svg id="scatter" viewBox="0 0 460 320" style="width:100%;border:1px solid var(--border);border-radius:10px;background:var(--surface)"></svg>
+      <div>
+        <div class="readout" style="margin-bottom:6px"><b>Nearest chunks</b> (top matches)</div>
+        <ol id="nearList" style="margin:0;padding-left:18px;font-size:13px;color:var(--ink-soft)"></ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STAGE 4 -->
+<section id="s4">
+  <div class="sec-h"><span class="sec-num">4</span><h2>Store + Index — making 260 vectors searchable fast</h2></div>
+  <p class="lead">All chunk vectors (plus their text + metadata) are saved in <b>Postgres</b> via the <span class="term" data-t="pgvector">pgvector<sup>i</sup></span> extension. To search them quickly without comparing against every row, we build two indexes: one for vector search, one for keyword search.</p>
+
+  <div class="grid2">
+    <div class="box">
+      <h4><span class="pill tech">technical</span> The <code>chunks</code> table (key columns)</h4>
+      <table class="t">
+        <tr><th>column</th><th>holds</th></tr>
+        <tr><td><code>content</code></td><td>the chunk text</td></tr>
+        <tr><td><code>embedding</code></td><td><code>vector(384)</code> — the meaning</td></tr>
+        <tr><td><code>content_tsv</code></td><td>auto keyword index of <code>content</code></td></tr>
+        <tr><td><code>title, category, verdict, as_of_date</code></td><td>filterable metadata</td></tr>
+        <tr><td><code>content_hash</code></td><td>UNIQUE → idempotent re-ingest</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <h4><span class="pill concept">concept</span> Two indexes, two skills</h4>
+      <p><b><span class="term" data-t="hnsw">HNSW<sup>i</sup></span></b> (vector) → "find me things that <i>mean</i> the same." Approximate but fast.<br><b><span class="term" data-t="tsvector">GIN / tsvector<sup>i</sup></span></b> (keyword) → "find me things that contain this <i>exact</i> word" (rescues names like <i>LangGraph</i>).</p>
+    </div>
+  </div>
+
+  <div class="codecap">supabase/migrations/0001_rag.sql — the indexes</div>
+<pre><span class="c">-- vector nearest-neighbour (cosine). Grows incrementally, no retraining.</span>
+<span class="k">create index</span> chunks_embedding_hnsw <span class="k">on</span> chunks
+  <span class="k">using</span> hnsw (embedding vector_cosine_ops) <span class="k">with</span> (m=<span class="n">16</span>, ef_construction=<span class="n">64</span>);
+
+<span class="c">-- keyword search; content_tsv is a GENERATED column kept in sync automatically</span>
+<span class="k">create index</span> chunks_tsv_gin <span class="k">on</span> chunks <span class="k">using</span> gin (content_tsv);</pre>
+
+  <div class="codecap">src/rag/store.ts — insert one chunk (vector passed as a text literal)</div>
+<pre><span class="k">const</span> vectors = <span class="k">await</span> localEmbeddings.embedPassages(texts); <span class="c">// 384-dim each</span>
+<span class="k">await</span> client.query(
+  `<span class="k">insert into</span> chunks (content, embedding, content_hash, title, category, …)
+   <span class="k">values</span> ($1, $2::vector, $3, …)
+   <span class="k">on conflict</span> (content_hash) <span class="k">do nothing</span>`,   <span class="c">// ← unchanged chunks skip</span>
+  [text, toVectorLiteral(vec), hash, …]);</pre>
+
+  <div class="stats">
+    <div class="stat"><div class="v">260</div><div class="l">chunks stored (live)</div></div>
+    <div class="stat"><div class="v">260/260</div><div class="l">have embeddings</div></div>
+    <div class="stat"><div class="v">384</div><div class="l">dimensions each</div></div>
+    <div class="stat"><div class="v">0.8.0</div><div class="l">pgvector version</div></div>
+  </div>
+  <div class="callout good">Steps 1–4 are the <b>"build the library"</b> phase — done once (and re-run cheaply when docs change). Everything below happens <b>per question</b>.</div>
+</section>
+
+<!-- STAGE 5 -->
+<section id="s5">
+  <div class="sec-h"><span class="sec-num">5</span><h2>Query — the question becomes a vector too</h2></div>
+  <p class="lead">When you ask something, the system builds a search string and embeds it with <code>embedQuery()</code> (the prefixed one). Now the question lives in the <i>same</i> 384-D space as the chunks, so "nearest" is meaningful.</p>
+  <div class="box">
+    <h4><span class="pill example">example</span> Your app's real query string</h4>
+    <p>The retriever blends the topic, the learner's goal, the must-cover items, and the raw prompt into one search string:</p>
+<pre><span class="s">"Agentic App Development — Build an agentic app with LangChain and</span>
+<span class="s"> LangGraph — LangChain LangGraph agents tools state — I want to learn</span>
+<span class="s"> how to build an agentic app using langchain and langraph"</span></pre>
+    <div class="codecap">src/agent/nodes.ts · retriever</div>
+<pre><span class="k">const</span> query = [profile.topic, intent.learningGoal,
+  mustCover.join(<span class="s">" "</span>), userPrompt].filter(Boolean).join(<span class="s">" — "</span>);
+<span class="k">const</span> { chunks, coverage } = <span class="k">await</span> retrieve(query, <span class="n">8</span>); <span class="c">// top 8</span></pre>
+  </div>
+</section>
+
+<!-- STAGE 6 -->
+<section id="s6">
+  <div class="sec-h"><span class="sec-num">6</span><h2>Retrieve — two searches, fused</h2></div>
+  <p class="lead">The query runs <b>two</b> searches in parallel, then merges them. Vector search finds meaning; keyword search guarantees exact names. Merging them (<span class="term" data-t="rrf">RRF<sup>i</sup></span>) gives results better than either alone.</p>
+
+  <div class="grid2">
+    <div class="box">
+      <h4><span class="pill tech">technical</span> Search A — vector (semantic)</h4>
+<pre><span class="k">select</span> id, content,
+  <span class="n">1</span> - (embedding &lt;=&gt; $1::vector) <span class="k">as</span> sim
+<span class="k">from</span> chunks
+<span class="k">order by</span> embedding &lt;=&gt; $1::vector
+<span class="k">limit</span> <span class="n">20</span>;</pre>
+      <p class="muted" style="font-size:12.5px"><code>&lt;=&gt;</code> = <span class="term" data-t="cosine">cosine<sup>i</sup></span> distance. <code>sim = 1 − distance</code> (1 = identical meaning).</p>
+    </div>
+    <div class="box">
+      <h4><span class="pill tech">technical</span> Search B — keyword (exact)</h4>
+<pre><span class="k">select</span> id, content
+<span class="k">from</span> chunks
+<span class="k">where</span> content_tsv @@
+   plainto_tsquery(<span class="s">'english'</span>, $1)
+<span class="k">order by</span> ts_rank(...) <span class="k">desc</span>
+<span class="k">limit</span> <span class="n">20</span>;</pre>
+      <p class="muted" style="font-size:12.5px">Catches "LangGraph" even if the embedding blurs it with "LangChain".</p>
+    </div>
+  </div>
+
+  <div class="demo">
+    <div class="dh"><span class="play">DEMO</span> Cosine similarity — why "angle" means "similar"</div>
+    <p class="muted" style="font-size:13px;margin:0 0 4px">Drag to rotate the <b style="color:var(--accent)">query</b> arrow toward/away from the fixed <b>document</b> arrow. Small angle = high similarity.</p>
+    <div class="scatterwrap">
+      <svg id="cos" viewBox="0 0 300 240" style="width:100%;max-width:340px;border:1px solid var(--border);border-radius:10px;background:var(--surface)"></svg>
+      <div>
+        <div class="controls"><input type="range" id="cosAngle" min="0" max="170" value="25"></div>
+        <div class="readout">angle: <b id="cosDeg">25°</b></div>
+        <div class="readout" style="margin-top:8px">cosine similarity: <b id="cosVal">0.91</b></div>
+        <div class="simbar"><i id="cosBar"></i></div>
+        <p class="muted" style="font-size:12px;margin-top:10px" id="cosNote"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo">
+    <div class="dh"><span class="play">DEMO</span> RRF — fusing the two ranked lists</div>
+    <p class="muted" style="font-size:13px;margin:0 0 4px">Each list ranks chunks differently. RRF scores every chunk by <code>Σ 1/(60 + rank)</code>. A chunk that appears in <b>both</b> lists climbs to the top. Watch <b style="color:var(--accent-2)">"LangGraph guide"</b> and <b style="color:var(--accent-2)">"langflow record"</b> win — they're in both.</p>
+    <div class="controls"><button class="btn" id="rrfRun">Fuse with RRF →</button></div>
+    <div class="rrf">
+      <div class="rcol"><h5>Vector list (by meaning)</h5><div id="rcolV"></div></div>
+      <div class="rcol"><h5>Keyword list (by exact term)</h5><div id="rcolK"></div></div>
+      <div class="rcol"><h5>① Fused result (top-k)</h5><div id="rcolF"></div></div>
+    </div>
+  </div>
+
+  <div class="box">
+    <h4><span class="pill concept">concept</span> Coverage — "did we actually find good stuff?"</h4>
+    <p>After fusing, a single <b>coverage</b> score (0–1, no LLM) estimates how well the KB covered the question — half from the best match, half from how many strong matches there were. Low coverage is the signal to fall back to the model's own knowledge (or, later, a web search).</p>
+    <div class="codecap">src/rag/retrieve.ts</div>
+<pre><span class="k">const</span> topSim = Math.max(...sims);              <span class="c">// best single match</span>
+<span class="k">const</span> strong = sims.filter(s =&gt; s &gt;= <span class="n">0.45</span>).length; <span class="c">// how many are strong</span>
+<span class="k">const</span> coverage = <span class="n">0.5</span>*topSim + <span class="n">0.5</span>*Math.min(<span class="n">1</span>, strong/(k*<span class="n">0.4</span>));</pre>
+    <div class="callout"><b>Live result</b> for the LangChain/LangGraph query: <b>8 chunks retrieved, coverage 0.872</b> — exactly the "88%" your app's UI shows.</div>
+  </div>
+</section>
+
+<!-- STAGE 7 -->
+<section id="s7">
+  <div class="sec-h"><span class="sec-num">7</span><h2>Augment + Generate — the grounded answer</h2></div>
+  <p class="lead">The retrieved chunks are tagged <code>S1…S8</code> and pasted into the model's prompt with an instruction to prefer them and cite them. The model writes the lesson; every <code>[S#]</code> it cites resolves to a real source in the footer.</p>
+
+  <div class="box">
+    <h4><span class="pill tech">technical</span> What the model actually receives</h4>
+    <div class="codecap">src/agent/prompts.ts · architectUserPrompt()</div>
+<pre>SOURCES from the knowledge base (cite via sources:[<span class="s">"S#"</span>];
+trust their recency over your training data):
+[<span class="n">S1</span>] langflow (as of 2026-06-17): Visual framework for agentic…
+[<span class="n">S2</span>] dify (as of 2026-06-17): Open-source LLM app platform…
+… (8 sources)</pre>
+  </div>
+
+  <div class="callout good">
+    <b>Result:</b> instead of a generic answer from memory, the model writes a lesson grounded in <i>your</i> 8 retrieved notes — current, specific, and with a <b>Sources</b> footer. That's the whole point of RAG.
+  </div>
+
+  <div class="box">
+    <h4><span class="pill concept">concept</span> Graceful fallback</h4>
+    <p>If there's no database, the query is empty, or nothing matches, <code>retrieve()</code> returns <code>{chunks:[], coverage:0}</code> and the system simply tells the model "use your own knowledge." The app never crashes for lack of RAG — retrieval only ever <i>improves</i> the answer.</p>
+  </div>
+</section>
+
+<hr class="soft"/>
+
+<!-- RECAP -->
+<section class="nobord" id="recap">
+  <div class="sec-h"><h2>The whole loop, in one breath</h2></div>
+  <ol style="font-size:15px;color:var(--ink-soft);line-height:1.9">
+    <li><b>Documents → Chunks:</b> normalize files; slice prose into ~320-word overlapping windows; keep records whole.</li>
+    <li><b>Chunks → Embeddings:</b> each chunk becomes 384 numbers capturing meaning (bge-small, local, free).</li>
+    <li><b>Store + Index:</b> save vectors + text + metadata in Postgres/pgvector; build HNSW (vector) and GIN (keyword) indexes.</li>
+    <li><b>Query:</b> embed the question into the same space (with the BGE query prefix).</li>
+    <li><b>Retrieve:</b> vector search + keyword search → fuse with RRF → top-8 → coverage score.</li>
+    <li><b>Augment + Generate:</b> inject the chunks as <code>S1…S8</code>, the model answers grounded and cites them.</li>
+  </ol>
+</section>
+
+<!-- IN THIS APP -->
+<section id="appmap">
+  <div class="sec-h"><h2>Where each step lives in your codebase</h2></div>
+  <ul class="filemap">
+    <li>📄 Load → <code>src/rag/loaders.ts</code> &nbsp;·&nbsp; ✂️ Chunk → <code>src/rag/chunkers.ts</code></li>
+    <li>🔢 Embed → <code>src/rag/embed.ts</code> &nbsp;·&nbsp; 🗄️ Store → <code>src/rag/store.ts</code> &nbsp;·&nbsp; orchestration → <code>src/rag/ingest.ts</code></li>
+    <li>🔎 Retrieve (hybrid + RRF + coverage) → <code>src/rag/retrieve.ts</code></li>
+    <li>🧱 Schema + indexes → <code>supabase/migrations/0001_rag.sql</code></li>
+    <li>🤖 Used by the agent → <code>src/agent/nodes.ts</code> (retriever) + <code>src/agent/prompts.ts</code> (injection)</li>
+  </ul>
+</section>
+
+<div class="foot">Built for learning · numbers verified against your live Supabase KB (260 chunks, pgvector 0.8.0) · click any <span style="color:var(--accent)">underlined term</span> for a definition.</div>
+
+</div>
+
+<div id="pop" role="dialog" aria-label="Definition"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- theme ----------
+  var tbtn = document.getElementById("theme");
+  function setTheme(t){ document.documentElement.setAttribute("data-theme", t); tbtn.textContent = t==="dark"?"☀ Light":"☾ Dark"; try{localStorage.setItem("rag-theme",t);}catch(e){} }
+  setTheme((function(){try{return localStorage.getItem("rag-theme")}catch(e){return null}})()||"light");
+  tbtn.addEventListener("click", function(){ setTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark"); });
+
+  // ---------- mental-map jump ----------
+  document.getElementById("pipe").addEventListener("click", function(e){
+    var b = e.target.closest("[data-go]"); if(!b) return;
+    var el = document.getElementById(b.getAttribute("data-go")); if(el) el.scrollIntoView({behavior:"smooth",block:"start"});
+  });
+
+  // ---------- (i) term popovers ----------
+  var DEFS = {
+    llm:["LLM (Large Language Model)","An AI text model (like Claude) trained on huge amounts of text. It predicts words to answer questions — but only from what it saw in training, unless you give it extra context."],
+    halluc:["Hallucination","When a model states something false but confident, usually because it's filling a gap from memory rather than from a real source. RAG reduces this by supplying real sources."],
+    vector:["Vector","An ordered list of numbers, e.g. [0.01, -0.04, …]. Here it has 384 slots and represents the meaning of a piece of text as a point/arrow in space."],
+    embedding:["Embedding","The process (and result) of converting text into a meaning-vector. Similar texts get vectors pointing in similar directions."],
+    chunk:["Chunk","A small slice of a document (a few paragraphs). We retrieve chunks, not whole documents, so the model gets focused, relevant context."],
+    pgvector:["pgvector","A Postgres extension that adds a 'vector' column type and nearest-neighbour search, so your normal database can do semantic search."],
+    hnsw:["HNSW","Hierarchical Navigable Small World — an index that finds approximate nearest vectors fast by hopping through a navigable graph, instead of scanning every row."],
+    tsvector:["tsvector / GIN","Postgres's built-in full-text (keyword) search. 'tsvector' is the searchable form of the text; 'GIN' is the index that makes keyword lookups fast."],
+    cosine:["Cosine similarity","Measures the angle between two vectors. 1 = same direction (same meaning), 0 = unrelated. Distance = 1 − similarity."],
+    rrf:["RRF (Reciprocal Rank Fusion)","A simple way to merge two ranked lists: each item scores Σ 1/(60 + its rank). Items ranked well in both lists rise to the top."],
+  };
+  var pop = document.getElementById("pop");
+  function openPop(btn){
+    var d = DEFS[btn.getAttribute("data-t")]; if(!d) return;
+    pop.innerHTML = '<div class="pt">'+esc(d[0])+'</div><div class="pn">'+esc(d[1])+'</div>';
+    pop.classList.add("on");
+    var r = btn.getBoundingClientRect();
+    var top = r.bottom+8, left = Math.min(r.left, window.innerWidth-316);
+    if(top+pop.offsetHeight > window.innerHeight) top = r.top-pop.offsetHeight-8;
+    pop.style.top = Math.max(8,top)+"px"; pop.style.left = Math.max(8,left)+"px";
+  }
+  function closePop(){ pop.classList.remove("on"); pop._for=null; }
+  document.addEventListener("click", function(e){
+    var t = e.target.closest(".term");
+    if(t){ e.preventDefault(); e.stopPropagation(); if(pop.classList.contains("on")&&pop._for===t){closePop();} else {openPop(t); pop._for=t;} return; }
+    if(!e.target.closest("#pop")) closePop();
+  });
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape") closePop(); });
+  window.addEventListener("resize", closePop);
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  // ---------- DEMO: chunking ----------
+  var WORDS = "An agent uses a language model to decide which tools to call and in what order to reach a goal".split(" ");
+  var srcEl = document.getElementById("chunkSrc"), outEl = document.getElementById("chunkOut");
+  function paintSrc(){ srcEl.innerHTML = WORDS.map(function(w){return '<span>'+esc(w)+'</span>';}).join(" "); }
+  paintSrc();
+  document.getElementById("chunkReset").addEventListener("click", function(){ outEl.innerHTML=""; });
+  document.getElementById("chunkRun").addEventListener("click", function(){
+    var N=8, O=3, i=0, idx=1; outEl.innerHTML="";
+    while(i < WORDS.length){
+      var slice = WORDS.slice(i, i+N);
+      var startOverlap = i>0 ? O : 0;            // first O words overlap previous
+      var html = slice.map(function(w,j){ return (j<startOverlap) ? '<span class="ov">'+esc(w)+'</span>' : esc(w); }).join(" ");
+      var div = document.createElement("div"); div.className="chk";
+      div.innerHTML = '<div class="lab">chunk '+idx+' · words '+(i+1)+'–'+Math.min(i+N,WORDS.length)+'</div>'+html;
+      outEl.appendChild(div);
+      if(i+N >= WORDS.length) break;
+      i += (N - O); idx++;
+    }
+  });
+
+  // ---------- DEMO: embedding scatter ----------
+  var SVGNS="http://www.w3.org/2000/svg";
+  var POINTS = [
+    {label:"LangGraph guide", x:18, y:26, grp:"frame"},
+    {label:"CrewAI overview", x:27, y:20, grp:"frame"},
+    {label:"AutoGen notes", x:22, y:33, grp:"frame"},
+    {label:"langflow record", x:31, y:28, grp:"frame"},
+    {label:"pgvector setup", x:74, y:34, grp:"store"},
+    {label:"vector database", x:80, y:42, grp:"store"},
+    {label:"HNSW index", x:71, y:46, grp:"store"},
+    {label:"banana bread recipe", x:55, y:84, grp:"food"},
+    {label:"chocolate cake", x:64, y:80, grp:"food"}
+  ];
+  var QUERIES = {
+    frame:{x:24,y:27,label:'"agent framework to build with"'},
+    store:{x:76,y:40,label:'"how to store vectors"'},
+    food:{x:60,y:82,label:'"dessert recipe"'}
+  };
+  var scatter = document.getElementById("scatter"), nearList = document.getElementById("nearList");
+  var SW=460, SH=320, PAD=30;
+  function sx(x){ return PAD + (x/100)*(SW-2*PAD); }
+  function sy(y){ return PAD + (y/100)*(SH-2*PAD); }
+  function drawScatter(qkey){
+    var q = QUERIES[qkey];
+    // nearest 3 by euclidean distance in the 2-D cartoon
+    var ranked = POINTS.map(function(p){ return {p:p, d:Math.hypot(p.x-q.x, p.y-q.y)}; }).sort(function(a,b){return a.d-b.d;});
+    var nearSet = {}; ranked.slice(0,3).forEach(function(r){ nearSet[r.p.label]=1; });
+    var maxD = 90;
+    var html = "";
+    // links to nearest
+    ranked.slice(0,3).forEach(function(r){
+      html += '<line x1="'+sx(q.x)+'" y1="'+sy(q.y)+'" x2="'+sx(r.p.x)+'" y2="'+sy(r.p.y)+'" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.55"/>';
+    });
+    // points
+    POINTS.forEach(function(p){
+      var on = nearSet[p.label];
+      html += '<circle cx="'+sx(p.x)+'" cy="'+sy(p.y)+'" r="'+(on?7:5)+'" fill="'+(on?'var(--accent)':'var(--border-strong)')+'" stroke="var(--surface)" stroke-width="2"/>';
+      html += '<text x="'+(sx(p.x)+9)+'" y="'+(sy(p.y)+4)+'" font-size="10.5" fill="'+(on?'var(--accent-2)':'var(--muted)')+'" font-weight="'+(on?700:500)+'">'+esc(p.label)+'</text>';
+    });
+    // query star
+    html += '<text x="'+sx(q.x)+'" y="'+(sy(q.y)+6)+'" font-size="20" text-anchor="middle" fill="var(--accent)">★</text>';
+    scatter.innerHTML = html;
+    nearList.innerHTML = ranked.slice(0,3).map(function(r){
+      var sim = Math.max(0, 1 - r.d/maxD).toFixed(2);
+      return '<li>'+esc(r.p.label)+' <span style="color:var(--faint)">· sim '+sim+'</span></li>';
+    }).join("");
+  }
+  document.querySelectorAll(".qbtn").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll(".qbtn").forEach(function(x){x.classList.remove("sel");});
+      b.classList.add("sel"); drawScatter(b.getAttribute("data-q"));
+    });
+  });
+  drawScatter("frame");
+
+  // ---------- DEMO: cosine ----------
+  var cos = document.getElementById("cos"), cosAngle=document.getElementById("cosAngle");
+  var OX=40, OY=200, L=150, DOC_DEG=20;
+  function pt(deg){ var r=deg*Math.PI/180; return [OX + L*Math.cos(r), OY - L*Math.sin(r)]; }
+  function drawCos(){
+    var qDeg = +cosAngle.value;
+    var diff = Math.abs(qDeg - DOC_DEG);
+    var sim = Math.cos(diff*Math.PI/180);
+    var d = pt(DOC_DEG), q = pt(qDeg);
+    cos.innerHTML =
+      '<line x1="'+OX+'" y1="'+OY+'" x2="'+(d[0])+'" y2="'+(d[1])+'" stroke="var(--ink-soft)" stroke-width="3" marker-end="url(#a1)"/>'+
+      '<line x1="'+OX+'" y1="'+OY+'" x2="'+(q[0])+'" y2="'+(q[1])+'" stroke="var(--accent)" stroke-width="3" marker-end="url(#a2)"/>'+
+      '<text x="'+(d[0]+4)+'" y="'+(d[1]-2)+'" font-size="11" fill="var(--ink-soft)" font-weight="700">document</text>'+
+      '<text x="'+(q[0]+4)+'" y="'+(q[1]-2)+'" font-size="11" fill="var(--accent-2)" font-weight="700">query</text>'+
+      '<circle cx="'+OX+'" cy="'+OY+'" r="3.5" fill="var(--muted)"/>'+
+      '<defs>'+
+        '<marker id="a1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--ink-soft)"/></marker>'+
+        '<marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--accent)"/></marker>'+
+      '</defs>';
+    document.getElementById("cosDeg").textContent = qDeg+"°";
+    document.getElementById("cosVal").textContent = sim.toFixed(2);
+    document.getElementById("cosBar").style.width = Math.max(0,sim*100)+"%";
+    var note = sim>0.85 ? "Almost the same direction → very similar meaning. This chunk would rank near the top." :
+               sim>0.5  ? "Pointing roughly the same way → somewhat related." :
+                          "Pointing apart → unrelated meaning. This chunk would be ignored.";
+    document.getElementById("cosNote").textContent = note;
+  }
+  cosAngle.addEventListener("input", drawCos); drawCos();
+
+  // ---------- DEMO: RRF ----------
+  var VEC = ["LangGraph guide","CrewAI overview","Agent loop concept","langflow record","Tool calling basics"];
+  var KW  = ["LangGraph guide","LangGraph vs CrewAI","State management","langflow record","Graph compilation"];
+  var RK=60;
+  function paintList(el, arr){ el.innerHTML = arr.map(function(c,i){ return '<div class="rrow"><span>'+esc(c)+'</span><span class="rk">#'+(i+1)+'</span></div>'; }).join(""); }
+  paintList(document.getElementById("rcolV"), VEC);
+  paintList(document.getElementById("rcolK"), KW);
+  document.getElementById("rrfRun").addEventListener("click", function(){
+    var score={};
+    VEC.forEach(function(c,i){ score[c]=(score[c]||0)+1/(RK+i); });
+    KW.forEach(function(c,i){ score[c]=(score[c]||0)+1/(RK+i); });
+    var both={}; VEC.forEach(function(c){ if(KW.indexOf(c)!==-1) both[c]=1; });
+    var fused = Object.keys(score).sort(function(a,b){return score[b]-score[a];});
+    document.getElementById("rcolF").innerHTML = fused.map(function(c,i){
+      return '<div class="rrow'+(both[c]?' hot':'')+'"><span>'+(i+1)+'. '+esc(c)+(both[c]?' ✦':'')+'</span><span class="sc">'+score[c].toFixed(4)+'</span></div>';
+    }).join("");
+  });
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Retrieval Eval Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F3F5F7; --surface:#FFFFFF; --ink:#18212B; --muted:#5A6573; --line:#D9DEE4;
+  --accent:#0B6E78; --accent-soft:#DCEFF0;
+  --good:#1F8A4C; --good-soft:#DDF2E4; --bad:#C23B30; --bad-soft:#F8E0DD; --warn:#A86A00; --warn-soft:#FBEBCB;
+  --chip:#E9EDF1;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#11161C; --surface:#18202A; --ink:#E6EBF0; --muted:#98A3B0; --line:#2B3541;
+    --accent:#4FC3CC; --accent-soft:#16373B;
+    --good:#5CCB88; --good-soft:#173524; --bad:#F07A6E; --bad-soft:#3C1E1B; --warn:#E3B04F; --warn-soft:#3A2D12;
+    --chip:#232D38;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#11161C; --surface:#18202A; --ink:#E6EBF0; --muted:#98A3B0; --line:#2B3541;
+  --accent:#4FC3CC; --accent-soft:#16373B;
+  --good:#5CCB88; --good-soft:#173524; --bad:#F07A6E; --bad-soft:#3C1E1B; --warn:#E3B04F; --warn-soft:#3A2D12;
+  --chip:#232D38;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;padding-inline:16px;padding-block:0 64px}
+.wrap{max-width:980px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(30px,5vw,46px);font-weight:800;letter-spacing:-.01em}
+h2{font-size:clamp(22px,3.2vw,30px);font-weight:800}
+h3{font-size:18px;font-weight:600}
+p{margin:0;max-width:68ch}
+.mono,code{font-family:var(--mono);font-size:.92em}
+header.hero{padding-block:40px 20px;display:grid;gap:14px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lede{color:var(--muted);font-size:17px}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow-x:auto}
+nav.tabs a{flex:none;text-decoration:none;color:var(--muted);font-size:14px;padding:6px 12px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+nav.tabs a:hover,nav.tabs a:focus-visible{color:var(--ink);border-color:var(--line);outline:none}
+section{padding-block:44px 8px;display:grid;gap:18px;scroll-margin-top:60px}
+.step{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:14px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.muted{color:var(--muted)}
+.note{border-left:3px solid var(--accent);padding:4px 0 4px 14px;color:var(--ink)}
+.warnbox{background:var(--warn-soft);border-radius:10px;padding:12px 14px}
+.tag{display:inline-block;font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:6px;background:var(--chip)}
+.tag.good{background:var(--good-soft);color:var(--good)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+
+/* pipeline */
+.pipe{overflow-x:auto}
+.pipe svg{min-width:720px;width:100%;height:auto;display:block}
+.pipe text{font-family:var(--body);fill:var(--ink)}
+.pipe .sub{fill:var(--muted);font-size:12px}
+
+/* table */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* playground */
+.controls{display:flex;flex-wrap:wrap;gap:18px;align-items:end}
+.ctl{display:grid;gap:4px;font-size:14px}
+.ctl label{color:var(--muted);font-size:13px}
+input[type=range]{width:200px;accent-color:var(--accent)}
+.ranklist{display:grid;gap:6px;counter-reset:r}
+.chunk{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}
+.chunk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chunk .rk{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.chunk .txt{font-size:14px}
+.chunk.rel{border-color:var(--good);background:var(--good-soft)}
+.chunk.out{opacity:.45}
+.cut{font-family:var(--mono);font-size:12px;color:var(--accent);border-top:2px dashed var(--accent);padding-top:4px;margin-top:2px}
+.scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.score{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px;background:var(--surface)}
+.score .name{font-size:13px;color:var(--muted)}
+.score .val{font-family:var(--display);font-weight:800;font-size:28px;font-variant-numeric:tabular-nums}
+.bar{height:6px;border-radius:3px;background:var(--chip);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.calc{font-family:var(--mono);font-size:12.5px;color:var(--muted);line-height:1.5;word-break:break-word}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+button.b{font:inherit;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+button.b:hover,button.b:focus-visible{border-color:var(--accent);outline:none}
+
+/* claims */
+.claim{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:9px;border:1px solid var(--line)}
+.claim input{margin-top:5px;accent-color:var(--good);width:18px;height:18px}
+.claim.on{background:var(--good-soft);border-color:var(--good)}
+.big{font-family:var(--display);font-weight:800;font-size:40px;font-variant-numeric:tabular-nums}
+
+/* cosine */
+.cos{display:grid;gap:10px}
+.cosrow{display:grid;grid-template-columns:1fr 150px;gap:12px;align-items:center}
+@media (max-width:560px){.cosrow{grid-template-columns:1fr}}
+
+/* fixes */
+.sym{display:flex;flex-wrap:wrap;gap:8px}
+.sym button{font:inherit;font-size:14px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.sym button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.fixes{display:grid;gap:10px}
+.fix{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface);display:grid;gap:4px}
+.fix b{font-weight:600}
+
+/* matrix */
+.mx{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;font-size:14px}
+.mx div{padding:10px;border-radius:8px;background:var(--chip)}
+.mx .h{background:transparent;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.mx .g{background:var(--good-soft)} .mx .r{background:var(--bad-soft)} .mx .w{background:var(--warn-soft)}
+@media (max-width:560px){.mx{grid-template-columns:1fr}.mx .h:first-child{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <span class="eyebrow">Agent evals · Level 1 of 4</span>
+  <h1>Retrieval Eval Lab</h1>
+  <p class="lede">Did the search bring back the right chunks? This page shows how that is measured, with live calculations you can change, and what to do when the numbers are low.</p>
+</header>
+
+<nav class="tabs" aria-label="Sections">
+  <a href="#flow">1 · Flow</a><a href="#gold">2 · Golden set</a><a href="#label">3 · Labelling</a><a href="#play">4 · Metrics lab</a><a href="#claims">5 · Claim recall</a><a href="#cosine">6 · Cosine trap</a><a href="#fix">7 · Fixes</a><a href="#sheet">8 · Cheat sheet</a>
+</nav>
+
+<!-- 1 FLOW -->
+<section id="flow">
+  <span class="step">Step 1</span>
+  <h2>Where retrieval eval sits</h2>
+  <p>Retrieval is measured <b>before</b> the LLM writes anything. If the right evidence never arrives, no prompt can save the answer. So you score retrieval on its own.</p>
+  <div class="panel pipe">
+    <svg viewBox="0 0 900 190" role="img" aria-label="Pipeline: query, retriever, top-k chunks, compare with golden set, metrics">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--muted)"/></marker></defs>
+      <g fill="var(--chip)" stroke="var(--line)">
+        <rect x="10" y="50" width="140" height="70" rx="10"/>
+        <rect x="190" y="50" width="160" height="70" rx="10"/>
+        <rect x="390" y="50" width="150" height="70" rx="10"/>
+        <rect x="580" y="50" width="140" height="70" rx="10" fill="var(--accent-soft)"/>
+        <rect x="760" y="50" width="130" height="70" rx="10"/>
+      </g>
+      <g stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)">
+        <line x1="152" y1="85" x2="186" y2="85"/><line x1="352" y1="85" x2="386" y2="85"/><line x1="542" y1="85" x2="576" y2="85"/><line x1="722" y1="85" x2="756" y2="85"/>
+      </g>
+      <text x="80" y="82" text-anchor="middle" font-weight="600">Test question</text><text class="sub" x="80" y="102" text-anchor="middle">from golden set</text>
+      <text x="270" y="82" text-anchor="middle" font-weight="600">Retriever</text><text class="sub" x="270" y="102" text-anchor="middle">vector / BM25 / hybrid</text>
+      <text x="465" y="82" text-anchor="middle" font-weight="600">Top-k chunks</text><text class="sub" x="465" y="102" text-anchor="middle">ranked list</text>
+      <text x="650" y="82" text-anchor="middle" font-weight="600">Label each</text><text class="sub" x="650" y="102" text-anchor="middle">relevant? yes / no</text>
+      <text x="825" y="82" text-anchor="middle" font-weight="600">Metrics</text><text class="sub" x="825" y="102" text-anchor="middle">avg over all Qs</text>
+      <text class="sub" x="650" y="150" text-anchor="middle">← the key step (see section 3)</text>
+    </svg>
+  </div>
+  <p class="note">Run this for every question in the golden set (say 200 questions). Compute metrics per question, then take the average. That average is your retrieval score.</p>
+</section>
+
+<!-- 2 GOLD -->
+<section id="gold">
+  <span class="step">Step 2</span>
+  <h2>What a golden set row looks like</h2>
+  <p>A golden set is a list of real questions with the known correct answer and the known source. Build it from real user queries, SME input, and production failures. Start with 50–200 rows.</p>
+  <div class="panel tbl">
+    <table>
+      <thead><tr><th>Question</th><th>Gold answer</th><th>Gold source IDs</th><th>Type</th></tr></thead>
+      <tbody>
+        <tr><td>What is the refund window for annual plans?</td><td>30 days from purchase, pro-rated after first month.</td><td><code>policy.pdf#c14</code></td><td><span class="tag">single-hop</span></td></tr>
+        <tr><td>Can an Enterprise user on annual billing get a refund after upgrading?</td><td>Yes, within 30 days; upgrade credit is deducted.</td><td><code>policy.pdf#c14</code>, <code>billing.md#c3</code></td><td><span class="tag warn">multi-hop</span></td></tr>
+        <tr><td>Error E-402 when exporting video</td><td>Plan limit reached; upgrade or reduce resolution.</td><td><code>errors.md#c22</code></td><td><span class="tag">exact term</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted">Tag each row by type. Later you can slice scores: "recall is fine on single-hop but poor on multi-hop" tells you exactly what to fix.</p>
+</section>
+
+<!-- 3 LABEL -->
+<section id="label">
+  <span class="step">Step 3</span>
+  <h2>How do you decide a chunk is "relevant"?</h2>
+  <p>Every metric depends on this yes/no label. There are three ways to get it.</p>
+  <div class="grid2">
+    <div class="panel"><h3>A · ID match</h3><p>Is the retrieved chunk ID in the gold ID list?</p><p><span class="tag good">exact, free</span> <span class="tag bad">breaks when you re-chunk</span></p><p class="muted">Good for a stable corpus and CI tests.</p></div>
+    <div class="panel"><h3>B · Cosine vs gold chunk</h3><p>Embed retrieved chunk and gold chunk. If similarity &gt; threshold, call it relevant.</p><p><span class="tag bad">threshold is arbitrary</span> <span class="tag bad">measures topic, not evidence</span></p><p class="muted">Weakest option. See section 6.</p></div>
+    <div class="panel"><h3>C · LLM judge</h3><p>Ask an LLM: "Does this chunk contain info needed to answer this question?" → yes/no.</p><p><span class="tag good">survives re-chunking</span> <span class="tag warn">costs money, needs checking</span></p><p class="muted">What RAGAS does. Validate the judge on ~50 human-labelled rows first.</p></div>
+  </div>
+  <p class="note">Common practice: store gold answer + gold source <b>document</b> IDs. Use the LLM judge at chunk level. Use ID match in CI where speed matters.</p>
+</section>
+
+<!-- 4 PLAY -->
+<section id="play">
+  <span class="step">Step 4</span>
+  <h2>Metrics lab</h2>
+  <p>One question. The retriever returned 10 chunks in rank order. <b>Click a chunk</b> to mark it relevant or not. Change <b>k</b> (how many you pass to the LLM) and <b>R</b> (how many relevant chunks exist in the whole corpus). All numbers update with the working shown.</p>
+  <div class="panel">
+    <div class="controls">
+      <div class="ctl"><label for="k">k = chunks kept: <b id="kv" class="mono"></b></label><input id="k" type="range" min="1" max="10" value="5"></div>
+      <div class="ctl"><label for="R">R = total relevant in corpus: <b id="Rv" class="mono"></b></label><input id="R" type="range" min="1" max="10" value="4"></div>
+      <div class="btnrow">
+        <button class="b" data-preset="good">Preset: good</button>
+        <button class="b" data-preset="late">Preset: right chunks, low rank</button>
+        <button class="b" data-preset="miss">Preset: most missed</button>
+      </div>
+    </div>
+    <div class="ranklist" id="list"></div>
+  </div>
+  <div class="scores" id="scores"></div>
+  <div class="panel">
+    <h3>Your question answered: 10 should come, 5 came</h3>
+    <p>Yes. If R = 10 relevant chunks exist and 5 of them are in your top-k, <b>Recall@k = 5 / 10 = 0.5</b>. Recall always divides by what <i>should</i> have come. Precision divides by what <i>did</i> come (k). Try it: set R = 10 above.</p>
+    <p class="muted">Catch: you must know R. With ID labels you know it. With an LLM judge you usually don't know every relevant chunk in the corpus, which is why RAGAS measures recall against the <b>claims in the gold answer</b> instead (next section).</p>
+  </div>
+</section>
+
+<!-- 5 CLAIMS -->
+<section id="claims">
+  <span class="step">Step 5</span>
+  <h2>Claim-level recall (how RAGAS does it)</h2>
+  <p>Split the gold answer into single facts (claims). For each claim, the judge asks: is this supported by <b>any</b> retrieved chunk? Recall = supported claims ÷ total claims. Tick what your retrieved chunks support.</p>
+  <div class="panel">
+    <p class="muted mono">Q: Can an Enterprise user on annual billing get a refund after upgrading?</p>
+    <div id="claimlist" class="ranklist"></div>
+    <div style="display:flex;gap:16px;align-items:baseline;flex-wrap:wrap"><span class="big" id="crv"></span><span class="calc" id="crc"></span></div>
+    <p class="muted">Why better: it does not need the full list of relevant chunks, and it survives re-chunking. It asks the question that matters: <i>is the evidence for every part of the answer present?</i></p>
+  </div>
+  <div class="panel">
+    <h3>RAGAS context precision (rank-aware)</h3>
+    <p>RAGAS precision is not plain "relevant ÷ k". It rewards relevant chunks that sit near the top, because LLMs pay more attention to early context.</p>
+    <p class="calc" style="font-size:14px;color:var(--ink)">Context Precision@K = Σ<sub>i=1..K</sub> ( Precision@i × rel<sub>i</sub> ) ÷ (number of relevant chunks in top K)</p>
+    <p class="muted">rel<sub>i</sub> is 1 if chunk i is relevant, else 0. This is the "AP" card in the lab above. Same chunks, better order → higher score.</p>
+  </div>
+</section>
+
+<!-- 6 COSINE -->
+<section id="cosine">
+  <span class="step">Step 6</span>
+  <h2>Why cosine similarity is a weak judge</h2>
+  <p>Embeddings capture <b>topic</b>. Relevance needs <b>evidence</b>. A chunk on the same topic that lacks the answer can score higher than the chunk that has it.</p>
+  <div class="panel cos">
+    <p class="mono muted">Q: What is the refund window for annual plans? · threshold = <b id="thv"></b></p>
+    <div class="ctl"><label for="th">Move the threshold</label><input id="th" type="range" min="0.60" max="0.95" step="0.01" value="0.80"></div>
+    <div id="coslist" class="cos"></div>
+    <p class="note">No threshold gets both right. That is the trap. The LLM judge reads the text and says chunk 2 has the answer and chunk 1 does not.</p>
+  </div>
+</section>
+
+<!-- 7 FIX -->
+<section id="fix">
+  <span class="step">Step 7</span>
+  <h2>Diagnose, then fix</h2>
+  <p>Read recall and precision together. The pair tells you the cause.</p>
+  <div class="panel">
+    <div class="mx">
+      <div class="h"></div><div class="h">Precision high</div><div class="h">Precision low</div>
+      <div class="h">Recall high</div><div class="g"><b>Healthy.</b> Move on to generation eval.</div><div class="w"><b>Noisy.</b> Right chunks found, buried in junk. Fix ranking.</div>
+      <div class="h">Recall low</div><div class="w"><b>Too narrow.</b> What comes is good, but pieces missing. Widen search.</div><div class="r"><b>Broken.</b> Check chunking, embeddings, and whether the doc is even indexed.</div>
+    </div>
+  </div>
+  <p>Pick a symptom to see the fixes, in the order to try them.</p>
+  <div class="sym" id="sym" role="group" aria-label="Symptom">
+    <button data-s="recall" aria-pressed="true">Low recall</button>
+    <button data-s="precision" aria-pressed="false">Low precision</button>
+    <button data-s="rank" aria-pressed="false">Low MRR / rank</button>
+    <button data-s="multi" aria-pressed="false">Fails on multi-hop</button>
+  </div>
+  <div class="fixes" id="fixes"></div>
+  <div class="warnbox"><b>The k trade-off.</b> Raising k lifts recall and drops precision. Standard pattern: retrieve wide (k = 30–50) for recall, then rerank and keep narrow (k = 5–8) for precision.</div>
+</section>
+
+<!-- 8 SHEET -->
+<section id="sheet">
+  <span class="step">Step 8</span>
+  <h2>Cheat sheet</h2>
+  <div class="panel tbl">
+    <table>
+      <thead><tr><th>Metric</th><th>Question it answers</th><th>Formula</th><th>Rough target</th></tr></thead>
+      <tbody>
+        <tr><td><b>Recall@k</b></td><td>Did we find all the evidence?</td><td class="mono">relevant in top-k ÷ R</td><td>≥ 0.8</td></tr>
+        <tr><td><b>Precision@k</b></td><td>How much of what we sent is useful?</td><td class="mono">relevant in top-k ÷ k</td><td>≥ 0.7</td></tr>
+        <tr><td><b>Hit rate@k</b></td><td>Did at least one good chunk come?</td><td class="mono">1 if any relevant in top-k</td><td>≥ 0.9</td></tr>
+        <tr><td><b>MRR</b></td><td>How fast does the first good chunk appear?</td><td class="mono">avg of 1 ÷ rank of first relevant</td><td>≥ 0.7</td></tr>
+        <tr><td><b>AP / RAGAS ctx precision</b></td><td>Are good chunks near the top?</td><td class="mono">Σ P@i·rel_i ÷ #relevant in top-k</td><td>≥ 0.7</td></tr>
+        <tr><td><b>NDCG@k</b></td><td>How close is ranking to perfect?</td><td class="mono">DCG ÷ ideal DCG; DCG = Σ rel_i ÷ log₂(i+1)</td><td>≥ 0.75</td></tr>
+        <tr><td><b>Context recall (RAGAS)</b></td><td>Is every gold claim supported?</td><td class="mono">supported claims ÷ total claims</td><td>≥ 0.8</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted">Targets are common starting points, not rules. Set yours from a baseline run, then gate releases on "no drop" in CI. Also track retrieval latency (p95) and cost per query.</p>
+  <p class="note"><b>Interview line:</b> "I evaluate retrieval separately from generation. Recall is my ceiling, precision is my noise. I label with an LLM judge validated against human labels, track claim-level recall and rank-aware precision, and fix recall with hybrid search and query rewriting, precision with a reranker."</p>
+</section>
+</div>
+
+<script>
+const CHUNKS=[
+ "Annual plans: refund within 30 days of purchase.",
+ "Monthly plans renew on the same date each month.",
+ "Refunds after month one are pro-rated.",
+ "How to change your profile picture.",
+ "Upgrade credit is deducted from any refund.",
+ "Enterprise contracts follow the same refund policy.",
+ "Company history and founding team.",
+ "Invoices are emailed on the billing date.",
+ "Pricing page FAQ: currencies supported.",
+ "Contact support via the help centre."
+];
+const PRESETS={good:[1,0,1,0,1,1,0,0,0,0],late:[0,0,0,1,0,1,1,1,0,0],miss:[0,0,1,0,0,0,0,0,0,0]};
+let rel=[...PRESETS.good];
+const $=s=>document.querySelector(s);
+const kEl=$("#k"),REl=$("#R");
+const f=x=>(Math.round(x*100)/100).toFixed(2);
+
+function render(){
+  const k=+kEl.value; let R=+REl.value;
+  const relTotal=rel.reduce((a,b)=>a+b,0);
+  if(R<relTotal){R=relTotal;REl.value=R;}
+  $("#kv").textContent=k; $("#Rv").textContent=R;
+  const list=$("#list"); list.innerHTML="";
+  CHUNKS.forEach((c,i)=>{
+    if(i===k){const d=document.createElement("div");d.className="cut";d.textContent="— cut-off: only chunks above this line go to the LLM —";list.appendChild(d);}
+    const b=document.createElement("button");
+    b.className="chunk"+(rel[i]?" rel":"")+(i>=k?" out":"");
+    b.setAttribute("aria-pressed",rel[i]?"true":"false");
+    b.innerHTML=`<span class="rk">#${i+1}</span><span class="txt">${c}</span><span class="tag ${rel[i]?"good":""}">${rel[i]?"relevant":"not relevant"}</span>`;
+    b.onclick=()=>{rel[i]=rel[i]?0:1;render();};
+    list.appendChild(b);
+  });
+  const top=rel.slice(0,k), hits=top.reduce((a,b)=>a+b,0);
+  const prec=hits/k, rec=hits/R, hit=hits>0?1:0;
+  const first=top.indexOf(1), mrr=first<0?0:1/(first+1);
+  let ap=0,run=0,apTerms=[];
+  top.forEach((r,i)=>{if(r){run++;ap+=run/(i+1);apTerms.push(`${run}/${i+1}`);}else if(false){} });
+  // running precision must count hits so far
+  ap=0;let h=0;apTerms=[];
+  top.forEach((r,i)=>{if(r){h++;ap+=h/(i+1);apTerms.push(`${h}/${i+1}`);}});
+  const apv=hits?ap/hits:0;
+  let dcg=0,dT=[];top.forEach((r,i)=>{if(r){dcg+=1/Math.log2(i+2);dT.push(`1/log₂(${i+2})`);}});
+  let idcg=0;for(let i=0;i<Math.min(R,k);i++)idcg+=1/Math.log2(i+2);
+  const ndcg=idcg?dcg/idcg:0;
+  const cards=[
+    ["Recall@"+k,rec,`${hits} relevant in top ${k} ÷ R ${R} = ${f(rec)}`],
+    ["Precision@"+k,prec,`${hits} relevant in top ${k} ÷ k ${k} = ${f(prec)}`],
+    ["Hit rate@"+k,hit,hits?`at least one relevant in top ${k} → 1`:`none in top ${k} → 0`],
+    ["MRR (this question)",mrr,first<0?`no relevant chunk in top ${k} → 0`:`first relevant at rank ${first+1} → 1/${first+1} = ${f(mrr)}`],
+    ["AP · RAGAS ctx precision",apv,hits?`(${apTerms.join(" + ")}) ÷ ${hits} = ${f(apv)}`:`no relevant chunks → 0`],
+    ["NDCG@"+k,ndcg,hits?`DCG ${f(dcg)} (${dT.join(" + ")}) ÷ ideal ${f(idcg)} = ${f(ndcg)}`:`DCG 0 → 0`]
+  ];
+  $("#scores").innerHTML=cards.map(([n,v,c])=>`<div class="score"><span class="name">${n}</span><span class="val">${f(v)}</span><div class="bar"><i style="width:${v*100}%"></i></div><span class="calc">${c}</span></div>`).join("");
+}
+kEl.oninput=render; REl.oninput=render;
+document.querySelectorAll("[data-preset]").forEach(b=>b.onclick=()=>{rel=[...PRESETS[b.dataset.preset]];REl.value=4;render();});
+render();
+
+/* claims */
+const CLAIMS=[["Refunds are allowed within 30 days.",true],["This applies to annual plans.",true],["Enterprise users follow the same policy.",false],["Upgrade credit is deducted from the refund.",false]];
+function renderClaims(){
+  const el=$("#claimlist");el.innerHTML="";
+  CLAIMS.forEach((c,i)=>{
+    const id="cl"+i;
+    const d=document.createElement("label");d.className="claim"+(c[1]?" on":"");d.htmlFor=id;
+    d.innerHTML=`<input type="checkbox" id="${id}" ${c[1]?"checked":""}><span><b>Claim ${i+1}.</b> ${c[0]} <span class="tag ${c[1]?"good":"bad"}">${c[1]?"supported":"not in retrieved chunks"}</span></span>`;
+    d.querySelector("input").onchange=e=>{CLAIMS[i][1]=e.target.checked;renderClaims();};
+    el.appendChild(d);
+  });
+  const s=CLAIMS.filter(c=>c[1]).length;
+  $("#crv").textContent=f(s/CLAIMS.length);
+  $("#crc").textContent=`context recall = ${s} supported ÷ ${CLAIMS.length} claims`;
+}
+renderClaims();
+
+/* cosine */
+const COS=[["Chunk 1: “Our refund policy is designed to be fair to all customers on annual and monthly plans.”",0.88,false],["Chunk 2: “Money back if cancelled inside 30 days of purchase (yearly billing).”",0.76,true],["Chunk 3: “Annual plan pricing starts at $199.”",0.82,false]];
+function renderCos(){
+  const t=+$("#th").value;$("#thv").textContent=t.toFixed(2);
+  $("#coslist").innerHTML=COS.map(([txt,s,truth])=>{
+    const call=s>=t; const right=call===truth;
+    return `<div class="cosrow"><div><div>${txt}</div><div class="calc">cosine ${s.toFixed(2)} → cosine says <b>${call?"relevant":"not relevant"}</b> · truth: ${truth?"has the answer":"no answer"}</div></div><span class="tag ${right?"good":"bad"}">${right?"correct":"wrong"}</span></div>`;
+  }).join("");
+}
+$("#th").oninput=renderCos;renderCos();
+
+/* fixes */
+const FIX={
+ recall:[
+  ["Check chunking","Too small splits an answer across chunks; too big blurs the embedding. Try 300–800 tokens with 10–20% overlap. Use parent-document retrieval: embed small chunks, send the larger parent."],
+  ["Add hybrid search","Dense embeddings miss exact terms (error codes, SKUs, acronyms). Add BM25 keyword search and merge rankings with Reciprocal Rank Fusion."],
+  ["Rewrite the query","User words ≠ document words. Rewrite, expand into 3–5 variants and union results, or use HyDE (search with a draft answer, which looks more like a document)."],
+  ["Raise k, then rerank","Recall is cheap at higher k. Pull 30–50 candidates and let a reranker trim."],
+  ["Try a better or tuned embedding model","Domain jargon may be poorly embedded. Test a few models on your golden set, or fine-tune on your query–chunk pairs."],
+  ["Check the index","Is the doc even ingested? Parsing of tables and PDFs often drops content silently."]],
+ precision:[
+  ["Add a reranker","Cross-encoder reads query and chunk together and rescores. Usually the single biggest win."],
+  ["Filter on metadata first","Restrict by product, region, date, or doc type before vector search."],
+  ["Chunk on meaning","Split on headings and sections, not fixed token counts, so each chunk is about one thing."],
+  ["Contextual retrieval","Prepend one line of document context to each chunk before embedding so it is not ambiguous alone."],
+  ["Lower final k","After reranking, send fewer chunks. Less noise, lower cost."],
+  ["De-duplicate","Near-duplicate chunks waste slots. Remove them at ingest or after retrieval."]],
+ rank:[
+  ["Reranker","Moves the right chunk from rank 7 to rank 1."],
+  ["Hybrid + RRF","Fusion rewards chunks that both dense and keyword search agree on."],
+  ["Boost signals","Boost by freshness, source authority, or click data."]],
+ multi:[
+  ["Decompose the question","Split into sub-questions, retrieve for each, then combine."],
+  ["Agentic retrieval loop","Retrieve, read, decide what is missing, retrieve again. This is where agents beat plain RAG."],
+  ["Graph or structured retrieval","Use a knowledge graph or SQL tool when answers need joins across entities."]]
+};
+function renderFix(s){
+  document.querySelectorAll("#sym button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.s===s?"true":"false"));
+  $("#fixes").innerHTML=FIX[s].map(([t,d],i)=>`<div class="fix"><b>${i+1}. ${t}</b><span class="muted">${d}</span></div>`).join("");
+}
+document.querySelectorAll("#sym button").forEach(b=>b.onclick=()=>renderFix(b.dataset.s));
+renderFix("recall");
+</script>
+
+</body></html>

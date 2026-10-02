@@ -1,0 +1,1224 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "OpenAI Agents SDK",
+    "title": "OpenAI Agents SDK",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "OpenAI Agents SDK is practical when learners can apply it to this concrete case: An OpenAI Agents SDK assistant resolves customer cases with tools and handoffs. By the end, they should be able to build or review Agents SDK design sketch with tools, guardrails, and handoff policy, measure tool success plus safe escalation rate, and catch the failure where a handoff fires without passing enough state to the next agent."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "OpenAI Agents SDK",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "OpenAI Agents SDK: mental map",
+    "caption": "Use the OpenAI Agents SDK for OpenAI-native agent apps with agents, tools, handoffs, sessions, guardrails, and tracing.",
+    "oneLineThesis": "The Agents SDK is useful when OpenAI-native runtime features are part of the product, not just when you need one model call.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Agents SDK wraps repeated OpenAI-native runs",
+        "sub": "Use it when the loop is a product surface.",
+        "what": "Learners distinguish SDK agents from direct model calls.",
+        "relevance": "This prevents overusing an agent framework for a single completion.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Start from the runtime features beyond one API call.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Tools and guardrails stay application authority",
+        "sub": "The SDK routes calls; your app owns permission and validation.",
+        "what": "Learners separate SDK tool plumbing from product safety.",
+        "relevance": "OpenAI-native convenience does not remove security responsibility.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Treat function tools as controlled backend operations.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Handoffs need ownership and return rules",
+        "sub": "Specialists should not create routing confusion.",
+        "what": "Learners design handoff boundaries.",
+        "relevance": "Unclear handoffs cause state, tone, and responsibility bugs.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Decide whether a specialist takes over or returns a result.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code a small agent with a function tool",
+        "sub": "The minimal example should expose the tool boundary.",
+        "what": "Learners connect SDK primitives to code.",
+        "relevance": "Concrete code prevents abstract framework talk.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Show agent, tool, run, and result in one slice.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Treat traces and sessions as production data",
+        "sub": "Continuation strategy and telemetry can create subtle bugs.",
+        "what": "Learners plan production operation for SDK agents.",
+        "relevance": "Mixing histories, sessions, and continuation IDs can confuse replay and privacy.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Choose one state strategy and protect trace payloads.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Agents SDK wraps repeated OpenAI-native runs",
+      "sub": "Use it when the loop is a product surface.",
+      "summary": "The SDK packages agents, tools, handoffs, sessions, and traces.",
+      "objectives": [
+        "Define Agent and Runner.",
+        "Explain when direct API calls are enough.",
+        "Name OpenAI-native runtime features."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The SDK is more than a thin client",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a tutoring product needs a KB-searching agent, a quiz-writing specialist, guardrails on output, session continuity, and traces for review. A direct model call is no longer the whole app."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The Agents SDK wraps the model loop with agents, runs, tools, handoffs, sessions, guardrails, and tracing in Python and TypeScript ecosystems."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If you do not need tools, handoffs, sessions, or traces, start simpler."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ],
+          "analogy": "The Agents SDK is a production harness, not just a request wrapper."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Case study: tutor plus quiz specialist",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The tutor agent answers from KB notes. When the learner asks for practice, it hands off or calls a quiz-writer specialist. Tracing records model calls, tool calls, and handoff."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is a good SDK fit because handoffs and trace inspection are product features."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Define focused agent instructions."
+                  }
+                ],
+                [
+                  {
+                    "text": "Attach a narrow KB tool."
+                  }
+                ],
+                [
+                  {
+                    "text": "Add specialist handoff only when routing is real."
+                  }
+                ],
+                [
+                  {
+                    "text": "Inspect traces on sample runs."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "SDK fit",
+          "prompt": "When is the direct OpenAI SDK likely enough?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A multi-agent workflow with handoffs and guardrails.",
+              "correct": false
+            },
+            {
+              "text": "A simple one-model flow without repeated tool loops, sessions, handoffs, or trace needs.",
+              "correct": true
+            },
+            {
+              "text": "A product that needs per-run tracing.",
+              "correct": false
+            }
+          ],
+          "explanation": "Use the agent runtime when its primitives matter.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb8",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Tools and guardrails stay application authority",
+      "sub": "The SDK routes calls; your app owns permission and validation.",
+      "summary": "Tools remain application capabilities.",
+      "objectives": [
+        "Define function tools and hosted/MCP tools.",
+        "Apply validation and approval around tools.",
+        "Use guardrails for inputs and outputs."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "A function tool is still your code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A function tool exposes ordinary code through a schema so the model can request it. Hosted and MCP tools may broaden capabilities, but the app still owns credentials, authorization, idempotency, approval, and auditing."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Guardrails can validate or block inputs and outputs, but they should complement deterministic checks. Do not put secrets or broad tokens into prompts or traces."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every side-effecting tool needs an approval and idempotency story."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ],
+          "analogy": "The SDK can hand the model a phone; the app still controls which numbers can be dialed."
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Agents SDK control surfaces",
+          "criteria": [
+            "Surface",
+            "Use for",
+            "Watch"
+          ],
+          "options": [
+            {
+              "name": "Function tool",
+              "cells": [
+                {
+                  "criterion": "Surface",
+                  "text": "Expose application code to the agent.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use for",
+                  "text": "Search, lookup, safe actions.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Watch",
+                  "text": "Permission and idempotency remain yours.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use for narrow operations.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Handoff",
+              "cells": [
+                {
+                  "criterion": "Surface",
+                  "text": "Transfer or delegate to specialist agent.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use for",
+                  "text": "Real ownership boundaries.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Watch",
+                  "text": "Ambiguous ownership across turns.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when specialist should own task.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Guardrail",
+              "cells": [
+                {
+                  "criterion": "Surface",
+                  "text": "Validate/block input or output.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use for",
+                  "text": "Safety and schema gates.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Watch",
+                  "text": "Must be tested on adversarial cases.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use with deterministic tests.",
+              "cost": "Low",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Tool authority",
+          "prompt": "What must the app still handle for an SDK function tool?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Nothing; the model schema is authorization.",
+              "correct": false
+            },
+            {
+              "text": "Authorization, validation, credentials, idempotency, approval, and audit.",
+              "correct": true
+            },
+            {
+              "text": "Only CSS rendering.",
+              "correct": false
+            }
+          ],
+          "explanation": "Framework routing does not replace product security.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb8",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Handoffs need ownership and return rules",
+      "sub": "Specialists should not create routing confusion.",
+      "summary": "A handoff is a workflow boundary.",
+      "objectives": [
+        "Compare agents-as-tools and handoffs.",
+        "Define who owns later turns.",
+        "Trace specialist decisions."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Delegation and handoff are different shapes",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "An agent-as-tool lets a manager call a specialist and keep control. A handoff can transfer the active task or conversation to a specialist. The product should decide which ownership model matches user expectations."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Handoffs need clear names, reasons, and return behavior. If a quiz writer takes over, should future questions return to the tutor? The state strategy must answer that."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "A handoff should appear in traces with source agent, target agent, reason, and result."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ],
+          "analogy": "Calling a specialist for advice is not the same as transferring the whole case."
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Worked tutor-to-quiz handoff",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The tutor answers concepts. When the learner asks “quiz me,” it hands off to quiz_writer. After the quiz, control returns to tutor for explanation."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The trace records the handoff reason and final quiz artifact."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Name specialist ownership."
+                  }
+                ],
+                [
+                  {
+                    "text": "Set trigger conditions."
+                  }
+                ],
+                [
+                  {
+                    "text": "Define return or takeover behavior."
+                  }
+                ],
+                [
+                  {
+                    "text": "Test misroutes and fallback."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Handoff ownership",
+          "prompt": "What should a handoff design specify?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only the specialist’s display color.",
+              "correct": false
+            },
+            {
+              "text": "Who owns the task after handoff and whether control returns.",
+              "correct": true
+            },
+            {
+              "text": "That all tools become public.",
+              "correct": false
+            }
+          ],
+          "explanation": "Handoffs are product routing decisions.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb8",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code a small agent with a function tool",
+      "sub": "The minimal example should expose the tool boundary.",
+      "summary": "Start with one agent and one safe tool.",
+      "objectives": [
+        "Define a function tool.",
+        "Attach it to an Agent.",
+        "Run the agent and inspect result."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "One tool is enough for the first slice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Start with one harmless lookup tool and one agent. Add specialists, sessions, and guardrails after the trace is clear."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from choosing frameworks, prototype the risky path next, not a decorative multi-agent team. For OpenAI Agents SDK, that may be tool permission or handoff ownership."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Pin model and SDK versions in real projects because defaults can change behavior and cost."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Minimal OpenAI Agents SDK shape",
+          "language": "python",
+          "code": "from agents import Agent, Runner, function_tool\n\n@function_tool\ndef search_kb(query: str) -> str:\n    \"\"\"Search approved lesson notes for a learner question.\"\"\"\n    return \"LangGraph is useful for explicit state, checkpoints, and interrupts.\"\n\ntutor = Agent(\n    name=\"Agentic AI tutor\",\n    instructions=\"Answer from the KB when possible and ask for clarification when underspecified.\",\n    tools=[search_kb],\n)\n\n# result = await Runner.run(tutor, \"When should I use LangGraph?\")\n# print(result.final_output)\nprint(search_kb(\"LangGraph\"))",
+          "explanation": "The snippet shows SDK primitives while keeping the runnable part local. A live run would require configured OpenAI credentials and async execution.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict the local printed text.",
+            "answer": "It prints the KB sentence about LangGraph state, checkpoints, and interrupts."
+          },
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "First slice",
+          "prompt": "What should you add after a one-tool SDK prototype?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Every possible specialist agent immediately.",
+              "correct": false
+            },
+            {
+              "text": "Trace review, tool permission tests, output guardrails, and only then justified handoffs or sessions.",
+              "correct": true
+            },
+            {
+              "text": "Secrets inside the instructions.",
+              "correct": false
+            }
+          ],
+          "explanation": "Grow the runtime after the simple slice is inspectable.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb8",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Treat traces and sessions as production data",
+      "sub": "Continuation strategy and telemetry can create subtle bugs.",
+      "summary": "SDK conveniences need state and telemetry discipline.",
+      "objectives": [
+        "Choose one conversation state strategy.",
+        "Protect trace data.",
+        "Evaluate model, prompt, and tool changes."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "State strategy is part of the design",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The SDK supports different ways to continue work: explicit histories, SDK sessions, or server-managed continuation strategies. Mixing them in one flow can duplicate context or lose constraints."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Traces may include prompts, user data, model outputs, and tool results. Treat them like production telemetry with retention, redaction, and access control."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "A trace should help debug without leaking secrets or unnecessary PII."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output from OpenAI Agents SDK",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review the run trace and state strategy."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The agent used the intended model, instructions, tools, and guardrails."
+                  }
+                ],
+                [
+                  {
+                    "text": "Function tools validated permissions and arguments outside the model."
+                  }
+                ],
+                [
+                  {
+                    "text": "Handoffs have clear ownership and return behavior."
+                  }
+                ],
+                [
+                  {
+                    "text": "Session or continuation strategy is consistent for the flow."
+                  }
+                ],
+                [
+                  {
+                    "text": "Trace data is redacted, access-controlled, and used in regression evals."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Production trace",
+          "prompt": "Why treat traces as sensitive?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "They only contain public CSS.",
+              "correct": false
+            },
+            {
+              "text": "They can contain prompts, user data, tool results, and model outputs.",
+              "correct": true
+            },
+            {
+              "text": "They are impossible to store.",
+              "correct": false
+            }
+          ],
+          "explanation": "Agent traces are production telemetry.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb8",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb8",
+        "kb10"
+      ]
+    }
+  ],
+  "glossary": {
+    "framework": {
+      "id": "framework",
+      "label": "Framework",
+      "laymanDefinition": "A library or platform that provides agent building blocks and conventions.",
+      "technicalNote": "Framework choice affects state handling, tools, tracing, deployment model, ecosystem fit, and how much control the application keeps.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "graph": {
+      "id": "graph",
+      "label": "Graph",
+      "laymanDefinition": "A workflow shape where nodes and edges define how work moves between steps.",
+      "technicalNote": "Graph-based agents make branching, retries, checkpoints, and human review more explicit than a single loose loop.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "checkpoint": {
+      "id": "checkpoint",
+      "label": "Checkpoint",
+      "laymanDefinition": "A saved workflow state that lets execution resume or be inspected later.",
+      "technicalNote": "Checkpoints are essential for durable agents because retries, approvals, and debugging need the exact state at a step boundary.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "handoff": {
+      "id": "handoff",
+      "label": "Handoff",
+      "laymanDefinition": "Passing work from one agent, tool, or human role to another.",
+      "technicalNote": "Handoffs need a typed payload, ownership transfer, stop condition, and audit trail so context does not vanish between actors.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "sdk": {
+      "id": "sdk",
+      "label": "SDK",
+      "laymanDefinition": "A software development kit with APIs and helpers for building applications.",
+      "technicalNote": "Agent SDKs encode assumptions about models, tools, sessions, tracing, and deployment, so evaluate those assumptions against the product architecture.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Software development kit"
+    },
+    "orchestration": {
+      "id": "orchestration",
+      "label": "Orchestration",
+      "laymanDefinition": "Coordinating steps, agents, tools, state, and decisions in a workflow.",
+      "technicalNote": "Orchestration owns sequencing, parallelism, retries, timeouts, approvals, and failure visibility across the agent system.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for OpenAI Agents SDK",
+    "themes": [
+      {
+        "name": "OpenAI Agents SDK fit",
+        "questions": [
+          {
+            "q": "Do tools, handoffs, sessions, guardrails, and tracing justify an agent runtime over direct API calls?",
+            "why": "The SDK adds orchestration primitives; direct Responses API use may be simpler for thin flows.",
+            "opts": [
+              "OpenAI Agents SDK",
+              "Direct OpenAI SDK/Responses API",
+              "LangGraph or provider-neutral framework"
+            ],
+            "rot": "Start with direct API calls for simple flows; use Agents SDK when repeated runs, tools, handoffs, sessions, and traces become product concerns."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct Agents SDK by naming Agent, Runner/run, function tools, hosted/MCP tools, handoffs, sessions, guardrails, tracing, and state strategy."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "OpenAI Agents SDK path from agent definition to traced run",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Agents SDK wraps repeated OpenAI-native runs",
+          "sub": "Use it when the loop is a product surface.",
+          "what": "Learners distinguish SDK agents from direct model calls.",
+          "relevance": "This prevents overusing an agent framework for a single completion.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Start from the runtime features beyond one API call.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Tools and guardrails stay application authority",
+          "sub": "The SDK routes calls; your app owns permission and validation.",
+          "what": "Learners separate SDK tool plumbing from product safety.",
+          "relevance": "OpenAI-native convenience does not remove security responsibility.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Treat function tools as controlled backend operations.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Handoffs need ownership and return rules",
+          "sub": "Specialists should not create routing confusion.",
+          "what": "Learners design handoff boundaries.",
+          "relevance": "Unclear handoffs cause state, tone, and responsibility bugs.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Decide whether a specialist takes over or returns a result.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code a small agent with a function tool",
+          "sub": "The minimal example should expose the tool boundary.",
+          "what": "Learners connect SDK primitives to code.",
+          "relevance": "Concrete code prevents abstract framework talk.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Show agent, tool, run, and result in one slice.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Treat traces and sessions as production data",
+          "sub": "Continuation strategy and telemetry can create subtle bugs.",
+          "what": "Learners plan production operation for SDK agents.",
+          "relevance": "Mixing histories, sessions, and continuation IDs can confuse replay and privacy.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Choose one state strategy and protect trace payloads.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Agents SDK wraps repeated OpenAI-native runs",
+        "detail": "The SDK packages agents, tools, handoffs, sessions, and traces."
+      },
+      {
+        "step": 2,
+        "label": "Tools and guardrails stay application authority",
+        "detail": "Tools remain application capabilities."
+      },
+      {
+        "step": 3,
+        "label": "Handoffs need ownership and return rules",
+        "detail": "A handoff is a workflow boundary."
+      },
+      {
+        "step": 4,
+        "label": "Code a small agent with a function tool",
+        "detail": "Start with one agent and one safe tool."
+      },
+      {
+        "step": 5,
+        "label": "Treat traces and sessions as production data",
+        "detail": "SDK conveniences need state and telemetry discipline."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_fit",
+        "label": "Can you justify the fit described in \"Agents SDK wraps repeated OpenAI-native runs\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_impl",
+        "label": "Can you inspect the implementation surface in \"Code a small agent with a function tool\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Treat traces and sessions as production data\" define production checks?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Design an OpenAI Agents SDK tutor with a KB search tool, quiz-writer handoff, output guardrail, session strategy, and trace fields. Next rung: compare with LangGraph explicit control.",
+      "scopedTo": "OpenAI Agents SDK"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LangGraph documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "kb8": {
+      "id": "kb8",
+      "kind": "kb",
+      "title": "KB: OpenAI Agents SDK",
+      "url": "https://openai.github.io/openai-agents-python/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb10": {
+      "id": "kb10",
+      "kind": "kb",
+      "title": "KB: Tool and Plugin Standards",
+      "url": "https://spec.openapis.org/oas/latest.html",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

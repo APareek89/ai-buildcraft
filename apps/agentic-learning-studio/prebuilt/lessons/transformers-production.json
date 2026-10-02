@@ -1,0 +1,1176 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Hugging Face Transformers in Production",
+    "title": "Hugging Face Transformers in Production",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Hugging Face Transformers in Production is practical when learners can apply it to this concrete case: A transformer powers extraction in a document workflow and must be packaged, monitored, and rolled back. By the end, they should be able to build or review production transformer deployment card with inputs, outputs, and guardrails, measure stable extraction quality across document batches, and catch the failure where tokenization changes between training and serving shift predictions."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Hugging Face Transformers in Production",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Hugging Face Transformers in Production: mental map",
+    "caption": "Package tokenizer, weights, config, preprocessing, runtime limits, and serving choice as one production contract.",
+    "oneLineThesis": "Transformers is a model library; production readiness comes from pinning the full inference contract and knowing when to hand serving to TGI, vLLM, BentoML, or another runtime.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Know what Transformers owns",
+        "sub": "Separate model loading and inference APIs from production serving responsibilities.",
+        "what": "Transformers gives access to models, tokenizers, configs, and generation utilities; production still needs packaging, contracts, limits, and observability.",
+        "relevance": "Identify what belongs in a Transformer inference contract.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Separate library capabilities from production endpoint responsibilities.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Package the inference path, not only weights",
+        "sub": "Freeze model files, tokenizer, schema, environment, and tests into a deployable artifact.",
+        "what": "A production package makes the notebook behavior reproducible across staging, batch jobs, and services.",
+        "relevance": "List package contents for a Transformer model.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Freeze model, tokenizer, schema, dependencies, and tests together.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Choose embedded library or serving runtime",
+        "sub": "Decide when plain Transformers is enough and when TGI, vLLM, or packaging frameworks should take over.",
+        "what": "Transformers can serve low-risk workloads directly, but high-throughput or multi-tenant systems need runtime features beyond a library call.",
+        "relevance": "Compare embedded Transformers, TGI, vLLM, and BentoML-style packaging.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Select the serving runtime that matches traffic and operational needs.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Smoke test tokenizer, cache, and limits",
+        "sub": "Make the production contract executable before load testing.",
+        "what": "A small smoke test can catch tokenizer mismatch, truncation surprises, output schema drift, and missing version identity.",
+        "relevance": "Write a minimal Transformer contract test.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Turn tokenizer and runtime assumptions into executable contract checks.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Release Transformers with rollback evidence",
+        "sub": "Synthesize the contract and build a solo production readiness card.",
+        "what": "The final artifact is a release card that names the full inference contract and the serving path.",
+        "relevance": "Recall the dependency chain from memory.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Reconstruct the inference contract and choose the next runtime step.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "dependency",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Know what Transformers owns",
+      "sub": "Separate model loading and inference APIs from production serving responsibilities.",
+      "summary": "Transformers gives access to models, tokenizers, configs, and generation utilities; production still needs packaging, contracts, limits, and observability.",
+      "objectives": [
+        "Identify what belongs in a Transformer inference contract.",
+        "Explain why tokenizer and chat template are release artifacts.",
+        "Name the responsibilities outside the library."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The library is not the whole service",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a team prototypes a sentiment classifier with `pipeline()` and then exposes it directly behind an API. It works for demos, but production requests fail when a dependency floats, a label map changes, long inputs truncate silently, and one replica loads a different tokenizer revision."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Hugging Face Transformers owns model classes, tokenizers, configs, generation utilities, pipelines, and integration with model artifacts. Production owns the contract around those pieces: input schema, truncation policy, tokenizer revision, label map, device placement, batching, errors, observability, packaging, rollout, and rollback."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Product framing: users need stable behavior, not just access to a model."
+                  }
+                ],
+                [
+                  {
+                    "text": "Engineering framing: weights, tokenizer, config, preprocessing, postprocessing, and dependency lockfile move together."
+                  }
+                ],
+                [
+                  {
+                    "text": "Operations framing: choose embedded library serving only when traffic and risk fit that simplicity."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Worked inference contract for a classifier",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Contract: `model_id=distilbert-base-uncased-finetuned-sst-2-english`, `revision=<pinned>`, `tokenizer_revision=<same>`, `max_length=256`, `truncation=true`, `labels={0:NEGATIVE,1:POSITIVE}`, `batch_max=32`, `p95_latency_target=150ms`, `error_on_empty_text=true`, `output_schema={label,score,model_version}`."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "That contract is more valuable than the code snippet because it tells clients what is stable, tells reviewers what can change, and tells operators what to log."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "canon1",
+            "kb2"
+          ],
+          "personalizedFor": "Transformer endpoint contract"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "What to pin",
+          "prompt": "Which artifact must be versioned with Transformer weights?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only the README file.",
+              "correct": false
+            },
+            {
+              "text": "Tokenizer, config, preprocessing/postprocessing, label map, and dependency/runtime assumptions.",
+              "correct": true
+            },
+            {
+              "text": "Only the GPU type.",
+              "correct": false
+            }
+          ],
+          "explanation": "The same weights can behave differently when tokenization, templates, labels, or dependencies change.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "canon1",
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb2",
+        "canon1"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Package the inference path, not only weights",
+      "sub": "Freeze model files, tokenizer, schema, environment, and tests into a deployable artifact.",
+      "summary": "A production package makes the notebook behavior reproducible across staging, batch jobs, and services.",
+      "objectives": [
+        "List package contents for a Transformer model.",
+        "Explain schema and golden-input tests.",
+        "Describe why floating dependencies break reproducibility."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Most production bugs are around the model",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The production failure is often not matrix multiplication. It is a missing tokenizer file, a different `transformers` version, a CUDA mismatch, a changed chat template, a label map omitted from the image, or a caller sending inputs the notebook never saw."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Package the whole inference path. Include weights or model reference, tokenizer, config, generation settings, preprocessing, postprocessing, schema, dependency lockfile, hardware assumptions, and golden examples. Then test the package before deployment by immutable tag."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Package pieces and production checks",
+          "criteria": [
+            "Piece",
+            "Why it matters",
+            "Check"
+          ],
+          "options": [
+            {
+              "name": "Tokenizer and template",
+              "cells": [
+                {
+                  "criterion": "Piece",
+                  "text": "Tokenizer files and chat template",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Why it matters",
+                  "text": "They decide token boundaries and prompt formatting",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Check",
+                  "text": "golden prompts produce expected token counts and roles",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Always package with weights.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Schema and labels",
+              "cells": [
+                {
+                  "criterion": "Piece",
+                  "text": "Input/output schema, label map, truncation",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Why it matters",
+                  "text": "Clients rely on stable meanings",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Check",
+                  "text": "contract tests for empty, long, batch, and malformed inputs",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Before exposing an endpoint.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Runtime image",
+              "cells": [
+                {
+                  "criterion": "Piece",
+                  "text": "Dependencies, CUDA, dtype, device map",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Why it matters",
+                  "text": "A different environment can change support or performance",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Check",
+                  "text": "image tag, smoke test, latency sample, rollback tag",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Before staging rollout.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2"
+          ]
+        },
+        {
+          "id": "m2_failure",
+          "kind": "functionalExample",
+          "title": "Case study: label map drift",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A model package omits `id2label`. One service maps class 1 to \"refund risk\" while another maps it to \"safe.\" Both load the same weights and pass shape checks. The production bug is semantic, not numerical. Contract tests with golden inputs catch the mismatch before rollout."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This echoes module 1: model behavior includes postprocessing. If it affects the output meaning, it belongs in the release artifact."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2",
+            "canon1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb2",
+        "canon1"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Choose embedded library or serving runtime",
+      "sub": "Decide when plain Transformers is enough and when TGI, vLLM, or packaging frameworks should take over.",
+      "summary": "Transformers can serve low-risk workloads directly, but high-throughput or multi-tenant systems need runtime features beyond a library call.",
+      "objectives": [
+        "Compare embedded Transformers, TGI, vLLM, and BentoML-style packaging.",
+        "Explain batching, streaming, metrics, and memory as runtime concerns.",
+        "Choose an endpoint shape based on traffic and operational requirements."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Runtime choice is an operations choice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For a small batch classifier, a Python service that imports Transformers may be perfect. For high-volume text generation, the endpoint needs streaming, batching, token limits, metrics, health checks, and memory management. At that point a serving runtime such as TGI, vLLM, SGLang, or a BentoML-packaged service may own the hot path better than custom glue."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The 2026 KB verdict treats TGI as important for existing Hugging Face serving flows while recommending comparison with vLLM or SGLang for new high-throughput generation. The broader lesson is stable: choose the runtime for the workload, not for brand familiarity."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Serving options for Transformer models",
+          "criteria": [
+            "Option",
+            "Good fit",
+            "Watch out"
+          ],
+          "options": [
+            {
+              "name": "Embedded Transformers service",
+              "cells": [
+                {
+                  "criterion": "Option",
+                  "text": "Custom API imports the library",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Good fit",
+                  "text": "Low volume, simple classifiers, controlled clients",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Watch out",
+                  "text": "You own batching, metrics, limits, and memory behavior",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for simple, low-risk services.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "TGI or vLLM endpoint",
+              "cells": [
+                {
+                  "criterion": "Option",
+                  "text": "Dedicated generation server",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Good fit",
+                  "text": "Streaming, batching, token limits, GPU serving, OpenAI-compatible clients",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Watch out",
+                  "text": "Runtime flags and templates become release artifacts",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for serious text generation traffic.",
+              "cost": "High",
+              "complexity": "Medium"
+            },
+            {
+              "name": "BentoML or package framework",
+              "cells": [
+                {
+                  "criterion": "Option",
+                  "text": "Packaged service abstraction",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Good fit",
+                  "text": "Consistent APIs, images, runners, and deployment workflow",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Watch out",
+                  "text": "Framework conventions can be overkill for one tiny model",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when many models need repeatable serving.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Keep plain Transformers when operational needs are plain.",
+          "useWhen": "Use embedded Transformers for small, predictable workloads with clear contracts and low concurrency.",
+          "avoidWhen": "Avoid hand-rolling a generation server when streaming, batching, multi-tenant quotas, GPU memory, or metrics are product requirements.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Hugging Face Transformers in Production: baseline, production design, or advanced optimization."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Smoke test tokenizer, cache, and limits",
+      "sub": "Make the production contract executable before load testing.",
+      "summary": "A small smoke test can catch tokenizer mismatch, truncation surprises, output schema drift, and missing version identity.",
+      "objectives": [
+        "Write a minimal Transformer contract test.",
+        "Predict how tokenizer drift changes behavior.",
+        "Verify AI-generated production code for omitted runtime limits."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Tokenizer and output contract test",
+          "language": "python",
+          "code": "from transformers import AutoTokenizer, pipeline\n\nMODEL = \"distilbert-base-uncased-finetuned-sst-2-english\"\nREVISION = \"main\"  # production should pin a commit hash or approved revision\n\ntokenizer = AutoTokenizer.from_pretrained(MODEL, revision=REVISION)\nclf = pipeline(\"sentiment-analysis\", model=MODEL, tokenizer=tokenizer, truncation=True)\n\ntext = \"The refund was handled quickly and clearly.\"\ntokens = tokenizer(text, max_length=256, truncation=True)\nresult = clf(text)[0]\n\nassert len(tokens[\"input_ids\"]) <= 256\nassert set(result) >= {\"label\", \"score\"}\nprint({\"model\": MODEL, \"revision\": REVISION, \"tokens\": len(tokens[\"input_ids\"]), \"result\": result})",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The comment is deliberate: a tutorial can use `main`, but a production release should pin an approved revision. The smoke test checks token length and output schema before latency or load testing."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "What can change if production silently pulls a different tokenizer revision?",
+            "answer": "Token counts, truncation behavior, chat formatting, and sometimes output quality can change even when the model name looks the same."
+          },
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "canon1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify AI-generated Transformers production code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review generated code for pinned revisions, tokenizer and config loading, max length and truncation policy, dtype and device placement, batch limits, output schema, error behavior, version logging, and runtime choice. Ask whether the code is a demo or a service contract."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Does it pin model and tokenizer revisions?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it test long, empty, malformed, and batch inputs?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it log model, tokenizer, package, and route version?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it explain when to switch to a serving runtime for batching or streaming?"
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Demo versus service",
+          "prompt": "What makes a `pipeline()` snippet production-ready?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Calling the function once without errors.",
+              "correct": false
+            },
+            {
+              "text": "A pinned contract around tokenizer, schema, limits, packaging, tests, logging, and serving behavior.",
+              "correct": true
+            },
+            {
+              "text": "Using the largest available model by default.",
+              "correct": false
+            }
+          ],
+          "explanation": "Production readiness is about repeatable behavior under real inputs, not a successful notebook cell.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "canon1",
+        "canon2",
+        "kb2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Release Transformers with rollback evidence",
+      "sub": "Synthesize the contract and build a solo production readiness card.",
+      "summary": "The final artifact is a release card that names the full inference contract and the serving path.",
+      "objectives": [
+        "Recall the dependency chain from memory.",
+        "Write a retrieval prompt for productionizing a Transformer model.",
+        "Create a capstone readiness card."
+      ],
+      "termIds": [
+        "gpu",
+        "serving",
+        "gateway",
+        "latency",
+        "throughput",
+        "versioning"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "conceptual",
+          "title": "Retrieval prompt for the whole lesson",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer this from memory: \"How do I take a Hugging Face Transformers prototype toward production?\" Include weights, tokenizer, config, preprocessing, postprocessing, schema, dependency lockfile, revision pins, runtime limits, serving choice, monitoring, and rollback."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: module 1 separated library ownership from service ownership. The final release card should make that boundary explicit enough that another engineer can operate it."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Promote a Transformer model only when the full inference contract is pinned.",
+          "useWhen": "Use a production release when contract tests, package image, latency sample, version logging, and rollback target are present.",
+          "avoidWhen": "Avoid shipping a notebook snippet directly to users, especially for generation workloads with streaming, batching, or long context.",
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb2"
+          ]
+        },
+        {
+          "id": "m5_capstone",
+          "kind": "functionalExample",
+          "title": "Capstone: production readiness card",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Pick one Transformer model. Fill out model ID, revision, tokenizer revision, config, task, input schema, output schema, max length, truncation, dtype, device target, batch limits, package image, serving runtime, metrics, golden examples, and rollback artifact. Then decide whether plain Transformers is enough or a serving runtime should own the endpoint."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Next rung: connect this to model registries and versioning so the card becomes a registered release rather than a local checklist."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "gpu",
+            "serving",
+            "gateway",
+            "latency",
+            "throughput",
+            "versioning"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ],
+          "personalizedFor": "Solo Transformers production card"
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Hugging Face Transformers in Production: baseline, production design, or advanced optimization."
+    }
+  ],
+  "glossary": {
+    "gpu": {
+      "id": "gpu",
+      "label": "GPU",
+      "laymanDefinition": "The accelerator used for larger transformer inference or batching.",
+      "technicalNote": "GPU use in Transformers production depends on model size, dtype, device mapping, batch shape, and whether a serving runtime manages memory more efficiently.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Graphics processing unit"
+    },
+    "serving": {
+      "id": "serving",
+      "label": "Serving",
+      "laymanDefinition": "Exposing a transformer model through a reliable prediction interface.",
+      "technicalNote": "Serving may be an embedded Transformers pipeline for simple cases or a dedicated runtime such as TGI, vLLM, or BentoML for operational control.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "gateway": {
+      "id": "gateway",
+      "label": "Gateway",
+      "laymanDefinition": "The layer that routes clients to the packaged model endpoint.",
+      "technicalNote": "A gateway can hide provider or runtime differences, but it must preserve model aliases, tokenizer assumptions, and trace identity.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "latency": {
+      "id": "latency",
+      "label": "Latency",
+      "laymanDefinition": "The delay caused by tokenization, model execution, decoding, and transport.",
+      "technicalNote": "Production latency depends on prompt length, batch size, KV cache behavior, device placement, and streaming design.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "throughput": {
+      "id": "throughput",
+      "label": "Throughput",
+      "laymanDefinition": "How many requests or tokens the endpoint can complete over time.",
+      "technicalNote": "Transformers library code can be fine for low volume; high throughput often needs a server runtime with batching and metrics.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "versioning": {
+      "id": "versioning",
+      "label": "Versioning",
+      "laymanDefinition": "Pinning weights, tokenizer, config, chat template, dependencies, and serving flags.",
+      "technicalNote": "A production Transformer release should never version weights alone because tokenizer or template drift can change behavior.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Hugging Face Transformers in Production",
+    "themes": [
+      {
+        "name": "Release-readiness check",
+        "questions": [
+          {
+            "q": "What decision does Hugging Face Transformers in Production change for this case?",
+            "why": "A good lesson changes how the learner builds, reviews, or ships production transformer deployment card with inputs, outputs, and guardrails.",
+            "opts": [
+              "Thin slice",
+              "Production path",
+              "Advanced optimization"
+            ],
+            "rot": "Choose the smallest option that catches: tokenization changes between training and serving shift predictions."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct the Transformers production contract: pin weights, tokenizer, config, schema, dependencies, runtime limits, serving choice, smoke tests, logs, and rollback evidence."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Hugging Face Transformers in Production operating path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Know what Transformers owns",
+          "sub": "Separate model loading and inference APIs from production serving responsibilities.",
+          "what": "Transformers gives access to models, tokenizers, configs, and generation utilities; production still needs packaging, contracts, limits, and observability.",
+          "relevance": "Identify what belongs in a Transformer inference contract.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Separate library capabilities from production endpoint responsibilities.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Package the inference path, not only weights",
+          "sub": "Freeze model files, tokenizer, schema, environment, and tests into a deployable artifact.",
+          "what": "A production package makes the notebook behavior reproducible across staging, batch jobs, and services.",
+          "relevance": "List package contents for a Transformer model.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Freeze model, tokenizer, schema, dependencies, and tests together.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Choose embedded library or serving runtime",
+          "sub": "Decide when plain Transformers is enough and when TGI, vLLM, or packaging frameworks should take over.",
+          "what": "Transformers can serve low-risk workloads directly, but high-throughput or multi-tenant systems need runtime features beyond a library call.",
+          "relevance": "Compare embedded Transformers, TGI, vLLM, and BentoML-style packaging.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Select the serving runtime that matches traffic and operational needs.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Smoke test tokenizer, cache, and limits",
+          "sub": "Make the production contract executable before load testing.",
+          "what": "A small smoke test can catch tokenizer mismatch, truncation surprises, output schema drift, and missing version identity.",
+          "relevance": "Write a minimal Transformer contract test.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Turn tokenizer and runtime assumptions into executable contract checks.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Release Transformers with rollback evidence",
+          "sub": "Synthesize the contract and build a solo production readiness card.",
+          "what": "The final artifact is a release card that names the full inference contract and the serving path.",
+          "relevance": "Recall the dependency chain from memory.",
+          "moduleId": "m5",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Reconstruct the inference contract and choose the next runtime step.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Know what Transformers owns",
+        "detail": "Separate model loading and inference APIs from production serving responsibilities."
+      },
+      {
+        "step": 2,
+        "label": "Package the inference path, not only weights",
+        "detail": "Freeze model files, tokenizer, schema, environment, and tests into a deployable artifact."
+      },
+      {
+        "step": 3,
+        "label": "Choose embedded library or serving runtime",
+        "detail": "Decide when plain Transformers is enough and when TGI, vLLM, or packaging frameworks should take over."
+      },
+      {
+        "step": 4,
+        "label": "Smoke test tokenizer, cache, and limits",
+        "detail": "Make the production contract executable before load testing."
+      },
+      {
+        "step": 5,
+        "label": "Release Transformers with rollback evidence",
+        "detail": "Synthesize the contract and build a solo production readiness card."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_contract",
+        "label": "Are weights, tokenizer, config, labels, schema, preprocessing, and dependencies pinned together?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_flow",
+        "label": "Does the package include golden-input contract tests and a rollback artifact?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_choice",
+        "label": "Is the serving choice justified by volume, batching, streaming, metrics, and memory needs?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_verify",
+        "label": "Do smoke tests check tokenization, truncation, output schema, and version logging?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_next",
+        "label": "Can another engineer operate the endpoint from the release card alone?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a one-page release-ready plan for production transformer deployment card with inputs, outputs, and guardrails. Include: the user problem, realistic input, mechanism, design choice, runnable or reviewable check, metric (stable extraction quality across document batches), failure case (tokenization changes between training and serving shift predictions), owner, and the next rung after this lesson.",
+      "scopedTo": "Hugging Face Transformers in Production"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Text Generation Inference (TGI)",
+      "url": "https://huggingface.co/docs/text-generation-inference/index",
+      "asOfDate": "2026-06-22"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB: Model Packaging and Containerization",
+      "url": "https://docs.bentoml.com/",
+      "asOfDate": "2026-06-23"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Hugging Face Transformers documentation",
+      "url": "https://huggingface.co/docs/transformers/index",
+      "asOfDate": "2026-06-23"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Hugging Face KV cache documentation",
+      "url": "https://huggingface.co/docs/transformers/en/kv_cache",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

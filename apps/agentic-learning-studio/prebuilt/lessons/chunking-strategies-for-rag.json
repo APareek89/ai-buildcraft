@@ -1,0 +1,1239 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Chunking Strategies for RAG",
+    "title": "Chunking Strategies for RAG",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Chunking Strategies for RAG is practical when learners can apply it to this concrete case: A support docs assistant cites the wrong page because chunks split policy context in half. By the end, they should be able to build or review chunking strategy sheet with size, overlap, metadata, and evaluation cases, measure retrieved chunks contain complete answer context, and catch the failure where small chunks retrieve keywords but lose the paragraph that explains the rule."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Chunking Strategies for RAG",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Chunking Strategies for RAG: mental map",
+    "caption": "Design chunks from source structure, retrieval behavior, and answer evidence rather than a universal token number.",
+    "oneLineThesis": "Chunking is the evidence-shaping decision in RAG: it decides what can be found, ranked, cited, and safely packed into the answer prompt.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Start from the answer evidence",
+        "sub": "Chunking begins with what an answer must prove.",
+        "what": "Learners identify the evidence unit before choosing a splitter.",
+        "relevance": "This prevents token windows from slicing off the caveat or exception that makes an answer true.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Anchor chunk choices in the sentence a future answer must support.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Respect document structure first",
+        "sub": "Headings, tables, code, and transcripts need different splitters.",
+        "what": "Learners choose splitters from document shape instead of copying one default.",
+        "relevance": "Structure-aware splits reduce broken tables, orphaned headings, and meaningless code fragments.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use native source boundaries before falling back to token windows.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Metadata makes chunks rankable and reviewable",
+        "sub": "Search quality depends on labels, filters, and provenance.",
+        "what": "Learners plan metadata as part of chunking, not an afterthought.",
+        "relevance": "Metadata supports tenant filters, freshness checks, exact source links, and debugging.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Attach the fields retrieval and citation review will later need.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Implement and test the split",
+        "sub": "A tiny splitter should expose boundaries before indexing.",
+        "what": "Learners implement a small chunking routine and inspect output.",
+        "relevance": "Inspecting chunks catches broken evidence before expensive embedding and indexing.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Turn the chunk contract into runnable checks before embedding anything.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Evaluate chunking as a regression surface",
+        "sub": "Chunking quality is measured with retrieval questions.",
+        "what": "Learners turn chunking assumptions into repeatable retrieval checks.",
+        "relevance": "Chunk changes otherwise look harmless while breaking citations or answer completeness.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Promote chunk decisions into tests that block silent retrieval regressions.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Start from the answer evidence",
+      "sub": "Chunking begins with what an answer must prove.",
+      "summary": "A chunk is not just a storage unit; it is the candidate evidence the model will cite.",
+      "objectives": [
+        "Define a chunk as an answer-support unit.",
+        "Explain why tiny chunks can retrieve keywords but lose meaning.",
+        "Name metadata that helps a weak chunk become usable."
+      ],
+      "termIds": [
+        "rag",
+        "chunk",
+        "embedding",
+        "vector_search",
+        "reranker"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "A chunk is the shape of retrievable evidence",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a support assistant cites the refund page but misses the paragraph saying enterprise contracts require finance approval. Retrieval “worked” by keyword, yet the answer was wrong because the returned chunk lacked the governing caveat."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The practical question is not “450 tokens or 800 tokens?” It is “what unit would let a reviewer verify this answer without opening the original document?” Headings, definitions, examples, table captions, and version dates are part of that unit."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before touching code, write the claim the assistant must support and underline the minimum surrounding context that makes the claim safe."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ],
+          "analogy": "A good chunk is a labeled evidence envelope, not a random slice from a shredder."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Worked artifact: refund policy chunk contract",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For the refund policy page, the chunk contract says each returned unit must include the heading path, product tier, effective date, and any exception paragraph adjacent to the rule. The body target is 350-600 tokens, but the policy exception outranks the target size."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The resulting chunk text starts with a breadcrumb: “Billing > Refunds > Enterprise exceptions.” That breadcrumb gives lexical search exact words, vector search semantic context, and the generator enough provenance to cite the correct page."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Write the answer claim: “Enterprise refunds require finance approval after 30 days.”"
+                  }
+                ],
+                [
+                  {
+                    "text": "Select the smallest source section containing the rule and exception."
+                  }
+                ],
+                [
+                  {
+                    "text": "Attach source URL, heading path, product tier, and effective date."
+                  }
+                ],
+                [
+                  {
+                    "text": "Create an eval query that asks exactly about enterprise refunds after 30 days."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ],
+          "personalizedFor": "Chunking Strategies for RAG"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Evidence before size",
+          "prompt": "A chunk contains the keyword “refund” but not the exception paragraph. What should you change first?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Lower the model temperature so it becomes more factual.",
+              "correct": false
+            },
+            {
+              "text": "Return a larger structural parent or split around headings so the exception travels with the rule.",
+              "correct": true
+            },
+            {
+              "text": "Delete metadata because it distracts semantic search.",
+              "correct": false
+            }
+          ],
+          "explanation": "Generation settings cannot restore evidence that retrieval did not return.",
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon3"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Respect document structure first",
+      "sub": "Headings, tables, code, and transcripts need different splitters.",
+      "summary": "The best initial splitter is usually the one that preserves the author’s organization.",
+      "objectives": [
+        "Compare heading, recursive, semantic, and parent-child splitting.",
+        "Explain why code and tables require special handling.",
+        "Choose overlap only after structure is preserved."
+      ],
+      "termIds": [
+        "rag",
+        "chunk",
+        "embedding",
+        "vector_search",
+        "reranker"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Structure beats blind length",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A Markdown handbook, an API reference, a spreadsheet export, and a call transcript should not all become identical 500-token windows. Each source has boundaries that already signal meaning."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Recursive splitting is useful because it tries larger natural units first, then falls back to smaller ones. Parent-child retrieval is useful when small children rank well but the answer needs the parent section."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If a chunk starts with “however” or “this limit,” find the antecedent. The split probably cut away the sentence that gives the chunk meaning."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ],
+          "analogy": "Use the document’s skeleton before measuring its limbs."
+        },
+        {
+          "id": "m2_worked",
+          "kind": "functionalExample",
+          "title": "Case study: onboarding docs with tables and code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A developer-assistant KB ingests onboarding docs. The first version chunks every 400 characters and returns code snippets without the prerequisite environment variable. The second version keeps code fences whole, summarizes tables with column names, and stores heading breadcrumbs."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Retrieval improves not because embeddings changed, but because each candidate now contains a complete procedural step. The model can answer “How do I create the API token?” without mixing token creation and token rotation."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Split Markdown by heading levels."
+                  }
+                ],
+                [
+                  {
+                    "text": "Keep code fences and tables intact unless they exceed budget."
+                  }
+                ],
+                [
+                  {
+                    "text": "Window inside long sections with modest overlap."
+                  }
+                ],
+                [
+                  {
+                    "text": "Return the parent section when the selected child is too narrow."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ],
+          "personalizedFor": "Chunking Strategies for RAG"
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Splitter choice",
+          "prompt": "Why can a table perform poorly after ordinary paragraph chunking?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Tables never work in RAG and must be removed.",
+              "correct": false
+            },
+            {
+              "text": "Column names and row meanings can be separated, leaving cells without schema context.",
+              "correct": true
+            },
+            {
+              "text": "Embedding models can only encode prose, not numbers.",
+              "correct": false
+            }
+          ],
+          "explanation": "Tables need schema and row grouping; they are not automatically unusable.",
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon3"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Metadata makes chunks rankable and reviewable",
+      "sub": "Search quality depends on labels, filters, and provenance.",
+      "summary": "Chunk text carries meaning; metadata carries control.",
+      "objectives": [
+        "List metadata needed for filtering and display.",
+        "Explain how breadcrumbs improve both lexical and vector retrieval.",
+        "Detect stale or unauthorized chunks before generation."
+      ],
+      "termIds": [
+        "rag",
+        "chunk",
+        "embedding",
+        "vector_search",
+        "reranker"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Metadata is retrieval control surface",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A chunk without source URL, heading path, version, permission scope, and freshness date is hard to trust even when the text is relevant. Metadata lets retrieval ask “relevant for whom, from which source, and as of when?”"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For Agentic Learning Studio, the category and lesson slug matter because a learner asking about “agents” should not receive a vector-near chunk about “agency” in a governance note. Filters narrow the candidate pool before ranking."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every chunk should be explainable in a trace: where it came from, why it was allowed, and why it was selected."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ],
+          "analogy": "Metadata is the label on the evidence bag."
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Chunk metadata decisions",
+          "criteria": [
+            "Field",
+            "Why it matters",
+            "Failure if absent"
+          ],
+          "options": [
+            {
+              "name": "Heading path",
+              "cells": [
+                {
+                  "criterion": "Field",
+                  "text": "Document title plus nested headings.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Why it matters",
+                  "text": "Ranks vague sections and gives citations readable labels.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Failure if absent",
+                  "text": "A “Limitations” chunk has no topic context.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use for all docs with structure.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Permission scope",
+              "cells": [
+                {
+                  "criterion": "Field",
+                  "text": "Tenant, role, source ACL, or visibility flag.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Why it matters",
+                  "text": "Prevents unauthorized evidence from entering prompts.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Failure if absent",
+                  "text": "Correct retrieval can still leak private content.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Mandatory for internal or customer data.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Freshness/version",
+              "cells": [
+                {
+                  "criterion": "Field",
+                  "text": "Effective date, source hash, product version.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Why it matters",
+                  "text": "Detects stale indexes and version-specific answers.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Failure if absent",
+                  "text": "Old facts look just as authoritative as current ones.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use whenever facts change.",
+              "cost": "Low",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Metadata check",
+          "prompt": "A chunk answers the question but belongs to the wrong customer tenant. What failed?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The reranker should have guessed the tenant from wording.",
+              "correct": false
+            },
+            {
+              "text": "The chunking/indexing path did not preserve permission metadata for filtering.",
+              "correct": true
+            },
+            {
+              "text": "The answer prompt needs more examples.",
+              "correct": false
+            }
+          ],
+          "explanation": "Security and tenant filtering must be explicit metadata constraints.",
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon3"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Implement and test the split",
+      "sub": "A tiny splitter should expose boundaries before indexing.",
+      "summary": "The first implementation test is a chunk preview, not a model answer.",
+      "objectives": [
+        "Write a heading-aware chunk preview.",
+        "Predict overlap behavior at section boundaries.",
+        "Create an eval query tied to each risky split."
+      ],
+      "termIds": [
+        "rag",
+        "chunk",
+        "embedding",
+        "vector_search",
+        "reranker"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Preview chunks before building the index",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A chunker that only reports counts hides the important failure: what text actually reaches retrieval. Print chunk IDs, headings, token estimates, and first/last sentences."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: earlier you named the answer evidence. Now verify the split produces that evidence as one returned unit or as a child linked to the right parent."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If you cannot explain why a chunk boundary exists, the retriever will have to live with an accidental decision."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Heading-aware chunk preview",
+          "language": "python",
+          "code": "def split_sections(markdown):\n    sections, current = [], {\"path\": [], \"lines\": []}\n    for line in markdown.splitlines():\n        if line.startswith(\"## \"):\n            if current[\"lines\"]:\n                sections.append(current)\n            current = {\"path\": [line[3:].strip()], \"lines\": [line]}\n        else:\n            current[\"lines\"].append(line)\n    if current[\"lines\"]:\n        sections.append(current)\n    return sections\n\ndef window_words(text, size=90, overlap=18):\n    words = text.split()\n    step = max(1, size - overlap)\n    for start in range(0, len(words), step):\n        yield \" \".join(words[start:start + size])\n\npolicy = \"\"\"## Refunds\nStandard plans can be refunded within 30 days.\nEnterprise contracts require finance approval after 30 days.\nRefunds are denied when usage violates the acceptable-use policy.\n\"\"\"\n\nfor section in split_sections(policy):\n    for i, chunk in enumerate(window_words(\"\n\".join(section[\"lines\"]))):\n        print({\"heading\": section[\"path\"], \"chunk\": i, \"text\": chunk})",
+          "explanation": "The preview keeps the heading with each window so the refund exception is not retrieved as context-free prose.",
+          "predictThenReveal": {
+            "prompt": "Before running it, predict whether the enterprise exception appears in the same previewed chunk as the 30-day rule.",
+            "answer": "With this small policy it stays together; on a longer section, the printed preview tells you whether to shrink, expand, or return the parent section."
+          },
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Implementation signal",
+          "prompt": "What should you inspect before embedding the chunks?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only the final vector dimensions.",
+              "correct": false
+            },
+            {
+              "text": "The actual chunk text, headings, metadata, and whether known answer evidence stays intact.",
+              "correct": true
+            },
+            {
+              "text": "Only the model response after generation.",
+              "correct": false
+            }
+          ],
+          "explanation": "Embedding a bad split makes the bad split faster, not better.",
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon3"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Evaluate chunking as a regression surface",
+      "sub": "Chunking quality is measured with retrieval questions.",
+      "summary": "A chunking strategy is not done until retrieval eval says the evidence survives.",
+      "objectives": [
+        "Build query cases that target boundary failures.",
+        "Separate retrieval miss from generation hallucination.",
+        "Use capstone criteria to decide what changes next."
+      ],
+      "termIds": [
+        "rag",
+        "chunk",
+        "embedding",
+        "vector_search",
+        "reranker"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Every chunking rule needs a failure test",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Chunking changes should be evaluated like code changes. A good test asks the exact question that used to fail and checks whether the expected source or fact appears high enough to fit in the answer prompt."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Failure modes are topic-specific: refund exceptions split away from rules, code snippets separated from prerequisites, tables indexed without column names, or stale pages kept after source refresh."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Retrieval recall at 20 is not enough if your prompt only packs top 6. Test the budget you actually ship."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify the AI output after a chunking change",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When the model gives a better-looking answer, verify the retrieval layer before celebrating."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The cited chunk contains the full sentence or table row supporting each claim."
+                  }
+                ],
+                [
+                  {
+                    "text": "The chunk metadata points to the correct source URL, heading, version, and permission scope."
+                  }
+                ],
+                [
+                  {
+                    "text": "A negative question returns “not enough evidence” instead of a plausible answer."
+                  }
+                ],
+                [
+                  {
+                    "text": "The old failing query now retrieves the decisive chunk within the packed top-k."
+                  }
+                ],
+                [
+                  {
+                    "text": "The answer does not quote neighboring text that was only present because overlap duplicated it."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Regression mindset",
+          "prompt": "A new chunk size improves average relevance but breaks refund exceptions. What should happen?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Ship it because averages matter more than edge cases.",
+              "correct": false
+            },
+            {
+              "text": "Keep the aggregate metric but add exception-focused tests and adjust the strategy.",
+              "correct": true
+            },
+            {
+              "text": "Remove overlap from every source to simplify the system.",
+              "correct": false
+            }
+          ],
+          "explanation": "Chunking eval needs representative cases and known failure buckets, not only one aggregate number.",
+          "termIds": [
+            "rag",
+            "chunk",
+            "embedding",
+            "vector_search",
+            "reranker"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon3"
+      ]
+    }
+  ],
+  "glossary": {
+    "rag": {
+      "id": "rag",
+      "label": "RAG",
+      "laymanDefinition": "Retrieving relevant evidence before generation so answers can be grounded in sources.",
+      "technicalNote": "RAG quality depends on corpus freshness, chunking, embeddings, filters, ranking, citation handling, and faithfulness evaluation.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Retrieval-augmented generation"
+    },
+    "embedding": {
+      "id": "embedding",
+      "label": "Embedding",
+      "laymanDefinition": "A numeric vector representation of text used for semantic comparison.",
+      "technicalNote": "Embedding choices fix dimension, distance metric, query/passage formatting, model version, and migration requirements for retrieval.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "vector_search": {
+      "id": "vector_search",
+      "label": "Vector search",
+      "laymanDefinition": "Finding nearby vectors to retrieve semantically related chunks.",
+      "technicalNote": "Vector search needs metadata filters, recall tests, index tuning, and fallback for exact terms, IDs, and rare phrases.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "chunk": {
+      "id": "chunk",
+      "label": "Chunk",
+      "laymanDefinition": "A source text segment stored and retrieved as a unit.",
+      "technicalNote": "Chunk design balances semantic completeness, citation accuracy, token budget, overlap, metadata, and update/delete behavior.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "reranker": {
+      "id": "reranker",
+      "label": "Reranker",
+      "laymanDefinition": "A second-stage model or method that reorders retrieved candidates by relevance.",
+      "technicalNote": "Rerankers improve top-result precision when candidate recall is adequate, but add latency, cost, and evaluation complexity.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "rrf": {
+      "id": "rrf",
+      "label": "RRF",
+      "laymanDefinition": "A rank-fusion method that merges multiple result lists by reciprocal rank.",
+      "technicalNote": "RRF is useful for hybrid retrieval because it combines lexical and vector rankings without requiring comparable raw scores.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Reciprocal rank fusion"
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Chunking Strategies for RAG",
+    "themes": [
+      {
+        "name": "Chunk design review",
+        "questions": [
+          {
+            "q": "Which chunking plan gives the retriever complete answer evidence without flooding context?",
+            "why": "The chunk plan sets the ceiling for retrieval quality before the model ever writes an answer.",
+            "opts": [
+              "Structure-aware sections with bounded windows",
+              "Tiny fixed windows everywhere",
+              "One long chunk per document"
+            ],
+            "rot": "Prefer the smallest chunk that still carries the definition, caveat, and metadata needed to support an answer."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: rebuild the lesson from memory by naming the source structure, chunk size, overlap, metadata, evaluation queries, and the failure signal each choice is meant to catch."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Chunking path from source document to answerable evidence",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Start from the answer evidence",
+          "sub": "Chunking begins with what an answer must prove.",
+          "what": "Learners identify the evidence unit before choosing a splitter.",
+          "relevance": "This prevents token windows from slicing off the caveat or exception that makes an answer true.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Anchor chunk choices in the sentence a future answer must support.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Respect document structure first",
+          "sub": "Headings, tables, code, and transcripts need different splitters.",
+          "what": "Learners choose splitters from document shape instead of copying one default.",
+          "relevance": "Structure-aware splits reduce broken tables, orphaned headings, and meaningless code fragments.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use native source boundaries before falling back to token windows.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Metadata makes chunks rankable and reviewable",
+          "sub": "Search quality depends on labels, filters, and provenance.",
+          "what": "Learners plan metadata as part of chunking, not an afterthought.",
+          "relevance": "Metadata supports tenant filters, freshness checks, exact source links, and debugging.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Attach the fields retrieval and citation review will later need.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Implement and test the split",
+          "sub": "A tiny splitter should expose boundaries before indexing.",
+          "what": "Learners implement a small chunking routine and inspect output.",
+          "relevance": "Inspecting chunks catches broken evidence before expensive embedding and indexing.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Turn the chunk contract into runnable checks before embedding anything.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Evaluate chunking as a regression surface",
+          "sub": "Chunking quality is measured with retrieval questions.",
+          "what": "Learners turn chunking assumptions into repeatable retrieval checks.",
+          "relevance": "Chunk changes otherwise look harmless while breaking citations or answer completeness.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Promote chunk decisions into tests that block silent retrieval regressions.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "shapes"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "proves"
+        }
+      ]
+    },
+    "capstone": {
+      "prompt": "Take one real policy or product-doc page. Produce a chunking spec with heading-aware splits, target token range, overlap rule, metadata fields, parent-child return behavior, and six eval questions that prove the answer context survives splitting. Next rung: add hybrid retrieval when exact identifiers matter.",
+      "scopedTo": "Chunking Strategies for RAG"
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Start from the answer evidence",
+        "detail": "A chunk is not just a storage unit; it is the candidate evidence the model will cite."
+      },
+      {
+        "step": 2,
+        "label": "Respect document structure first",
+        "detail": "The best initial splitter is usually the one that preserves the author’s organization."
+      },
+      {
+        "step": 3,
+        "label": "Metadata makes chunks rankable and reviewable",
+        "detail": "Chunk text carries meaning; metadata carries control."
+      },
+      {
+        "step": 4,
+        "label": "Implement and test the split",
+        "detail": "The first implementation test is a chunk preview, not a model answer."
+      },
+      {
+        "step": 5,
+        "label": "Evaluate chunking as a regression surface",
+        "detail": "A chunking strategy is not done until retrieval eval says the evidence survives."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_problem_anchor",
+        "label": "Can you explain why “Start from the answer evidence” matters for the running case?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_design_choice",
+        "label": "Did you make the design choice from “Metadata makes chunks rankable and reviewable” explicit?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_evidence_gate",
+        "label": "Can the capstone be reviewed using “Evaluate chunking as a regression surface”?",
+        "fromModuleId": "m5"
+      }
+    ]
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Retrieval-Augmented Generation & Vector Search",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Retrieval-Augmented Generation & Vector Search",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LlamaIndex RAG documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    },
+    "kb3": {
+      "id": "kb3",
+      "kind": "kb",
+      "title": "KB: RAG Fundamentals",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-22"
+    },
+    "kb4": {
+      "id": "kb4",
+      "kind": "kb",
+      "title": "KB: Chunking, hybrid retrieval, Graph RAG, and retrieval evaluation notes",
+      "url": "kb/RAG-tooling",
+      "asOfDate": "2026-06-22"
+    },
+    "canon3": {
+      "id": "canon3",
+      "kind": "canonical",
+      "title": "LangChain retrieval concepts",
+      "url": "https://docs.langchain.com/oss/python/langchain/retrieval",
+      "asOfDate": "2026-06-22"
+    },
+    "canon4": {
+      "id": "canon4",
+      "kind": "canonical",
+      "title": "LlamaIndex RAG guide",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

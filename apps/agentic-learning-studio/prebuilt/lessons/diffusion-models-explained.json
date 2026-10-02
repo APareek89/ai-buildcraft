@@ -1,0 +1,936 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Diffusion Models Explained",
+    "title": "Diffusion Models Explained",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 42,
+    "thesis": "Diffusion Models Explained is practical when learners can apply it to this concrete case: A marketing team needs a simple mental model for how noisy images become product visuals. By the end, they should be able to build or review diffusion storyboard from noise, denoise steps, prompt, and review, measure prompt changes produce understandable visual changes, and catch the failure where the team treats generation as magic and cannot debug bad outputs."
+  },
+  "learnerProfile": {
+    "level": "beginner",
+    "depth": "conceptual",
+    "examples": "functional",
+    "topic": "Diffusion Models Explained",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Diffusion Models Explained: mental map",
+    "caption": "Follow diffusion from random noise through conditioned denoising steps, scheduler choices, and responsible output review.",
+    "oneLineThesis": "Diffusion models generate media by learning how to reverse noise step by step, not by retrieving a finished image.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Generation starts from structured noise",
+        "sub": "The model learns to undo a corruption process.",
+        "what": "Learners get the core mental model first.",
+        "relevance": "This prevents prompt-only explanations of image generation.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Turn a noisy solar-system illustration into a cleaner sample over steps.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Conditioning tells the denoiser what to aim for",
+        "sub": "Prompts, masks, references, and layouts guide the same loop.",
+        "what": "Learners separate the engine from the guidance signal.",
+        "relevance": "This helps debug missing objects, bad counts, and weak layout control.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Encode the lesson prompt as guidance for the denoising path.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Schedulers decide the denoising route",
+        "sub": "Timesteps control speed, quality, and reproducibility tradeoffs.",
+        "what": "Learners understand a key inference component.",
+        "relevance": "This makes quality and cost tradeoffs concrete.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Compare fast and careful denoising routes with the same prompt.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code a toy denoising loop",
+        "sub": "A one-dimensional loop makes the iteration visible.",
+        "what": "Learners see iteration in runnable code.",
+        "relevance": "This turns the abstract process into mechanics.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Move a noisy number toward a prompt target over several steps.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Artifacts and safety checks finish the loop",
+        "sub": "A plausible image is still a draft.",
+        "what": "Learners close with responsible use.",
+        "relevance": "This prevents attractive images from becoming misleading teaching assets.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Review generated lesson media for correctness, safety, bias, and rights.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "guides"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "routes"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "implements"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "reviews"
+      }
+    ],
+    "structureType": "dependency"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Generation starts from structured noise",
+      "sub": "The model learns to undo a corruption process.",
+      "summary": "Diffusion begins with noise because training taught the model to remove it.",
+      "objectives": [
+        "Explain forward noising and reverse denoising.",
+        "Use a concrete lesson-image example.",
+        "Avoid the stored-image misconception."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Noise is the starting material",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: an educator asks for an image of a student studying a solar-system diagram. A diffusion model starts from random noise and repeatedly updates the sample toward something that fits learned image patterns and the prompt."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Training corrupts real examples with noise, and the model learns to predict how to remove that noise. Inference runs the learned process backward."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_diffusers",
+            "kb_multimodal_generative"
+          ],
+          "analogy": "Diffusion is restoring a foggy sketch one wipe at a time."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Five-step denoising story",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Step 1 is speckled noise. Step 2 separates background and foreground. Step 3 forms a student, desk, and diagram. Step 4 sharpens planets and notebook edges. Step 5 gets reviewed for prompt fit, artifacts, and rights."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Starting point",
+          "prompt": "What does a diffusion generator usually start from?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A completed stored image.",
+              "correct": false
+            },
+            {
+              "text": "Random noise that is iteratively denoised.",
+              "correct": true
+            },
+            {
+              "text": "A hand-coded SVG template.",
+              "correct": false
+            }
+          ],
+          "explanation": "The reverse denoising loop is the core mechanism.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_diffusers",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Conditioning tells the denoiser what to aim for",
+      "sub": "Prompts, masks, references, and layouts guide the same loop.",
+      "summary": "Conditioning shapes denoising without guaranteeing exact obedience.",
+      "objectives": [
+        "Define conditioning.",
+        "Explain prompt mismatch.",
+        "Name non-text conditioning examples."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The prompt is guidance, not a remote control",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Text prompts are encoded into vectors that condition denoising. Other workflows can condition on images, masks, sketches, depth maps, or layouts. Conditioning changes probabilities at every step, but exact counts, readable text, and spatial relations can still fail."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_diffusers",
+            "kb_multimodal_generative"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Prompt mismatch in a science image",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A prompt asks for eight labeled planets. The image has six planets and unreadable labels. The broad style succeeded; the factual diagram requirement failed, so the asset should be rejected or redrawn with a deterministic tool."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_diffusers",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Schedulers decide the denoising route",
+      "sub": "Timesteps control speed, quality, and reproducibility tradeoffs.",
+      "summary": "The scheduler converts denoiser predictions into the next sample.",
+      "objectives": [
+        "Explain scheduler and timestep.",
+        "Connect steps to latency.",
+        "Avoid assuming more steps fixes everything."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "The scheduler is the route planner",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "At each timestep, the denoiser predicts a correction. The scheduler decides how that correction changes the sample. More steps can improve detail up to a point, but they add latency and may not fix bad conditioning or model limits."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_schedulers",
+            "kb_multimodal_generative"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Diffusion control knobs",
+          "criteria": [
+            "Knob",
+            "What it changes",
+            "Failure to watch"
+          ],
+          "options": [
+            {
+              "name": "Seed",
+              "cells": [
+                {
+                  "criterion": "Knob",
+                  "text": "Seed",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it changes",
+                  "text": "initial noise and repeatability",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure to watch",
+                  "text": "same prompt can vary widely",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Need reproducible comparisons.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Steps",
+              "cells": [
+                {
+                  "criterion": "Knob",
+                  "text": "Steps",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it changes",
+                  "text": "number of denoising updates",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure to watch",
+                  "text": "too few rough; too many slow",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Tune speed-quality.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Scheduler",
+              "cells": [
+                {
+                  "criterion": "Knob",
+                  "text": "Scheduler",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it changes",
+                  "text": "path through timesteps",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure to watch",
+                  "text": "look, speed, or stability changes",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Inference comparison.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_schedulers"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_schedulers",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code a toy denoising loop",
+      "sub": "A one-dimensional loop makes the iteration visible.",
+      "summary": "The toy code preserves the idea of repeated guided correction.",
+      "objectives": [
+        "Run a tiny denoising loop.",
+        "Predict why it approaches rather than jumps.",
+        "Verify AI explanations of diffusion."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Toy denoising toward a prompt target",
+          "language": "python",
+          "code": "sample = 0.0\ntarget_from_prompt = 10.0\nsteps = 5\nguidance = 0.4\n\nfor t in range(steps, 0, -1):\n    correction = (target_from_prompt - sample) * guidance\n    sample += correction\n    print(f\"step {t}: {sample:.2f}\")",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Real diffusion uses tensors, trained denoisers, and schedulers. This toy loop shows repeated partial corrections toward conditioned structure."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Will the sample reach exactly 10.0 after five steps?",
+            "answer": "No. It approaches 10.0 through partial corrections. Real diffusion also balances guidance, learned priors, and scheduler behavior."
+          },
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative",
+            "canon_hf_schedulers"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify AI-generated diffusion code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: iterative timesteps are present; denoiser and scheduler roles are separate; seed, model, steps, and prompt are recorded; and output review is included."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_diffusers"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_multimodal_generative",
+        "canon_hf_schedulers",
+        "canon_hf_diffusers"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Artifacts and safety checks finish the loop",
+      "sub": "A plausible image is still a draft.",
+      "summary": "Generated media needs artifact, factuality, safety, and rights review.",
+      "objectives": [
+        "Name diffusion artifacts.",
+        "Add review criteria for lesson media.",
+        "Decide when to reject generated assets."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Looks good is not the same as correct",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Generated media can contain distorted hands, impossible diagrams, unreadable labels, biased depictions, unsafe content, or rights constraints. A learning product should label, review, and replace assets that mislead."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative",
+            "canon_hf_diffusers"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Use diffusion outputs as drafts that must pass content, safety, and rights review.",
+          "useWhen": "Use diffusion when visual variation or editing is useful and human review is available.",
+          "avoidWhen": "Avoid factual diagrams, identity-sensitive depictions, or rights-constrained contexts without verification.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Review gate",
+          "prompt": "Why review a generated science illustration?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Diffusion always creates exact diagrams.",
+              "correct": false
+            },
+            {
+              "text": "It can look polished while containing factual or visual errors.",
+              "correct": true
+            },
+            {
+              "text": "Only text models need review.",
+              "correct": false
+            }
+          ],
+          "explanation": "Generated media needs domain and safety review.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_multimodal_generative",
+        "canon_hf_diffusers"
+      ]
+    }
+  ],
+  "glossary": {
+    "diffusion": {
+      "id": "diffusion",
+      "label": "Diffusion",
+      "laymanDefinition": "A generative process that learns to turn noise into structured media.",
+      "technicalNote": "Diffusion systems combine denoising steps, conditioning, schedulers, and safety controls; quality and provenance depend on the full pipeline.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "latent_space": {
+      "id": "latent_space",
+      "label": "Latent space",
+      "laymanDefinition": "A compressed representation where models manipulate meaning more efficiently than raw pixels or audio.",
+      "technicalNote": "Latent-space choices affect speed, detail, editability, artifacts, and what safety or provenance checks can inspect.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "The ordered set of model, preprocessing, generation, postprocessing, and safety steps.",
+      "technicalNote": "Media pipelines should pin model versions, prompts, parameters, assets, moderation, watermarking, and review metadata for reproducibility.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "vlm": {
+      "id": "vlm",
+      "label": "VLM",
+      "laymanDefinition": "A model that connects visual inputs with language understanding or generation.",
+      "technicalNote": "VLM workflows need image preprocessing, prompt grounding, output validation, and privacy review for uploaded visual content.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Vision-language model"
+    },
+    "asr": {
+      "id": "asr",
+      "label": "ASR",
+      "laymanDefinition": "Technology that converts spoken audio into text.",
+      "technicalNote": "ASR systems should track language, accent, noise, timestamps, confidence, privacy, and downstream correction paths.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Automatic speech recognition"
+    },
+    "provenance": {
+      "id": "provenance",
+      "label": "Provenance",
+      "laymanDefinition": "Evidence about where media came from and how it was created or edited.",
+      "technicalNote": "Provenance for generated media includes source assets, model versions, prompts, parameters, edits, disclosures, and review decisions.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Diffusion Models Explained",
+    "themes": [
+      {
+        "name": "Denoising explanation",
+        "questions": [
+          {
+            "q": "Can you explain what changes at each denoising step?",
+            "why": "The core concept is the repeated correction loop guided by conditioning and scheduler timesteps.",
+            "opts": [
+              "Iterative denoising story",
+              "Stored-image lookup",
+              "One-step drawing"
+            ],
+            "rot": "Name noise, denoiser, conditioning, scheduler, step count, and review."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct diffusion by naming forward noising, reverse denoising, seed, prompt conditioning, scheduler timesteps, artifacts, and final review."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Diffusion path from noisy sample to reviewed media",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Generation starts from structured noise",
+          "sub": "The model learns to undo a corruption process.",
+          "what": "Learners get the core mental model first.",
+          "relevance": "This prevents prompt-only explanations of image generation.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Turn a noisy solar-system illustration into a cleaner sample over steps.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Conditioning tells the denoiser what to aim for",
+          "sub": "Prompts, masks, references, and layouts guide the same loop.",
+          "what": "Learners separate the engine from the guidance signal.",
+          "relevance": "This helps debug missing objects, bad counts, and weak layout control.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Encode the lesson prompt as guidance for the denoising path.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Schedulers decide the denoising route",
+          "sub": "Timesteps control speed, quality, and reproducibility tradeoffs.",
+          "what": "Learners understand a key inference component.",
+          "relevance": "This makes quality and cost tradeoffs concrete.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Compare fast and careful denoising routes with the same prompt.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code a toy denoising loop",
+          "sub": "A one-dimensional loop makes the iteration visible.",
+          "what": "Learners see iteration in runnable code.",
+          "relevance": "This turns the abstract process into mechanics.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Move a noisy number toward a prompt target over several steps.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Artifacts and safety checks finish the loop",
+          "sub": "A plausible image is still a draft.",
+          "what": "Learners close with responsible use.",
+          "relevance": "This prevents attractive images from becoming misleading teaching assets.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Review generated lesson media for correctness, safety, bias, and rights.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "guides"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "routes"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "implements"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "reviews"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Generation starts from structured noise",
+        "detail": "Diffusion begins with noise because training taught the model to remove it."
+      },
+      {
+        "step": 2,
+        "label": "Conditioning tells the denoiser what to aim for",
+        "detail": "Conditioning shapes denoising without guaranteeing exact obedience."
+      },
+      {
+        "step": 3,
+        "label": "Schedulers decide the denoising route",
+        "detail": "The scheduler converts denoiser predictions into the next sample."
+      },
+      {
+        "step": 4,
+        "label": "Code a toy denoising loop",
+        "detail": "The toy code preserves the idea of repeated guided correction."
+      },
+      {
+        "step": 5,
+        "label": "Artifacts and safety checks finish the loop",
+        "detail": "Generated media needs artifact, factuality, safety, and rights review."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Generation starts from structured noise\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Code a toy denoising loop\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Artifacts and safety checks finish the loop\" define the production or review gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a five-step explanation of a generated lesson illustration: seed noise, prompt conditioning, scheduler steps, denoising updates, artifact review. Next rung: compare pixel diffusion with latent diffusion.",
+      "scopedTo": "Generative foundations",
+      "checks": [
+        "Generation is iterative.",
+        "Prompt conditioning is guidance, not command execution.",
+        "Scheduler and steps are recorded.",
+        "Output is reviewed before use."
+      ]
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Multimodal Generative AI",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Multimodal Generative AI",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Diffusers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-20"
+    },
+    "canon_hf_diffusers": {
+      "id": "canon_hf_diffusers",
+      "kind": "canonical",
+      "title": "Hugging Face Diffusers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_hf_schedulers": {
+      "id": "canon_hf_schedulers",
+      "kind": "canonical",
+      "title": "Diffusers schedulers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/api/schedulers/overview",
+      "asOfDate": "2026-06-23"
+    },
+    "kb_multimodal_generative": {
+      "id": "kb_multimodal_generative",
+      "kind": "kb",
+      "title": "KB: Multimodal and Generative Models",
+      "url": "https://huggingface.co/docs/diffusers/index",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

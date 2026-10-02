@@ -1,0 +1,48 @@
+%% Blindspot — immutable eval spend authorization with explicit execution grade (takeover reviewed 2026-07-22)
+%% files: packages/core/src/eval/cost.ts, packages/core/src/eval/planner.ts, packages/core/src/eval/runner.ts, packages/db/src/schema.ts, apps/dashboard/app/(app)/routes/[name]/RouteDetailView.tsx
+%% granularity: full
+flowchart TD
+  PICK["Choose eligible models, execution grade and maximum USD spend<br/>USER"]:::ask
+  ELIG["Re-check selected workflow, registry, candidates and replay readiness<br/>FUNCTION"]:::fn
+  LOAD["Load latest versioned golden set<br/>DATA · active golden_examples"]:::data
+  PRICE["Estimate candidate + judge calls<br/>FUNCTION · bounded inputs/outputs + safety factor"]:::fn
+  FULL{"Budget covers every case?<br/>FUNCTION"}:::dec
+  SAMPLE["Choose reproducible strata<br/>FUNCTION · must-pass, known-failure, edge, representative · stable SHA seed"]:::fn
+  DRAFT["Store immutable plan for 30 minutes<br/>DATA · execution mode, examples/hash, calls, costs and confidence"]:::data
+  REVIEW{"Confirm this exact plan?<br/>USER"}:::ask
+  FRESH{"Examples, model eligibility, replay config and key access still valid?<br/>FUNCTION"}:::dec
+  LOCK["Lock + single-use transition<br/>FUNCTION · draft to running"]:::fn
+  REFRESH["409 · calculate a fresh estimate<br/>FUNCTION · no provider spend"]:::term
+  LOOP["For each authorized model and example<br/>FUNCTION · pre-check the per-model cap"]:::fn
+  EXEC{"Authorized execution mode?<br/>FUNCTION"}:::dec
+  DIRECT["Model-only candidate call<br/>AGENT · selected model<br/>out: screening output"]:::agent
+  REPLAY["Protected application replay<br/>FUNCTION · temporary model override<br/>out: actual target-node output after real app context"]:::fn
+  JUDGE["Score visible criteria<br/>AGENT · JUDGE_MODEL<br/>out: per-criterion scores + reasoning"]:::agent
+  MEAN["Equal-weight criterion mean<br/>FUNCTION · transparent score formula"]:::fn
+  EVID["Persist evidence immediately<br/>DATA · input/reference/output, issues, usage, costs and errors"]:::data
+  DONE{"All selected examples finished within the authorization?<br/>FUNCTION"}:::dec
+  SCREEN["Show model-only shortlist and issues<br/>DATA · cannot recommend a production switch"]:::term
+  REC["Workflow-replay evidence may enter policy<br/>DATA · Recommendation remains approval-gated"]:::data
+  WARN["Keep partial evidence/issues; no Recommendation<br/>DATA"]:::term
+
+  PICK --> ELIG --> LOAD --> PRICE --> FULL
+  FULL -- "yes" --> DRAFT
+  FULL -- "no" --> SAMPLE --> DRAFT
+  DRAFT --> REVIEW
+  REVIEW -- "revise" --> PICK
+  REVIEW -- "confirm" --> FRESH
+  FRESH -- "no" --> REFRESH
+  FRESH -- "yes" --> LOCK --> LOOP --> EXEC
+  EXEC -- "model-only" --> DIRECT --> JUDGE
+  EXEC -- "workflow replay" --> REPLAY --> JUDGE
+  JUDGE --> MEAN --> EVID --> DONE
+  DONE -- "no" --> WARN
+  DONE -- "yes, model-only" --> SCREEN
+  DONE -- "yes, replay" --> REC
+
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;

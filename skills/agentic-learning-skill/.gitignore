@@ -1,0 +1,15 @@
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Local test output (generated lessons live wherever the user runs the renderer)
+/tmp-lesson*.html
+*.local.html
+.playwright-mcp/

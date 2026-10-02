@@ -1,0 +1,1898 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Claude Tool Use and Agent Patterns",
+    "title": "Claude Tool Use and Agent Patterns",
+    "generatedAt": "2026-06-22",
+    "estTotalMinutes": 32,
+    "thesis": "Claude tool use turns a one-shot text model into an agent: you declare tools, Claude asks to call one, your code runs it and returns the result, and the loop repeats until the task is done."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Claude Tool Use and Agent Patterns",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Claude Tool Use and Agent Patterns: mental map",
+    "caption": "Start at module 1 and follow the path: what tool use is, the loop, which pattern to choose, how to build it, how it breaks.",
+    "oneLineThesis": "Declare tools, let Claude request a tool_use, run it, feed the tool_result back, and repeat until done.",
+    "structureType": "procedural",
+    "entryNodeId": "n_m1",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "What tool use is",
+        "order": 1,
+        "orient": "Start here: why a text-only model needs tools to act on the world.",
+        "sub": "Why Claude needs tools, and what a tool definition contains.",
+        "what": "Tool use lets Claude call functions you control instead of only emitting text.",
+        "relevance": "It matters because the whole agent story starts with declaring a tool and reading a tool_use request.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m2",
+        "label": "The tool-use loop",
+        "order": 2,
+        "orient": "The core cycle: request, tool_use, you run it, tool_result, repeat.",
+        "sub": "Trace one full request to tool_use to tool_result round trip.",
+        "what": "The loop is the four-message exchange that runs a tool and feeds the result back.",
+        "relevance": "It matters because every Claude agent is this loop running until a stop condition fires.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m3",
+        "label": "Choosing a pattern",
+        "order": 3,
+        "orient": "Decide between one shot, a tool loop, or orchestrator-workers.",
+        "sub": "Pick the smallest agent pattern that satisfies the task.",
+        "what": "Agent patterns range from a single tool call to multi-agent orchestration.",
+        "relevance": "It matters because over-engineering the pattern is the most common and costly mistake.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "spine"
+      },
+      {
+        "id": "n_m4",
+        "label": "Building the loop",
+        "order": 4,
+        "orient": "Write the smallest working tool-use loop and verify each piece.",
+        "sub": "See the minimal runnable loop and what to check before trusting it.",
+        "what": "A concrete tool-use loop in code: tool schema, dispatch, tool_result, stop.",
+        "relevance": "It matters because the gap between the concept and a correct implementation hides bugs.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal"
+      },
+      {
+        "id": "n_m5",
+        "label": "How it breaks",
+        "order": 5,
+        "orient": "Late-stage failure modes: runaway loops, bad inputs, missing stops.",
+        "sub": "Harden the loop against the ways tool-using agents fail in production.",
+        "what": "Production failure modes and the guards that catch each one.",
+        "relevance": "It matters because the loop that works in a demo is the loop that loops forever in production.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine"
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "What tool use is and why it exists",
+      "sub": "Starts the spine: the problem tool use solves.",
+      "summary": "A text-only Claude call answers once and stops. Tool use lets Claude request that your code run a function and hand the result back, which is what makes an agent possible. This module frames the whole path before we open the loop.",
+      "objectives": [
+        "Explain why a one-shot Claude call cannot complete a task that needs live data or an action.",
+        "Name the parts of a tool definition Claude needs to call a function.",
+        "Recognize a tool_use request as Claude asking your code to act on its behalf."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_why",
+          "kind": "conceptual",
+          "title": "Why tool use exists: the problem it solves",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A plain Claude call works in one shot. You send a prompt, Claude replies, and the turn ends. That is fine for writing or reasoning over text you already provided. It breaks the moment the task needs something Claude cannot produce from its weights: a live price, the contents of a file, the result of running code, or any action in the outside world."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Ask Claude \"what is the weather in Paris right now?\" and a one-shot call can only guess. It has no way to fetch live data, see what came back, and then answer. "
+                },
+                {
+                  "text": "Tool use",
+                  "term": "framework",
+                  "strong": true
+                },
+                {
+                  "text": " closes that gap: you declare functions Claude is allowed to ask for, and Claude can request one, read the result your code returns, and continue."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: "
+                },
+                {
+                  "text": "what would go wrong if you tried to answer a live-data question with a single Claude call and no tools?",
+                  "em": true
+                }
+              ]
+            }
+          ],
+          "analogy": "A one-shot call is like asking a colleague a question and hanging up before they can look anything up; tool use is staying on the line so they can check a source and report back.",
+          "termIds": [
+            "framework"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m1_pieces",
+          "kind": "conceptual",
+          "title": "The pieces: what a tool definition contains",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "You give Claude tools as part of the request. Each "
+                },
+                {
+                  "text": "tool",
+                  "term": "framework"
+                },
+                {
+                  "text": " is a small contract with three parts."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "name",
+                    "strong": true
+                  },
+                  {
+                    "text": " — a stable identifier Claude uses to ask for the tool (e.g. "
+                  },
+                  {
+                    "text": "get_weather",
+                    "code": true
+                  },
+                  {
+                    "text": ")."
+                  }
+                ],
+                [
+                  {
+                    "text": "description",
+                    "strong": true
+                  },
+                  {
+                    "text": " — plain language telling Claude when and why to use it. This is the single biggest lever on whether Claude picks the right tool."
+                  }
+                ],
+                [
+                  {
+                    "text": "input_schema",
+                    "strong": true
+                  },
+                  {
+                    "text": " — a JSON Schema for the arguments, so Claude knows which fields to fill and your code can validate them."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Claude never runs the function. It only produces a structured "
+                },
+                {
+                  "text": "tool_use",
+                  "term": "handoff"
+                },
+                {
+                  "text": " request — the name plus arguments — and hands control back to your code. The "
+                },
+                {
+                  "text": "boundary",
+                  "term": "graph"
+                },
+                {
+                  "text": " between what the model decides and what your application executes is the whole safety story."
+                }
+              ]
+            }
+          ],
+          "analogy": "A tool definition is like a job posting: the title (name), the responsibilities (description), and the required application fields (input_schema). Claude reads the posting and applies; your code does the hiring and the work.",
+          "termIds": [
+            "framework",
+            "handoff",
+            "graph"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m1_visual",
+          "kind": "steppedFlow",
+          "title": "From prompt to tool_use request",
+          "caption": "The first half of the loop: a tool-equipped request produces a tool_use request, not a final answer.",
+          "steps": [
+            {
+              "label": "Declare tools",
+              "detail": "You send the prompt plus a list of tool definitions (name, description, input_schema)."
+            },
+            {
+              "label": "Claude reasons",
+              "detail": "Claude reads the goal and the available tools and decides it needs to call one."
+            },
+            {
+              "label": "tool_use emitted",
+              "detail": "Claude returns a tool_use block with stop_reason \"tool_use\" — the name plus arguments."
+            },
+            {
+              "label": "Control handed back",
+              "detail": "Your code now owns the next step: run the function and return a tool_result."
+            }
+          ],
+          "termIds": [
+            "framework",
+            "handoff"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_example",
+          "kind": "functionalExample",
+          "title": "Concrete use case: a weather question",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A user asks: \"Is it raining in Paris right now?\" You send Claude the prompt and one tool, "
+                },
+                {
+                  "text": "get_weather(city)",
+                  "code": true
+                },
+                {
+                  "text": "."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Claude cannot know live weather, so it does not answer directly."
+                  }
+                ],
+                [
+                  {
+                    "text": "It returns a "
+                  },
+                  {
+                    "text": "tool_use",
+                    "term": "handoff"
+                  },
+                  {
+                    "text": " request: name "
+                  },
+                  {
+                    "text": "get_weather",
+                    "code": true
+                  },
+                  {
+                    "text": ", arguments "
+                  },
+                  {
+                    "text": "{\"city\":\"Paris\"}",
+                    "code": true
+                  },
+                  {
+                    "text": "."
+                  }
+                ],
+                [
+                  {
+                    "text": "Your code runs the real API, gets \"light rain, 12C\", and feeds it back."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "That hand-off is the pattern to copy: declare the tool, let Claude ask, run it yourself, return the result."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "framework",
+            "handoff"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "What does Claude actually do when it decides to use a tool?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It runs the function itself and returns the output.",
+              "correct": false
+            },
+            {
+              "text": "It returns a structured tool_use request (name + arguments) and hands control back to your code.",
+              "correct": true
+            },
+            {
+              "text": "It always uses the most powerful tool available.",
+              "correct": false
+            }
+          ],
+          "explanation": "Claude never executes anything. It emits a tool_use request describing the call; your application runs the function and returns the result. That boundary is what keeps tool use safe and controllable.",
+          "termIds": [
+            "framework",
+            "handoff"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "The tool-use loop",
+      "sub": "Follows module 1: the full round trip Claude runs each turn.",
+      "summary": "Module 1 ended at the tool_use request. This module completes the cycle: you run the tool, send a tool_result back, and Claude either calls another tool or gives a final answer. Repeating that exchange is the agent loop.",
+      "objectives": [
+        "Trace the four messages of one tool-use round trip in order.",
+        "Explain how a tool_result message feeds the next turn.",
+        "Identify the stop condition that ends the loop."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The loop: request, tool_use, tool_result, repeat",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A Claude agent is the tool-use exchange run on repeat. One turn has four moves, and each move feeds the next."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Request",
+                    "strong": true
+                  },
+                  {
+                    "text": " — you send the conversation plus the tool list to Claude."
+                  }
+                ],
+                [
+                  {
+                    "text": "tool_use",
+                    "term": "handoff",
+                    "strong": true
+                  },
+                  {
+                    "text": " — Claude replies with a tool_use block (stop_reason \"tool_use\")."
+                  }
+                ],
+                [
+                  {
+                    "text": "Run + tool_result",
+                    "strong": true
+                  },
+                  {
+                    "text": " — your code runs the function and appends a "
+                  },
+                  {
+                    "text": "tool_result",
+                    "term": "checkpoint"
+                  },
+                  {
+                    "text": " message carrying the output."
+                  }
+                ],
+                [
+                  {
+                    "text": "Repeat",
+                    "strong": true
+                  },
+                  {
+                    "text": " — you send the whole conversation back; Claude either calls another tool or answers."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The loop ends when Claude returns a normal text response (stop_reason \"end_turn\") instead of a tool_use — or when you hit a turn limit you set. The conversation history is the agent's "
+                },
+                {
+                  "text": "memory",
+                  "term": "graph"
+                },
+                {
+                  "text": ": each tool_result you append is what the next turn observes."
+                }
+              ]
+            }
+          ],
+          "analogy": "It is like a cook following a recipe with a helper: the cook asks for an ingredient (tool_use), the helper fetches it and puts it on the counter (tool_result), and the cook looks at the counter before asking for the next thing.",
+          "termIds": [
+            "framework",
+            "handoff",
+            "checkpoint",
+            "graph"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_visual",
+          "kind": "diagram",
+          "title": "One full tool-use round trip",
+          "caption": "Each arrow feeds the next message. The loop exits when Claude answers with text instead of a tool_use.",
+          "layout": "flow",
+          "nodes": [
+            {
+              "id": "d1",
+              "label": "Request",
+              "sub": "Conversation + tools sent to Claude"
+            },
+            {
+              "id": "d2",
+              "label": "tool_use",
+              "sub": "Claude asks for a tool (name + args)"
+            },
+            {
+              "id": "d3",
+              "label": "Run tool",
+              "sub": "Your code executes the function"
+            },
+            {
+              "id": "d4",
+              "label": "tool_result",
+              "sub": "Output appended to the conversation"
+            }
+          ],
+          "edges": [
+            {
+              "from": "d1",
+              "to": "d2",
+              "label": "Claude replies"
+            },
+            {
+              "from": "d2",
+              "to": "d3",
+              "label": "your code"
+            },
+            {
+              "from": "d3",
+              "to": "d4",
+              "label": "append"
+            },
+            {
+              "from": "d4",
+              "to": "d1",
+              "label": "send again"
+            }
+          ],
+          "termIds": [
+            "handoff",
+            "checkpoint"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_example",
+          "kind": "functionalExample",
+          "title": "Worked example: two turns to answer one question",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Goal: \"What is the weather in Paris, and should I take an umbrella?\" One tool is available: "
+                },
+                {
+                  "text": "get_weather(city)",
+                  "code": true
+                },
+                {
+                  "text": "."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "Turn 1"
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Request",
+                    "strong": true
+                  },
+                  {
+                    "text": ": prompt + the get_weather tool."
+                  }
+                ],
+                [
+                  {
+                    "text": "tool_use",
+                    "strong": true
+                  },
+                  {
+                    "text": ": Claude asks for get_weather with {\"city\":\"Paris\"}."
+                  }
+                ],
+                [
+                  {
+                    "text": "tool_result",
+                    "strong": true
+                  },
+                  {
+                    "text": ": your code returns \"light rain, 12C\" appended to the conversation."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "Turn 2"
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Request",
+                    "strong": true
+                  },
+                  {
+                    "text": ": you send the full conversation, now including the tool_result."
+                  }
+                ],
+                [
+                  {
+                    "text": "Answer",
+                    "strong": true
+                  },
+                  {
+                    "text": ": Claude has what it needs, so it replies in text \"It is raining lightly, so yes, bring an umbrella.\" stop_reason is \"end_turn\" and the loop ends."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Notice the hand-off: turn 1's tool_result is exactly what turn 2 reads. Drop that message and Claude would ask for the weather again."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "framework",
+            "handoff",
+            "checkpoint"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_code",
+          "kind": "codeExample",
+          "title": "Minimal tool-use loop with the Claude SDK",
+          "language": "python",
+          "code": "import anthropic\nclient = anthropic.Anthropic()\ntools = [{\n    \"name\": \"get_weather\",\n    \"description\": \"Get current weather for a city.\",\n    \"input_schema\": {\"type\": \"object\",\n        \"properties\": {\"city\": {\"type\": \"string\"}},\n        \"required\": [\"city\"]},\n}]\nmessages = [{\"role\": \"user\", \"content\": \"Weather in Paris?\"}]\nresp = client.messages.create(model=\"claude-sonnet-4-5\",\n    max_tokens=1024, tools=tools, messages=messages)\nprint(resp.stop_reason)",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is the first half of the loop: send the prompt with the tool, then inspect what Claude decided. The "
+                },
+                {
+                  "text": "sdk",
+                  "term": "sdk"
+                },
+                {
+                  "text": " returns a response whose stop_reason tells you whether Claude wants a tool or is done."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Before running this, predict: what will resp.stop_reason print, and what will be inside resp.content?",
+            "answer": "stop_reason prints \"tool_use\". resp.content contains a tool_use block with name \"get_weather\" and input {\"city\": \"Paris\"} — Claude is asking your code to run the tool, not answering yet."
+          },
+          "syntax": [
+            {
+              "part": "tools=[...]",
+              "explains": "The tool definitions passed in the request — name, description, input_schema."
+            },
+            {
+              "part": "input_schema",
+              "explains": "JSON Schema for the arguments; \"required\" lists fields Claude must fill."
+            },
+            {
+              "part": "messages.create",
+              "explains": "Sends one request to Claude and returns the response."
+            },
+            {
+              "part": "stop_reason",
+              "explains": "\"tool_use\" means Claude wants a tool; \"end_turn\" means it answered."
+            }
+          ],
+          "termIds": [
+            "framework",
+            "sdk",
+            "handoff"
+          ],
+          "sources": [
+            "canon2",
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "What ends the tool-use loop?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Claude returns a normal text response (stop_reason \"end_turn\"), or you hit a turn limit.",
+              "correct": true
+            },
+            {
+              "text": "The first tool_result is appended.",
+              "correct": false
+            },
+            {
+              "text": "The model runs out of tokens on the first turn.",
+              "correct": false
+            }
+          ],
+          "explanation": "The loop continues as long as Claude keeps emitting tool_use blocks. It stops when Claude answers in text, or when your own turn budget cuts it off.",
+          "termIds": [
+            "framework",
+            "checkpoint"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Choosing an agent pattern",
+      "sub": "Follows the loop: now decide how much machinery the task needs.",
+      "summary": "Once you can run the loop, the real decision is how elaborate to make it. This module weighs three patterns, a single tool call, a tool loop, and orchestrator-workers, and pushes you toward the smallest one that works.",
+      "objectives": [
+        "Distinguish a single tool call from a multi-turn loop from an orchestrator-workers design.",
+        "Choose the smallest pattern that satisfies a given task.",
+        "Name the cost of jumping to multi-agent orchestration too early."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "orchestration"
+      ],
+      "estMinutes": 6,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Three patterns, smallest first",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "\"Agent pattern\" is just how much structure wraps the tool-use loop. Three are worth knowing."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Single tool call",
+                    "strong": true
+                  },
+                  {
+                    "text": " — one request, one tool_use, one tool_result, one answer. Predictable and cheap."
+                  }
+                ],
+                [
+                  {
+                    "text": "Tool loop",
+                    "strong": true
+                  },
+                  {
+                    "text": " — the loop from module 2 running for several turns, deciding tools dynamically until done."
+                  }
+                ],
+                [
+                  {
+                    "text": "Orchestrator-workers",
+                    "strong": true
+                  },
+                  {
+                    "text": " — one lead Claude plans and delegates subtasks to worker agents via "
+                  },
+                  {
+                    "text": "orchestration",
+                    "term": "orchestration"
+                  },
+                  {
+                    "text": ", each running its own loop."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "warn",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: ",
+                  "strong": true
+                },
+                {
+                  "text": "which of these three is the right default for a brand-new task, and why?",
+                  "em": true
+                }
+              ]
+            }
+          ],
+          "analogy": "It is like deciding between sending one text (single call), having a back-and-forth chat (loop), or scheduling a meeting with a project lead and a team (orchestrator-workers). Most errands are a single text.",
+          "termIds": [
+            "framework",
+            "orchestration"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionMatrix",
+          "title": "Which agent pattern fits?",
+          "criteria": [
+            "Fit",
+            "Operational burden",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Single tool call",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Task needs one lookup or one action, then an answer.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "One round trip; trivial to trace and test.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Cannot adapt if the first result is insufficient.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the task is one well-scoped step.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Tool loop",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Task needs several dependent steps decided on the fly.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Needs a turn budget, dispatch table, and tracing.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Can loop or drift without guards.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when steps depend on earlier results and the count is unknown up front.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Orchestrator-workers",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Best for parallel subtasks or distinct specialist roles.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Many loops, message passing, and shared state to debug.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Compounding errors and cost; hard to reproduce.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use only after a single loop is provably insufficient.",
+              "cost": "High",
+              "complexity": "High"
+            }
+          ],
+          "howToRead": "Pick the smallest pattern that satisfies the task. Move up a row only when a trace shows the simpler one cannot do the job.",
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_example",
+          "kind": "functionalExample",
+          "title": "Same goal, three sizes",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Goal: \"Summarize today's three top tech headlines.\""
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Single call",
+                    "strong": true
+                  },
+                  {
+                    "text": ": if a single fetch_headlines tool returns all three, one tool_use + one tool_result is enough."
+                  }
+                ],
+                [
+                  {
+                    "text": "Tool loop",
+                    "strong": true
+                  },
+                  {
+                    "text": ": if each headline must be fetched then expanded, Claude loops, deciding the next fetch from the last result."
+                  }
+                ],
+                [
+                  {
+                    "text": "Orchestrator-workers",
+                    "strong": true
+                  },
+                  {
+                    "text": ": only justified if you wanted three workers researching three topics in parallel and a lead merging them, which is overkill here."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The lesson: the same goal fits all three, and the cheapest one that works is almost always right."
+                }
+              ]
+            }
+          ],
+          "personalizedFor": "Agentic Learning Studio course library",
+          "termIds": [
+            "framework",
+            "orchestration"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Why is jumping straight to orchestrator-workers usually the wrong call?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It is a named concept you must memorize.",
+              "correct": false
+            },
+            {
+              "text": "It multiplies loops, message passing, and cost while a single tool loop usually suffices, and the extra moving parts are far harder to debug.",
+              "correct": true
+            },
+            {
+              "text": "It is only available on the largest model.",
+              "correct": false
+            }
+          ],
+          "explanation": "Multi-agent orchestration adds compounding error, latency, and cost. Reach for it only after a single loop is demonstrably insufficient.",
+          "termIds": [
+            "framework",
+            "orchestration"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Choose the smallest agent pattern for the task: single tool call, tool loop, or orchestrator-workers."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Building the loop",
+      "sub": "Follows the pattern choice: now write and verify the loop.",
+      "summary": "With a pattern chosen, this module turns it into running code: a dispatch table, the tool_result hand-off, and a stop condition. It also shows how to verify an AI-generated loop before you trust it, and asks you to fill in the key line.",
+      "objectives": [
+        "Assemble a working tool loop from a dispatch table, tool_result, and a stop check.",
+        "Verify an AI-generated tool loop against a concrete checklist.",
+        "Identify the one line that, if wrong, silently breaks the loop."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_recall",
+          "kind": "note",
+          "tone": "info",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Before reading on, recall from module 2: ",
+                  "strong": true
+                },
+                {
+                  "text": "after Claude emits a tool_use and your code runs the function, what message must you append, and what happens to the loop if you forget it?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer: you append a ",
+                  "em": true
+                },
+                {
+                  "text": "tool_result",
+                  "term": "checkpoint",
+                  "em": true
+                },
+                {
+                  "text": " message carrying the output. Forget it and the next turn re-observes a request with no result, so Claude asks for the same tool again, the classic stuck-loop signature.",
+                  "em": true
+                }
+              ]
+            }
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Completion problem: finish the loop",
+          "language": "python",
+          "code": "def run_agent(client, tools, dispatch, messages, max_turns=8):\n    for _ in range(max_turns):\n        resp = client.messages.create(model=\"claude-sonnet-4-5\",\n            max_tokens=1024, tools=tools, messages=messages)\n        if resp.stop_reason != \"tool_use\":\n            return resp  # final answer -> stop\n        messages.append({\"role\": \"assistant\", \"content\": resp.content})\n        results = []\n        for block in resp.content:\n            if block.type == \"tool_use\":\n                out = dispatch[block.name](**block.input)\n                results.append({\"type\": \"tool_result\",\n                    \"tool_use_id\": block.id, \"content\": str(out)})\n        # TODO: append the tool_result message so the next turn sees it\n        # messages.append( ??? )\n    raise RuntimeError(\"turn budget exhausted\")",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Everything is wired except the hand-off line. The "
+                },
+                {
+                  "text": "dispatch",
+                  "term": "handoff"
+                },
+                {
+                  "text": " table maps each tool name to a Python function. The "
+                },
+                {
+                  "text": "max_turns",
+                  "code": true
+                },
+                {
+                  "text": " guard is the "
+                },
+                {
+                  "text": "stop condition",
+                  "term": "checkpoint"
+                },
+                {
+                  "text": " that prevents a runaway loop."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Fill in the TODO: what message must you append so the next turn sees the tool output?",
+            "answer": "messages.append({\"role\": \"user\", \"content\": results}) — the collected tool_result blocks go back as a user-role message. That is the tool_result hand-off; without it the loop stalls and Claude re-requests the same tool."
+          },
+          "syntax": [
+            {
+              "part": "dispatch[block.name]",
+              "explains": "Looks up the real Python function for the tool Claude asked for."
+            },
+            {
+              "part": "tool_use_id",
+              "explains": "Ties each tool_result back to the exact tool_use it answers."
+            },
+            {
+              "part": "for _ in range(max_turns)",
+              "explains": "The hard turn budget; raising at the end prevents an infinite loop."
+            },
+            {
+              "part": "role: user",
+              "explains": "Tool results are sent back in a user-role message, not assistant."
+            }
+          ],
+          "termIds": [
+            "framework",
+            "sdk",
+            "handoff",
+            "checkpoint"
+          ],
+          "sources": [
+            "canon2",
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "note",
+          "tone": "warn",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If you let an AI assistant generate a tool loop, verify these four things before trusting it, AI-written loops look right and fail subtly."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "tool_result hand-off",
+                    "strong": true
+                  },
+                  {
+                    "text": ": confirm each tool_use's output is appended as a user-role tool_result with the matching tool_use_id. A missing or mismatched id is the most common silent bug."
+                  }
+                ],
+                [
+                  {
+                    "text": "Stop condition",
+                    "strong": true
+                  },
+                  {
+                    "text": ": confirm the code can return on a non-tool_use response AND has a max-turns guard. Both, not one."
+                  }
+                ],
+                [
+                  {
+                    "text": "Schema match",
+                    "strong": true
+                  },
+                  {
+                    "text": ": confirm every tool name in the dispatch table matches a declared tool, and arguments are validated against input_schema before the function runs."
+                  }
+                ],
+                [
+                  {
+                    "text": "Error path",
+                    "strong": true
+                  },
+                  {
+                    "text": ": confirm a tool that raises returns an error tool_result, not an unhandled exception that kills the loop."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "checkpoint",
+            "handoff"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Which single omission most often makes a tool loop silently stall?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Choosing the wrong model.",
+              "correct": false
+            },
+            {
+              "text": "Failing to append the tool_result (or using a mismatched tool_use_id), so the next turn never sees the output.",
+              "correct": true
+            },
+            {
+              "text": "Setting max_tokens too high.",
+              "correct": false
+            }
+          ],
+          "explanation": "The tool_result hand-off is the join between turns. Skip it or mismatch the tool_use_id and Claude re-observes a request with no answer, so it re-requests the same tool, the textbook stuck loop.",
+          "termIds": [
+            "checkpoint",
+            "handoff"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "How it breaks in production",
+      "sub": "Closes the spine: the failure modes the demo never shows.",
+      "summary": "A loop that works on a happy-path demo is exactly the loop that loops forever or burns budget in production. This module names the real failure modes, gives the guard for each, and forces a decision on how much hardening a given deployment needs.",
+      "objectives": [
+        "Name the four most common ways a Claude tool loop fails in production.",
+        "Match each failure to the guard that catches it.",
+        "Decide the right hardening level for a given deployment."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_failure",
+          "kind": "conceptual",
+          "title": "How tool-using agents break in practice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Knowing the happy path is not enough. These are the failures that show up only at scale, and the guard for each."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "1. Runaway loop"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Claude never decides the goal is met and keeps calling tools. Guard: a hard "
+                },
+                {
+                  "text": "turn budget",
+                  "term": "checkpoint"
+                },
+                {
+                  "text": " plus a clear stop instruction in the system prompt."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "2. Stale or dropped tool_result"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A tool_result is missing or carries a mismatched "
+                },
+                {
+                  "text": "tool_use_id",
+                  "code": true
+                },
+                {
+                  "text": ", so the next turn re-observes old state and repeats the call. Guard: assert every tool_use has a matching "
+                },
+                {
+                  "text": "tool_result",
+                  "term": "handoff"
+                },
+                {
+                  "text": " before sending."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "3. Bad or unsafe tool input"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Claude fills an argument that is wrong, malformed, or dangerous (a destructive query, an out-of-range value). Guard: validate every argument against the "
+                },
+                {
+                  "text": "input_schema",
+                  "code": true
+                },
+                {
+                  "text": " and re-check at the "
+                },
+                {
+                  "text": "boundary",
+                  "term": "graph"
+                },
+                {
+                  "text": " before executing. Never trust model output as a safe instruction."
+                }
+              ]
+            },
+            {
+              "t": "h",
+              "level": 4,
+              "spans": [
+                {
+                  "text": "4. Context overflow (non-obvious)"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Every turn appends to the conversation. After many tool calls, early messages, including the original goal, get pushed out and Claude drifts. Guard: summarize or prune old tool_results and re-anchor the goal each turn."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "checkpoint",
+            "handoff",
+            "graph"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_diagnostic",
+          "kind": "note",
+          "tone": "warn",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "First diagnostic signal: ",
+                  "strong": true
+                },
+                {
+                  "text": "an agent that calls the same tool with the same arguments more than once almost always has a dropped or mismatched tool_result. Check the hand-off before you blame the model's reasoning."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "handoff",
+            "checkpoint"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionMatrix",
+          "title": "How much hardening does this deployment need?",
+          "criteria": [
+            "Fit",
+            "Operational burden",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Prototype guards",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Internal demo or notebook where you watch every run.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Just a turn budget and basic logging.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Fine while a human is in the loop.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use while exploring, with a human watching each run.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Production guards",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "User-facing agent calling read-only or low-risk tools.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Turn budget, schema validation, error tool_results, tracing.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Lower; failures are caught and logged.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Use when real users depend on the result.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "High-stakes guards",
+              "cells": [
+                {
+                  "criterion": "Fit",
+                  "text": "Tools that write data, spend money, or touch production systems.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Operational burden",
+                  "text": "Adds approval gates, sandboxing, and replayable traces.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Highest blast radius if a guard is missing.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use whenever a tool can take an irreversible action.",
+              "cost": "High",
+              "complexity": "High"
+            }
+          ],
+          "howToRead": "Match the hardening to the blast radius of the tools, not the cleverness of the agent. A write-capable tool always needs the high-stakes column.",
+          "termIds": [
+            "framework",
+            "checkpoint",
+            "graph"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "prompt": "Which guard directly prevents a runaway loop?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Validating arguments against input_schema.",
+              "correct": false
+            },
+            {
+              "text": "A hard turn budget (max-turns) that cuts the loop off.",
+              "correct": true
+            },
+            {
+              "text": "Summarizing old tool_results.",
+              "correct": false
+            }
+          ],
+          "explanation": "A turn budget sets a hard ceiling on iterations, so an agent that never decides it is done still stops. Schema validation and context pruning fix different failures.",
+          "termIds": [
+            "framework",
+            "checkpoint"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Decide the hardening level for the deployment: prototype, production, or high-stakes guards."
+    }
+  ],
+  "glossary": {
+    "framework": {
+      "id": "framework",
+      "label": "Tool use",
+      "laymanDefinition": "The capability that lets Claude ask your code to run a function and use the result.",
+      "technicalNote": "In a request you pass a tools array; Claude may respond with a tool_use block instead of text. Your code runs the named function and returns a tool_result.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "graph": {
+      "id": "graph",
+      "label": "Boundary",
+      "laymanDefinition": "The line between what Claude decides and what your application actually executes.",
+      "technicalNote": "Claude only proposes tool calls; your code owns execution, validation, and side effects. Treat every model argument as untrusted at this boundary.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "checkpoint": {
+      "id": "checkpoint",
+      "label": "Stop condition",
+      "laymanDefinition": "The rule that ends the loop: a final answer, or a turn budget you set.",
+      "technicalNote": "The loop ends on stop_reason \"end_turn\" or when a max-turns counter is hit. A tool_result is the per-turn checkpoint that carries state forward.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "handoff": {
+      "id": "handoff",
+      "label": "tool_use / tool_result hand-off",
+      "laymanDefinition": "The exchange where Claude asks for a tool and your code returns the result.",
+      "technicalNote": "Claude emits a tool_use block (name, input, id); your code appends a matching tool_result block (same tool_use_id) in a user-role message before the next turn.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "sdk": {
+      "id": "sdk",
+      "label": "SDK",
+      "laymanDefinition": "The Anthropic client library you call to send requests and read responses.",
+      "technicalNote": "The Anthropic SDK exposes messages.create with a tools parameter and returns content blocks plus a stop_reason.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Software development kit"
+    },
+    "orchestration": {
+      "id": "orchestration",
+      "label": "Orchestration",
+      "laymanDefinition": "Coordinating multiple agents, a lead and workers, instead of one loop.",
+      "technicalNote": "An orchestrator Claude plans and delegates subtasks to worker agents, each running its own tool-use loop, then merges their results.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts",
+    "themes": [
+      {
+        "name": "Pattern and hardening check",
+        "questions": [
+          {
+            "q": "What is the smallest agent pattern that satisfies this task?",
+            "why": "Over-engineering the pattern is the most common and most expensive tool-use mistake.",
+            "opts": [
+              "Single tool call",
+              "Tool loop",
+              "Orchestrator-workers"
+            ],
+            "rot": "Start at single call; move up only when a trace proves it insufficient."
+          },
+          {
+            "q": "How much can the tools in this deployment break?",
+            "why": "Hardening should match the blast radius of the tools, not the cleverness of the agent.",
+            "opts": [
+              "Read-only",
+              "Low-risk writes",
+              "Irreversible actions"
+            ],
+            "rot": "A write-capable tool always needs approval gates and replayable traces."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Reconstruct the path from memory before reading on: ",
+            "strong": true
+          },
+          {
+            "text": "what does a tool definition contain, what are the four moves of one tool-use round trip, which pattern is the right default, and which single missing line stalls the loop?"
+          }
+        ]
+      },
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "The answers: a tool is name + description + input_schema; the round trip is request, tool_use, run + tool_result, repeat; the default is a single tool call (escalate only when proven necessary); and the missing tool_result hand-off is what stalls the loop. The habit underneath all of it: keep every tool call observable, validated, and bounded by a stop condition."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Reference path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "What tool use is",
+          "order": 1,
+          "orient": "Declare a tool; Claude requests it instead of answering directly.",
+          "sub": "Tool definition: name, description, input_schema.",
+          "what": "Tool use lets Claude call functions you control instead of only emitting text.",
+          "relevance": "The agent story starts with declaring a tool and reading a tool_use request.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m2",
+          "label": "The tool-use loop",
+          "order": 2,
+          "orient": "Run the tool, return a tool_result, repeat until a text answer.",
+          "sub": "Request, tool_use, tool_result, repeat.",
+          "what": "The loop is the four-message exchange that runs a tool and feeds the result back.",
+          "relevance": "Every Claude agent is this loop running until a stop condition fires.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal"
+        },
+        {
+          "id": "n_m3",
+          "label": "Choosing a pattern",
+          "order": 3,
+          "orient": "Pick the smallest pattern: one call, a loop, or orchestration.",
+          "sub": "Single call vs tool loop vs orchestrator-workers.",
+          "what": "Agent patterns range from a single tool call to multi-agent orchestration.",
+          "relevance": "Over-engineering the pattern is the most common and costly mistake.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine"
+        },
+        {
+          "id": "n_m4",
+          "label": "Building the loop",
+          "order": 4,
+          "orient": "Wire dispatch, tool_result, and a turn budget; verify each piece.",
+          "sub": "Minimal runnable loop plus a verify checklist.",
+          "what": "A concrete tool-use loop in code: tool schema, dispatch, tool_result, stop.",
+          "relevance": "The gap between the concept and a correct implementation hides bugs.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal"
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Declare the tool",
+        "detail": "Write the name, a sharp description, and the input_schema (module 1)."
+      },
+      {
+        "step": 2,
+        "label": "Run one round trip",
+        "detail": "Send the request, read the tool_use, run it, append the tool_result (module 2)."
+      },
+      {
+        "step": 3,
+        "label": "Choose the pattern",
+        "detail": "Pick the smallest pattern that fits: single call, loop, or orchestration (module 3)."
+      },
+      {
+        "step": 4,
+        "label": "Build and verify the loop",
+        "detail": "Add the dispatch table, stop condition, and run the verify checklist (module 4)."
+      },
+      {
+        "step": 5,
+        "label": "Harden for production",
+        "detail": "Add a turn budget, schema validation, error tool_results, and guards sized to blast radius (module 5)."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_tool",
+        "label": "Does each tool have a name, a sharp description, and a validated input_schema?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_handoff",
+        "label": "Is every tool_use answered by a matching tool_result before the next turn?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_pattern",
+        "label": "Did you choose the smallest pattern that the task actually needs?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_guards",
+        "label": "Are there a turn budget and guards sized to what the tools can break?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Build a working single-tool Claude agent end to end: declare one tool (name, description, input_schema), run the request/tool_use/tool_result/answer loop with a turn budget, and validate the argument before executing. Then extend it: add a second tool so the loop must run two turns, and write down which failure mode from module 5 your guards now cover. Next rung: turn this into a multi-tool loop and study Anthropic's agent-building guidance on when orchestrator-workers is justified.",
+      "scopedTo": "Claude tool use"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Claude Tool Use and Agent Patterns",
+      "url": "https://docs.anthropic.com/en/docs/build-with-claude/tool-use",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Building effective agents with Claude",
+      "url": "https://www.anthropic.com/engineering/building-effective-agents",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Anthropic: Building effective agents",
+      "url": "https://www.anthropic.com/engineering/building-effective-agents",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Anthropic tool use documentation",
+      "url": "https://docs.anthropic.com/en/docs/build-with-claude/tool-use",
+      "asOfDate": "2026-06-20"
+    }
+  }
+}

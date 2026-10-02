@@ -1,0 +1,919 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Supervised, Unsupervised, and Reinforcement Learning",
+    "title": "Supervised, Unsupervised, and Reinforcement Learning",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 42,
+    "thesis": "Supervised, Unsupervised, and Reinforcement Learning is practical when learners can apply it to this concrete case: A product team must choose whether labels, clusters, or rewards match a new AI feature. By the end, they should be able to build or review learning-paradigm decision guide for support and operations tasks, measure labels, clusters, or rewards match a new AI feature. They do not need trivia about Supervised, Unsupervised, and Reinforcement Learning; they need a decision they can make, a concrete artifact they can inspect, and a way to know whether problem framed with the right feedback signal, and catch the failure where the team uses reinforcement learning where a labeled classifier would be simpler."
+  },
+  "learnerProfile": {
+    "level": "beginner",
+    "depth": "conceptual",
+    "examples": "functional",
+    "topic": "Supervised, Unsupervised, and Reinforcement Learning",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Supervised, Unsupervised, and Reinforcement Learning: mental map",
+    "caption": "Choose supervised, unsupervised, or reinforcement learning by the feedback available: labels, hidden structure, or rewards from actions.",
+    "oneLineThesis": "The learning paradigm follows the feedback signal, not the trendiest algorithm name.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Labels, structure, and rewards define the problem",
+        "sub": "The feedback signal chooses the learning paradigm.",
+        "what": "Learners get the top-level comparison before details.",
+        "relevance": "This prevents applying RL or clustering to problems that have cleaner supervised labels.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Sort product tasks by the kind of feedback they provide.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Supervised learning predicts known targets",
+        "sub": "The dataset contains examples with desired answers.",
+        "what": "Learners understand the most common ML setup.",
+        "relevance": "This helps choose simple baselines when labels exist.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use historical churn labels to train a predictor.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Unsupervised learning discovers structure",
+        "sub": "There is no answer key, so interpretation matters.",
+        "what": "Learners see what unsupervised learning can and cannot prove.",
+        "relevance": "This prevents overclaiming from cluster IDs or visual maps.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Group unlabeled tickets and inspect whether themes are useful.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Reinforcement learning learns from actions and delayed rewards",
+        "sub": "The learner changes the situation by acting in it.",
+        "what": "Learners get an accurate beginner picture of RL without hype.",
+        "relevance": "This prevents using RL when supervised logs or rules would be safer.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Code a tiny reward update for discount choices.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Choose the paradigm by feedback, risk, and evaluation",
+        "sub": "The simplest viable learning setup is often the best first experiment.",
+        "what": "Learners close with a practical selection rule.",
+        "relevance": "This prevents fashionable but mismatched ML designs.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Pick the learning setup that matches labels, structure, or rewards.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "contrasts"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "contrasts"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "adds reward"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "chooses"
+      }
+    ],
+    "structureType": "comparative"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Labels, structure, and rewards define the problem",
+      "sub": "The feedback signal chooses the learning paradigm.",
+      "summary": "Supervised, unsupervised, and RL differ mainly in what feedback trains them.",
+      "objectives": [
+        "Distinguish labels, structure, and rewards.",
+        "Map product examples to paradigms.",
+        "Avoid choosing by buzzword."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Ask what feedback exists before asking which algorithm",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a product team has three ideas. Predict churn from labeled historical outcomes. Group unlabeled support tickets into themes. Teach a pricing agent to choose discounts from delayed revenue outcomes. These are different learning problems because the feedback differs: labels, hidden structure, and rewards."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised",
+            "canon_sklearn_clustering",
+            "canon_openai_spinningup_rl"
+          ],
+          "analogy": "The feedback signal is the teacher: answer key, pattern hunt, or reward scoreboard."
+        },
+        {
+          "id": "m1_matrix",
+          "kind": "decisionMatrix",
+          "title": "Paradigm overview",
+          "criteria": [
+            "Paradigm",
+            "Feedback signal",
+            "Example"
+          ],
+          "options": [
+            {
+              "name": "Supervised",
+              "cells": [
+                {
+                  "criterion": "Paradigm",
+                  "text": "Supervised",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Feedback signal",
+                  "text": "input-output labels",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Example",
+                  "text": "predict churn from past churn labels",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "You have reliable labeled examples.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Unsupervised",
+              "cells": [
+                {
+                  "criterion": "Paradigm",
+                  "text": "Unsupervised",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Feedback signal",
+                  "text": "no labels; structure in data",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Example",
+                  "text": "cluster tickets or reduce dimensions",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "You need exploration or grouping.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Reinforcement",
+              "cells": [
+                {
+                  "criterion": "Paradigm",
+                  "text": "Reinforcement",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Feedback signal",
+                  "text": "reward after actions over time",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Example",
+                  "text": "choose actions in an environment",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Sequential decisions affect later outcomes.",
+              "cost": "High",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised",
+            "canon_sklearn_clustering",
+            "canon_openai_spinningup_rl"
+          ]
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Feedback signal",
+          "prompt": "Which paradigm fits labeled spam/not-spam emails?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Unsupervised clustering by default.",
+              "correct": false
+            },
+            {
+              "text": "Supervised learning.",
+              "correct": true
+            },
+            {
+              "text": "Reinforcement learning because the model takes an action.",
+              "correct": false
+            }
+          ],
+          "explanation": "Known target labels make it supervised.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_supervised",
+        "canon_sklearn_clustering",
+        "canon_openai_spinningup_rl"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Supervised learning predicts known targets",
+      "sub": "The dataset contains examples with desired answers.",
+      "summary": "Supervised learning fits a mapping from inputs to labels or numeric targets.",
+      "objectives": [
+        "Explain classification and regression.",
+        "Name common supervised evaluation metrics.",
+        "Recognize label leakage and label quality issues."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Supervised learning has an answer key",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "In supervised learning, each training example has input features and a target: spam/not spam, churn/no churn, price, rating, or next token. The model learns a mapping that should generalize to new examples. Classification predicts categories; regression predicts numbers."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised",
+            "kb_neural_backprop"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Case study: churn prediction",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Dataset row: account_age=400 days, failed_payments=2, support_tickets=4, churned=true. The supervised task is to predict churned for future accounts. Evaluation might use recall for high-risk customers, precision for outreach cost, and calibration for probability quality."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        }
+      ],
+      "citations": [
+        "canon_sklearn_supervised",
+        "kb_neural_backprop"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Unsupervised learning discovers structure",
+      "sub": "There is no answer key, so interpretation matters.",
+      "summary": "Unsupervised methods cluster, compress, visualize, or detect anomalies.",
+      "objectives": [
+        "Explain clustering and dimensionality reduction as unlabeled exploration.",
+        "Avoid treating clusters as truth.",
+        "Connect unsupervised work to downstream decisions."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Unsupervised learning gives candidates, not labels from heaven",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Without labels, the model can still find patterns: nearby embeddings, dense groups, principal components, unusual points. But the output needs interpretation. A cluster may be a real product theme, a language split, a data artifact, or a scaling mistake."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_clustering",
+            "kb_embeddings_vectors"
+          ]
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Ticket clustering as exploration",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The team clusters ticket embeddings and samples each group. One cluster is clearly password resets; another mixes billing and cancellation because both mention \"charge.\" The first can become a routing candidate; the second needs better representation or more labels."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_clustering",
+            "kb_embeddings_vectors"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_clustering",
+        "kb_embeddings_vectors"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Reinforcement learning learns from actions and delayed rewards",
+      "sub": "The learner changes the situation by acting in it.",
+      "summary": "RL is for sequential decisions where actions influence future feedback.",
+      "objectives": [
+        "Explain agent, action, state, reward, and policy.",
+        "Run a tiny bandit-style update.",
+        "Recognize why RL is risky for many product tasks."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 10,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "RL is about trial, consequence, and policy improvement",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "OpenAI Spinning Up frames RL around agents learning by trial and error from reward or punishment. In product terms, an agent chooses an action, observes outcome, receives reward, and updates a policy. This is powerful when actions affect future states, but expensive and risky when real users carry the cost of exploration."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_openai_spinningup_rl"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Tiny bandit update for discount choices",
+          "language": "python",
+          "code": "values = {\"no_discount\": 0.0, \"small_discount\": 0.0}\ncounts = {\"no_discount\": 0, \"small_discount\": 0}\n\n# Logged outcomes from a safe experiment: action, reward\nhistory = [\n    (\"no_discount\", 0.0),\n    (\"small_discount\", 1.0),\n    (\"small_discount\", 0.0),\n]\n\nfor action, reward in history:\n    counts[action] += 1\n    # incremental average reward for each action\n    values[action] += (reward - values[action]) / counts[action]\n\nprint(values)\nprint(\"current best\", max(values, key=values.get))",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is a tiny bandit-style update, not full RL. It shows the reward-feedback idea without pretending sequential product RL is easy."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the average value for small_discount after rewards 1.0 and 0.0.",
+            "answer": "small_discount has value 0.5. The current best is small_discount because no_discount has only reward 0.0 in this tiny history."
+          },
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_openai_spinningup_rl"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_openai_spinningup_rl"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Choose the paradigm by feedback, risk, and evaluation",
+      "sub": "The simplest viable learning setup is often the best first experiment.",
+      "summary": "Paradigm choice should follow data, action risk, and measurable success.",
+      "objectives": [
+        "Use a decision matrix to choose a learning paradigm.",
+        "Name failure modes for each paradigm.",
+        "Plan a baseline before complex systems."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The paradigm is a contract with your feedback loop",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If you have clean labels, supervised learning is usually the first baseline. If you have unlabeled data and need understanding, unsupervised exploration is appropriate. If decisions affect future states and reward is measurable, RL may fit, but offline evaluation, safety constraints, and exploration risk become central."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised",
+            "canon_sklearn_clustering",
+            "canon_openai_spinningup_rl"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Choose the learning paradigm that matches the feedback you can safely and honestly measure.",
+          "useWhen": "Use supervised for labeled prediction, unsupervised for exploration or compression, and RL for sequential action problems with reward and safety controls.",
+          "avoidWhen": "Avoid RL for static prediction, clustering for known labels, or supervised metrics for unlabeled discovery.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_openai_spinningup_rl",
+            "canon_sklearn_supervised"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Paradigm choice",
+          "prompt": "A system must choose daily inventory orders and today's choice affects tomorrow's stockout risk. Which paradigm may be relevant?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Unsupervised PCA only.",
+              "correct": false
+            },
+            {
+              "text": "Reinforcement learning or contextual bandits, if rewards and safety constraints are well defined.",
+              "correct": true
+            },
+            {
+              "text": "A supervised classifier with no action feedback.",
+              "correct": false
+            }
+          ],
+          "explanation": "Sequential decisions with delayed rewards are the RL-shaped case.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_openai_spinningup_rl"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_supervised",
+        "canon_sklearn_clustering",
+        "canon_openai_spinningup_rl"
+      ]
+    }
+  ],
+  "glossary": {
+    "ai": {
+      "id": "ai",
+      "label": "AI",
+      "laymanDefinition": "Software systems that perform tasks associated with human intelligence.",
+      "technicalNote": "In these foundations lessons, AI is the broad field; the concrete mechanisms are models, data, objectives, and evaluation loops.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_supervised"
+      ],
+      "acronymExpansion": "Artificial intelligence"
+    },
+    "ml": {
+      "id": "ml",
+      "label": "ML",
+      "laymanDefinition": "A branch of AI where systems learn patterns from data instead of only following hand-written rules.",
+      "technicalNote": "ML work is defined by training data, features, models, objectives, validation, and deployment constraints.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_supervised"
+      ],
+      "acronymExpansion": "Machine learning"
+    },
+    "model": {
+      "id": "model",
+      "label": "Model",
+      "laymanDefinition": "A learned or configured function that maps inputs to predictions, scores, clusters, or generated outputs.",
+      "technicalNote": "Model choice encodes assumptions such as linearity, distance, tree splits, capacity, or sequential reward.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_supervised"
+      ]
+    },
+    "loss": {
+      "id": "loss",
+      "label": "Loss",
+      "laymanDefinition": "A numerical training signal that measures how wrong a prediction is for a task.",
+      "technicalNote": "Loss drives optimization; it is not the same as product quality, fairness, or final generalization.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_supervised"
+      ]
+    },
+    "generalization": {
+      "id": "generalization",
+      "label": "Generalization",
+      "laymanDefinition": "The ability of a model to perform well on examples it did not train on.",
+      "technicalNote": "Generalization is checked with validation/test data, leakage audits, and slice monitoring.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_supervised"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "A repeatable sequence of data transforms, feature steps, model fitting, and evaluation or inference.",
+      "technicalNote": "Pipelines prevent train/test leakage and keep preprocessing identical between training and production.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_supervised"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Supervised, Unsupervised, and Reinforcement Learning",
+    "themes": [
+      {
+        "name": "Feedback signal choice",
+        "questions": [
+          {
+            "q": "What feedback does the system actually receive: correct answers, unlabeled examples, or rewards after actions?",
+            "why": "Choosing the wrong paradigm creates avoidable complexity and weak evaluation.",
+            "opts": [
+              "Paradigm follows feedback",
+              "RL for every agent",
+              "Clustering for labeled targets"
+            ],
+            "rot": "Start with the simplest paradigm supported by available feedback and risk constraints."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct the three paradigms by naming supervised labels, unsupervised structure, reinforcement rewards, example tasks, failure modes, evaluation methods, and the decision rule that chooses among them."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Learning paradigm choice by feedback signal",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Labels, structure, and rewards define the problem",
+          "sub": "The feedback signal chooses the learning paradigm.",
+          "what": "Learners get the top-level comparison before details.",
+          "relevance": "This prevents applying RL or clustering to problems that have cleaner supervised labels.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Sort product tasks by the kind of feedback they provide.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Supervised learning predicts known targets",
+          "sub": "The dataset contains examples with desired answers.",
+          "what": "Learners understand the most common ML setup.",
+          "relevance": "This helps choose simple baselines when labels exist.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use historical churn labels to train a predictor.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Unsupervised learning discovers structure",
+          "sub": "There is no answer key, so interpretation matters.",
+          "what": "Learners see what unsupervised learning can and cannot prove.",
+          "relevance": "This prevents overclaiming from cluster IDs or visual maps.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Group unlabeled tickets and inspect whether themes are useful.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Reinforcement learning learns from actions and delayed rewards",
+          "sub": "The learner changes the situation by acting in it.",
+          "what": "Learners get an accurate beginner picture of RL without hype.",
+          "relevance": "This prevents using RL when supervised logs or rules would be safer.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Code a tiny reward update for discount choices.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Choose the paradigm by feedback, risk, and evaluation",
+          "sub": "The simplest viable learning setup is often the best first experiment.",
+          "what": "Learners close with a practical selection rule.",
+          "relevance": "This prevents fashionable but mismatched ML designs.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Pick the learning setup that matches labels, structure, or rewards.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "labels"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "structures"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "acts"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "selects"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Labels, structure, and rewards define the problem",
+        "detail": "Supervised, unsupervised, and RL differ mainly in what feedback trains them."
+      },
+      {
+        "step": 2,
+        "label": "Supervised learning predicts known targets",
+        "detail": "Supervised learning fits a mapping from inputs to labels or numeric targets."
+      },
+      {
+        "step": 3,
+        "label": "Unsupervised learning discovers structure",
+        "detail": "Unsupervised methods cluster, compress, visualize, or detect anomalies."
+      },
+      {
+        "step": 4,
+        "label": "Reinforcement learning learns from actions and delayed rewards",
+        "detail": "RL is for sequential decisions where actions influence future feedback."
+      },
+      {
+        "step": 5,
+        "label": "Choose the paradigm by feedback, risk, and evaluation",
+        "detail": "Paradigm choice should follow data, action risk, and measurable success."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Labels, structure, and rewards define the problem\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Reinforcement learning learns from actions and delayed rewards\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Choose the paradigm by feedback, risk, and evaluation\" define the selection or evaluation gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Classify five product ideas by paradigm: churn prediction, ticket clustering, ad bidding, document deduplication, and refund decision automation. For each, name the feedback signal, dataset, evaluation metric, and first baseline. Next rung: compare semi-supervised and offline RL caveats.",
+      "scopedTo": "Foundations",
+      "checks": [
+        "Feedback signal is explicit.",
+        "Evaluation matches the paradigm.",
+        "Simplest viable baseline is named.",
+        "Safety/risk constraints are considered before RL."
+      ]
+    }
+  },
+  "citations": {
+    "canon_sklearn_supervised": {
+      "id": "canon_sklearn_supervised",
+      "kind": "canonical",
+      "title": "scikit-learn supervised learning guide",
+      "url": "https://scikit-learn.org/stable/supervised_learning.html",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_sklearn_clustering": {
+      "id": "canon_sklearn_clustering",
+      "kind": "canonical",
+      "title": "scikit-learn clustering guide",
+      "url": "https://scikit-learn.org/stable/modules/clustering.html",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_openai_spinningup_rl": {
+      "id": "canon_openai_spinningup_rl",
+      "kind": "canonical",
+      "title": "OpenAI Spinning Up: Key Concepts in RL",
+      "url": "https://spinningup.openai.com/en/latest/spinningup/rl_intro.html",
+      "asOfDate": "2026-06-23"
+    },
+    "kb_neural_backprop": {
+      "id": "kb_neural_backprop",
+      "kind": "kb",
+      "title": "KB: Neural Networks and Backpropagation",
+      "url": "https://d2l.ai/chapter_multilayer-perceptrons/backprop.html",
+      "asOfDate": "2026-06-22"
+    },
+    "kb_embeddings_vectors": {
+      "id": "kb_embeddings_vectors",
+      "kind": "kb",
+      "title": "KB: Embeddings and Vector Representations",
+      "url": "https://www.sbert.net/examples/sentence_transformer/applications/semantic-search/README.html",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

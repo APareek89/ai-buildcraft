@@ -1,0 +1,1251 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Building an Agentic Workflow That Turns Marketing Scripts into Ads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --accent:#2563eb; --accent-2:#1d4ed8; --accent-weak:#e8efff;
+  --ink:#0f1729; --ink-soft:#27324a; --muted:#56607a; --faint:#8893ab;
+  --bg:#f5f8ff; --surface:#ffffff; --surface-2:#f9fbff;
+  --border:#e3e9f5; --border-strong:#d0d9ee;
+  --ok:#1d9e75; --ok-weak:#e6f6ef; --warn:#b9770a; --warn-weak:#fbf1de;
+  --danger:#d2433a; --danger-weak:#fcebea; --info:#2563eb; --info-weak:#e8efff;
+  --code-bg:#0b1228; --code-ink:#e7ecff;
+  --radius:14px; --radius-sm:9px; --measure:780px;
+  --font-body:Lexend,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-head:"Space Grotesk",Lexend,system-ui,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --shadow:0 1px 2px rgba(15,23,41,.05),0 10px 30px rgba(37,99,235,.08);
+}
+[data-theme="dark"]{
+  --ink:#eaf0ff; --ink-soft:#c8d2ea; --muted:#9aa6c4; --faint:#76829f;
+  --bg:#0a0f1f; --surface:#121829; --surface-2:#161d31;
+  --border:#222a44; --border-strong:#313b5c; --accent-weak:#142149;
+  --code-bg:#070b18; --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.65;font-size:16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+a{color:var(--accent);text-decoration:none}
+.shell{max-width:min(1240px,94vw);margin:0 auto;padding:22px 26px 56px}
+h1,h2,h3,h4{line-height:1.25;letter-spacing:-.01em;color:var(--ink);font-family:var(--font-head)}
+.eyebrow{color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.muted{color:var(--muted)}
+code{font-family:var(--font-mono);font-size:.88em;background:var(--accent-weak);color:var(--accent-2);padding:1px 6px;border-radius:6px}
+
+/* ---- top bar (theme toggle + progress) ---- */
+.topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:1320px;margin:0 auto;padding:10px 26px;display:flex;align-items:center;gap:14px}
+.tb-left{flex:1 1 0;display:flex;justify-content:flex-start;min-width:0}
+.tb-center{flex:0 1 auto;text-align:center;min-width:0;padding:0 10px}
+.tb-right{flex:1 1 0;display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+.brand-mini{font-weight:800;font-size:17px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;max-width:100%}
+.spacer{flex:1}
+@media(max-width:820px){.brand-mini{font-size:14px}.tb-right{gap:8px}}
+.progress{height:6px;width:120px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress > i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s ease}
+.tbtn{border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;padding:5px 11px;border-radius:8px;cursor:pointer}
+
+/* ---- hero ---- */
+.hero{padding:14px 0 6px}
+.hero h1{font-size:32px;font-weight:800;margin:.18em 0 .25em}
+.thesis{font-size:18px;color:var(--ink-soft);font-weight:500}
+.meta-line{margin-top:10px;color:var(--muted);font-size:13.5px;display:flex;gap:14px;flex-wrap:wrap}
+
+/* ---- mental map ---- */
+.map{margin:26px 0 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);padding:18px}
+.map h2{font-size:15px;margin:0 0 3px}
+.map .cap{color:var(--muted);font-size:13px;margin:0 0 14px}
+.map-layer{margin:0 0 10px}
+.map-layer-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:700;margin:0 0 6px}
+.map-row{display:flex;flex-wrap:wrap;gap:9px}
+.map-node{flex:1 1 240px;min-width:230px;text-align:left;border:1px solid var(--border-strong);background:var(--surface-2);border-radius:11px;padding:12px 14px;cursor:pointer;font:inherit;color:var(--ink);transition:border-color .12s,transform .08s,box-shadow .12s}
+.map-node:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow)}
+.map-node.spine{border-left:3px solid var(--accent)}
+.map-node .mn-title{font-weight:600;font-size:13.5px}
+.map-node .mn-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+/* Persistent "click for details" affordance on every linked block. */
+.map-node .mn-go{display:inline-flex;align-items:center;gap:5px;width:fit-content;font-size:11px;color:var(--accent-2);font-weight:700;margin-top:8px;background:var(--accent-weak);border-radius:99px;padding:3px 10px}
+.map-node .mn-cue-ico{font-size:11px;line-height:1}
+.map-node:hover .mn-go{background:var(--accent);color:#fff}
+.map-arrow{display:flex;justify-content:center;color:var(--faint);font-size:14px;margin:2px 0}
+
+/* Make the hidden attribute authoritative (author #overview/#workbench rules below
+   would otherwise override the UA [hidden] rule and break the overview↔workbench swap). */
+[hidden]{display:none!important}
+
+/* ===== Overview = ONE non-scrolling screen; the map flows LEFT-TO-RIGHT =====
+   The overview must fit the viewport with NO scrolling. (Regression note: the
+   structure-typed overview swapped the renderer to .map-path/.map-concept/.map-options,
+   but the old no-scroll rules targeted a now-dead .map-flow, and .map-node{flex:1 1 240px}
+   grew vertically inside the column .map-path → giant cards + scroll. Fixed below by
+   making #overview a fixed, clipped flex column and laying EVERY structure type out as a
+   compact left-to-right card grid where the numbers/icons carry the order.)
+   Scoped to :not([hidden]) so it only applies while the overview is the active view. */
+#overview:not([hidden]){height:calc(100dvh - 54px);overflow:hidden;display:flex;flex-direction:column}
+/* width:100% so the auto side-margins don't shrink the shell to content width in the
+   overview's flex column (which collapsed the card grid to ~2 columns). */
+#overview .shell{flex:1;min-height:0;width:100%;display:flex;flex-direction:column;overflow:hidden;padding:14px 26px}
+#overview .hero{flex:none;padding:2px 0 0}
+#overview .hero h1{font-size:25px;margin:.05em 0 .1em}
+#overview .thesis{font-size:14.5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#overview .meta-line{margin-top:6px;font-size:12.5px}
+#overview .ov-hint{flex:none;margin:8px 0 0}
+#overview .map{flex:1;min-height:0;display:flex;flex-direction:column;margin:12px 0 0;overflow:hidden;padding:14px 16px}
+#overview .map h2{font-size:14px}
+#overview .map .cap{margin:0 0 8px}
+#overview .map-body{flex:1;min-height:0;overflow:hidden}
+/* EVERY structure type → a compact left-to-right card grid that fits the viewport.
+   (procedural/dependency use .map-path with .map-step li wrappers; conceptual/comparative
+   use .map-concept/.map-options with the cards as direct children.) */
+#overview .map-path,#overview .map-concept,#overview .map-options{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;
+  max-width:none;align-content:flex-start;height:100%;overflow:hidden;
+}
+#overview .map-step{display:flex;flex-direction:column}        /* li wrapper just holds the card */
+#overview .map-conn{display:none}                              /* drop the vertical spine connector */
+/* stop the card growing vertically (the regression): natural height, fill its grid cell */
+#overview .map-node{flex:0 0 auto;width:100%;min-width:0;padding:10px 12px;gap:5px}
+#overview .map-node .mn-orient,#overview .map-node .mn-what,#overview .map-node .mn-rel{
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+#overview .map-node .mn-go{margin-top:auto}
+#overview .mn-head{gap:8px}
+#overview .mn-num{width:24px;height:24px;font-size:12px}
+/* narrow screens: let the page scroll rather than clip the grid */
+@media(max-width:820px){
+  #overview:not([hidden]){height:auto;overflow:visible}
+  #overview .shell,#overview .map,#overview .map-body{overflow:visible;min-height:0}
+  #overview .map-path,#overview .map-concept,#overview .map-options{height:auto;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+}
+
+/* ---- overview / workbench (Fix 2 layout) ---- */
+.ov-hint{text-align:center;color:var(--muted);font-size:13.5px;margin:18px 0 0}
+.nav-back{margin-right:4px}
+#workbench{display:grid;grid-template-columns:248px 1fr;align-items:start}
+#blocknav{position:sticky;top:53px;align-self:start;max-height:calc(100vh - 53px);overflow:auto;border-right:1px solid var(--border);padding:16px 10px;display:flex;flex-direction:column;gap:3px;background:var(--surface)}
+.navitem{display:flex;align-items:center;gap:10px;text-align:left;width:100%;border:none;background:transparent;color:var(--ink-soft);font:inherit;font-size:13.5px;padding:9px 11px;border-radius:9px;cursor:pointer;line-height:1.3}
+.navitem:hover{background:var(--surface-2)}
+.navitem.active{background:var(--accent-weak);color:var(--accent-2);font-weight:600}
+.navitem .ni-num{flex:none;width:22px;height:22px;border-radius:7px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ink-soft)}
+.navitem.active .ni-num{background:var(--accent);color:#fff}
+.navitem.nav-special{color:var(--muted)}
+#blockmain{padding:26px 40px 90px;min-width:0;max-width:1000px;margin:0 auto}
+/* keep prose comfortably readable even though the panel is wide; wide blocks
+   (matrix / code / diagrams / interactive visuals) still use the full width. */
+#blockmain .block p,#blockmain .block ul,#blockmain .block ol,#blockmain .module-body>p{max-width:760px}
+.panel{display:none}
+.panel.active{display:block;animation:fadein .22s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.panel h2{font-size:24px;font-weight:800;margin:.1em 0 .35em}
+
+/* ---- module panel internals ---- */
+.module-head{padding:0 0 4px}
+.panel .module-body{padding:0}
+.module-head .num{color:var(--accent);font-weight:800;font-size:13px}
+.module-head h2{font-size:22px;font-weight:800;margin:.15em 0 .1em}
+.module-head .sub{color:var(--muted);font-size:14px;margin:0}
+.module-body{padding:6px 22px 22px}
+.objectives{background:var(--accent-weak);border-radius:var(--radius-sm);padding:11px 14px;margin:14px 0;font-size:13.5px}
+.objectives b{display:block;color:var(--accent-2);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.objectives ul{margin:0;padding-left:18px}
+.decision-forces{font-size:13px;color:var(--warn);background:var(--warn-weak);border-radius:var(--radius-sm);padding:9px 13px;margin:12px 0}
+.keyterms{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+
+/* ---- generic blocks ---- */
+.block{margin:16px 0}
+.block h3{font-size:16px;margin:0 0 6px}
+.block p{margin:.5em 0;color:var(--ink-soft)}
+.block ul,.block ol{margin:.4em 0;padding-left:20px;color:var(--ink-soft)}
+.block li{margin:.25em 0}
+.callout{border-left:3px solid var(--info);background:var(--info-weak);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:11px 14px;margin:14px 0}
+.callout.good{border-color:var(--ok);background:var(--ok-weak)}
+.callout.warn{border-color:var(--warn);background:var(--warn-weak)}
+.callout.danger{border-color:var(--danger);background:var(--danger-weak)}
+
+/* decision callout */
+.dcall{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin:14px 0}
+.dcall > div{background:var(--surface);padding:11px 13px;font-size:13.5px}
+.dcall .lab{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;margin-bottom:4px}
+.dcall .use .lab{color:var(--ok)} .dcall .avoid .lab{color:var(--danger)}
+.dcall .rot{grid-column:1/-1;background:var(--accent-weak);color:var(--accent-2)}
+
+/* decision matrix */
+.matrix{overflow-x:auto;margin:14px 0}
+table.dm{border-collapse:collapse;width:100%;font-size:13px;min-width:520px}
+table.dm th,table.dm td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+table.dm thead th{background:var(--surface-2);font-weight:700}
+table.dm td.when{background:var(--accent-weak);color:var(--accent-2);font-weight:500}
+.rate{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.rate.good{background:var(--ok)} .rate.ok{background:var(--warn)} .rate.bad{background:var(--danger)}
+.howread{font-size:12px;color:var(--muted);margin-top:6px}
+
+/* code + functional examples + tabs */
+.ex{margin:16px 0;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+.ex-tabs{display:flex;gap:0;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.ex-tabs label{padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+.ex input[type=radio]{position:absolute;opacity:0;pointer-events:none}
+.ex-pane{display:none;padding:0}
+.ex .pane-functional{padding:14px}
+pre.code{margin:0;background:var(--code-bg);color:var(--code-ink);padding:14px 16px;overflow-x:auto;font-family:var(--font-mono);font-size:12.8px;line-height:1.6}
+pre.code .cm{color:#7f88b3}
+.code-path{font-size:11px;color:var(--faint);padding:7px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);font-family:var(--font-mono)}
+.copy{float:right;border:1px solid var(--border-strong);background:var(--surface);color:var(--muted);font:inherit;font-size:11px;padding:2px 8px;border-radius:6px;cursor:pointer}
+/* which tab is active */
+.ex input.t-functional:checked ~ .ex-tabs label[for$="-fn"],
+.ex input.t-code:checked ~ .ex-tabs label[for$="-code"]{color:var(--accent);border-bottom-color:var(--accent)}
+.ex input.t-functional:checked ~ .pane-functional{display:block}
+.ex input.t-code:checked ~ .pane-code{display:block}
+
+/* walkthrough / taxonomy / scenario */
+.walk{counter-reset:step;margin:14px 0}
+.walk .step{display:flex;gap:12px;padding:8px 0}
+.walk .step .n{counter-increment:step;flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.walk .step .n::before{content:counter(step)}
+.scn{border:1px dashed var(--border-strong);border-radius:var(--radius-sm);padding:12px 14px;margin:14px 0;font-size:13.5px}
+.scn .ask{font-weight:600}.scn .imp{color:var(--muted);margin-top:4px}
+.tax{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0}
+.tax .grp{border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;background:var(--surface-2)}
+.tax .grp h4{margin:0 0 6px;font-size:13px}
+.tax .grp ul{margin:0;padding-left:16px;font-size:12.5px;color:var(--ink-soft)}
+
+/* quiz */
+.quiz{border:1px solid var(--accent);border-radius:var(--radius-sm);background:var(--accent-weak);padding:14px;margin:18px 0}
+.quiz .q{font-weight:600;margin-bottom:9px}
+.quiz .opt{display:block;width:100%;text-align:left;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);font:inherit;font-size:13.5px;padding:9px 12px;border-radius:8px;margin:5px 0;cursor:pointer}
+.quiz .opt:hover{border-color:var(--accent)}
+.quiz .opt.correct{border-color:var(--ok);background:var(--ok-weak)}
+.quiz .opt.wrong{border-color:var(--danger);background:var(--danger-weak)}
+.quiz .reveal{border:none;background:var(--accent);color:#fff;font:inherit;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;margin-top:8px}
+.quiz .answer{display:none;margin-top:10px;font-size:13.5px;color:var(--ink-soft);border-top:1px solid var(--border-strong);padding-top:10px}
+.quiz.revealed .answer{display:block}
+
+/* go-deeper progressive disclosure */
+.deeper-toggle{border:1px dashed var(--border-strong);background:transparent;color:var(--accent);font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;margin:10px 0;width:100%}
+.deeper{display:none}
+.module.show-deeper .deeper{display:block}
+
+/* (i) term button + popover */
+.term{border:none;background:transparent;color:inherit;font:inherit;cursor:pointer;border-bottom:1.5px dotted var(--accent);padding:0;white-space:nowrap}
+.term .i{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;font-size:9px;font-weight:700;color:#fff;background:var(--accent);border-radius:50%;margin-left:3px;vertical-align:super;line-height:1}
+.term-chip{border:1px solid var(--border-strong);background:var(--surface-2);color:var(--ink-soft);font:inherit;font-size:12px;padding:3px 9px 3px 10px;border-radius:99px;cursor:pointer}
+.term-chip .i{font-size:9px;margin-left:5px}
+#popover{position:fixed;z-index:60;max-width:300px;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);box-shadow:var(--shadow);padding:12px 14px;font-size:13px;display:none}
+#popover.on{display:block}
+#popover .pt{font-weight:700;margin-bottom:3px}
+#popover .px{font-size:10.5px;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
+#popover .pn{color:var(--ink-soft)}
+#popover .ptech{margin-top:7px;padding-top:7px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
+#popover .psrc{margin-top:7px;font-size:11px;color:var(--faint)}
+
+/* synthesis + citations */
+.synth{margin:34px 0;border:1px solid var(--accent);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);padding:22px}
+.synth h2{font-size:20px;margin:0 0 8px}
+.checklist{list-style:none;padding:0;margin:12px 0}
+.checklist li{padding:7px 0;border-bottom:1px solid var(--border);font-size:14px;display:flex;gap:9px}
+.checklist li::before{content:"☐";color:var(--accent)}
+.capstone{margin-top:14px;background:var(--accent-weak);border-radius:var(--radius-sm);padding:13px 15px;font-size:14px}
+.cites{margin-top:30px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--border);padding-top:14px}
+.cites h3{font-size:13px;color:var(--ink)}
+.cites ol{padding-left:18px}
+
+/* whats-new */
+.whatsnew{border:1px solid var(--info);background:var(--info-weak);border-radius:var(--radius-sm);padding:12px 15px;margin:18px 0;font-size:13.5px}
+.whatsnew .lab{font-weight:700;color:var(--info);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+
+/* ---- richer mental-map cards (what / relevance) ---- */
+.map-node .mn-what{font-size:12.5px;color:var(--ink-soft);margin-top:5px;line-height:1.5}
+.map-node .mn-rel{font-size:11.5px;color:var(--muted);margin-top:7px;border-top:1px dashed var(--border-strong);padding-top:6px;line-height:1.5}
+.map-node .mn-rel-lab{display:block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);margin-bottom:2px}
+
+/* ---- in-lesson content toggles (top bar) ---- */
+.toggle-group{display:flex;gap:6px;flex-wrap:wrap}
+.tbtn.toggle{font-size:12px;padding:5px 10px}
+.tbtn.toggle[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tbtn.toggle[aria-pressed="false"]{opacity:.62}
+body.hide-concept .b-concept{display:none!important}
+body.hide-funcex .b-funcex{display:none!important}
+body.hide-code .b-code{display:none!important}
+
+/* ---- syntax breakdown (revealed by "Explain syntax") ---- */
+.syntax-panel{display:none;margin:10px 0 0;border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:var(--surface-2);padding:11px 14px}
+body.show-syntax .syntax-panel{display:block}
+.syntax-panel .sp-h{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-2);margin-bottom:7px}
+.syntax-panel dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.syntax-panel dt{margin:0}
+.syntax-panel dt code{font-size:12px;background:var(--accent-weak);color:var(--accent-2);padding:1px 6px;border-radius:6px;white-space:nowrap}
+.syntax-panel dd{margin:0;color:var(--ink-soft)}
+
+/* ---- interactive visual blocks (scatter / slider / stepped) ---- */
+.viz{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);padding:16px;margin:16px 0}
+.viz .viz-cap{font-size:13.5px;color:var(--muted);margin:0 0 12px}
+.viz-body{min-height:36px}
+.viz-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.viz-qbtn{border:1px solid var(--border-strong);background:transparent;color:var(--accent);font:inherit;font-size:12.5px;padding:5px 11px;border-radius:8px;cursor:pointer}
+.viz-qbtn.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+.viz-scatter-grid{display:grid;grid-template-columns:1fr 200px;gap:14px;align-items:start}
+.viz svg.scatter{width:100%;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.viz-near{margin:0;padding-left:18px;font-size:13px;color:var(--ink-soft)}
+.viz-near-lab{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.viz-slider-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.viz-slider-row input[type=range]{accent-color:var(--accent);flex:1;min-width:160px}
+.viz-readout{font-size:14px}.viz-readout b{color:var(--accent-2)}
+.viz-stop-note{margin-top:10px;font-size:13.5px;color:var(--ink-soft);background:var(--accent-weak);border-radius:var(--radius-sm);padding:10px 13px}
+.viz-stop-note .vsn-label{font-weight:700;color:var(--accent-2)}
+.viz-steps-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.viz-step-btn{border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-soft);font:inherit;font-size:12.5px;padding:6px 11px;border-radius:8px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.viz-step-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.viz-step-btn .vsb-n{font-weight:700}
+.viz-step-detail{font-size:14px;color:var(--ink-soft);border-left:3px solid var(--accent);background:var(--surface-2);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:12px 15px}
+.viz-step-detail h4{margin:0 0 5px;font-size:15px;color:var(--ink)}
+@media(max-width:560px){.viz-scatter-grid{grid-template-columns:1fr}}
+
+/* ---- provenance banner (shown when the learner uploaded documents) ---- */
+.provenance{display:flex;gap:11px;align-items:flex-start;margin:18px 0;padding:13px 16px;border:1px solid var(--accent);background:var(--accent-weak);border-radius:var(--radius-sm);font-size:13.5px;color:var(--ink-soft)}
+.provenance .prov-star{color:var(--accent);font-size:16px;line-height:1.3;flex:none}
+.provenance strong{color:var(--accent-2)}
+.cites li.src-upload{color:var(--accent-2);font-weight:500}
+
+/* ---- progressive build: "building…" placeholder + nav status ---- */
+.building{display:flex;align-items:center;gap:9px;margin:16px 0;padding:13px 15px;border:1px dashed var(--border-strong);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--muted);font-size:13.5px}
+.bspin{flex:none;width:13px;height:13px;border-radius:50%;border:2px solid var(--border-strong);border-top-color:var(--accent);animation:bspin .8s linear infinite}
+@keyframes bspin{to{transform:rotate(360deg)}}
+.building.failed{border-style:solid;border-color:var(--danger);color:var(--danger);cursor:pointer}
+.building.failed .bspin{display:none}
+.navitem .ni-status{flex:none;width:7px;height:7px;border-radius:50%;background:transparent;margin-left:auto}
+.navitem.building .ni-status{background:var(--warn);animation:pulse 1.1s infinite}
+.navitem.failed .ni-status{background:var(--danger);animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ===== 27-combo visibility gates (no JS) ===== */
+body[data-depth="conceptual"] .needs-technical{display:none}
+body[data-depth="technical"] .needs-conceptual{display:none}
+body[data-examples="functional"] .needs-code{display:none}
+body[data-examples="code"] .needs-functional{display:none}
+body[data-level="advanced"] .lvl-beginner-only{display:none}
+body[data-level="beginner"] .lvl-advanced-only{display:none}
+
+/* ===== Phase 2 — colored block types (break the monotony of text) ===== */
+.blk-explain{background:linear-gradient(180deg,var(--surface) 0%,var(--surface) 100%);border-left:3px solid var(--accent)}
+.blk-example{background:#fff8ec;border-left:3px solid #f0a92b}
+[data-theme="dark"] .blk-example{background:#241d0f}
+.blk-code{background:#eef4ff;border-left:3px solid var(--accent-2)}
+[data-theme="dark"] .blk-code{background:#0e1733}
+.blk-check{background:#f0fbf5;border-left:3px solid var(--ok)}
+[data-theme="dark"] .blk-check{background:#0e2419}
+.block.blk-explain,.block.blk-example,.block.blk-code,.block.blk-check{border-radius:12px;padding:14px 16px;margin:14px 0}
+
+/* "In plain words" analogy callout */
+.analogy{background:var(--accent-weak);border-radius:10px;padding:9px 12px;margin:2px 0 10px;font-size:14.5px;color:var(--ink-soft)}
+.analogy .an-lab{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-2);margin-bottom:2px}
+body[data-level="advanced"] .analogy,body[data-level="advanced"] .mn-layman{display:none}
+
+/* Collapsible example/code (keep landing light on text) */
+.collapse{margin:6px 0}
+.collapse-h{display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:1px dashed var(--border-strong);background:transparent;color:var(--ink-soft);font:inherit;font-size:13.5px;font-weight:600;padding:9px 12px;border-radius:9px;cursor:pointer}
+.collapse-h:hover{border-color:var(--accent);color:var(--accent-2)}
+.collapse-h .col-ico{font-family:var(--font-mono)}
+.collapse-h .col-chev{margin-left:auto;transition:transform .15s}
+.collapse.open .collapse-h .col-chev{transform:rotate(90deg)}
+.collapse-body{display:none;padding-top:10px}
+.collapse.open .collapse-body{display:block;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+
+/* Knowledge check */
+.kc h3{margin:.1em 0 .4em}
+.kc-intro{color:var(--muted);font-size:14px;margin:0 0 12px}
+.kc-score{font-size:13px;color:var(--ok);font-weight:600;margin-bottom:10px}
+.kc-item{border-top:1px solid var(--border);padding:13px 0}
+.kc-item:first-of-type{border-top:none}
+.kc-q{font-weight:600;font-size:14.5px;margin-bottom:9px;display:flex;gap:8px}
+.kc-n{flex:none;background:var(--ok);color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:1px 7px;height:fit-content}
+.kc-opts{display:flex;flex-direction:column;gap:7px}
+.kc-opt{text-align:left;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;padding:9px 12px;border-radius:9px;cursor:pointer;transition:border-color .12s,background .12s}
+.kc-opt:hover{border-color:var(--accent)}
+.kc-opt.correct{border-color:var(--ok);background:var(--ok-weak);color:#0f6e4f}
+.kc-opt.wrong{border-color:var(--danger);background:var(--danger-weak);color:var(--danger)}
+.kc-opt[disabled]{cursor:default;opacity:.85}
+.kc-free{display:flex;flex-direction:column;gap:8px}
+.kc-input{border:1px solid var(--border-strong);border-radius:9px;font:inherit;font-size:14px;padding:9px 11px;resize:vertical;background:var(--surface);color:var(--ink)}
+.kc-input:focus{outline:none;border-color:var(--accent)}
+.kc-submit{align-self:flex-start;border:none;background:var(--accent);color:#fff;font:inherit;font-size:13px;font-weight:600;padding:7px 15px;border-radius:9px;cursor:pointer}
+.kc-submit[disabled]{opacity:.6;cursor:default}
+.kc-feedback{font-size:13.5px;font-weight:600;margin-bottom:8px;padding:8px 11px;border-radius:8px}
+.kc-feedback.ok{background:var(--ok-weak);color:#0f6e4f}
+.kc-feedback.no{background:var(--danger-weak);color:var(--danger)}
+.kc-feedback.grading{background:var(--accent-weak);color:var(--accent-2)}
+.kc-explain{font-size:13.5px;color:var(--muted);margin-top:9px;padding-left:11px;border-left:2px solid var(--border-strong)}
+
+/* Scroll-reveal — blocks ease in as you reach them */
+.reveal{opacity:0;transform:translateY(10px);transition:opacity .45s ease,transform .45s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+/* Module head icon + reading time */
+.module-head{display:flex;gap:13px;align-items:flex-start}
+.module-head .m-ico{flex:none;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--accent-weak);border-radius:11px}
+.module-head .mh-text{min-width:0}
+.m-time{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* Overview: node icons, layman card, animated current-flow connector */
+.mn-ico{margin-right:7px}
+.mn-layman{margin-top:7px;font-size:12.5px;color:var(--ink-soft);background:var(--accent-weak);border-radius:8px;padding:6px 9px;line-height:1.4}
+.mn-layman .mn-lay-ico{margin-right:5px}
+.map-arrow.flow{position:relative;overflow:hidden}
+.map-arrow.flow .spark{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px 2px var(--accent);opacity:.9}
+@media (min-width:821px){
+  #overview .map-flow .map-arrow.flow{align-self:center;width:34px;height:3px;background:linear-gradient(90deg,var(--border-strong),var(--accent));border-radius:2px}
+  #overview .map-flow .map-arrow.flow::before{content:"";position:absolute;right:-2px;top:50%;transform:translateY(-50%);border-left:7px solid var(--accent);border-top:4px solid transparent;border-bottom:4px solid transparent}
+  #overview .map-flow .map-arrow.flow .spark{top:50%;margin-top:-3px;animation:flowx 1.8s linear infinite}
+  @keyframes flowx{0%{left:-8px;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:34px;opacity:0}}
+}
+
+/* Course recap card (overview top, lessons 2..N) */
+.recap{background:var(--accent-weak);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:12px 0 0}
+.recap-h{font-weight:700;font-size:13px;color:var(--accent-2);margin-bottom:6px}
+.recap ul{margin:0;padding-left:18px;font-size:13px;color:var(--ink-soft)}
+.recap li{margin:2px 0}
+
+/* ===== Overview structure (advance organizer) ===== */
+.map-body{margin-top:8px}
+/* ordered path — a numbered vertical spine with connectors */
+.map-path{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-width:760px}
+.map-step{display:flex;flex-direction:column}
+.map-conn{width:2px;height:16px;margin:2px 0 2px 31px;background:linear-gradient(var(--accent),var(--border-strong));position:relative;overflow:hidden}
+.map-conn .spark{position:absolute;left:-2px;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 7px 1px var(--accent);animation:flowy 1.8s linear infinite}
+@keyframes flowy{0%{top:-8px;opacity:0}20%{opacity:1}80%{opacity:1}100%{top:16px;opacity:0}}
+.map-path .map-node{width:100%}
+/* conceptual / comparative — responsive card grid */
+.map-concept,.map-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:12px}
+/* the minimal card */
+.map .map-node{display:flex;flex-direction:column;gap:7px;align-items:stretch}
+.mn-head{display:flex;align-items:center;gap:10px}
+.mn-num{flex:none;width:27px;height:27px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+.map-node.is-start .mn-num{box-shadow:0 0 0 4px var(--accent-weak)}
+.mn-start{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:var(--ok);border-radius:99px;padding:2px 8px;margin-left:auto}
+.mn-orient{font-size:12.5px;color:var(--muted);line-height:1.42}
+.mn-go{font-size:11px;color:var(--accent-2);font-weight:700;align-self:flex-start;background:var(--accent-weak);border-radius:99px;padding:3px 10px}
+.map-node:hover .mn-go{background:var(--accent);color:#fff}
+
+/* ===== Spine inside the module ===== */
+.m-spine{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:5px}
+.m-pos{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent-2);background:var(--accent-weak);border-radius:99px;padding:2px 9px}
+.m-prev{font-size:12px;color:var(--muted)}
+.m-what{font-size:15.5px;color:var(--ink-soft);margin:12px 0 0;line-height:1.5}
+.m-rel{margin-top:10px;font-size:13.5px;color:var(--ink-soft);background:var(--surface-2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:8px 12px}
+.m-rel-lab{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-2);margin-bottom:2px}
+.next-step{margin-top:20px;border:1px solid var(--accent);background:var(--accent-weak);color:var(--accent-2);font:inherit;font-weight:700;font-size:13.5px;padding:10px 16px;border-radius:10px;cursor:pointer}
+.next-step:hover{background:var(--accent);color:#fff}
+
+/* Key terms — subtle attention pulse on hover */
+.term-chip,.term{transition:background .15s,color .15s,transform .12s}
+.term-chip:hover,.term:hover{transform:translateY(-1px)}
+
+@media print{
+  .topbar,.tbtn,.copy,.deeper-toggle,.map-node .mn-go{display:none!important}
+  .deeper{display:block!important}.quiz .answer{display:block!important}
+  .syntax-panel{display:block!important}.collapse-body{display:block!important}
+  .reveal{opacity:1!important;transform:none!important}
+  .ex-pane{display:block!important}.module{break-inside:avoid;box-shadow:none}
+}
+@media (max-width:560px){.dcall{grid-template-columns:1fr}.module-head h2{font-size:20px}}
+
+/* ============================================================================
+   HORIZONTAL reading mode — a fixed-viewport paged deck (additive; vertical mode
+   never sees these rules). The learner stays on one in-viewport screen the whole
+   time; only the left TOC stays put. Heavy blocks open in a modal, not inline.
+   ============================================================================ */
+.h-mode-tag{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent-2);background:var(--accent-weak);border-radius:99px;padding:3px 10px}
+/* pages are fixed in the viewport, so force scroll-reveal blocks visible up front */
+[data-reading="horizontal"] .reveal{opacity:1!important;transform:none!important}
+#hworkbench{display:grid;grid-template-columns:248px 1fr;align-items:stretch}
+#hworkbench #blocknav{position:sticky;top:53px;align-self:start;max-height:calc(100vh - 53px);overflow:auto;border-right:1px solid var(--border);padding:16px 10px;display:flex;flex-direction:column;gap:3px;background:var(--surface)}
+.h-stage{position:relative;overflow:hidden;height:calc(100dvh - 55px)}
+.h-track{display:flex;height:100%;transition:transform .38s cubic-bezier(.4,0,.2,1);will-change:transform}
+@media (prefers-reduced-motion:reduce){.h-track{transition:none}}
+.h-page{flex:0 0 100%;width:100%;height:100%;display:flex;flex-direction:column;min-width:0}
+.h-page-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:24px 40px;width:100%;max-width:1000px;margin:0 auto}
+.h-page-body .block p,.h-page-body .block ul,.h-page-body .block ol,.h-page-body .module-body>p{max-width:760px}
+.h-page .h-next{flex:none;align-self:flex-end;margin:8px 40px 18px auto;border:1px solid var(--accent);background:var(--accent);color:#fff;font:inherit;font-weight:700;font-size:13.5px;padding:10px 20px;border-radius:10px;cursor:pointer}
+.h-page .h-next:hover{filter:brightness(1.06)}
+/* the module's own "Next" (.next-step from moduleInner) sits inside the body and advances the deck */
+.h-page .next-step{display:inline-block}
+/* in horizontal mode a collapsible advertises that it opens in a modal */
+[data-reading="horizontal"] .collapse-h .col-chev{transform:none;font-size:0}
+[data-reading="horizontal"] .collapse-h .col-chev::after{content:"⤢ open";font-size:12px;color:var(--accent-2);font-weight:700}
+[data-reading="horizontal"] .collapse-body{display:none!important}
+
+/* modal that heavy/expandable blocks open into (examples, code, "go deeper") */
+.hmodal{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;background:rgba(8,12,24,.55);padding:24px}
+.hmodal[hidden]{display:none}
+.hmodal-card{position:relative;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius);box-shadow:var(--shadow);width:100%;max-width:780px;max-height:86vh;overflow:auto;padding:22px 24px}
+.hmodal-x{position:absolute;top:12px;right:14px;border:1px solid var(--border-strong);background:var(--surface);color:var(--muted);font:inherit;font-size:18px;line-height:1;width:30px;height:30px;border-radius:8px;cursor:pointer}
+.hmodal-x:hover{border-color:var(--accent);color:var(--accent-2)}
+.hmodal-title{font-family:var(--font-head);font-weight:700;font-size:17px;margin:0 40px 14px 0;color:var(--ink)}
+.hmodal-body .collapse-body,.hmodal-body .deeper{display:block!important}
+.hmodal-body .deeper-toggle{display:none}
+.kc-pending .kc-intro{color:var(--muted)}
+
+@media (max-width:820px){
+  #hworkbench{grid-template-columns:1fr}
+  #hworkbench #blocknav{position:static;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;max-height:none;border-right:none;border-bottom:1px solid var(--border);gap:6px;padding:10px}
+  #hworkbench #blocknav .navitem{flex:0 0 auto}
+  .h-stage{height:calc(100dvh - 112px)}
+  .h-page-body{padding:18px 18px}
+  .h-page .h-next{margin:8px 18px 14px auto}
+}
+</style>
+</head>
+<body data-level="beginner" data-depth="conceptual_technical" data-examples="functional_code" data-reading="vertical" data-theme="light">
+
+  <div class="topbar"><div class="topbar-in">
+    <div class="tb-left"><button class="tbtn nav-back" id="to-overview" hidden>← Overview</button></div>
+    <div class="tb-center"><span class="brand-mini">Building an Agentic Workflow That Turns Marketing Scripts into Ads</span></div>
+    <div class="tb-right">
+      <div class="toggle-group" role="group" aria-label="Show or hide content"><button class="tbtn toggle" id="t-concept" aria-pressed="true">Concept</button><button class="tbtn toggle" id="t-funcex" aria-pressed="true">Functional</button><button class="tbtn toggle" id="t-code" aria-pressed="true">Code</button><button class="tbtn toggle" id="t-syntax" aria-pressed="false">Explain syntax</button></div>
+      <div class="progress" title="Progress"><i></i></div>
+      <button class="tbtn" id="theme">☾ Dark</button>
+    </div>
+  </div></div>
+
+  <div id="overview">
+    <main class="shell">
+      <div class="hero">
+        <div class="eyebrow">Interactive lesson</div>
+        <h1>Building an Agentic Workflow That Turns Marketing Scripts into Ads</h1>
+        <p class="thesis">You can chain specialized agents into a single stateful workflow that ingests a marketing script, drafts ad copy, generates visuals, and validates the result before it ships.</p>
+        <div class="meta-line"><span>beginner</span><span>conceptual + technical</span><span>functional + code</span><span>55 min read</span><span>for marketing</span></div>
+      </div>
+      
+      
+      
+      <div class="map"><div class="eyebrow">Your build path · start at step 1</div><h2>Agentic Workflows — the map</h2><p class="cap">Follow these steps in order — each builds on the one before.</p><div class="map-body map-procedural"><ol class="map-path"><li class="map-step"><button class="map-node is-start" data-deepdive="m_architecture"><div class="mn-head"><span class="mn-num">1</span><span class="mn-title">Workflow architecture &amp; agent roles</span><span class="mn-start">Start here</span></div><div class="mn-orient">The blueprint: which agents exist and how the script flows between them.</div><span class="mn-go">Open →</span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div></li><li class="map-step"><button class="map-node" data-deepdive="m_ingest"><div class="mn-head"><span class="mn-num">2</span><span class="mn-title">Script ingestion &amp; parsing</span></div><div class="mn-orient">The front door: turn a raw script into clean, structured fields the agents can use.</div><span class="mn-go">Open →</span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div></li><li class="map-step"><button class="map-node" data-deepdive="m_copy"><div class="mn-head"><span class="mn-num">3</span><span class="mn-title">Ad copy generation with an LLM</span></div><div class="mn-orient">The copywriter agent: prompt an LLM to draft headlines and body text from the parsed script.</div><span class="mn-go">Open →</span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div></li><li class="map-step"><button class="map-node" data-deepdive="m_tools"><div class="mn-head"><span class="mn-num">4</span><span class="mn-title">Tool use: images &amp; formatting</span></div><div class="mn-orient">Give agents tools: an image generator and a formatter so the ad becomes a finished asset.</div><span class="mn-go">Open →</span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div></li><li class="map-step"><button class="map-node" data-deepdive="m_orchestrate"><div class="mn-head"><span class="mn-num">5</span><span class="mn-title">Orchestration &amp; validation loop</span></div><div class="mn-orient">Wire it together in LangGraph and add a reviewer that checks output and loops back if needed.</div><span class="mn-go">Open →</span></button></li></ol></div></div>
+      <p class="ov-hint">Pick a building block above to dive in — or use the menu that appears on the left.</p>
+    </main>
+  </div>
+
+  <div id="workbench" hidden>
+    <nav id="blocknav"><button class="navitem" data-goto="m_architecture"><span class="ni-num">1</span><span class="ni-label">The blueprint: agent roles &amp; workflow architecture</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="m_ingest"><span class="ni-num">2</span><span class="ni-label">Script ingestion &amp; parsing</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="m_copy"><span class="ni-num">3</span><span class="ni-label">The copywriter agent: generating ad copy</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="m_tools"><span class="ni-num">4</span><span class="ni-label">Tool use: images, copywriting &amp; formatting</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="m_orchestrate"><span class="ni-num">5</span><span class="ni-label">Orchestration &amp; the validation review loop</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="q-6-mqnx8maw"><span class="ni-num">6</span><span class="ni-label">explain more about pydantic</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="q-7-mqnxf74p"><span class="ni-num">7</span><span class="ni-label">explain more about pydantic</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem nav-special" data-goto="_synth"><span class="ni-num">✦</span><span class="ni-label">Putting it together</span></button><button class="navitem nav-special" data-goto="_sources"><span class="ni-num">⌕</span><span class="ni-label">Sources</span></button></nav>
+    <div id="blockmain"><section class="panel module" data-panel="m_architecture" data-module="m_architecture" id="panel-m_architecture"><div class="module-head"><div class="num">1</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 1 of 7</span></div><h2>The blueprint: agent roles &amp; workflow architecture</h2><p class="sub">The starting point — design the system before writing any code.</p><div class="m-time">⏱ ~6 min read</div></div></div><p class="m-what">A blueprint of the four core agent roles in an ad-generation workflow and how a script travels through them.</p><div class="analogy"><span class="an-lab">In plain words</span>Like an ad agency org chart: a writer, a designer, and an editor each own one job and pass work down the line.</div><div class="m-rel"><span class="m-rel-lab">Why this matters for you</span>This is the structural foundation your entire agentic ad system is built on — every later module adds detail to one of these roles or connections.</div><div class="module-body"><p>Map your ad-making workflow as a small team of specialized agents, each owning one job, with a clear path the script travels through. This blueprint is the spine every later module fills in.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>After this you'll be able to name the core agent roles in an ad-generation workflow.</li><li>After this you'll be able to describe how a script flows from input to finished ad.</li><li>After this you'll be able to explain why a multi-agent design beats one giant prompt.</li></ul></div><div class="decision-forces"><strong>Decision this forces:</strong> Which jobs deserve their own agent versus being folded into one step.</div><div class="keyterms"><button class="term-chip" data-term="agentic_workflow">Agentic workflow<span class="i">i</span></button><button class="term-chip" data-term="agent">Agent<span class="i">i</span></button><button class="term-chip" data-term="agent_loop">Agent loop<span class="i">i</span></button><button class="term-chip" data-term="multi_agent">Multi-agent system<span class="i">i</span></button><button class="term-chip" data-term="orchestration">Orchestration<span class="i">i</span></button><button class="term-chip" data-term="state">State<span class="i">i</span></button></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>What is an agentic workflow — and why does it matter here?</h3><div class="analogy"><span class="an-lab">In plain words</span>An agentic workflow is like a small production studio: instead of one person doing everything, each specialist handles their lane, and the script moves down the line.</div><div class="callout info">Before reading on, predict: <em>if you had to turn a one-line ad brief into a finished video ad, what distinct jobs would need to happen in order?</em> Hold that answer — you'll see how it maps to the architecture below.</div><p>An <button class="term" data-term="agentic_workflow">agentic workflow<span class="i">i</span></button> is a system where one or more AI models plan, act, observe results, and repeat until a goal is complete. Unlike a single chatbot call, the model can use external tools and adapt each next step based on what it learns.</p><p>The core unit is an <button class="term" data-term="agent">agent<span class="i">i</span></button>: an <button class="term" data-term="llm">LLM<span class="i">i</span></button> wired into a loop with a specific job. It receives input, reasons about it, takes an action, and passes a result forward.</p><p>A <button class="term" data-term="multi_agent">multi-agent system<span class="i">i</span></button> chains several agents together, each owning one job. An <button class="term" data-term="orchestration">orchestrator<span class="i">i</span></button> — the director — decides which agent runs next. It also passes <button class="term" data-term="state">state<span class="i">i</span></button> — the shared memory of what has happened — between them.</p><h3>Why not just write one big prompt?</h3><p>A single giant prompt tries to research, write copy, check brand tone, and generate image instructions at once. That overloads the model, mixes concerns, and makes errors hard to trace. Focused agents can each be tested, swapped, or improved independently. You can also insert a human review step between agents without rebuilding everything.</p><h3>The four core agent roles in an ad-generation workflow</h3><ul><li><strong>Brief Analyst</strong> — reads the raw brief and extracts the goal, audience, and constraints.</li><li><strong>Script Writer</strong> — turns the structured brief into a draft ad script with hooks and a call to action.</li><li><strong>Brand Reviewer</strong> — checks the script against tone-of-voice guidelines and flags off-brand language.</li><li><strong>Asset Director</strong> — converts the approved script into image-generation prompts and layout instructions.</li></ul><p>Each role is a separate agent with its own <button class="term" data-term="prompt">prompt<span class="i">i</span></button>, its own tools, and a clear output contract. The orchestrator holds shared state and routes the script from agent to agent.</p><div class="keyterms"><button class="term-chip" data-term="agentic_workflow">Agentic workflow<span class="i">i</span></button><button class="term-chip" data-term="agent">Agent<span class="i">i</span></button><button class="term-chip" data-term="agent_loop">Agent loop<span class="i">i</span></button><button class="term-chip" data-term="multi_agent">Multi-agent system<span class="i">i</span></button><button class="term-chip" data-term="orchestration">Orchestration<span class="i">i</span></button><button class="term-chip" data-term="state">State<span class="i">i</span></button><button class="term-chip" data-term="llm">LLM<span class="i">i</span></button></div></div><div class="block reveal"><h3>How a script travels through the ad-generation workflow</h3><div class="viz" data-viz="stepped"><p class="viz-cap">Each step is one agent. The output of each step becomes the input of the next.</p><div class="viz-body"></div><script type="application/json" class="viz-data">{"steps":[{"label":"Brief Analyst","detail":"Receives the raw brief (e.g. 'Summer sale, 18–35 audience, upbeat tone'). Extracts goal, audience, tone, and constraints into a structured object.","icon":"📋"},{"label":"Script Writer","detail":"Takes the structured brief and drafts the ad script: hook, body copy, and call to action. Returns a versioned draft.","icon":"✍️"},{"label":"Brand Reviewer","detail":"Checks the draft against brand guidelines. Approves, or returns specific revision notes back to the Script Writer.","icon":"🔍"},{"label":"Asset Director","detail":"Converts the approved script into image-generation prompts and layout specs ready for the production tool.","icon":"🎨"}]}</script></div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">Worked example: a summer-sale ad brief, end to end</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>Imagine you're a PM at a sportswear brand. Your brief is: <em>"Summer sale, 30% off, target audience 18–35, upbeat and energetic tone, Instagram Story format."</em></p><h4>Step 1 — Brief Analyst receives the raw text</h4><p>The Brief Analyst reads the sentence and outputs a structured object. Result: goal = drive sales, discount = 30%, audience = 18–35, tone = upbeat, format = Instagram Story. This is stored in shared <button class="term" data-term="state">state<span class="i">i</span></button> so every downstream agent can read it.</p><h4>Step 2 — Script Writer drafts the ad</h4><p>The Script Writer reads the structured brief from state. It produces — Hook: "Summer just got 30% cheaper." Body: "Shop the drop before it's gone." CTA: "Tap to shop now." — saved as <code>draft_v1</code>.</p><h4>Step 3 — Brand Reviewer checks the draft</h4><p>The Brand Reviewer compares the draft against the brand's tone guide. It flags "Shop the drop" as too informal and returns a revision note.<code>draft_v2</code> reads: "Explore the collection before it sells out."</p><h4>Step 4 — Asset Director generates image prompts</h4><p>With the approved script in state, the Asset Director writes an image prompt. Output: "Bright outdoor scene, young adult running, bold text overlay '30% OFF', Instagram Story 9:16 ratio, energetic color palette." This prompt is ready to pass to an image-generation tool.</p><div class="callout good">Notice what the orchestrator did: it held shared state, chose which agent ran next, and managed the revision loop — without any agent knowing about the others.</div></div></div><div class="keyterms"><button class="term-chip" data-term="agentic_workflow">Agentic workflow<span class="i">i</span></button><button class="term-chip" data-term="agent">Agent<span class="i">i</span></button><button class="term-chip" data-term="state">State<span class="i">i</span></button><button class="term-chip" data-term="orchestration">Orchestration<span class="i">i</span></button><button class="term-chip" data-term="human_in_the_loop">Human in the loop<span class="i">i</span></button></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">LangGraph — wiring the four-agent blueprint</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code"># LangGraph — four-agent ad workflow blueprint
+from typing import TypedDict, Optional
+from langgraph.graph import StateGraph, END
+from langchain_openai import ChatOpenAI
+
+# --- 1. Define shared state ---
+class AdState(TypedDict):
+    raw_brief: str
+    structured_brief: Optional[dict]
+    script_draft: Optional[str]
+    review_notes: Optional[str]
+    asset_prompt: Optional[str]
+
+# --- 2. Define each agent node ---
+llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
+
+def brief_analyst_node(state: AdState) -&gt; AdState:
+    """Extract goal, audience, tone from the raw brief."""
+    result = llm.invoke(
+        f"Extract goal, audience, tone, format as JSON.\nBrief: {state['raw_brief']}"
+    )
+    state["structured_brief"] = result.content  # simplified; use structured_output in practice
+    return state
+
+def script_writer_node(state: AdState) -&gt; AdState:
+    """Write hook, body, and CTA from the structured brief."""
+    result = llm.invoke(
+        f"Write a short ad script (hook, body, CTA).\nBrief: {state['structured_brief']}"
+    )
+    state["script_draft"] = result.content
+    return state
+
+def brand_reviewer_node(state: AdState) -&gt; AdState:
+    """Check the draft against brand tone; add revision notes or approve."""
+    result = llm.invoke(
+        f"Review this ad for brand tone. Reply APPROVED or list issues.\nScript: {state['script_draft']}"
+    )
+    state["review_notes"] = result.content
+    return state
+
+def asset_director_node(state: AdState) -&gt; AdState:
+    """Turn the approved script into an image-generation prompt."""
+    result = llm.invoke(
+        f"Write an image-generation prompt for this ad script.\nScript: {state['script_draft']}"
+    )
+    state["asset_prompt"] = result.content
+    return state
+
+# --- 3. Route: if reviewer flagged issues, loop back ---
+def route_after_review(state: AdState) -&gt; str:
+    if "APPROVED" in (state["review_notes"] or ""):
+        return "asset_director"
+    return "script_writer"  # revision loop
+
+# --- 4. Build the graph ---
+workflow = StateGraph(AdState)
+workflow.add_node("brief_analyst", brief_analyst_node)
+workflow.add_node("script_writer", script_writer_node)
+workflow.add_node("brand_reviewer", brand_reviewer_node)
+workflow.add_node("asset_director", asset_director_node)
+
+workflow.set_entry_point("brief_analyst")
+workflow.add_edge("brief_analyst", "script_writer")
+workflow.add_edge("script_writer", "brand_reviewer")
+workflow.add_conditional_edges("brand_reviewer", route_after_review)
+workflow.add_edge("asset_director", END)
+
+app = workflow.compile()
+
+# --- 5. Run it ---
+result = app.invoke({"raw_brief": "Summer sale, 30% off, audience 18-35, upbeat, Instagram Story"})
+print(result["asset_prompt"])</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>TypedDict</code></dt><dd>A Python type that defines the exact fields in the shared state object — like a named form with fixed slots.</dd><dt><code>StateGraph(AdState)</code></dt><dd>Creates a LangGraph graph whose nodes all read from and write to the AdState dictionary.</dd><dt><code>add_node("name", fn)</code></dt><dd>Registers a Python function as a named step (node) in the graph.</dd><dt><code>set_entry_point("brief_analyst")</code></dt><dd>Tells the graph which node runs first when you call app.invoke().</dd><dt><code>add_edge("a", "b")</code></dt><dd>Creates a fixed route: after node 'a' finishes, always go to node 'b'.</dd><dt><code>add_conditional_edges("brand_reviewer", route_after_review)</code></dt><dd>After the brand reviewer runs, calls route_after_review() to decide the next node dynamically — enabling the revision loop.</dd><dt><code>workflow.compile()</code></dt><dd>Locks the graph structure and returns a runnable app object.</dd><dt><code>app.invoke({...})</code></dt><dd>Starts the workflow with an initial state and runs every node in order until END is reached.</dd></dl></div><p>Each node function takes the current state, does one job, and returns the updated state. No node needs to know about the others — the graph wiring handles routing. The conditional edge after <code>brand_reviewer</code> is what creates the revision loop: if the reviewer doesn't say APPROVED, the script goes back to the writer.</p><div class="quiz"><div class="q">Predict: Before you run this: the graph calls `brief_analyst_node` first. What does it add to `state`, and which node runs next?</div><button class="reveal">Reveal</button><div class="answer">It adds `structured_brief` to state. The graph edge routes to `script_writer_node` next, which reads that field.</div></div></div></div><div class="keyterms"><button class="term-chip" data-term="langgraph">LangGraph<span class="i">i</span></button><button class="term-chip" data-term="state">State<span class="i">i</span></button><button class="term-chip" data-term="orchestration">Orchestration<span class="i">i</span></button><button class="term-chip" data-term="agent">Agent<span class="i">i</span></button><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button><button class="term-chip" data-term="schema">Schema<span class="i">i</span></button></div></div><div class="block reveal"><div class="dcall"><div class="use"><div class="lab">Use when</div>Give a job its own agent when it has a distinct input/output contract, needs its own prompt or tool, or must be reviewable and replaceable independently. Examples: brand review, image-prompt generation, legal compliance check.</div><div class="avoid"><div class="lab">Avoid when</div>Don't split a job into its own agent when it's a trivial transformation (e.g. formatting a date), when it shares the exact same context and prompt as the previous step, or when the overhead of passing state outweighs the benefit. Folding two tightly coupled steps into one node is fine.</div><div class="rot"><div class="lab">Rule of thumb</div>If you'd hire a different specialist for the job in a real agency, it probably deserves its own agent. If it's just the same person doing the next sentence, keep it in one node.</div></div><div class="keyterms"><button class="term-chip" data-term="agent">Agent<span class="i">i</span></button><button class="term-chip" data-term="multi_agent">Multi-agent system<span class="i">i</span></button><button class="term-chip" data-term="orchestration">Orchestration<span class="i">i</span></button></div></div><div class="block reveal"><div class="callout warn"><h3>Common failure modes to watch for</h3><ul><li><strong>Infinite revision loops.</strong> If the Brand Reviewer never outputs "APPROVED", the graph loops forever between writer and reviewer. Fix: add a max-revision counter in state and route to END (or a human) after N attempts.</li><li><strong>State pollution.</strong> If an early agent writes a vague or malformed value to state, every downstream agent inherits the error. Fix: use typed state (TypedDict or Pydantic) and validate outputs before passing them on.</li><li><strong>Over-splitting.</strong> Creating ten micro-agents for a five-step job adds latency and makes debugging painful. Fix: start with four roles; only split when a node's prompt grows unwieldy or you need independent testing.</li><li><strong>Missing the human gate.</strong> Fully automated ad generation can ship off-brand or legally risky copy without anyone noticing. Fix: add a <button class="term" data-term="human_in_the_loop">human-in-the-loop<span class="i">i</span></button> checkpoint after Brand Review before the Asset Director runs.</li></ul><h3>How to verify AI-generated workflow code before trusting it</h3><ul><li><strong>Check every edge is wired.</strong> Print or draw the compiled graph and confirm no node is an island (no incoming or outgoing edge).</li><li><strong>Trace the state at each node.</strong> Log the state dict after each node runs and confirm the expected field was written and nothing was overwritten unexpectedly.</li><li><strong>Test the revision loop explicitly.</strong> Feed a brief that will fail brand review and confirm the graph loops back — not that it silently skips to asset generation.</li><li><strong>Confirm the entry point and END are correct.</strong> AI-generated LangGraph code often wires the entry point to the wrong node or forgets to add the final edge to END.</li></ul></div><div class="keyterms"><button class="term-chip" data-term="state">State<span class="i">i</span></button><button class="term-chip" data-term="orchestration">Orchestration<span class="i">i</span></button><button class="term-chip" data-term="agent_loop">Agent loop<span class="i">i</span></button><button class="term-chip" data-term="human_in_the_loop">Human in the loop<span class="i">i</span></button></div></div><button class="next-step" data-deepdive="m_ingest">Next · step 2: Script ingestion &amp; parsing →</button></div></section><section class="panel module" data-panel="m_ingest" data-module="m_ingest" id="panel-m_ingest"><div class="module-head"><div class="num">2</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 2 of 7</span><span class="m-prev">↳ builds on “The blueprint: agent roles &amp; workflow architecture”</span></div><h2>Script ingestion &amp; parsing</h2><p class="sub">Now build the front door of the blueprint you just designed.</p><div class="m-time">⏱ ~6 min read</div></div></div><p class="m-what">This module teaches how to turn a raw marketing script into a clean, validated set of structured fields that every downstream agent can reliably use.</p><div class="analogy"><span class="an-lab">In plain words</span>Like a receptionist who reads the brief and fills in a tidy intake form before anyone starts working.</div><div class="m-rel"><span class="m-rel-lab">Why this matters for you</span>Without a solid parsing step, every agent in your ad-generation workflow receives ambiguous inputs — leading to wrong ads, silent failures, and hard-to-debug errors.</div><div class="module-body"><p>Turn a messy marketing script into clean, structured fields like product, audience, tone, and call-to-action. Structured parsing gives every downstream agent reliable inputs.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>After this you'll be able to define a schema for the fields an ad needs from a script.</li><li>After this you'll be able to use an LLM to extract those fields as validated JSON.</li><li>After this you'll be able to spot and handle a malformed or incomplete script.</li></ul></div><div class="decision-forces"><strong>Decision this forces:</strong> What fields to extract and how strictly to validate them before passing on.</div><div class="keyterms"><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button><button class="term-chip" data-term="schema">Schema<span class="i">i</span></button><button class="term-chip" data-term="parsing">Parsing<span class="i">i</span></button><button class="term-chip" data-term="instructor">Instructor<span class="i">i</span></button><button class="term-chip" data-term="tool_calling">Tool calling<span class="i">i</span></button></div><div class="block reveal"><div class="callout info"><div class="callout info">Before moving forward: in your own words, what does an <button class="term" data-term="agent_loop">agent loop<span class="i">i</span></button> do on each turn? Try to recall the three-word rhythm — receive, decide, act — before reading the answer below.</div><p>Answer: <button class="term" data-term="agent_loop">each turn the agent inspects its goal, picks the next action, calls a tool or model, and reads the result back into its <span class="i">i</span></button><button class="term" data-term="state">state<span class="i">i</span></button><button class="term" data-term="agent_loop">. That loop repeats until the task is done.<span class="i">i</span></button></p><p>This module is about what feeds that loop. Before any agent can act on a marketing script, it needs to read the script and pull out the facts that matter. That's <strong>script ingestion and parsing</strong> — and it's the job of Module 2.</p></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>What ingestion and parsing actually mean</h3><div class="analogy"><span class="an-lab">In plain words</span>Parsing a script is like a barista reading a coffee order and mentally separating it into drink type, size, milk choice, and extras — turning a sentence into a checklist the kitchen can act on.</div><p><strong>Ingestion</strong> just means receiving the raw script — a blob of text a copywriter wrote. It could be polished or messy, long or short.</p><p><button class="term" data-term="parsing"><strong>Parsing</strong><span class="i">i</span></button> means reading that blob and pulling out specific, named pieces of information — like product name, target audience, tone, and call-to-action. Each named piece is a <strong>field</strong>.</p><p>A <button class="term" data-term="schema"><strong>schema</strong><span class="i">i</span></button> is the blueprint that lists every field you want, its data type, and whether it's required. Think of it as the form the barista fills in — the form defines what questions to ask.</p><p>The output of parsing is <button class="term" data-term="structured_output"><strong>structured output</strong><span class="i">i</span></button><button class="term" data-term="agent">: a clean JSON object that every downstream <span class="i">i</span></button><button class="term" data-term="agentic_workflow"> can read without guessing. Structured data is the handshake between agents in your <span class="i">i</span></button><button class="term" data-term="agentic_workflow">agentic workflow<span class="i">i</span></button>.</p><div class="keyterms"><button class="term-chip" data-term="parsing">Parsing<span class="i">i</span></button><button class="term-chip" data-term="schema">Schema<span class="i">i</span></button><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button><button class="term-chip" data-term="llm">LLM<span class="i">i</span></button></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>Designing your ad schema — what fields to extract</h3><div class="analogy"><span class="an-lab">In plain words</span>A schema is like a job application form: it decides exactly which boxes must be filled in before the application can move forward.</div><p>Before asking an <button class="term" data-term="llm">LLM<span class="i">i</span></button> to parse anything, decide what you want back. For a marketing ad, four fields cover most cases.</p><ul><li><strong>product</strong> — the name or short description of what's being advertised.</li><li><strong>audience</strong> — who the ad targets (e.g. "first-time homebuyers").</li><li><strong>tone</strong> — the emotional register: playful, urgent, professional, etc.</li><li><strong>call_to_action</strong> — the one action you want the reader to take next (e.g. "Book a free demo").</li></ul><p>Each field needs a type (usually <code>string</code>) and a required flag. Required fields must be present before data moves on. Optional fields can fall back to a sensible default.</p><p><button class="term" data-term="validation"><strong>Validation</strong><span class="i">i</span></button> runs after parsing. It confirms the LLM returned every required field in the correct format. If not, it raises an error — so a bad parse never silently poisons downstream agents.</p><div class="keyterms"><button class="term-chip" data-term="schema">Schema<span class="i">i</span></button><button class="term-chip" data-term="validation">Validation<span class="i">i</span></button><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button></div></div><div class="block reveal"><h3>From raw script to validated JSON — the parsing pipeline</h3><div class="viz" data-viz="stepped"><div class="viz-body"></div><script type="application/json" class="viz-data">{"steps":[{"label":"Receive raw script","detail":"A copywriter's text arrives as an unstructured string — could be one sentence or ten.","icon":"📄"},{"label":"Define the schema","detail":"You declare a Pydantic model listing every field (product, audience, tone, call_to_action) with types and required flags.","icon":"📋"},{"label":"Prompt the LLM","detail":"You send the script plus the schema to the LLM, asking it to extract only the fields defined — nothing more.","icon":"🤖"},{"label":"Validate the output","detail":"Pydantic checks the returned JSON against the schema. Missing or wrong-type fields raise an error immediately.","icon":"✅"},{"label":"Pass structured data downstream","detail":"A clean, validated JSON object enters the agent's state — every downstream agent reads the same reliable fields.","icon":"🔗"}]}</script></div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">Real-world scenario: parsing a messy product launch script</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>Imagine your copywriter sends this script for a new fitness app launch:</p><div class="callout info">"FitFlow is the app busy professionals have been waiting for. No gym required — just 15 minutes a day. It's fun, it's fast, and it actually works. Download it free today."</div><p>A human instantly reads: product = FitFlow, audience = busy professionals, tone = energetic/playful, CTA = download free. But the image-generation agent needs those as <strong>named fields</strong>, not buried in a paragraph.</p><p>Send the script to an LLM with this prompt: "Extract as JSON: product, audience, tone (one of: playful, urgent, professional, inspirational), call_to_action." The LLM returns:</p><div class="callout good">{ "product": "FitFlow", "audience": "busy professionals", "tone": "playful", "call_to_action": "Download it free today" }</div><p>Validation confirms all four fields are present and <code>tone</code> is a valid enum value. The object is written to shared <button class="term" data-term="state">state<span class="i">i</span></button>. Every downstream agent — copy refiner, image generator, audience targeter — reads from it directly.</p></div></div><div class="keyterms"><button class="term-chip" data-term="parsing">Parsing<span class="i">i</span></button><button class="term-chip" data-term="schema">Schema<span class="i">i</span></button><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button><button class="term-chip" data-term="validation">Validation<span class="i">i</span></button></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">LangChain — extract ad fields as validated JSON</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code">from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from pydantic import BaseModel, Field
+
+# 1. Define the schema — the "form" the LLM must fill in
+class AdFields(BaseModel):
+    product: str = Field(description="Name or short description of the product")
+    audience: str = Field(description="Who the ad targets")
+    tone: str = Field(description="Emotional register, e.g. playful, urgent")
+    call_to_action: str = Field(description="The single action the reader should take")
+
+# 2. Set up the LLM with structured output enforced
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
+structured_llm = llm.with_structured_output(AdFields)
+
+# 3. Write the extraction prompt
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are an expert marketing analyst. "
+               "Extract the ad fields from the script below. "
+               "If a field is not clearly stated, infer it from context."),
+    ("human", "{script}")
+])
+
+# 4. Chain prompt → structured LLM
+extraction_chain = prompt | structured_llm
+
+# 5. Run it — result is a validated AdFields object, not raw text
+raw_script = (
+    "Hey, so we're launching FlowDesk — it's a project tool "
+    "for remote teams who hate Jira. Keep it fun and a bit cheeky. "
+    "We want people to sign up for the beta."
+)
+result = extraction_chain.invoke({"script": raw_script})
+
+print(result.product)        # FlowDesk — a project tool for remote teams
+print(result.audience)       # remote teams who dislike complex project tools
+print(result.tone)           # fun, cheeky
+print(result.call_to_action) # Sign up for the beta</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>class AdFields(BaseModel)</code></dt><dd>Defines the schema as a Python class. Pydantic uses this to validate that the LLM's output has every field in the right format.</dd><dt><code>Field(description=...)</code></dt><dd>Adds a plain-English hint for each field. LangChain passes these hints to the LLM so it knows what to look for.</dd><dt><code>llm.with_structured_output(AdFields)</code></dt><dd>Tells the LLM to return its answer as a validated AdFields object instead of free text. LangChain handles the JSON conversion and validation automatically.</dd><dt><code>ChatPromptTemplate.from_messages([...])</code></dt><dd>Builds a reusable prompt template. The {script} placeholder is filled in at run time with the actual script text.</dd><dt><code>prompt | structured_llm</code></dt><dd>The pipe operator chains the prompt and the model together into one callable. This is LangChain's LCEL (LangChain Expression Language) syntax.</dd><dt><code>extraction_chain.invoke({"script": raw_script})</code></dt><dd>Runs the chain: fills in the prompt, calls the LLM, validates the output, and returns a Python AdFields object.</dd></dl></div><div class="quiz"><div class="q">Predict: Before reading the code: the LLM returns a Python object, not raw text. Which line do you think actually triggers the extraction and gives back a validated AdFields object?</div><button class="reveal">Reveal</button><div class="answer">The line `result = extraction_chain.invoke({"script": raw_script})` — it sends the script through the prompt and the structured-output model in one call, and LangChain validates the result against the Pydantic schema automatically.</div></div></div></div><div class="keyterms"><button class="term-chip" data-term="schema">Schema<span class="i">i</span></button><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button><button class="term-chip" data-term="validation">Validation<span class="i">i</span></button><button class="term-chip" data-term="prompt">Prompt<span class="i">i</span></button><button class="term-chip" data-term="llm">LLM<span class="i">i</span></button><button class="term-chip" data-term="instructor">Instructor<span class="i">i</span></button></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>How script parsing breaks in practice</h3><h3>Common failure modes</h3><ul><li><strong>Missing field — silent gap.</strong> The script never mentions a call-to-action. The LLM invents one or returns an empty string. Downstream agents get a blank field and generate a useless ad.</li><li><strong>Hallucinated field value.</strong> The LLM confidently fills in "audience: millennials" when the script gave no audience signal at all. Validation passes, but the data is wrong.</li><li><strong>Overly long field.</strong> The LLM returns a 200-word "product" description instead of a short label. Downstream copy agents get confused or hit token limits.</li><li><strong>Schema mismatch on retries.</strong> If you retry a failed parse with a slightly different prompt, the LLM may return a different field name (e.g. "CTA" instead of "call_to_action"). Pydantic will reject it, but you need a retry strategy.</li></ul><h3>Non-obvious failure to watch for</h3><p><strong>Validation passing doesn't mean the data is correct.</strong> Pydantic only checks types and required fields. A tone of <code>"banana"</code> passes validation. Add an <strong>enum or Literal type</strong> for fields like tone to catch nonsense values early.</p><div class="callout warn"><strong>Rule of thumb: </strong>treat any field the LLM inferred (not explicitly stated in the script) as low-confidence. Log it, flag it, or route it to a human review step before it drives creative decisions.</div><div class="keyterms"><button class="term-chip" data-term="validation">Validation<span class="i">i</span></button><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button><button class="term-chip" data-term="parsing">Parsing<span class="i">i</span></button><button class="term-chip" data-term="prompt">Prompt<span class="i">i</span></button></div></div><div class="block reveal"><div class="callout good"><p>When an AI tool writes your extraction chain, run through this checklist before wiring it into your workflow.</p><ul><li><strong>Does the schema mark the right fields as required?</strong> Check that product and call_to_action are required, not optional — a missing CTA is a broken ad.</li><li><strong>Does it use with_structured_output, not just a plain LLM call?</strong> A plain call returns raw text; you need the structured wrapper to get a validated object.</li><li><strong>Does it handle a missing field gracefully?</strong> Test with a script that omits the call-to-action. Does it raise a clear error, or silently return an empty string?</li><li><strong>Are tone values constrained?</strong> Check whether tone is a free string or a Literal/enum. Free strings let nonsense values through.</li><li><strong>Does the prompt include field descriptions?</strong> Without Field(description=...) hints, the LLM guesses what each field means and accuracy drops.</li></ul></div></div><div class="block reveal"><div class="dcall"><div class="use"><div class="lab">Use when</div>Use strict validation (required fields + enum constraints) when the parsed data feeds automated agents with no human review step — errors must be caught at the gate, not discovered in a live ad.</div><div class="avoid"><div class="lab">Avoid when</div>Avoid strict validation when scripts are exploratory drafts or when a human will review the output anyway — overly strict schemas will reject valid but unusual scripts and slow the team down.</div><div class="rot"><div class="lab">Rule of thumb</div>Start strict on the fields that directly drive creative output (product, call_to_action). Be lenient on inferred fields (tone) until you have enough real scripts to know what values actually appear.</div></div><div class="keyterms"><button class="term-chip" data-term="validation">Validation<span class="i">i</span></button><button class="term-chip" data-term="schema">Schema<span class="i">i</span></button><button class="term-chip" data-term="human_in_the_loop">Human in the loop<span class="i">i</span></button></div></div><button class="next-step" data-deepdive="m_copy">Next · step 3: The copywriter agent: generating ad copy →</button></div></section><section class="panel module" data-panel="m_copy" data-module="m_copy" id="panel-m_copy"><div class="module-head"><div class="num">3</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 3 of 7</span><span class="m-prev">↳ builds on “Script ingestion &amp; parsing”</span></div><h2>The copywriter agent: generating ad copy</h2><p class="sub">Feed the parsed fields into the agent that writes the ad.</p><div class="m-time">⏱ ~6 min read</div></div></div><p class="m-what">How to design a prompt that turns parsed script data into structured, reliable ad copy using a LangGraph copywriter node.</p><div class="analogy"><span class="an-lab">In plain words</span>Like a copywriter who takes the brief and writes the punchy ad lines.</div><div class="m-rel"><span class="m-rel-lab">Why this matters for you</span>This is the creative engine of your ad workflow — a well-designed copywriter prompt is what makes every downstream step (image generation, review, publishing) predictable and automatable.</div><div class="module-body"><p>Prompt an LLM to draft headlines and body copy from the parsed script, separating durable instructions from per-request data. Good prompt design is the interface that makes output reliable.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>After this you'll be able to write a copywriter prompt that names audience, tone, and format.</li><li>After this you'll be able to return copy as structured fields, not freeform text.</li><li>After this you'll be able to recognize common copy failure modes and how to constrain them.</li></ul></div><div class="keyterms"><button class="term-chip" data-term="llm">LLM<span class="i">i</span></button><button class="term-chip" data-term="prompt">Prompt<span class="i">i</span></button><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button><button class="term-chip" data-term="agent">Agent<span class="i">i</span></button></div><div class="block reveal"><div class="callout info"><div class="callout info">Predict first (from memory, don't scroll back): In Module 1 you learned about the <button class="term" data-term="agent_loop">agent loop<span class="i">i</span></button>. What are the four core steps an agent repeats on every turn? Write them down before reading on.</div><p>Answer: <strong>receive goal → decide next action → call a tool or model → observe the result</strong>, then repeat. Every agent in your ad-generation workflow — including the copywriter you're about to build — runs this same loop.</p><p>In Module 2 you built the script parser, which hands the copywriter a clean, <button class="term" data-term="structured_output">structured output<span class="i">i</span></button> object. This module is about what the copywriter does with that object.</p></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>Prompt design: the copywriter's interface</h3><div class="analogy"><span class="an-lab">In plain words</span>A prompt is like a creative brief handed to a freelance copywriter — the more clearly it names the audience, tone, and deliverable format, the less you have to fix later.</div><p>A <button class="term" data-term="prompt">prompt<span class="i">i</span></button> is not magic phrasing. It is the interface between what you want and what the <button class="term" data-term="llm">LLM<span class="i">i</span></button> produces.</p><p>Good prompts split into two layers. The <strong>system prompt</strong> holds durable instructions that never change: audience, tone, brand rules, and output format. The <strong>user message</strong> holds per-request data: the parsed script for this specific ad.</p><p>Keeping them separate matters because it makes your agent <strong>predictable</strong>. When the system prompt is stable, the only variable is the input data — so you can test, debug, and improve reliably.</p><ul><li><strong>Audience</strong> — who will read this ad? (e.g. "millennial homeowners aged 28–40")</li><li><strong>Tone</strong> — what feeling should the copy carry? (e.g. "warm, confident, never salesy")</li><li><strong>Format</strong> — what fields must the output contain? (e.g. headline, subheadline, body copy, CTA)</li><li><strong>Constraints</strong> — what is forbidden? (e.g. "no superlatives, max 8 words per headline")</li></ul></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>Return copy as structured fields, not freeform text</h3><div class="analogy"><span class="an-lab">In plain words</span>Asking the LLM for structured output is like asking a chef to plate each dish in a labeled container — you can grab exactly what you need without sorting through a pile.</div><p>If the LLM returns a wall of text, the next agent in your workflow has to parse it — and that parsing can break. <button class="term" data-term="structured_output">Structured output<span class="i">i</span></button> means asking the model to return a typed object with named fields instead.</p><p>You define a <button class="term" data-term="schema">schema<span class="i">i</span></button> — a blueprint that names each field and its type. The model must fill in that blueprint. Your code then reads <code>copy.headline</code> directly, with no string-splitting required.</p><p>In Python, you define the schema as a Pydantic model. <button class="term" data-term="instructor">Instructor<span class="i">i</span></button> (which you met in Module 2) patches the LLM client to enforce that schema automatically.</p><div class="callout good">Rule of thumb: every field the downstream agent needs should be its own named field in the schema — not buried inside a single <code>body_copy</code> string.</div></div><div class="block reveal"><h3>Creative freedom vs. structure: finding the right balance</h3><div class="viz" data-viz="slider"><p class="viz-cap">Drag to see how much creative latitude you give the copy agent — and what you gain or lose at each setting.</p><div class="viz-body"></div><script type="application/json" class="viz-data">{"min":1,"max":5,"unit":"freedom","stops":[{"at":1,"label":"Fully constrained","note":"Every field has a character limit, a required keyword, and a fixed tone. Output is consistent but can feel robotic. Good for compliance-heavy brands."},{"at":2,"label":"Structured with guardrails","note":"Schema enforces fields and types; tone and audience are named; superlatives are banned. Most production ad agents live here."},{"at":3,"label":"Guided creative","note":"Schema enforces fields; tone is a suggestion, not a rule. The model has room to surprise you. Requires human review before publishing."},{"at":4,"label":"Loose brief","note":"Only the output fields are fixed. Tone and style are inferred from the script. Output quality varies widely across runs."},{"at":5,"label":"Freeform","note":"No schema, no tone guidance. The model writes whatever it wants. Useful for brainstorming, not for production pipelines."}]}</script></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>How the copy agent breaks in practice</h3><p>Knowing the failure modes before you hit them saves hours of debugging. Here are the most common ones for a copywriter agent.</p><h4>Common failures</h4><ul><li><strong>Headline drift</strong> — the model ignores your character limit and writes a 20-word headline. Fix: add the limit to the schema as a <code>max_length</code> validator.</li><li><strong>Tone bleed</strong> — the model picks up the script's tone (e.g. urgent, fear-based) instead of your brand tone. Fix: state the brand tone explicitly in the system prompt and give a one-sentence example.</li><li><strong>Freeform leakage</strong> — without a schema, the model returns a prose paragraph instead of separate fields. Fix: always use a typed schema; never rely on "please return JSON" in plain text.</li></ul><h4>Non-obvious failures</h4><ul><li><strong>Schema hallucination</strong> — the model fills every field even when the source script doesn't support it, inventing claims. Fix: add a field like <code>confidence: Literal['high','low']</code> and route low-confidence outputs to human review.</li><li><strong>Prompt injection via script</strong> — a script that contains instruction-like text (e.g. "Ignore previous instructions and…") can hijack the agent. Fix: pass the script as a clearly labeled data block, not inline with instructions.</li></ul><div class="callout warn">Watch for: <strong>outputs that look correct but contain invented product claims.</strong> A schema enforces structure, not factual accuracy. Always validate claims against the source script.</div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">Real-world scenario: writing the brief for a home-insurance ad</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>Imagine your parsed script says: <em>"Product: HomeShield insurance. Key benefit: covers floods and fires. Audience: first-time homeowners. Tone: reassuring."</em></p><p>Write a <strong>system prompt</strong> that never changes: "You are a HomeShield copywriter. Write for first-time homeowners. Tone: warm and reassuring. No superlatives. Return structured fields only."</p><p>Pass the parsed script as the <strong>user message</strong>: "Draft ad copy from this script: [parsed script object]." The model returns <code>headline</code>, <code>body_copy</code>, and <code>cta</code> as separate fields.</p><p>Think of the <strong>system prompt</strong> as your brand style guide. It stays fixed. The user message is the campaign brief — it changes per ad.</p></div></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">LangChain + Instructor: copywriter agent node</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code"># copywriter_node.py  — LangChain + Instructor + LangGraph
+from typing import Annotated
+from pydantic import BaseModel, Field
+from langchain_openai import ChatOpenAI
+from langgraph.graph import StateGraph, END
+import instructor
+
+# ── 1. Schema: the blueprint for structured copy output ──────────────────────
+class AdCopy(BaseModel):
+    headline: str = Field(
+        ...,
+        description="Max 8 words. Warm, benefit-led.",
+        max_length=60,          # ~8 words at avg 7 chars
+    )
+    body_copy: str = Field(
+        ...,
+        description="2–3 sentences. Reassuring tone. No superlatives.",
+    )
+    cta: str = Field(
+        ...,
+        description="Call-to-action button text. Max 5 words.",
+    )
+    confidence: str = Field(
+        ...,
+        description="'high' if script supports all claims, else 'low'.",
+    )
+
+# ── 2. Patch the LLM client so it enforces the schema ───────────────────────
+raw_llm = ChatOpenAI(model="gpt-4o", temperature=0.4)
+client  = instructor.from_openai(raw_llm)          # Instructor wraps the client
+
+# ── 3. Durable system prompt (never changes per request) ────────────────────
+SYSTEM_PROMPT = """
+You are a copywriter for HomeShield insurance.
+Audience: first-time homeowners aged 28–40.
+Tone: warm, reassuring. Never use superlatives.
+Return ONLY the structured fields — no extra prose.
+"""
+
+# ── 4. Copywriter node for LangGraph ────────────────────────────────────────
+def copywriter_node(state: dict) -&gt; dict:
+    parsed_script = state["parsed_script"]   # output from Module 2 parser
+
+    ad_copy: AdCopy = client.chat.completions.create(
+        model="gpt-4o",
+        response_model=AdCopy,               # TODO: what does this line enforce?
+        messages=[
+            {"role": "system",  "content": SYSTEM_PROMPT},
+            {"role": "user",    "content": f"Draft ad copy from this script:\n{parsed_script}"},
+        ],
+    )
+    return {"ad_copy": ad_copy}
+
+# ── 5. Wire the node into a LangGraph workflow ───────────────────────────────
+builder = StateGraph(dict)
+builder.add_node("copywriter", copywriter_node)
+builder.set_entry_point("copywriter")
+builder.add_edge("copywriter", END)
+graph = builder.compile()
+</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>class AdCopy(BaseModel)</code></dt><dd>Defines a Pydantic model — a Python class that describes the exact fields and types the LLM must return. Think of it as a form the model has to fill in.</dd><dt><code>Field(..., description=..., max_length=...)</code></dt><dd>Attaches rules to each field: the description tells the model what to write; max_length is a hard validator that rejects outputs that are too long.</dd><dt><code>instructor.from_openai(raw_llm)</code></dt><dd>Wraps the LLM client so every response is automatically validated against the schema. If the model's output doesn't match, Instructor retries automatically.</dd><dt><code>response_model=AdCopy</code></dt><dd>Tells Instructor which schema to enforce. The model's raw text is parsed and validated into an AdCopy object — your code gets a typed object, not a string.</dd><dt><code>state["parsed_script"]</code></dt><dd>Reads the parsed script from LangGraph's shared state — the structured output produced by the parser node in Module 2.</dd><dt><code>StateGraph(dict)</code></dt><dd>Creates a LangGraph workflow where each node reads from and writes to a shared state dictionary. Nodes are functions; edges define the order.</dd><dt><code>builder.set_entry_point("copywriter")</code></dt><dd>Tells LangGraph which node runs first when the workflow starts.</dd><dt><code>builder.add_edge("copywriter", END)</code></dt><dd>After the copywriter node finishes, the workflow ends. In the full pipeline you'd route to the next agent instead.</dd></dl></div><p>The TODO comment on line 28 is your completion problem. <code>response_model=AdCopy</code> is the line that enforces the schema — it tells Instructor to validate the model's output against your <code>AdCopy</code> blueprint before returning it.</p><p>Notice the <code>confidence</code> field. It's a lightweight guard against schema hallucination: if the model marks a field <code>'low'</code>, you can route that output to a human reviewer before it goes live.</p><div class="quiz"><div class="q">Predict: Before reading the code: the schema has a `headline` field with `max_length=8` words. What do you think happens if the model tries to return a 12-word headline?</div><button class="reveal">Reveal</button><div class="answer">Pydantic raises a ValidationError before the output ever reaches the next agent. Instructor catches it and can retry automatically — the bad output never leaks downstream.</div></div></div></div><div class="keyterms"><button class="term-chip" data-term="prompt">Prompt<span class="i">i</span></button><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button><button class="term-chip" data-term="schema">Schema<span class="i">i</span></button><button class="term-chip" data-term="instructor">Instructor<span class="i">i</span></button><button class="term-chip" data-term="llm">LLM<span class="i">i</span></button><button class="term-chip" data-term="langgraph">LangGraph<span class="i">i</span></button></div></div><div class="block reveal"><div class="dcall"><div class="use"><div class="lab">Use when</div>Use a tightly structured prompt (schema + explicit tone + constraints) when you need consistent, brand-safe output across many ads — especially for regulated industries like insurance or finance.</div><div class="avoid"><div class="lab">Avoid when</div>Avoid over-constraining when you're in early creative exploration or when the brand voice is still being defined. Too many rules produce copy that feels mechanical and generic.</div><div class="rot"><div class="lab">Rule of thumb</div>Start structured and loosen one constraint at a time. It's easier to relax a rule than to add one after bad copy has already shipped.</div></div></div><div class="block reveal"><div class="callout warn"><p>Before running the copywriter node in production, check these things.</p><ul><li><strong>Schema is actually enforced</strong> — confirm <code>response_model=AdCopy</code> is passed in <code>client.chat.completions.create()</code>. AI tools often generate the class but forget to pass it.</li><li><strong>System prompt is in the right role</strong> — durable instructions belong in <code>role: 'system'</code>, not <code>role: 'user'</code>. Mixing them weakens instruction-following.</li><li><strong>Script is passed as data, not inline</strong> — label it clearly (e.g. "Draft ad copy from this script:\n..."). Inline injection risks prompt hijacking.</li><li><strong>Confidence field is wired to a review step</strong> — if the code ignores <code>confidence</code>, add a conditional LangGraph edge. Route low-confidence outputs to a <button class="term" data-term="human_in_the_loop">human_in_the_loop<span class="i">i</span></button> node.</li><li><strong>Claims match the source script</strong> — check the headline and body copy against the parsed script. A schema enforces structure, not factual accuracy.</li></ul></div></div><button class="next-step" data-deepdive="m_tools">Next · step 4: Tool use: images, copywriting &amp; formatting →</button></div></section><section class="panel module" data-panel="m_tools" data-module="m_tools" id="panel-m_tools"><div class="module-head"><div class="num">4</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 4 of 7</span><span class="m-prev">↳ builds on “The copywriter agent: generating ad copy”</span></div><h2>Tool use: images, copywriting &amp; formatting</h2><p class="sub">Give the agents tools so words become a finished ad asset.</p><div class="m-time">⏱ ~5 min read</div></div></div><p class="m-what">How to define tools and wire them into a LangGraph workflow so an agent can generate images and assemble a structured ad layout.</p><div class="analogy"><span class="an-lab">In plain words</span>Like handing the designer a camera and a layout template so words become a real ad.</div><div class="m-rel"><span class="m-rel-lab">Why this matters for you</span>This is the step that turns your ad-generation workflow from a text producer into a complete artifact builder — outputting a real image URL and a formatted ad object ready for review or handoff.</div><div class="module-body"><p>Let agents call tools: an image generator for visuals and a formatter to assemble copy plus image into an ad layout. Tools are how an agent acts on the world instead of just talking.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>After this you'll be able to define a tool and let an agent call it.</li><li>After this you'll be able to wire an image-generation tool into the workflow.</li><li>After this you'll be able to format copy and image into a structured ad output.</li></ul></div><div class="decision-forces"><strong>Decision this forces:</strong> Which steps need a real tool call versus a plain model response.</div><div class="keyterms"><button class="term-chip" data-term="tool">Tool<span class="i">i</span></button><button class="term-chip" data-term="tool_calling">Tool calling<span class="i">i</span></button><button class="term-chip" data-term="agent_loop">Agent loop<span class="i">i</span></button><button class="term-chip" data-term="image_generation">Image generation<span class="i">i</span></button></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>Quick recall: what did the copywriter agent return?</h3><div class="callout info">Before reading on, predict from memory: <strong>what is a </strong><button class="term" data-term="structured_output">structured output<span class="i">i</span></button><strong> and why did the copywriter agent produce one? Write your answer before scrolling.</strong></div><p>A <button class="term" data-term="structured_output">structured output<span class="i">i</span></button> is a model response shaped to a fixed <button class="term" data-term="schema">schema<span class="i">i</span></button>. It defines fields like <code>headline</code>, <code>body_copy</code>, and <code>cta</code>. Downstream steps can then read each field reliably.</p><p>That structured copy object is what this module's tools will consume. You have the copy. Next, you act on the world — generate an image and assemble a finished ad.</p></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>What is a tool — and why does an agent need one?</h3><div class="analogy"><span class="an-lab">In plain words</span>A tool is like a vending machine button: the agent decides which button to press and what to put in, but the machine does the actual work and hands back a result.</div><p>A language model alone can only produce text. A <button class="term" data-term="tool">tool<span class="i">i</span></button> is a function the model may call. It hands off a task to real code and gets a result back.</p><p><button class="term" data-term="tool_calling">Tool calling<span class="i">i</span></button> works in three beats. First, the model decides a tool is needed. Second, it outputs a structured call with arguments. Third, the runtime executes the function and feeds the result back into the <button class="term" data-term="agent_loop">agent loop<span class="i">i</span></button>.</p><p>Without tools, your agent is just a chatbot. With tools, it can generate images, write files, or call APIs. It can <strong>act on the world</strong> — not just describe it.</p><ul><li>Tool = a Python function with a clear name, inputs, and return value.</li><li>The model reads the tool's description and decides when to call it.</li><li>The result becomes new context; the loop continues.</li></ul><div class="keyterms"><button class="term-chip" data-term="tool">Tool<span class="i">i</span></button><button class="term-chip" data-term="tool_calling">Tool calling<span class="i">i</span></button><button class="term-chip" data-term="agent_loop">Agent loop<span class="i">i</span></button></div></div><div class="block reveal"><div class="dcall"><div class="use"><div class="lab">Use when</div>The step requires something outside the model's knowledge or text output — generating an image, calling an external API, writing a file, or assembling a structured layout from multiple pieces.</div><div class="avoid"><div class="lab">Avoid when</div>The step is pure reasoning, summarising, or text transformation — anything the model can do correctly from its own weights without side effects. Adding a tool here adds latency and a new failure point for no gain.</div><div class="rot"><div class="lab">Rule of thumb</div>If the output could be wrong without touching the real world, use a plain model response. If the output requires creating or fetching something external, use a tool.</div></div><div class="keyterms"><button class="term-chip" data-term="tool_calling">Tool calling<span class="i">i</span></button><button class="term-chip" data-term="tool">Tool<span class="i">i</span></button><button class="term-chip" data-term="llm">LLM<span class="i">i</span></button></div></div><div class="block reveal"><h3>How tools fit into the ad-generation workflow</h3><div class="viz" data-viz="stepped"><p class="viz-cap">Each step hands its output to the next. Tools appear where the agent must act on the world.</p><div class="viz-body"></div><script type="application/json" class="viz-data">{"steps":[{"label":"Copywriter agent","detail":"Produces structured ad copy (headline, body, CTA) as a schema-validated object — plain model response, no tool needed.","icon":"✍️"},{"label":"Image-generation tool call","detail":"Agent calls generate_image(prompt) — a real tool. The function hits an image API and returns a URL.","icon":"🖼️"},{"label":"Formatter tool call","detail":"Agent calls format_ad(copy, image_url) — another tool. It assembles copy and image into a structured ad layout object.","icon":"📐"},{"label":"Final ad output","detail":"The workflow returns a complete AdLayout with all fields filled. Ready for review or downstream delivery.","icon":"📦"}]}</script></div><div class="keyterms"><button class="term-chip" data-term="tool_calling">Tool calling<span class="i">i</span></button><button class="term-chip" data-term="tool">Tool<span class="i">i</span></button><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button><button class="term-chip" data-term="agentic_workflow">Agentic workflow<span class="i">i</span></button></div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">Scenario: assembling a sports-drink ad</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>Imagine you're a PM overseeing an ad campaign for a new sports drink. The copywriter agent (Module 3) already returned a structured object: headline = "Fuel Your Edge", body = "Zero sugar. Maximum drive.", cta = "Shop now".</p><p>The agent now needs a visual. It calls the <button class="term" data-term="image_generation">image-generation tool<span class="i">i</span></button> with a prompt built from the headline: <code>"athlete sprinting, bold colours, sports drink in hand"</code>.</p><p>The tool returns an image URL. The agent then calls the formatter tool, passing both the copy object and the URL. The formatter returns a single <code>AdLayout</code> object — headline, body, CTA, and image URL all in one place.</p><p>At no point did a human manually stitch these pieces together. The agent decided the order, called each tool, and assembled the result — that's the power of <button class="term" data-term="tool_calling">tool calling<span class="i">i</span></button> inside an <button class="term" data-term="agentic_workflow">agentic workflow<span class="i">i</span></button>.</p></div></div><div class="keyterms"><button class="term-chip" data-term="tool_calling">Tool calling<span class="i">i</span></button><button class="term-chip" data-term="image_generation">Image generation<span class="i">i</span></button><button class="term-chip" data-term="agentic_workflow">Agentic workflow<span class="i">i</span></button><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">LangGraph — defining and wiring image + formatter tools</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code">from langgraph.graph import StateGraph, END
+from langchain_core.tools import tool
+from langchain_openai import ChatOpenAI
+from pydantic import BaseModel
+import requests
+
+# --- Schemas ---
+class AdCopy(BaseModel):
+    headline: str
+    body: str
+    cta: str
+
+class AdLayout(BaseModel):
+    headline: str
+    body: str
+    cta: str
+    image_url: str
+
+# --- Tool 1: image generation ---
+@tool
+def generate_image(prompt: str) -&gt; str:
+    """Call an image API and return the image URL."""
+    # Replace with your real image API call
+    response = requests.post(
+        "https://api.example.com/images",
+        json={"prompt": prompt}
+    )
+    return response.json()["url"]
+
+# --- Tool 2: ad formatter ---
+@tool
+def format_ad(headline: str, body: str, cta: str, image_url: str) -&gt; dict:
+    """Assemble copy and image into a structured ad layout."""
+    return AdLayout(
+        headline=headline,
+        body=body,
+        cta=cta,
+        image_url=image_url
+    ).model_dump()
+
+# --- Agent state ---
+class AdState(BaseModel):
+    copy: AdCopy | None = None
+    image_url: str = ""
+    ad_layout: dict | None = None
+
+# --- LLM with tools bound ---
+llm = ChatOpenAI(model="gpt-4o")
+llm_with_tools = llm.bind_tools([generate_image, format_ad])
+
+# --- Node: generate image ---
+def image_node(state: AdState) -&gt; AdState:
+    prompt = f"{state.copy.headline} — {state.copy.body}"
+    url = generate_image.invoke({"prompt": prompt})  # TODO: what does .invoke() return here?
+    return AdState(**state.model_dump(), image_url=url)
+
+# --- Node: format ad ---
+def format_node(state: AdState) -&gt; AdState:
+    layout = format_ad.invoke({
+        "headline": state.copy.headline,
+        "body": state.copy.body,
+        "cta": state.copy.cta,
+        "image_url": state.image_url
+    })
+    return AdState(**state.model_dump(), ad_layout=layout)
+
+# --- Build graph ---
+graph = StateGraph(AdState)
+graph.add_node("generate_image", image_node)
+graph.add_node("format_ad", format_node)
+graph.set_entry_point("generate_image")
+graph.add_edge("generate_image", "format_ad")
+graph.add_edge("format_ad", END)
+
+app = graph.compile()
+
+# --- Run ---
+initial_state = AdState(
+    copy=AdCopy(
+        headline="Fuel Your Edge",
+        body="Zero sugar. Maximum drive.",
+        cta="Shop now"
+    )
+)
+result = app.invoke(initial_state)
+print(result["ad_layout"])</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>@tool</code></dt><dd>A LangChain decorator that turns a plain Python function into a tool the LLM can call. It reads the function's name, arguments, and docstring to build the tool description.</dd><dt><code>llm.bind_tools([...])</code></dt><dd>Attaches a list of tools to the LLM so it knows they exist and can choose to call them during a run.</dd><dt><code>StateGraph(AdState)</code></dt><dd>Creates a LangGraph workflow whose shared memory is typed as AdState — every node reads from and writes to this object.</dd><dt><code>graph.set_entry_point("generate_image")</code></dt><dd>Tells LangGraph which node runs first when the workflow starts.</dd><dt><code>graph.add_edge("generate_image", "format_ad")</code></dt><dd>Draws a fixed arrow: after generate_image finishes, always go to format_ad next.</dd><dt><code>graph.compile()</code></dt><dd>Locks the graph structure and returns a runnable app object you can call with .invoke().</dd><dt><code>.model_dump()</code></dt><dd>A Pydantic method that converts a typed model object into a plain Python dictionary — useful for returning data from a tool.</dd></dl></div><div class="quiz"><div class="q">Predict: Look at the image_node function. The line marked TODO calls generate_image.invoke(...). What type of value does it return — and what does image_node store it as in the state?</div><button class="reveal">Reveal</button><div class="answer">generate_image is defined to return a string (the image URL). So .invoke() returns a plain string, and image_node stores it in state.image_url — a string field. The next node (format_node) then reads that URL from state.</div></div></div></div><div class="keyterms"><button class="term-chip" data-term="tool_calling">Tool calling<span class="i">i</span></button><button class="term-chip" data-term="tool">Tool<span class="i">i</span></button><button class="term-chip" data-term="langgraph">LangGraph<span class="i">i</span></button><button class="term-chip" data-term="state">State<span class="i">i</span></button><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button><button class="term-chip" data-term="image_generation">Image generation<span class="i">i</span></button></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>How tool use breaks in practice</h3><h3>Common failures</h3><ul><li><strong>Wrong tool chosen: </strong>the model calls the formatter before the image is ready, so <code>image_url</code> is empty. Guard by checking state before the format node runs.</li><li><strong>Bad tool arguments: </strong>the model passes a vague or off-topic image prompt, producing an irrelevant visual. Build the prompt from structured copy fields, not free text.</li><li><strong>API failure swallowed silently: </strong>the image API returns an error but the code stores an empty string. Always validate the URL before passing it downstream.</li></ul><h3>Non-obvious failure</h3><p>The model may <strong>skip a tool entirely</strong> if its description is vague — it reasons the tool isn't needed. Write clear, specific docstrings: say exactly what the tool does and when to use it.</p><div class="callout warn"><strong>Watch for: </strong>a finished <code>AdLayout</code> where <code>image_url</code> is an empty string or a 4xx error URL. That means the image tool ran but failed silently.</div><div class="keyterms"><button class="term-chip" data-term="tool_calling">Tool calling<span class="i">i</span></button><button class="term-chip" data-term="tool">Tool<span class="i">i</span></button><button class="term-chip" data-term="state">State<span class="i">i</span></button><button class="term-chip" data-term="image_generation">Image generation<span class="i">i</span></button></div></div><div class="block reveal"><div class="callout info"><p>When an AI writes your tool nodes, check these specifics before running in production.</p><ul><li>Does the @tool docstring clearly describe when to call it? Vague docs = the model skips it.</li><li>Does image_node validate that the returned URL is non-empty before storing it in state?</li><li>Does format_node guard against a missing or empty image_url field?</li><li>Are tool arguments built from structured copy fields (not raw free text) to avoid off-topic prompts?</li><li>Does the graph edge order match the data dependency — image first, then format?</li><li>Is the API key loaded from an environment variable, not hardcoded in the tool function?</li></ul></div><div class="keyterms"><button class="term-chip" data-term="tool_calling">Tool calling<span class="i">i</span></button><button class="term-chip" data-term="tool">Tool<span class="i">i</span></button><button class="term-chip" data-term="state">State<span class="i">i</span></button><button class="term-chip" data-term="image_generation">Image generation<span class="i">i</span></button><button class="term-chip" data-term="langgraph">LangGraph<span class="i">i</span></button></div></div><button class="next-step" data-deepdive="m_orchestrate">Next · step 5: Orchestration &amp; the validation review loop →</button></div></section><section class="panel module" data-panel="m_orchestrate" data-module="m_orchestrate" id="panel-m_orchestrate"><div class="module-head"><div class="num">5</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 5 of 7</span><span class="m-prev">↳ builds on “Tool use: images, copywriting &amp; formatting”</span></div><h2>Orchestration &amp; the validation review loop</h2><p class="sub">Wire every agent together and add the reviewer that closes the loop.</p><div class="m-time">⏱ ~6 min read</div></div></div><p class="m-what">Build a LangGraph state machine that connects your agents into one workflow, adds a validator node, and loops failed ads back for fixes or human review.</p><div class="analogy"><span class="an-lab">In plain words</span>Like a managing editor who routes work between people and sends it back for fixes until it's good.</div><div class="m-rel"><span class="m-rel-lab">Why this matters for you</span>This is the capstone step — it turns the individual agents you built into a single, resilient pipeline that can catch bad ads before they ship.</div><div class="module-body"><p>Use LangGraph to connect agents as a stateful graph, then add a validator that checks the ad and loops back for fixes when it falls short. This turns separate agents into one resilient workflow.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>After this you'll be able to express the workflow as a LangGraph state machine.</li><li>After this you'll be able to add a validation node that approves or rejects an ad.</li><li>After this you'll be able to route failed output back for a retry with a human checkpoint.</li></ul></div><div class="decision-forces"><strong>Decision this forces:</strong> When to auto-retry versus pause for human review.</div><div class="keyterms"><button class="term-chip" data-term="langgraph">LangGraph<span class="i">i</span></button><button class="term-chip" data-term="orchestration">Orchestration<span class="i">i</span></button><button class="term-chip" data-term="state">State<span class="i">i</span></button><button class="term-chip" data-term="validation">Validation<span class="i">i</span></button><button class="term-chip" data-term="human_in_the_loop">Human in the loop<span class="i">i</span></button><button class="term-chip" data-term="multi_agent">Multi-agent system<span class="i">i</span></button></div><div class="block reveal"><div class="callout info"><p>Quick recall from Module 3 — answer from memory before reading on.</p><p>In the copywriter agent, the model didn't just return text — it called a <button class="term" data-term="tool">tool<span class="i">i</span></button>. What is the job of a tool call in an agent loop, and why can't the model just produce the final answer in one shot?</p><p>Think it through, then keep reading — the answer will surface naturally as we build the validation loop.</p></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>From separate agents to one stateful graph</h3><div class="analogy"><span class="an-lab">In plain words</span>A LangGraph workflow is like a factory assembly line where each station does one job, a conveyor belt moves the product forward, and a quality inspector can send it back to any earlier station if it fails.</div><p>You've built individual agents — a copywriter, an image generator, a formatter. Now you need to connect them. They must run in the right order and share information. That connecting layer is called <button class="term" data-term="orchestration">orchestration<span class="i">i</span></button>.</p><p><button class="term" data-term="langgraph">LangGraph<span class="i">i</span></button> is the tool we use. It expresses your <button class="term" data-term="agentic_workflow">agentic workflow<span class="i">i</span></button> as a <strong>state machine</strong>. That's a diagram of nodes and edges. Each node does one job. Each edge decides where to go next.</p><p>The glue is <button class="term" data-term="state">state<span class="i">i</span></button>: a shared dictionary every node can read and write. The copywriter finishes and writes ad copy into state. The next node picks it up from there — no manual variable passing.</p><p>This transforms your <button class="term" data-term="multi_agent">multi-agent system<span class="i">i</span></button> from a fragile chain of function calls. The result is one resilient, inspectable workflow. It can pause, retry, or branch based on what actually happened.</p><div class="keyterms"><button class="term-chip" data-term="orchestration">Orchestration<span class="i">i</span></button><button class="term-chip" data-term="langgraph">LangGraph<span class="i">i</span></button><button class="term-chip" data-term="state">State<span class="i">i</span></button><button class="term-chip" data-term="agentic_workflow">Agentic workflow<span class="i">i</span></button><button class="term-chip" data-term="multi_agent">Multi-agent system<span class="i">i</span></button></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>The validation review loop: approve, retry, or escalate</h3><div class="analogy"><span class="an-lab">In plain words</span>A validation node is like a copy editor who either stamps 'approved', sends the draft back to the writer with notes, or flags it for the editor-in-chief when it's too broken to fix automatically.</div><p>A <button class="term" data-term="validation"><strong>validation</strong><span class="i">i</span></button> node is a regular LangGraph node. It inspects the current output and returns a verdict: pass or fail.</p><p>If the ad passes, the graph routes forward. If it fails, a <strong>conditional edge</strong> routes it back to the copywriter. The failure reason is attached to state. The copywriter reads it and tries again.</p><p>Auto-retry has limits. After a set number of attempts, the graph routes to a <button class="term" data-term="human_in_the_loop">human-in-the-loop<span class="i">i</span></button> checkpoint. A real person reviews the output before the workflow continues.</p><p>This three-way routing — approve → retry → escalate — is the core pattern of a resilient <button class="term" data-term="agent_loop">agent loop<span class="i">i</span></button>. It keeps quality high without requiring a human to watch every run.</p><div class="keyterms"><button class="term-chip" data-term="validation">Validation<span class="i">i</span></button><button class="term-chip" data-term="human_in_the_loop">Human in the loop<span class="i">i</span></button><button class="term-chip" data-term="agent_loop">Agent loop<span class="i">i</span></button><button class="term-chip" data-term="langgraph">LangGraph<span class="i">i</span></button></div></div><div class="block reveal"><h3>The validation review loop — step by step</h3><div class="viz" data-viz="stepped"><p class="viz-cap">Follow the ad from generation through validation to either approval, retry, or human escalation.</p><div class="viz-body"></div><script type="application/json" class="viz-data">{"steps":[{"label":"Copywriter node runs","detail":"The LLM reads the script from state and writes ad copy. It stores the result back into the shared state dictionary.","icon":"✍️"},{"label":"Validator node inspects","detail":"A second node reads the ad copy and checks it against rules (e.g. brand tone, required CTA, character limits). It writes a verdict — 'pass' or 'fail' — plus a reason into state.","icon":"🔍"},{"label":"Conditional edge routes","detail":"LangGraph reads the verdict from state. 'Pass' routes forward to the formatter. 'Fail' checks the retry counter.","icon":"🔀"},{"label":"Auto-retry (if retries remain)","detail":"The failure reason is already in state. The graph loops back to the copywriter node, which reads the reason and rewrites the ad.","icon":"🔁"},{"label":"Human checkpoint (if retries exhausted)","detail":"LangGraph pauses the graph and surfaces the ad to a human reviewer. The human approves, edits, or rejects before the workflow resumes.","icon":"🧑‍💼"},{"label":"Formatter node finalises","detail":"Once approved, the ad moves to the formatter, which assembles the final deliverable and writes it to state.","icon":"📦"}]}</script></div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">Scenario: validating a product-launch ad for a SaaS brand</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>Your team is launching a project-management SaaS. The agentic workflow generates a 30-second social ad from a product script. Here's how the validation loop plays out.</p><h4>Run 1 — auto-retry</h4><p>The copywriter produces: "Tired of missed deadlines? Try our app." The validator fails it: missing the product name and required CTA label ("Start free trial"). The failure reason is written to state. The graph loops back. The copywriter rewrites: "Tired of missed deadlines? <strong>TaskFlow</strong> keeps every project on track. Start free trial today." The validator passes it.</p><h4>Run 2 — human escalation</h4><p>A different script produces off-brand copy after two retries. The tone is too casual for an enterprise audience. The retry counter hits its limit. LangGraph pauses and routes to the human checkpoint. You review the ad and add a note: "needs formal tone, remove slang." The copywriter reads your note from state and produces the final version.</p><p>The key insight: the graph never loses context. Every failure reason, retry count, and human note lives in <button class="term" data-term="state">state<span class="i">i</span></button>. Each node always knows the full history of what went wrong.</p></div></div><div class="keyterms"><button class="term-chip" data-term="validation">Validation<span class="i">i</span></button><button class="term-chip" data-term="human_in_the_loop">Human in the loop<span class="i">i</span></button><button class="term-chip" data-term="state">State<span class="i">i</span></button><button class="term-chip" data-term="langgraph">LangGraph<span class="i">i</span></button></div></div><div class="block reveal"><div class="dcall"><div class="use"><div class="lab">Use when</div>Auto-retry when the failure is clearly fixable by the model — e.g. a missing CTA, wrong word count, or a formatting rule the LLM can correct given the error message.</div><div class="avoid"><div class="lab">Avoid when</div>Avoid auto-retry when the failure involves brand judgment, legal risk, or ambiguous creative direction — these require a human decision, not another LLM guess. Also avoid unlimited retries: cap at 2–3 to prevent infinite loops.</div><div class="rot"><div class="lab">Rule of thumb</div>If you can write the fix as a rule ('add the product name', 'shorten to 30 words'), auto-retry is safe. If the fix requires taste or policy judgment, escalate to a human.</div></div><div class="keyterms"><button class="term-chip" data-term="human_in_the_loop">Human in the loop<span class="i">i</span></button><button class="term-chip" data-term="validation">Validation<span class="i">i</span></button><button class="term-chip" data-term="agent_loop">Agent loop<span class="i">i</span></button></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">LangGraph — stateful ad-generation graph with validation loop</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code">from typing import TypedDict, Literal
+from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import MemorySaver
+from langchain_openai import ChatOpenAI
+
+# ── 1. Define shared state ──────────────────────────────────────────
+class AdState(TypedDict):
+    script: str          # input: the product script
+    ad_copy: str         # output of the copywriter node
+    verdict: str         # 'pass' or 'fail'
+    failure_reason: str  # why it failed (empty string if passed)
+    retries: int         # how many times we've retried
+
+# ── 2. Nodes ────────────────────────────────────────────────────────
+llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
+
+def copywriter_node(state: AdState) -&gt; AdState:
+    """Generate (or rewrite) ad copy from the script."""
+    history = ""
+    if state["failure_reason"]:
+        history = f"\n\nPrevious attempt failed because: {state['failure_reason']}. Please fix this."
+    prompt = f"Write a punchy 30-word social ad for this product script:{history}\n\n{state['script']}"
+    response = llm.invoke(prompt)
+    return {**state, "ad_copy": response.content, "retries": state["retries"] + 1}
+
+def validator_node(state: AdState) -&gt; AdState:
+    """Check the ad against brand rules; return verdict + reason."""
+    ad = state["ad_copy"]
+    # Simple rule-based check (swap for an LLM judge in production)
+    if "Start free trial" not in ad or len(ad.split()) &gt; 35:
+        return {**state, "verdict": "fail",
+                "failure_reason": "Must include 'Start free trial' and be ≤35 words."}
+    return {**state, "verdict": "pass", "failure_reason": ""}
+
+def human_review_node(state: AdState) -&gt; AdState:
+    """Pause here — LangGraph surfaces this to a human reviewer."""
+    # In production: interrupt_before=["human_review"] in compile()
+    print("[HUMAN REVIEW NEEDED]")
+    print(f"Ad copy: {state['ad_copy']}")
+    print(f"Reason: {state['failure_reason']}")
+    # Human edits state externally via LangGraph's update_state() API
+    return state
+
+# ── 3. Routing logic ────────────────────────────────────────────────
+MAX_RETRIES = 2
+
+def route_after_validation(
+    state: AdState,
+) -&gt; Literal["copywriter", "human_review", "__end__"]:
+    if state["verdict"] == "pass":
+        return "__end__"                        # ✅ approved — move on
+    if state["retries"] &lt; MAX_RETRIES:
+        return "copywriter"                     # 🔁 TODO: what goes here?
+    return "human_review"                       # 🧑 escalate
+
+# ── 4. Build the graph ──────────────────────────────────────────────
+builder = StateGraph(AdState)
+builder.add_node("copywriter", copywriter_node)
+builder.add_node("validator", validator_node)
+builder.add_node("human_review", human_review_node)
+
+builder.set_entry_point("copywriter")
+builder.add_edge("copywriter", "validator")
+builder.add_conditional_edges("validator", route_after_validation)
+
+memory = MemorySaver()  # enables checkpointing / resumability
+graph = builder.compile(checkpointer=memory,
+                        interrupt_before=["human_review"])
+
+# ── 5. Run ──────────────────────────────────────────────────────────
+initial_state: AdState = {
+    "script": "TaskFlow keeps every project on track. Teams love it.",
+    "ad_copy": "",
+    "verdict": "",
+    "failure_reason": "",
+    "retries": 0,
+}
+config = {"configurable": {"thread_id": "ad-run-001"}}
+result = graph.invoke(initial_state, config=config)
+print(result["ad_copy"])</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>TypedDict</code></dt><dd>A Python type hint that defines the exact keys and value types of the state dictionary — LangGraph uses this as the contract every node must follow.</dd><dt><code>StateGraph(AdState)</code></dt><dd>Creates a new LangGraph graph whose shared state has the shape defined by AdState.</dd><dt><code>builder.add_node("copywriter", copywriter_node)</code></dt><dd>Registers a node named 'copywriter' that runs the copywriter_node function when the graph reaches it.</dd><dt><code>builder.add_conditional_edges("validator", route_after_validation)</code></dt><dd>After the validator node runs, calls route_after_validation to decide which node to visit next — this is how branching (approve / retry / escalate) works.</dd><dt><code>Literal["copywriter", "human_review", "__end__"]</code></dt><dd>Tells Python (and LangGraph) that the routing function can only return one of these three exact strings — a safety check against typos.</dd><dt><code>MemorySaver()</code></dt><dd>An in-memory checkpointer that saves the graph's state after every node, so the workflow can be paused and resumed (e.g. at the human review step).</dd><dt><code>interrupt_before=["human_review"]</code></dt><dd>Tells LangGraph to pause the graph BEFORE entering the human_review node, giving a person time to inspect and edit state before the workflow continues.</dd><dt><code>graph.invoke(initial_state, config=config)</code></dt><dd>Starts the graph from the entry point, passing in the initial state and a thread ID that ties checkpoints together for this specific run.</dd></dl></div><p>The graph has three nodes: <strong>copywriter</strong> → <strong>validator</strong> → (branch). The branch is the key part: <code>route_after_validation</code> reads the verdict from state and returns a string that names the next node.</p><p>Notice that <code>copywriter_node</code> checks <code>state['failure_reason']</code> before writing the prompt. On a retry, the failure reason is already in state — the node automatically gets better instructions without any extra wiring.</p><p>The <code>interrupt_before=["human_review"]</code> flag is what makes this a true <button class="term" data-term="human_in_the_loop">human-in-the-loop<span class="i">i</span></button> checkpoint. The graph freezes, a reviewer edits state via <code>graph.update_state()</code>, and then the workflow resumes from exactly where it stopped.</p><div class="quiz"><div class="q">Predict: The `route_after_validation` function reads `state['verdict']`. Before reading the code: what should it return when the verdict is 'fail' AND retries are not yet exhausted? Think about which node the graph should visit next.</div><button class="reveal">Reveal</button><div class="answer">It should return the string `'copywriter'` — routing the graph back to the copywriter node so it can rewrite the ad using the failure reason already stored in state.</div></div></div></div><div class="keyterms"><button class="term-chip" data-term="langgraph">LangGraph<span class="i">i</span></button><button class="term-chip" data-term="state">State<span class="i">i</span></button><button class="term-chip" data-term="validation">Validation<span class="i">i</span></button><button class="term-chip" data-term="human_in_the_loop">Human in the loop<span class="i">i</span></button><button class="term-chip" data-term="structured_output">Structured output<span class="i">i</span></button></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>How the validation loop breaks in practice</h3><h3>Common failure modes</h3><ul><li><strong>Infinite retry loop.</strong> If you forget to cap retries, a stubborn failure will loop forever and burn tokens. Always set a <code>MAX_RETRIES</code> constant and test that the escalation path actually fires.</li><li><strong>Vague failure reasons.</strong> If the validator writes "ad is bad" into state, the copywriter has nothing useful to act on. The failure reason must be specific and actionable — treat it like a code error message.</li><li><strong>State mutation bugs.</strong> Each node should return a new state dict (<code>{**state, "key": new_value}</code>), not mutate the existing one. Mutating state in place can cause subtle bugs where old values bleed into the next node.</li></ul><h3>Non-obvious failure modes</h3><ul><li><strong>Validator drift.</strong> If your validator is itself an LLM, it can give inconsistent verdicts — passing the same ad one run and failing it the next. Add deterministic rule checks (word count, keyword presence) as a first gate before the LLM judge.</li><li><strong>Human checkpoint never resumed.</strong> If a reviewer forgets to call <code>graph.invoke()</code> after editing state, the workflow stays paused indefinitely. Build an alert or timeout into your ops process.</li><li><strong>Retry counter not reset between runs.</strong> If you reuse a thread ID across different ad campaigns, the retry counter from a previous run can carry over. Always initialise state fresh for each new job.</li></ul><div class="keyterms"><button class="term-chip" data-term="validation">Validation<span class="i">i</span></button><button class="term-chip" data-term="human_in_the_loop">Human in the loop<span class="i">i</span></button><button class="term-chip" data-term="agent_loop">Agent loop<span class="i">i</span></button><button class="term-chip" data-term="langgraph">LangGraph<span class="i">i</span></button></div></div><div class="block reveal"><div class="callout warn"><p>Checklist: before trusting AI-generated LangGraph code for this pattern</p><ol><li>Does the routing function cover ALL three outcomes — pass, retry, and escalate? A missing branch silently routes to the wrong node.</li><li>Is <code>interrupt_before</code> actually set in <code>compile()</code>? AI often writes the human_review node but forgets to wire the interrupt — the graph will skip it entirely.</li><li>Does the copywriter node read <code>failure_reason</code> from state and inject it into the prompt? Without this, retries are blind repetitions, not improvements.</li><li>Is there a hard cap on retries? Check that the counter increments correctly and that the escalation branch fires when the cap is hit.</li><li>Does each node return a new state dict rather than mutating the input? Run a quick test with two consecutive failures and inspect state after each node.</li></ol></div><div class="keyterms"><button class="term-chip" data-term="langgraph">LangGraph<span class="i">i</span></button><button class="term-chip" data-term="validation">Validation<span class="i">i</span></button><button class="term-chip" data-term="human_in_the_loop">Human in the loop<span class="i">i</span></button></div></div><button class="next-step" data-deepdive="q-6-mqnx8maw">Next · step 6: explain more about pydantic →</button></div></section><section class="panel module" data-panel="q-6-mqnx8maw" data-module="q-6-mqnx8maw" id="panel-q-6-mqnx8maw"><div class="module-head"><div class="m-ico">❓</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 6 of 7</span><span class="m-prev">↳ builds on “Orchestration &amp; the validation review loop”</span></div><h2>explain more about pydantic</h2><p class="sub">Added from your question</p><div class="m-time">⏱ ~4 min read</div></div></div><div class="module-body"><p>A focused answer to: explain more about pydantic</p><div class="block reveal"><div class="callout info"><div class="callout info">Before reading on, predict from memory: in Module 3, the copywriter agent returned ad copy. What Python concept ensured that copy arrived in a predictable, named structure — not a raw string? Write your answer, then continue.</div><p>The answer is <button class="term" data-term="structured_output">structured output<span class="i">i</span></button> — the LLM was told to return data matching a defined <button class="term" data-term="schema">schema<span class="i">i</span></button>. Pydantic defines and enforces that schema in Python. That is what this module unpacks.</p></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>What Pydantic is and why it exists</h3><div class="analogy"><span class="an-lab">In plain words</span>Pydantic is like a customs officer at an airport: it checks every piece of data against a declared list of rules before it is allowed through — wrong type, wrong shape, or missing field gets rejected on the spot.</div><p>Pydantic is a Python library. It lets you describe the exact shape of your data using a class. It then checks that incoming data matches that shape.</p><p>You define a <button class="term" data-term="schema">schema<span class="i">i</span></button> by writing a class that inherits from <code>BaseModel</code>. Each field has a name and a type — for example, <code>headline: str</code> or <code>word_count: int</code>.</p><p>When data arrives — say, a JSON blob from an <button class="term" data-term="llm">LLM<span class="i">i</span></button> — Pydantic parses it. It raises a clear error if anything is wrong. Bad data cannot silently flow into the next step of your <button class="term" data-term="agentic_workflow">agentic workflow<span class="i">i</span></button>.</p><p>In your ad-generation workflow, Pydantic is the contract between the LLM and the pipeline. It guarantees the copywriter agent always returns a <code>headline</code>, a <code>body_copy</code>, and a <code>call_to_action</code> — never a surprise.</p></div><div class="block reveal"><h3>How strict should your Pydantic model be?</h3><div class="viz" data-viz="slider"><p class="viz-cap">Slide to see how adding more field constraints changes what Pydantic catches — and what it lets through.</p><div class="viz-body"></div><script type="application/json" class="viz-data">{"min":1,"max":5,"unit":"strictness level","stops":[{"at":1,"label":"Bare field (no constraints)","note":"headline: str — accepts any string, including an empty one or a 5,000-word essay. Fast to write; catches only missing fields."},{"at":2,"label":"Optional with default","note":"tagline: str = '' — field is optional; Pydantic fills in the default if the LLM omits it. Good for non-critical fields."},{"at":3,"label":"min/max length","note":"headline: str = Field(min_length=5, max_length=80) — rejects headlines that are too short or too long. Catches common LLM over-generation."},{"at":4,"label":"Enum / Literal type","note":"tone: Literal['formal','casual','urgent'] — only these exact values pass. Prevents the LLM from inventing new tone labels."},{"at":5,"label":"Custom validator","note":"@field_validator('cta') — runs your own Python logic (e.g. must start with a verb). Maximum control; catches subtle semantic errors."}]}</script></div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">Real-world scenario: validating ad copy in a marketing workflow</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>Imagine your copywriter <button class="term" data-term="agent">agent<span class="i">i</span></button> just finished generating an ad. It returns a blob of text from the LLM.</p><p>Without Pydantic, your code must guess. Did the LLM include a headline? Is the call-to-action a string or a list? Did it use <code>slogan</code> instead of <code>tagline</code>? Any mismatch silently breaks the next step.</p><p>With Pydantic, you define an <code>AdCopy</code> model once. Every LLM response is checked against that model. A missing headline raises a clear error — not a silent <code>None</code> that crashes later.</p><p>This is especially powerful in a <button class="term" data-term="validation">validation<span class="i">i</span></button> review loop (Module 5). The <button class="term" data-term="orchestration">orchestration<span class="i">i</span></button> layer can catch a Pydantic error and automatically re-route the task to the copywriter agent.</p></div></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">Defining and using a Pydantic model with LangChain (LangGraph)</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code">from pydantic import BaseModel, Field
+from langchain_openai import ChatOpenAI
+from langgraph.graph import StateGraph, END
+from typing import TypedDict
+
+# 1. Define the schema for ad copy output
+class AdCopy(BaseModel):
+    headline: str = Field(min_length=5, max_length=80, description="Main ad headline")
+    body_copy: str = Field(min_length=20, description="Body text of the ad")
+    call_to_action: str = Field(description="CTA button text, e.g. 'Shop Now'")
+
+# 2. Define the LangGraph state
+class AdState(TypedDict):
+    script_text: str
+    ad_copy: AdCopy | None
+    error: str | None
+
+# 3. Copywriter node — LLM returns structured AdCopy
+def copywriter_node(state: AdState) -&gt; AdState:
+    llm = ChatOpenAI(model="gpt-4o")
+    structured_llm = llm.with_structured_output(AdCopy)  # TODO: what does this line do?
+    result = structured_llm.invoke(
+        f"Write ad copy for this script: {state['script_text']}"
+    )
+    return {**state, "ad_copy": result, "error": None}
+
+# 4. Build the graph
+graph = StateGraph(AdState)
+graph.add_node("copywriter", copywriter_node)
+graph.set_entry_point("copywriter")
+graph.add_edge("copywriter", END)
+app = graph.compile()
+
+# 5. Run it
+output = app.invoke({"script_text": "Introducing AuraGlow — skincare that adapts to you.", "ad_copy": None, "error": None})
+print(output["ad_copy"])</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>BaseModel</code></dt><dd>The Pydantic base class your schema inherits from. Any class that extends it gets automatic validation for free.</dd><dt><code>Field(min_length=5, max_length=80, description=...)</code></dt><dd>Adds extra rules to a field beyond just its type — here, the headline must be between 5 and 80 characters.</dd><dt><code>TypedDict</code></dt><dd>A Python type hint for a plain dictionary. LangGraph uses it to define what keys the shared workflow state can hold.</dd><dt><code>AdCopy | None</code></dt><dd>The field can be either an AdCopy object or None (empty). The | None means it is optional — useful before the copywriter has run.</dd><dt><code>llm.with_structured_output(AdCopy)</code></dt><dd>A LangChain method that wraps the LLM so its output is automatically parsed and validated against the AdCopy Pydantic model.</dd><dt><code>StateGraph(AdState)</code></dt><dd>Creates a LangGraph workflow whose shared state must match the AdState TypedDict shape.</dd><dt><code>graph.compile()</code></dt><dd>Locks the graph definition and returns a runnable app object you can call with .invoke().</dd></dl></div><div class="quiz"><div class="q">Predict: Look at line: `structured_llm = llm.with_structured_output(AdCopy)`. Before reading the answer — what do you think this line tells LangChain to do with the LLM's response?</div><button class="reveal">Reveal</button><div class="answer">It tells LangChain to parse the LLM's raw response and force it into the shape of the AdCopy Pydantic model. If the response is missing a required field or has the wrong type, Pydantic raises a validation error instead of returning bad data.</div></div></div></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>How Pydantic breaks in practice — and what to watch for</h3><div class="analogy"><span class="an-lab">In plain words</span>Pydantic validation errors are like a form that rejects your submission — helpful when the rules are right, but frustrating when the rules themselves are wrong.</div><h3>Common failure modes</h3><ul><li><strong>LLM returns extra fields.</strong> By default Pydantic ignores unknown fields, so a rogue <code>slogan</code> key is silently dropped. You may never know the LLM drifted from your schema.</li><li><strong>Field constraints are too tight.</strong> A <code>max_length=80</code> headline rule will reject a perfectly good 85-character headline. The LLM retries, costs money, and may loop.</li><li><strong>Nested models fail silently.</strong> If a nested Pydantic model has a default value, a missing sub-field fills in silently — the error never surfaces.</li><li><strong>Type coercion surprises.</strong> Pydantic v2 coerces <code>"5"</code> (a string) into <code>5</code> (an int) by default. The LLM can return a number as a string and validation still passes — masking a prompt problem.</li></ul><h3>Non-obvious one to watch</h3><p>The most dangerous failure is a <button class="term" data-term="schema">schema<span class="i">i</span></button> that is technically valid but semantically wrong. Pydantic confirms the <code>call_to_action</code> is a string — but it cannot tell you whether <code>"Click here"</code> is a good CTA for a luxury skincare brand. Structural validation and quality review are two separate jobs.</p><div class="callout warn">Use <code>model_config = ConfigDict(extra='forbid')</code> in your BaseModel to make Pydantic raise an error on unexpected fields instead of silently ignoring them. This catches LLM schema drift early.</div></div><div class="block reveal"><div class="callout good"><p>When an AI writes a Pydantic model for you, check these things before using it:</p><ol><li>Every required field uses <code>...</code> as its default, not <code>None</code> or a string — silent defaults hide missing data.</li><li>Numeric fields have explicit range constraints (<code>ge</code>/<code>le</code>) where business logic demands — e.g. confidence can't exceed 1.0.</li><li>The model inherits from <code>BaseModel</code>, not a plain Python class — without this, no validation runs.</li><li>Run a quick test: pass a bad value and confirm a <code>ValidationError</code> is raised — never assume it works without trying.</li><li>Check field descriptions match your actual LLM prompt — a mismatch means the LLM will hallucinate the value.</li></ol></div></div><button class="next-step" data-deepdive="q-7-mqnxf74p">Next · step 7: explain more about pydantic →</button></div></section><section class="panel module" data-panel="q-7-mqnxf74p" data-module="q-7-mqnxf74p" id="panel-q-7-mqnxf74p"><div class="module-head"><div class="m-ico">❓</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 7 of 7</span><span class="m-prev">↳ builds on “explain more about pydantic”</span></div><h2>explain more about pydantic</h2><p class="sub">Added from your question</p><div class="m-time">⏱ ~6 min read</div></div></div><div class="module-body"><p>A focused answer to: explain more about pydantic</p><div class="block reveal"><div class="callout info"><div class="callout info">Before the new material: from memory, what does <button class="term" data-term="langgraph">LangGraph<span class="i">i</span></button> use to pass information between nodes in a workflow? (Think: what is the shared object every node reads from and writes to?)</div><p>Answer: <button class="term" data-term="state">State<span class="i">i</span></button>. Every LangGraph node receives the current state object and returns an updated version of it. Pydantic — the topic of this module — is exactly what gives that state object its shape and rules.</p></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>What Pydantic is and why it exists</h3><div class="analogy"><span class="an-lab">In plain words</span>Pydantic is like a customs officer at an airport: it checks every piece of data against a strict list of rules before it's allowed through — wrong type, wrong shape, rejected.</div><p>Pydantic is a Python library that lets you define the exact shape and type of your data using plain Python classes. When data arrives — from an LLM, an API, or a user — Pydantic checks it automatically. If something is wrong (a missing field, a number where a string is expected), it raises a clear error immediately.</p><p>The core building block is a <code>BaseModel</code>: a class you write once that describes your data's fields and their types. Pydantic then enforces those rules every time you create an instance of that class.</p><p>In an <button class="term" data-term="agentic_workflow">agentic workflow<span class="i">i</span></button>, agents pass data between each other constantly. Without Pydantic, a typo or a missing field can silently break a downstream step — and you won't know until something crashes much later.</p><ul><li>Defines data shape with typed fields (e.g. <code>headline: str</code>, <code>score: int</code>)</li><li>Validates data automatically on creation — no manual if-checks needed</li><li>Produces clear error messages that tell you exactly what went wrong and where</li><li>Converts compatible types automatically (e.g. the string <code>"42"</code> becomes the integer <code>42</code>)</li></ul></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>Pydantic models as schemas for structured output</h3><div class="analogy"><span class="an-lab">In plain words</span>A Pydantic model is like a form template: it defines every field that must be filled in, and the LLM's job is to fill in the blanks correctly.</div><p>An <button class="term" data-term="llm">LLM<span class="i">i</span></button> naturally returns free text. But your workflow needs reliable, machine-readable data — not a paragraph. A Pydantic model acts as a <button class="term" data-term="schema">schema<span class="i">i</span></button>: it tells the LLM exactly what fields to return and in what format.</p><p>Libraries like <button class="term" data-term="instructor">Instructor<span class="i">i</span></button> and LangChain's <code>.with_structured_output()</code> use your Pydantic model to constrain the LLM's response. The result is a validated Python object, not a raw string you have to parse yourself.</p><p>This is the bridge between the LLM world and your code. Once the output is a Pydantic object, every downstream agent or node can access fields like <code>result.headline</code> with confidence — no guessing, no string splitting.</p><div class="callout info">Predict first: if an LLM returns <code>{ "headline": "Buy Now", "score": "nine" }</code> and your model declares <code>score: int</code>, what do you think Pydantic will do? (Guess before reading on.)</div><p>Answer: Pydantic will raise a <code>ValidationError</code> because <code>"nine"</code> cannot be converted to an integer. This is exactly the safety net you want — catch the bad data at the boundary, not deep inside your workflow.</p></div><div class="block reveal"><h3>How strict should your Pydantic model be?</h3><div class="viz" data-viz="slider"><p class="viz-cap">Slide to see the tradeoff between flexibility and safety in your Pydantic model design.</p><div class="viz-body"></div><script type="application/json" class="viz-data">{"min":1,"max":5,"unit":"strictness level","stops":[{"at":1,"label":"No validation","note":"All fields are Optional[str] or Any. The model always passes. But bad data flows silently into your workflow and breaks things later — hard to debug."},{"at":2,"label":"Loose types","note":"Fields have types but no constraints. A score could be -999 or 10000. Catches obvious errors but misses bad values that are technically valid types."},{"at":3,"label":"Typed + required fields","note":"Every field has a type and is required. The LLM must return all fields. This is the sweet spot for most agentic workflows — clear contracts, not over-engineered."},{"at":4,"label":"Typed + constrained","note":"Add Field(ge=0, le=100) for scores, min_length for strings. Catches bad values, not just bad types. Great for ad copy quality scores or character limits."},{"at":5,"label":"Validators + nested models","note":"Custom @field_validator logic and nested Pydantic models. Maximum safety. Use when the data shape is complex or the stakes of bad data are high."}]}</script></div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">Real-world scenario: validating ad copy output in a marketing workflow</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>Imagine your agentic workflow generates Facebook ad copy from a product script. The copywriter agent returns a headline, body text, and a quality score. Without a contract, the LLM might return the score as a word ("high") or skip the body entirely.</p><p>You define a Pydantic model called <code>AdCopy</code> with three fields: <code>headline: str</code>, <code>body: str</code>, and <code>quality_score: int</code>.</p><p>When the LLM responds, LangChain's <button class="term" data-term="structured_output">structured output<span class="i">i</span></button> feature uses your <code>AdCopy</code> model to parse and validate the response. If the score is missing, you get an error immediately — before the validation agent ever sees bad data.</p><p>The validation agent downstream can then safely access <code>ad.quality_score</code> and <code>ad.headline</code> as real Python values. No parsing, no guessing — just clean, typed data flowing through your workflow.</p></div></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">LangChain + Pydantic: structured ad copy output</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code">from pydantic import BaseModel, Field
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+# 1. Define the schema — the "form template" the LLM must fill in
+class AdCopy(BaseModel):
+    headline: str = Field(description="Short, punchy ad headline")
+    body: str = Field(description="2-3 sentence ad body text")
+    quality_score: int = Field(description="Quality score from 0 to 100")
+
+# 2. Create the LLM and bind it to your schema
+llm = ChatOpenAI(model="gpt-4o")
+structured_llm = llm.with_structured_output(AdCopy)
+
+# 3. Write the prompt
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a marketing copywriter. Generate ad copy from the script."),
+    ("human", "{script}")
+])
+
+# 4. Build the chain and invoke it
+chain = prompt | structured_llm
+
+script = "New running shoes with carbon-fibre soles. Lightweight. For serious runners."
+result = chain.invoke({"script": script})
+
+# result is a validated AdCopy object — not a raw string
+print(result.headline)       # e.g. "Run Faster. Feel Nothing."
+print(result.quality_score)  # e.g. 87  (always an int, never "high")
+
+# TODO: What happens if you change quality_score: int to quality_score: str?
+# Predict: will the chain break, or will it still work?</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>BaseModel</code></dt><dd>The Pydantic base class — inherit from it to make your class a validated data model.</dd><dt><code>Field(description=...)</code></dt><dd>Adds metadata to a field. The description is passed to the LLM as a hint about what to fill in.</dd><dt><code>llm.with_structured_output(AdCopy)</code></dt><dd>Tells LangChain to constrain the LLM's response to match the AdCopy schema and return a validated AdCopy object.</dd><dt><code>prompt | structured_llm</code></dt><dd>The pipe operator chains the prompt and the LLM together into a single runnable — LangChain's LCEL (LangChain Expression Language) syntax.</dd><dt><code>chain.invoke({"script": script})</code></dt><dd>Runs the chain with the given input. Returns a validated AdCopy instance, not a raw string.</dd></dl></div><div class="quiz"><div class="q">Predict: If you change `quality_score: int` to `quality_score: str`, what happens when the LLM returns `87`?</div><button class="reveal">Reveal</button><div class="answer">It still works — Pydantic coerces the integer 87 into the string "87" automatically. But now your downstream code can't do math on it (e.g. `if result.quality_score &gt; 70` will fail). This is a silent type bug — the model accepts it, but the logic breaks later.</div></div></div></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>How Pydantic breaks in practice — what to watch for</h3><h3>Common failure modes</h3><ul><li>The LLM ignores the schema and returns plain text. This happens when the model doesn't support tool/function calling. Always check your model supports structured output before relying on it.</li><li>A field is optional in the model but required by your logic. If you declare <code>quality_score: Optional[int] = None</code>, Pydantic won't complain when it's missing — but your downstream code will crash.</li><li>Nested data breaks silently. If your model has a nested Pydantic model (e.g. <code>metadata: AdMeta</code>) and the LLM returns a flat dict, validation fails with a confusing error.</li><li>Type coercion hides bugs. Pydantic converts <code>"87"</code> to <code>87</code> silently. This is helpful, but it can mask an LLM that's returning the wrong format.</li></ul><h3>Non-obvious failure: the schema is too strict for the LLM</h3><p>If your model has many required fields with tight constraints, the LLM may fail to satisfy them all in one shot. The result is a <code>ValidationError</code> loop — the LLM retries, fails again, and your workflow stalls. Start with fewer required fields and add constraints incrementally.</p><div class="callout warn">Watch for: a <code>ValidationError</code> that repeats on every retry usually means the schema is asking for something the LLM can't reliably produce — not a bug in your code.</div></div><div class="block reveal"><div class="callout good"><p>When you ask an AI assistant to generate a Pydantic model for your workflow, check these things before using it:</p><ol><li>Every field has an explicit type. Watch for <code>Any</code> — it disables validation entirely.</li><li>Required fields match what your LLM can actually return. Test with a real LLM call; don't just trust the model definition looks right.</li><li>Optional fields are intentional. If a field is <code>Optional</code>, confirm your downstream code handles the <code>None</code> case.</li><li>Field descriptions are clear and specific. Vague descriptions produce vague LLM outputs — the description is part of your <button class="term" data-term="prompt">prompt<span class="i">i</span></button>.</li><li>Run a quick smoke test: pass a known-bad input and confirm Pydantic raises an error. If it doesn't, the model is too permissive.</li></ol></div></div><button class="next-step" data-goto="_synth">Finish → Putting it together</button></div></section><section class="panel" data-panel="_synth" id="panel-_synth"><div class="eyebrow">Putting it together</div><h2>Synthesis</h2><p>Without looking back, try to name the five stages your script passes through, from blueprint to validated ad. Which stage decides what fields get extracted, and which one sends a bad ad back for a fix?</p><h3>Suggested build order</h3><div class="walk"><div class="step"><div class="n"></div><div><strong>Design the agent roles and the path a script travels (architecture blueprint).</strong></div></div><div class="step"><div class="n"></div><div><strong>Ingest and parse the script into structured fields with a schema.</strong></div></div><div class="step"><div class="n"></div><div><strong>Generate ad copy with a well-designed copywriter prompt and structured output.</strong></div></div><div class="step"><div class="n"></div><div><strong>Add tools for image generation and formatting to assemble the ad asset.</strong></div></div><div class="step"><div class="n"></div><div><strong>Orchestrate the agents in LangGraph and add a validation review loop.</strong></div></div></div><h3>Decision checklist</h3><ul class="checklist"><li>Decide which jobs deserve their own agent.</li><li>Decide which script fields to extract and how strictly to validate them.</li><li>Decide how much creative freedom versus structure the copy agent gets.</li><li>Decide which steps need a real tool call versus a plain model response.</li><li>Decide when to auto-retry versus pause for human review.</li></ul><div class="capstone"><strong>Try it:</strong> Apply what you learned to an agentic workflow that generates marketing ads from scripts.</div></section><section class="panel" data-panel="_sources" id="panel-_sources"><div class="eyebrow">Provenance</div><h2>Sources</h2><div class="cites"><ol><li class=""><a href="https://github.com/pydantic/pydantic-ai">pydantic-ai</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class=""><a href="https://github.com/567-labs/instructor">instructor</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class="">00_agentic_systems_overview.md <span class="muted">· knowledge base</span></li><li class=""><a href="https://github.com/Eigenwise/atomic-agents">atomic-agents</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class=""><a href="https://github.com/dbos-inc/dbos-transact-py">dbos-transact-py</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class=""><a href="https://github.com/temporalio/sdk-python">sdk-python</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class=""><a href="https://github.com/langflow-ai/langflow">langflow</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class=""><a href="https://github.com/567-labs/instructor">instructor</a> <span class="muted">· knowledge base · 2026-06-18</span></li></ol></div></section></div>
+  </div>
+<div id="popover" role="dialog" aria-label="Definition"></div>
+<script type="application/json" id="glossary-data">{"agentic_workflow":{"id":"agentic_workflow","label":"Agentic workflow","laymanDefinition":"A system where one or more language models run in a loop, take actions, and continue step by step until a goal is done."},"agent":{"id":"agent","label":"Agent","laymanDefinition":"A language model wired into a loop so it can decide and take actions, not just answer once."},"agent_loop":{"id":"agent_loop","label":"Agent loop","laymanDefinition":"The repeating cycle of: read the goal, decide an action, call a tool, observe the result, and continue."},"multi_agent":{"id":"multi_agent","label":"Multi-agent system","laymanDefinition":"A workflow split across several specialized agents that each own one job and hand work to the next."},"orchestration":{"id":"orchestration","label":"Orchestration","laymanDefinition":"The control logic that decides which agent or step runs next and how work flows between them."},"state":{"id":"state","label":"State","laymanDefinition":"The shared memory that holds what's been done so far as work passes between steps."},"structured_output":{"id":"structured_output","label":"Structured output","laymanDefinition":"Model output forced into a fixed shape like JSON fields, instead of loose freeform text."},"schema":{"id":"schema","label":"Schema","laymanDefinition":"A definition of the exact fields and types a piece of data must have."},"parsing":{"id":"parsing","label":"Parsing","laymanDefinition":"Reading raw text and pulling out the specific pieces of information you need from it."},"instructor":{"id":"instructor","label":"Instructor","laymanDefinition":"A Python library that makes an LLM return validated, typed output matching a schema you define."},"tool_calling":{"id":"tool_calling","label":"Tool calling","laymanDefinition":"When a model invokes an external function, such as a search or image generator, and uses the result."},"tool":{"id":"tool","label":"Tool","laymanDefinition":"An external function an agent can call to do something it can't do by talking alone."},"llm":{"id":"llm","label":"LLM","acronymExpansion":"Large Language Model","laymanDefinition":"A large language model that predicts and generates text, used here to write and reason."},"prompt":{"id":"prompt","label":"Prompt","laymanDefinition":"The instructions and context you give a model to shape what it produces."},"image_generation":{"id":"image_generation","label":"Image generation","laymanDefinition":"Using an AI model to create a picture from a text description."},"langgraph":{"id":"langgraph","label":"LangGraph","laymanDefinition":"A Python framework for building agents as a graph of nodes and edges with shared, resumable state."},"validation":{"id":"validation","label":"Validation","laymanDefinition":"Checking that output meets the rules you set before it's accepted as finished."},"human_in_the_loop":{"id":"human_in_the_loop","label":"Human in the loop","laymanDefinition":"A pause point where a person reviews or approves the agent's work before it continues."}}</script>
+<script type="application/json" id="lesson-config">{"stubModuleIds":[]}</script>
+<script>
+(function(){
+  "use strict";
+  var glossary = {};
+  try { glossary = JSON.parse(document.getElementById("glossary-data").textContent || "{}"); } catch(e){}
+  var depth = document.body.getAttribute("data-depth") || "conceptual_technical";
+  var showTech = depth.indexOf("technical") !== -1;
+  var pop = document.getElementById("popover");
+
+  function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+  function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+  // ---- theme ----
+  function applyTheme(t){ document.body.setAttribute("data-theme", t); document.documentElement.setAttribute("data-theme", t); var b=document.getElementById("theme"); if(b) b.textContent = t==="dark" ? "☀ Light" : "☾ Dark"; }
+  applyTheme(lsGet("als-theme") || "light");
+
+  // ---- progress (which building blocks have been opened) ----
+  var moduleIds = Array.prototype.map.call(document.querySelectorAll(".navitem:not(.nav-special)"), function(b){ return b.getAttribute("data-goto"); });
+  var total = moduleIds.length || 1;
+  var visited = {};
+  function markVisited(id){ if(moduleIds.indexOf(id) !== -1 && !visited[id]){ visited[id]=1; setProgress(); } }
+  function setProgress(){ var n=Object.keys(visited).length; var bar=document.querySelector(".progress > i"); if(bar) bar.style.width = Math.round(n/total*100)+"%"; }
+
+  // ---- HORIZONTAL reading mode (paged deck): nav + modal + per-page Next ----
+  var HORIZ = document.body.getAttribute("data-reading")==="horizontal";
+  var hTrack = document.querySelector(".h-track");
+  var hPages = HORIZ ? Array.prototype.slice.call(document.querySelectorAll(".h-page")) : [];
+  var hOrder = hPages.map(function(p){ return p.getAttribute("data-panel"); });
+  var hIndex = 0;
+  var hModal = document.getElementById("hmodal");
+  function hRender(){
+    if(hTrack) hTrack.style.transform = "translateX(-"+(hIndex*100)+"%)";
+    hPages.forEach(function(p,i){ p.classList.toggle("active", i===hIndex); });
+    var cur = hOrder[hIndex];
+    document.querySelectorAll(".navitem").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-goto")===cur); });
+    markVisited(cur);
+    closePopover();
+    var body = hPages[hIndex] && hPages[hIndex].querySelector(".h-page-body"); if(body) body.scrollTop=0;
+  }
+  function hGoto(id){
+    var i = hOrder.indexOf(id);
+    if(i<0) return false;
+    hIndex=i; hRender();
+    if(isStub(id)) prioritize(id);
+    return true;
+  }
+  function hNext(){ if(hIndex < hPages.length-1){ hIndex++; hRender(); var id=hOrder[hIndex]; if(isStub(id)) prioritize(id); } }
+  // Modal: heavy/expandable blocks (examples, code, "go deeper") open here instead of inline.
+  function openModal(title, html){
+    if(!hModal) return;
+    var tt=hModal.querySelector(".hmodal-title"), bd=hModal.querySelector(".hmodal-body");
+    if(tt) tt.textContent=title||"";
+    if(bd){ bd.innerHTML=html||""; }
+    hModal.hidden=false;
+    if(bd){ hydrate(bd); bd.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); }); }
+  }
+  function closeModal(){ if(hModal && !hModal.hidden){ hModal.hidden=true; var bd=hModal.querySelector(".hmodal-body"); if(bd) bd.innerHTML=""; } }
+  function openCollapseModal(col){ if(!col) return; var lab=col.querySelector(".col-lab"), body=col.querySelector(".collapse-body"); openModal(lab?lab.textContent:"Details", body?body.innerHTML:""); }
+  function openDeeperModal(btn){ var d=btn && (btn.nextElementSibling && btn.nextElementSibling.classList.contains("deeper") ? btn.nextElementSibling : (btn.parentElement && btn.parentElement.querySelector(".deeper"))); openModal("Going deeper", d?d.innerHTML:""); }
+
+  // ---- overview <-> workbench ----
+  function enterWorkbench(id){
+    var ov=document.getElementById("overview"), wb=document.getElementById("workbench"), back=document.getElementById("to-overview");
+    if(ov) ov.hidden=true; if(wb) wb.hidden=false; if(back) back.hidden=false;
+    activatePanel(id);
+    window.scrollTo(0,0);
+  }
+  function showOverview(){
+    var ov=document.getElementById("overview"), wb=document.getElementById("workbench"), back=document.getElementById("to-overview");
+    if(ov) ov.hidden=false; if(wb) wb.hidden=true; if(back) back.hidden=true;
+    closePopover(); window.scrollTo(0,0);
+  }
+  function activatePanel(id){
+    var found=false;
+    document.querySelectorAll(".panel").forEach(function(p){ var on = p.getAttribute("data-panel")===id; p.classList.toggle("active", on); if(on) found=true; });
+    document.querySelectorAll(".navitem").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-goto")===id); });
+    if(found) markVisited(id);
+    var main=document.getElementById("blockmain"); if(main) main.scrollTop=0;
+  }
+
+  // ---- term popover ----
+  function openPopover(btn){
+    var t = glossary[btn.getAttribute("data-term")];
+    if(!t){ return; }
+    var tech = (showTech && t.technicalNote) ? '<div class="ptech">'+esc(t.technicalNote)+'</div>' : '';
+    var acr = t.acronymExpansion ? '<div class="px">'+esc(t.acronymExpansion)+'</div>' : '';
+    var src = (t.sources && t.sources.length) ? '<div class="psrc">Source: '+esc(t.sources.join(", "))+'</div>' : '';
+    pop.innerHTML = '<div class="pt">'+esc(t.label)+'</div>'+acr+'<div class="pn">'+esc(t.laymanDefinition)+'</div>'+tech+src;
+    pop.classList.add("on");
+    var r = btn.getBoundingClientRect();
+    var top = r.bottom + 8, left = Math.min(r.left, window.innerWidth - 320);
+    if(top + pop.offsetHeight > window.innerHeight) top = r.top - pop.offsetHeight - 8;
+    pop.style.top = Math.max(8, top) + "px";
+    pop.style.left = Math.max(8, left) + "px";
+  }
+  function closePopover(){ pop.classList.remove("on"); pop._for=null; }
+
+  function copyCode(btn){
+    var pre = btn.parentElement.querySelector("pre.code"); if(!pre) return;
+    var txt = pre.innerText;
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){flash(btn);}); }
+    else { var ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); flash(btn); }
+  }
+  function flash(btn){ var o=btn.textContent; btn.textContent="Copied"; setTimeout(function(){btn.textContent=o;},1200); }
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  // ---- one delegated click handler ----
+  document.addEventListener("click", function(ev){
+    // Horizontal modal: a backdrop or close-button click dismisses it (handle before .closest).
+    if(HORIZ){
+      if(ev.target.closest(".hmodal-x")){ closeModal(); return; }
+      if(ev.target.id==="hmodal"){ closeModal(); return; }
+    }
+    var t = ev.target.closest("[data-deepdive],[data-goto],#to-overview,.term,.term-chip,.deeper-toggle,.quiz .opt,.quiz .reveal,#theme,.copy,.toggle,.building,.collapse-h,.kc-opt,.kc-submit,.h-next");
+    if(!t){ if(!ev.target.closest("#popover")) closePopover(); return; }
+
+    if(t.matches(".h-next")){ hNext(); return; }
+    if(t.matches(".collapse-h")){
+      if(HORIZ){ openCollapseModal(t.closest(".collapse")); return; }
+      var col=t.closest(".collapse"); var open=col.classList.toggle("open"); t.setAttribute("aria-expanded", String(open)); return;
+    }
+    if(t.matches(".kc-opt")){ kcAnswerMcq(t); return; }
+    if(t.matches(".kc-submit")){ kcAnswerFree(t); return; }
+
+    if(t.matches("[data-deepdive],[data-goto]")){ ev.preventDefault(); var gid=t.getAttribute("data-deepdive")||t.getAttribute("data-goto"); if(HORIZ){ hGoto(gid); } else { enterWorkbench(gid); if(isStub(gid)) prioritize(gid); } return; }
+    if(t.matches(".building")){ var bp_=t.closest(".panel[data-module]"); if(bp_){ var mid=bp_.getAttribute("data-module"); t.classList.remove("failed"); t.innerHTML='<span class="bspin"></span> Building this section…'; prioritize(mid); } return; }
+    if(t.id==="to-overview"){ showOverview(); return; }
+    if(t.matches(".term,.term-chip")){ ev.preventDefault(); ev.stopPropagation(); if(pop.classList.contains("on") && pop._for===t){ closePopover(); } else { openPopover(t); pop._for=t; } return; }
+    if(t.matches(".deeper-toggle")){
+      if(HORIZ){ openDeeperModal(t); return; }
+      var mod=t.closest(".panel"); mod.classList.toggle("show-deeper"); t.textContent = mod.classList.contains("show-deeper") ? "Hide advanced detail" : t.getAttribute("data-label"); return;
+    }
+    if(t.matches(".quiz .reveal")){ t.closest(".quiz").classList.add("revealed"); return; }
+    if(t.matches(".quiz .opt")){
+      var correct = t.getAttribute("data-correct")==="1";
+      t.classList.add(correct?"correct":"wrong");
+      if(!correct){ var c=t.closest(".quiz").querySelector('.opt[data-correct="1"]'); if(c) c.classList.add("correct"); }
+      t.closest(".quiz").classList.add("revealed"); return;
+    }
+    if(t.id==="theme"){ var cur=document.body.getAttribute("data-theme")==="dark"?"light":"dark"; applyTheme(cur); lsSet("als-theme",cur); return; }
+    if(t.matches(".copy")){ copyCode(t); return; }
+    // ---- in-lesson content toggles: Concept / Functional / Code / Explain-syntax ----
+    if(t.classList.contains("toggle")){
+      ev.preventDefault();
+      var pressed = t.getAttribute("aria-pressed")==="true";
+      if(t.id==="t-concept"){ document.body.classList.toggle("hide-concept", pressed); t.setAttribute("aria-pressed", String(!pressed)); }
+      else if(t.id==="t-funcex"){ document.body.classList.toggle("hide-funcex", pressed); t.setAttribute("aria-pressed", String(!pressed)); }
+      else if(t.id==="t-code"){ document.body.classList.toggle("hide-code", pressed); t.setAttribute("aria-pressed", String(!pressed)); }
+      else if(t.id==="t-syntax"){ document.body.classList.toggle("show-syntax", !pressed); t.setAttribute("aria-pressed", String(!pressed)); }
+      return;
+    }
+  });
+
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ if(HORIZ && hModal && !hModal.hidden){ closeModal(); } else { closePopover(); } } });
+  window.addEventListener("resize", closePopover);
+
+  // ---- knowledge check (grades via /api/check; MCQ vs the stored Blueprint, freeText by LLM) ----
+  function kcBumpScore(kc){
+    var items=kc.querySelectorAll(".kc-item"), got=0;
+    items.forEach(function(it){ if(it.getAttribute("data-result")==="ok") got++; });
+    var sc=kc.querySelector(".kc-score"); if(sc){ sc.hidden=false; var b=sc.querySelector("b"); if(b) b.textContent=String(got); }
+  }
+  function kcShow(item, ok, msg){
+    var fb=item.querySelector(".kc-feedback"); if(fb){ fb.hidden=false; fb.className="kc-feedback "+(ok?"ok":"no"); fb.textContent=msg||(ok?"Correct ✓":"Not quite"); }
+    var ex=item.querySelector(".kc-explain"); if(ex) ex.hidden=false;
+    item.setAttribute("data-result", ok?"ok":"no");
+    kcBumpScore(item.closest(".kc"));
+  }
+  function kcCheck(payload){
+    return fetch("/api/check",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).then(function(r){ return r.json(); });
+  }
+  function kcAnswerMcq(btn){
+    var item=btn.closest(".kc-item"); if(item.getAttribute("data-done")) return;
+    var kc=btn.closest(".kc"), bid=item.getAttribute("data-block")||kc.getAttribute("data-block"), qid=btn.getAttribute("data-qid"), choice=+btn.getAttribute("data-choice");
+    item.setAttribute("data-done","1");
+    item.querySelectorAll(".kc-opt").forEach(function(o){ o.setAttribute("disabled","1"); });
+    if(!ARTIFACT_ID){ kcShow(item,true,"Saved (grading needs the live app)."); btn.classList.add("correct"); return; }
+    kcCheck({artifactId:ARTIFACT_ID,blockId:bid,questionId:qid,choiceIndex:choice}).then(function(res){
+      if(res.correct){ btn.classList.add("correct"); }
+      else{ btn.classList.add("wrong"); if(typeof res.correctIndex==="number"){ var c=item.querySelectorAll(".kc-opt")[res.correctIndex]; if(c) c.classList.add("correct"); } }
+      kcShow(item,!!res.correct);
+    }).catch(function(){ item.removeAttribute("data-done"); item.querySelectorAll(".kc-opt").forEach(function(o){ o.removeAttribute("disabled"); }); });
+  }
+  function kcAnswerFree(btn){
+    var item=btn.closest(".kc-item"), inp=item.querySelector(".kc-input"); if(!inp||!inp.value.trim()) return;
+    var kc=btn.closest(".kc"), bid=item.getAttribute("data-block")||kc.getAttribute("data-block"), qid=btn.getAttribute("data-qid");
+    var fb=item.querySelector(".kc-feedback"); if(fb){ fb.hidden=false; fb.className="kc-feedback grading"; fb.textContent="Grading your answer…"; }
+    btn.setAttribute("disabled","1");
+    if(!ARTIFACT_ID){ kcShow(item,true,"Saved (grading needs the live app)."); return; }
+    kcCheck({artifactId:ARTIFACT_ID,blockId:bid,questionId:qid,text:inp.value.trim()}).then(function(res){
+      kcShow(item,!!res.correct,res.feedback||(res.correct?"Correct ✓":"Not quite"));
+    }).catch(function(){ btn.removeAttribute("disabled"); if(fb){ fb.className="kc-feedback no"; fb.textContent="Couldn't grade — try again."; } });
+  }
+
+  // ---- scroll-reveal: blocks ease in as they enter the viewport ----
+  var revObs=null;
+  if("IntersectionObserver" in window){
+    revObs=new IntersectionObserver(function(entries){ entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); revObs.unobserve(e.target); } }); }, {rootMargin:"0px 0px -8% 0px"});
+  }
+  function observeReveals(root){
+    var els=(root||document).querySelectorAll(".reveal:not(.in)");
+    if(!revObs){ els.forEach(function(el){ el.classList.add("in"); }); return; }
+    els.forEach(function(el){ revObs.observe(el); });
+  }
+
+  // ---- hydrate interactive visual blocks (data-only → live SVG/controls) ----
+  function vEsc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function buildScatter(body, data){
+    var pts=(data.points||[]), qs=(data.queries||[]);
+    if(pts.length<1||qs.length<1){ return; }
+    var W=460,H=300,PAD=34;
+    function sx(x){ return PAD + (Math.max(0,Math.min(100,x))/100)*(W-2*PAD); }
+    function sy(y){ return PAD + (Math.max(0,Math.min(100,y))/100)*(H-2*PAD); }
+    body.innerHTML = '<div class="viz-controls">'+qs.map(function(q,i){return '<button class="viz-qbtn'+(i===0?' sel':'')+'" data-qi="'+i+'">'+vEsc(q.label)+'</button>';}).join("")+'</div>'+
+      '<div class="viz-scatter-grid"><svg class="scatter" viewBox="0 0 '+W+' '+H+'"></svg><div><div class="viz-near-lab">Nearest matches</div><ol class="viz-near"></ol></div></div>';
+    var svg=body.querySelector("svg.scatter"), near=body.querySelector(".viz-near"), maxD=Math.hypot(100,100);
+    function draw(qi){
+      var q=qs[qi];
+      var ranked=pts.map(function(p){return {p:p,d:Math.hypot((p.x||0)-q.x,(p.y||0)-q.y)};}).sort(function(a,b){return a.d-b.d;});
+      var nearSet={}; ranked.slice(0,3).forEach(function(r){ nearSet[r.p.label]=1; });
+      var h="";
+      ranked.slice(0,3).forEach(function(r){ h+='<line x1="'+sx(q.x)+'" y1="'+sy(q.y)+'" x2="'+sx(r.p.x)+'" y2="'+sy(r.p.y)+'" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.5"/>'; });
+      pts.forEach(function(p){ var on=nearSet[p.label]; h+='<circle cx="'+sx(p.x)+'" cy="'+sy(p.y)+'" r="'+(on?7:5)+'" fill="'+(on?'var(--accent)':'var(--border-strong)')+'" stroke="var(--surface)" stroke-width="2"/><text x="'+(sx(p.x)+9)+'" y="'+(sy(p.y)+4)+'" font-size="10.5" fill="'+(on?'var(--accent-2)':'var(--muted)')+'" font-weight="'+(on?700:500)+'">'+vEsc(p.label)+'</text>'; });
+      h+='<text x="'+sx(q.x)+'" y="'+(sy(q.y)+6)+'" font-size="20" text-anchor="middle" fill="var(--accent)">★</text>';
+      svg.innerHTML=h;
+      near.innerHTML=ranked.slice(0,3).map(function(r){ return '<li>'+vEsc(r.p.label)+' <span style="color:var(--faint)">· '+Math.max(0,1-r.d/maxD).toFixed(2)+'</span></li>'; }).join("");
+    }
+    body.querySelector(".viz-controls").addEventListener("click", function(e){ var b=e.target.closest(".viz-qbtn"); if(!b)return; body.querySelectorAll(".viz-qbtn").forEach(function(x){x.classList.remove("sel");}); b.classList.add("sel"); draw(+b.getAttribute("data-qi")); });
+    draw(0);
+  }
+  function buildSlider(body, data){
+    var min=+data.min, max=+data.max, unit=data.unit||"", stops=(data.stops||[]).slice().sort(function(a,b){return a.at-b.at;});
+    if(stops.length<2||!(max>min)){ return; }
+    var step=(max-min)/100; if(!(step>0)) step=1;
+    body.innerHTML='<div class="viz-slider-row"><span class="viz-readout">'+vEsc(String(min))+'</span><input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+stops[0].at+'"><span class="viz-readout">'+vEsc(String(max))+'</span></div>'+
+      '<div class="viz-readout" style="margin-top:8px">Value: <b class="vs-val"></b> '+vEsc(unit)+'</div>'+
+      '<div class="viz-stop-note"><span class="vsn-label vs-lab"></span><span class="vs-note"></span></div>';
+    var range=body.querySelector("input"), val=body.querySelector(".vs-val"), lab=body.querySelector(".vs-lab"), note=body.querySelector(".vs-note");
+    function nearest(v){ var best=stops[0],bd=Math.abs(v-stops[0].at); for(var i=1;i<stops.length;i++){var d=Math.abs(v-stops[i].at); if(d<bd){bd=d;best=stops[i];}} return best; }
+    function upd(){ var v=+range.value; val.textContent=Math.round(v*100)/100; var s=nearest(v); lab.textContent=s.label+" — "; note.textContent=s.note; }
+    range.addEventListener("input", upd); upd();
+  }
+  function buildStepped(body, data){
+    var steps=(data.steps||[]); if(steps.length<2){ return; }
+    body.innerHTML='<div class="viz-steps-nav">'+steps.map(function(s,i){return '<button class="viz-step-btn'+(i===0?' active':'')+'" data-si="'+i+'"><span class="vsb-n">'+(i+1)+'</span>'+(s.icon?vEsc(s.icon)+' ':'')+vEsc(s.label)+'</button>';}).join("")+'</div><div class="viz-step-detail"></div>';
+    var detail=body.querySelector(".viz-step-detail");
+    function show(i){ var s=steps[i]; detail.innerHTML='<h4>'+(s.icon?vEsc(s.icon)+' ':'')+vEsc(s.label)+'</h4>'+vEsc(s.detail); body.querySelectorAll(".viz-step-btn").forEach(function(b,bi){b.classList.toggle("active", bi===i);}); }
+    body.querySelector(".viz-steps-nav").addEventListener("click", function(e){ var b=e.target.closest(".viz-step-btn"); if(!b)return; show(+b.getAttribute("data-si")); });
+    show(0);
+  }
+  function hydrateViz(viz){
+    var kind=viz.getAttribute("data-viz"), dataEl=viz.querySelector(".viz-data"), body=viz.querySelector(".viz-body");
+    if(!dataEl||!body||viz._hydrated) return;
+    viz._hydrated=true;
+    var data; try { data=JSON.parse(dataEl.textContent||"{}"); } catch(e){ return; }
+    try {
+      if(kind==="scatter") buildScatter(body,data);
+      else if(kind==="slider") buildSlider(body,data);
+      else if(kind==="stepped") buildStepped(body,data);
+    } catch(e){ /* a bad payload never breaks the page */ }
+  }
+  // Hydrate every .viz under a root (whole doc at init, or a freshly-injected panel).
+  function hydrate(root){ Array.prototype.forEach.call((root||document).querySelectorAll(".viz"), hydrateViz); }
+
+  // ---- progressive background build queue (this iframe calls the server directly) ----
+  var cfg={}; try { cfg=JSON.parse(document.getElementById("lesson-config").textContent||"{}"); } catch(e){}
+  // The artifactId is in this iframe's own URL: /api/artifact/<id>. (A downloaded
+  // file:// page has no match → ARTIFACT_ID "" → no fetching, which is correct.)
+  var _m=(location.pathname||"").match(/\/api\/artifact\/([^\/?#]+)/);
+  var ARTIFACT_ID=_m?_m[1]:"";
+  var queue=(cfg.stubModuleIds||[]).slice();
+  var busy=false;
+  function cssEsc(s){ return String(s).replace(/["\\]/g,"\\$&"); }
+  function navItem(id){ return document.querySelector('.navitem[data-goto="'+cssEsc(id)+'"]'); }
+  // Matches both the vertical workbench panel and the horizontal h-page (both carry data-module).
+  function panelEl(id){ return document.querySelector('[data-module="'+cssEsc(id)+'"]'); }
+  function isStub(id){ var p=panelEl(id); return !!(p && p.classList.contains("is-stub")); }
+  function pump(){
+    if(busy || !ARTIFACT_ID) return;
+    var id=queue.shift(); if(!id) return;
+    if(!isStub(id)){ pump(); return; }            // already built (e.g. via priority) — skip
+    busy=true;
+    var nav=navItem(id);
+    fetch("/api/module",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({artifactId:ARTIFACT_ID,moduleId:id})})
+      .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+      .then(function(data){
+        var panel=panelEl(id);
+        // Inject into the page body when present (horizontal h-page), else the panel itself.
+        var target=panel ? (panel.querySelector(".h-page-body")||panel) : null;
+        if(target && data && data.fragmentHtml){ target.innerHTML=data.fragmentHtml; if(panel) panel.classList.remove("is-stub"); hydrate(target); observeReveals(target); }
+        if(nav){ nav.classList.remove("building","failed"); }
+      })
+      .catch(function(){
+        if(nav){ nav.classList.remove("building"); nav.classList.add("failed"); }
+        var panel=panelEl(id), b=panel&&panel.querySelector(".building");
+        if(b){ b.classList.add("failed"); b.textContent="⚠ Couldn't build this section — tap to retry."; }
+      })
+      .then(function(){ busy=false; pump(); });
+  }
+  function prioritize(id){
+    var i=queue.indexOf(id);
+    if(i>0){ queue.splice(i,1); queue.unshift(id); }
+    else if(i===-1 && isStub(id)){ queue.unshift(id); }
+    pump();
+  }
+
+  hydrate(document);
+  observeReveals(document);
+  setProgress();
+  if(HORIZ) hRender(); // sync nav highlight + progress to the first page
+  pump();             // start building the remaining modules, one by one
+})();
+</script>
+</body>
+</html>

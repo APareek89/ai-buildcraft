@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Build with the Agent2Agent (A2A) Protocol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --accent:#2563eb; --accent-2:#1d4ed8; --accent-weak:#e8efff;
+  --ink:#0f1729; --ink-soft:#27324a; --muted:#56607a; --faint:#8893ab;
+  --bg:#f5f8ff; --surface:#ffffff; --surface-2:#f9fbff;
+  --border:#e3e9f5; --border-strong:#d0d9ee;
+  --ok:#1d9e75; --ok-weak:#e6f6ef; --warn:#b9770a; --warn-weak:#fbf1de;
+  --danger:#d2433a; --danger-weak:#fcebea; --info:#2563eb; --info-weak:#e8efff;
+  --code-bg:#0b1228; --code-ink:#e7ecff;
+  --radius:14px; --radius-sm:9px; --measure:780px;
+  --font-body:Lexend,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-head:"Space Grotesk",Lexend,system-ui,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --shadow:0 1px 2px rgba(15,23,41,.05),0 10px 30px rgba(37,99,235,.08);
+}
+[data-theme="dark"]{
+  --ink:#eaf0ff; --ink-soft:#c8d2ea; --muted:#9aa6c4; --faint:#76829f;
+  --bg:#0a0f1f; --surface:#121829; --surface-2:#161d31;
+  --border:#222a44; --border-strong:#313b5c; --accent-weak:#142149;
+  --code-bg:#070b18; --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.65;font-size:16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+a{color:var(--accent);text-decoration:none}
+.shell{max-width:min(1240px,94vw);margin:0 auto;padding:22px 26px 56px}
+h1,h2,h3,h4{line-height:1.25;letter-spacing:-.01em;color:var(--ink);font-family:var(--font-head)}
+.eyebrow{color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.muted{color:var(--muted)}
+code{font-family:var(--font-mono);font-size:.88em;background:var(--accent-weak);color:var(--accent-2);padding:1px 6px;border-radius:6px}
+
+/* ---- top bar (theme toggle + progress) ---- */
+.topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:1320px;margin:0 auto;padding:10px 26px;display:flex;align-items:center;gap:14px}
+.tb-left{flex:1 1 0;display:flex;justify-content:flex-start;min-width:0}
+.tb-center{flex:0 1 auto;text-align:center;min-width:0;padding:0 10px}
+.tb-right{flex:1 1 0;display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+.brand-mini{font-weight:800;font-size:17px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;max-width:100%}
+.spacer{flex:1}
+@media(max-width:820px){.brand-mini{font-size:14px}.tb-right{gap:8px}}
+.progress{height:6px;width:120px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress > i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s ease}
+.tbtn{border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;padding:5px 11px;border-radius:8px;cursor:pointer}
+
+/* ---- hero ---- */
+.hero{padding:14px 0 6px}
+.hero h1{font-size:32px;font-weight:800;margin:.18em 0 .25em}
+.thesis{font-size:18px;color:var(--ink-soft);font-weight:500}
+.meta-line{margin-top:10px;color:var(--muted);font-size:13.5px;display:flex;gap:14px;flex-wrap:wrap}
+
+/* ---- mental map ---- */
+.map{margin:26px 0 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);padding:18px}
+.map h2{font-size:15px;margin:0 0 3px}
+.map .cap{color:var(--muted);font-size:13px;margin:0 0 14px}
+.map-layer{margin:0 0 10px}
+.map-layer-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:700;margin:0 0 6px}
+.map-row{display:flex;flex-wrap:wrap;gap:9px}
+.map-node{flex:1 1 240px;min-width:230px;text-align:left;border:1px solid var(--border-strong);background:var(--surface-2);border-radius:11px;padding:12px 14px;cursor:pointer;font:inherit;color:var(--ink);transition:border-color .12s,transform .08s,box-shadow .12s}
+.map-node:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow)}
+.map-node.spine{border-left:3px solid var(--accent)}
+.map-node .mn-title{font-weight:600;font-size:13.5px}
+.map-node .mn-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+/* Persistent "click for details" affordance on every linked block. */
+.map-node .mn-go{display:inline-flex;align-items:center;gap:5px;width:fit-content;font-size:11px;color:var(--accent-2);font-weight:700;margin-top:8px;background:var(--accent-weak);border-radius:99px;padding:3px 10px}
+.map-node .mn-cue-ico{font-size:11px;line-height:1}
+.map-node:hover .mn-go{background:var(--accent);color:#fff}
+.map-arrow{display:flex;justify-content:center;color:var(--faint);font-size:14px;margin:2px 0}
+
+/* Make the hidden attribute authoritative (author #overview/#workbench rules below
+   would otherwise override the UA [hidden] rule and break the overview↔workbench swap). */
+[hidden]{display:none!important}
+
+/* ===== Overview = ONE non-scrolling screen; mental map flows LEFT-TO-RIGHT ===== */
+/* Scoped to :not([hidden]) so it only applies while the overview is the active view. */
+#overview:not([hidden]){min-height:calc(100dvh - 54px);overflow-y:auto;display:flex;flex-direction:column}
+#overview .shell{flex:1;display:flex;flex-direction:column;overflow:visible;padding:14px 26px}
+#overview .hero{padding:2px 0 0}
+#overview .hero h1{font-size:26px;margin:.06em 0 .12em}
+#overview .thesis{font-size:15px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#overview .meta-line{margin-top:6px;font-size:12.5px}
+#overview .ov-hint{margin:8px 0 0}
+#overview .map{display:flex;flex-direction:column;margin:12px 0 0;overflow:visible;padding:16px}
+#overview .map h2{font-size:14px}
+#overview .map .cap{margin:0 0 8px}
+/* layers become side-by-side columns; nodes stack inside their column */
+#overview .map-flow{display:flex;align-items:flex-start;gap:6px}
+#overview .map-flow .map-layer{flex:1 1 0;min-width:0;display:flex;flex-direction:column;margin:0}
+#overview .map-flow .map-row{display:flex;flex-direction:column;flex-wrap:nowrap;gap:8px}
+#overview .map-flow .map-node{flex:0 0 auto;min-width:0;overflow:visible;display:flex;flex-direction:column;gap:3px}
+#overview .map-flow .map-node .mn-go{margin-top:auto}
+#overview .map-flow .mn-what,#overview .map-flow .mn-rel{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#overview .map-flow .map-arrow{flex:0 0 auto;align-self:center;margin:0 2px}
+#overview .map-flow .map-arrow::before{content:"→"}
+/* narrow screens: fall back to vertical stacking + a normal scrolling page */
+@media(max-width:820px){
+  #overview:not([hidden]){height:auto;overflow:visible}
+  #overview .shell,#overview .map,#overview .map-flow{overflow:visible}
+  #overview .map-flow{flex-direction:column}
+  #overview .map-flow .map-row{flex-direction:row;flex-wrap:wrap}
+  #overview .map-flow .map-arrow::before{content:"↓"}
+}
+
+/* ---- overview / workbench (Fix 2 layout) ---- */
+.ov-hint{text-align:center;color:var(--muted);font-size:13.5px;margin:18px 0 0}
+.nav-back{margin-right:4px}
+#workbench{display:grid;grid-template-columns:248px 1fr;align-items:start}
+#blocknav{position:sticky;top:53px;align-self:start;max-height:calc(100vh - 53px);overflow:auto;border-right:1px solid var(--border);padding:16px 10px;display:flex;flex-direction:column;gap:3px;background:var(--surface)}
+.navitem{display:flex;align-items:center;gap:10px;text-align:left;width:100%;border:none;background:transparent;color:var(--ink-soft);font:inherit;font-size:13.5px;padding:9px 11px;border-radius:9px;cursor:pointer;line-height:1.3}
+.navitem:hover{background:var(--surface-2)}
+.navitem.active{background:var(--accent-weak);color:var(--accent-2);font-weight:600}
+.navitem .ni-num{flex:none;width:22px;height:22px;border-radius:7px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ink-soft)}
+.navitem.active .ni-num{background:var(--accent);color:#fff}
+.navitem.nav-special{color:var(--muted)}
+#blockmain{padding:26px 40px 90px;min-width:0;max-width:1000px;margin:0 auto}
+/* keep prose comfortably readable even though the panel is wide; wide blocks
+   (matrix / code / diagrams / interactive visuals) still use the full width. */
+#blockmain .block p,#blockmain .block ul,#blockmain .block ol,#blockmain .module-body>p{max-width:760px}
+.panel{display:none}
+.panel.active{display:block;animation:fadein .22s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.panel h2{font-size:24px;font-weight:800;margin:.1em 0 .35em}
+
+/* ---- module panel internals ---- */
+.module-head{padding:0 0 4px}
+.panel .module-body{padding:0}
+.module-head .num{color:var(--accent);font-weight:800;font-size:13px}
+.module-head h2{font-size:22px;font-weight:800;margin:.15em 0 .1em}
+.module-head .sub{color:var(--muted);font-size:14px;margin:0}
+.module-body{padding:6px 22px 22px}
+.objectives{background:var(--accent-weak);border-radius:var(--radius-sm);padding:11px 14px;margin:14px 0;font-size:13.5px}
+.objectives b{display:block;color:var(--accent-2);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.objectives ul{margin:0;padding-left:18px}
+.decision-forces{font-size:13px;color:var(--warn);background:var(--warn-weak);border-radius:var(--radius-sm);padding:9px 13px;margin:12px 0}
+.keyterms{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+
+/* ---- generic blocks ---- */
+.block{margin:16px 0}
+.block h3{font-size:16px;margin:0 0 6px}
+.block p{margin:.5em 0;color:var(--ink-soft)}
+.block ul,.block ol{margin:.4em 0;padding-left:20px;color:var(--ink-soft)}
+.block li{margin:.25em 0}
+.callout{border-left:3px solid var(--info);background:var(--info-weak);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:11px 14px;margin:14px 0}
+.callout.good{border-color:var(--ok);background:var(--ok-weak)}
+.callout.warn{border-color:var(--warn);background:var(--warn-weak)}
+.callout.danger{border-color:var(--danger);background:var(--danger-weak)}
+
+/* decision callout */
+.dcall{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin:14px 0}
+.dcall > div{background:var(--surface);padding:11px 13px;font-size:13.5px}
+.dcall .lab{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;margin-bottom:4px}
+.dcall .use .lab{color:var(--ok)} .dcall .avoid .lab{color:var(--danger)}
+.dcall .rot{grid-column:1/-1;background:var(--accent-weak);color:var(--accent-2)}
+
+/* decision matrix */
+.matrix{overflow-x:auto;margin:14px 0}
+table.dm{border-collapse:collapse;width:100%;font-size:13px;min-width:520px}
+table.dm th,table.dm td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+table.dm thead th{background:var(--surface-2);font-weight:700}
+table.dm td.when{background:var(--accent-weak);color:var(--accent-2);font-weight:500}
+.rate{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.rate.good{background:var(--ok)} .rate.ok{background:var(--warn)} .rate.bad{background:var(--danger)}
+.howread{font-size:12px;color:var(--muted);margin-top:6px}
+
+/* code + functional examples + tabs */
+.ex{margin:16px 0;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+.ex-tabs{display:flex;gap:0;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.ex-tabs label{padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+.ex input[type=radio]{position:absolute;opacity:0;pointer-events:none}
+.ex-pane{display:none;padding:0}
+.ex .pane-functional{padding:14px}
+pre.code{margin:0;background:var(--code-bg);color:var(--code-ink);padding:14px 16px;overflow-x:auto;font-family:var(--font-mono);font-size:12.8px;line-height:1.6}
+pre.code .cm{color:#7f88b3}
+.code-path{font-size:11px;color:var(--faint);padding:7px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);font-family:var(--font-mono)}
+.copy{float:right;border:1px solid var(--border-strong);background:var(--surface);color:var(--muted);font:inherit;font-size:11px;padding:2px 8px;border-radius:6px;cursor:pointer}
+/* which tab is active */
+.ex input.t-functional:checked ~ .ex-tabs label[for$="-fn"],
+.ex input.t-code:checked ~ .ex-tabs label[for$="-code"]{color:var(--accent);border-bottom-color:var(--accent)}
+.ex input.t-functional:checked ~ .pane-functional{display:block}
+.ex input.t-code:checked ~ .pane-code{display:block}
+
+/* walkthrough / taxonomy / scenario */
+.walk{counter-reset:step;margin:14px 0}
+.walk .step{display:flex;gap:12px;padding:8px 0}
+.walk .step .n{counter-increment:step;flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.walk .step .n::before{content:counter(step)}
+.scn{border:1px dashed var(--border-strong);border-radius:var(--radius-sm);padding:12px 14px;margin:14px 0;font-size:13.5px}
+.scn .ask{font-weight:600}.scn .imp{color:var(--muted);margin-top:4px}
+.tax{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0}
+.tax .grp{border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;background:var(--surface-2)}
+.tax .grp h4{margin:0 0 6px;font-size:13px}
+.tax .grp ul{margin:0;padding-left:16px;font-size:12.5px;color:var(--ink-soft)}
+
+/* quiz */
+.quiz{border:1px solid var(--accent);border-radius:var(--radius-sm);background:var(--accent-weak);padding:14px;margin:18px 0}
+.quiz .q{font-weight:600;margin-bottom:9px}
+.quiz .opt{display:block;width:100%;text-align:left;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);font:inherit;font-size:13.5px;padding:9px 12px;border-radius:8px;margin:5px 0;cursor:pointer}
+.quiz .opt:hover{border-color:var(--accent)}
+.quiz .opt.correct{border-color:var(--ok);background:var(--ok-weak)}
+.quiz .opt.wrong{border-color:var(--danger);background:var(--danger-weak)}
+.quiz .reveal{border:none;background:var(--accent);color:#fff;font:inherit;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;margin-top:8px}
+.quiz .answer{display:none;margin-top:10px;font-size:13.5px;color:var(--ink-soft);border-top:1px solid var(--border-strong);padding-top:10px}
+.quiz.revealed .answer{display:block}
+
+/* go-deeper progressive disclosure */
+.deeper-toggle{border:1px dashed var(--border-strong);background:transparent;color:var(--accent);font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;margin:10px 0;width:100%}
+.deeper{display:none}
+.module.show-deeper .deeper{display:block}
+
+/* (i) term button + popover */
+.term{border:none;background:transparent;color:inherit;font:inherit;cursor:pointer;border-bottom:1.5px dotted var(--accent);padding:0;white-space:nowrap}
+.term .i{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;font-size:9px;font-weight:700;color:#fff;background:var(--accent);border-radius:50%;margin-left:3px;vertical-align:super;line-height:1}
+.term-chip{border:1px solid var(--border-strong);background:var(--surface-2);color:var(--ink-soft);font:inherit;font-size:12px;padding:3px 9px 3px 10px;border-radius:99px;cursor:pointer}
+.term-chip .i{font-size:9px;margin-left:5px}
+#popover{position:fixed;z-index:60;max-width:300px;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);box-shadow:var(--shadow);padding:12px 14px;font-size:13px;display:none}
+#popover.on{display:block}
+#popover .pt{font-weight:700;margin-bottom:3px}
+#popover .px{font-size:10.5px;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
+#popover .pn{color:var(--ink-soft)}
+#popover .ptech{margin-top:7px;padding-top:7px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
+#popover .psrc{margin-top:7px;font-size:11px;color:var(--faint)}
+
+/* synthesis + citations */
+.synth{margin:34px 0;border:1px solid var(--accent);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);padding:22px}
+.synth h2{font-size:20px;margin:0 0 8px}
+.checklist{list-style:none;padding:0;margin:12px 0}
+.checklist li{padding:7px 0;border-bottom:1px solid var(--border);font-size:14px;display:flex;gap:9px}
+.checklist li::before{content:"☐";color:var(--accent)}
+.capstone{margin-top:14px;background:var(--accent-weak);border-radius:var(--radius-sm);padding:13px 15px;font-size:14px}
+.cites{margin-top:30px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--border);padding-top:14px}
+.cites h3{font-size:13px;color:var(--ink)}
+.cites ol{padding-left:18px}
+
+/* whats-new */
+.whatsnew{border:1px solid var(--info);background:var(--info-weak);border-radius:var(--radius-sm);padding:12px 15px;margin:18px 0;font-size:13.5px}
+.whatsnew .lab{font-weight:700;color:var(--info);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+
+/* ---- richer mental-map cards (what / relevance) ---- */
+.map-node .mn-what{font-size:12.5px;color:var(--ink-soft);margin-top:5px;line-height:1.5}
+.map-node .mn-rel{font-size:11.5px;color:var(--muted);margin-top:7px;border-top:1px dashed var(--border-strong);padding-top:6px;line-height:1.5}
+.map-node .mn-rel-lab{display:block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);margin-bottom:2px}
+
+/* ---- in-lesson content toggles (top bar) ---- */
+.toggle-group{display:flex;gap:6px;flex-wrap:wrap}
+.tbtn.toggle{font-size:12px;padding:5px 10px}
+.tbtn.toggle[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tbtn.toggle[aria-pressed="false"]{opacity:.62}
+body.hide-concept .b-concept{display:none!important}
+body.hide-funcex .b-funcex{display:none!important}
+body.hide-code .b-code{display:none!important}
+
+/* ---- syntax breakdown (revealed by "Explain syntax") ---- */
+.syntax-panel{display:none;margin:10px 0 0;border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:var(--surface-2);padding:11px 14px}
+body.show-syntax .syntax-panel{display:block}
+.syntax-panel .sp-h{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-2);margin-bottom:7px}
+.syntax-panel dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.syntax-panel dt{margin:0}
+.syntax-panel dt code{font-size:12px;background:var(--accent-weak);color:var(--accent-2);padding:1px 6px;border-radius:6px;white-space:nowrap}
+.syntax-panel dd{margin:0;color:var(--ink-soft)}
+
+/* ---- interactive visual blocks (scatter / slider / stepped) ---- */
+.viz{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);padding:16px;margin:16px 0}
+.viz .viz-cap{font-size:13.5px;color:var(--muted);margin:0 0 12px}
+.viz-body{min-height:36px}
+.viz-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.viz-qbtn{border:1px solid var(--border-strong);background:transparent;color:var(--accent);font:inherit;font-size:12.5px;padding:5px 11px;border-radius:8px;cursor:pointer}
+.viz-qbtn.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+.viz-scatter-grid{display:grid;grid-template-columns:1fr 200px;gap:14px;align-items:start}
+.viz svg.scatter{width:100%;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.viz-near{margin:0;padding-left:18px;font-size:13px;color:var(--ink-soft)}
+.viz-near-lab{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.viz-slider-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.viz-slider-row input[type=range]{accent-color:var(--accent);flex:1;min-width:160px}
+.viz-readout{font-size:14px}.viz-readout b{color:var(--accent-2)}
+.viz-stop-note{margin-top:10px;font-size:13.5px;color:var(--ink-soft);background:var(--accent-weak);border-radius:var(--radius-sm);padding:10px 13px}
+.viz-stop-note .vsn-label{font-weight:700;color:var(--accent-2)}
+.viz-steps-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.viz-step-btn{border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-soft);font:inherit;font-size:12.5px;padding:6px 11px;border-radius:8px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.viz-step-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.viz-step-btn .vsb-n{font-weight:700}
+.viz-step-detail{font-size:14px;color:var(--ink-soft);border-left:3px solid var(--accent);background:var(--surface-2);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:12px 15px}
+.viz-step-detail h4{margin:0 0 5px;font-size:15px;color:var(--ink)}
+@media(max-width:560px){.viz-scatter-grid{grid-template-columns:1fr}}
+
+/* ---- provenance banner (shown when the learner uploaded documents) ---- */
+.provenance{display:flex;gap:11px;align-items:flex-start;margin:18px 0;padding:13px 16px;border:1px solid var(--accent);background:var(--accent-weak);border-radius:var(--radius-sm);font-size:13.5px;color:var(--ink-soft)}
+.provenance .prov-star{color:var(--accent);font-size:16px;line-height:1.3;flex:none}
+.provenance strong{color:var(--accent-2)}
+.cites li.src-upload{color:var(--accent-2);font-weight:500}
+
+/* ---- progressive build: "building…" placeholder + nav status ---- */
+.building{display:flex;align-items:center;gap:9px;margin:16px 0;padding:13px 15px;border:1px dashed var(--border-strong);border-radius:var(--radius-sm);background:var(--surface-2);color:var(--muted);font-size:13.5px}
+.bspin{flex:none;width:13px;height:13px;border-radius:50%;border:2px solid var(--border-strong);border-top-color:var(--accent);animation:bspin .8s linear infinite}
+@keyframes bspin{to{transform:rotate(360deg)}}
+.building.failed{border-style:solid;border-color:var(--danger);color:var(--danger);cursor:pointer}
+.building.failed .bspin{display:none}
+.navitem .ni-status{flex:none;width:7px;height:7px;border-radius:50%;background:transparent;margin-left:auto}
+.navitem.building .ni-status{background:var(--warn);animation:pulse 1.1s infinite}
+.navitem.failed .ni-status{background:var(--danger);animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ===== 27-combo visibility gates (no JS) ===== */
+body[data-depth="conceptual"] .needs-technical{display:none}
+body[data-depth="technical"] .needs-conceptual{display:none}
+body[data-examples="functional"] .needs-code{display:none}
+body[data-examples="code"] .needs-functional{display:none}
+body[data-level="advanced"] .lvl-beginner-only{display:none}
+body[data-level="beginner"] .lvl-advanced-only{display:none}
+
+/* ===== Phase 2 — colored block types (break the monotony of text) ===== */
+.blk-explain{background:linear-gradient(180deg,var(--surface) 0%,var(--surface) 100%);border-left:3px solid var(--accent)}
+.blk-example{background:#fff8ec;border-left:3px solid #f0a92b}
+[data-theme="dark"] .blk-example{background:#241d0f}
+.blk-code{background:#eef4ff;border-left:3px solid var(--accent-2)}
+[data-theme="dark"] .blk-code{background:#0e1733}
+.blk-check{background:#f0fbf5;border-left:3px solid var(--ok)}
+[data-theme="dark"] .blk-check{background:#0e2419}
+.block.blk-explain,.block.blk-example,.block.blk-code,.block.blk-check{border-radius:12px;padding:14px 16px;margin:14px 0}
+
+/* "In plain words" analogy callout */
+.analogy{background:var(--accent-weak);border-radius:10px;padding:9px 12px;margin:2px 0 10px;font-size:14.5px;color:var(--ink-soft)}
+.analogy .an-lab{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-2);margin-bottom:2px}
+body[data-level="advanced"] .analogy,body[data-level="advanced"] .mn-layman{display:none}
+
+/* Collapsible example/code (keep landing light on text) */
+.collapse{margin:6px 0}
+.collapse-h{display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:1px dashed var(--border-strong);background:transparent;color:var(--ink-soft);font:inherit;font-size:13.5px;font-weight:600;padding:9px 12px;border-radius:9px;cursor:pointer}
+.collapse-h:hover{border-color:var(--accent);color:var(--accent-2)}
+.collapse-h .col-ico{font-family:var(--font-mono)}
+.collapse-h .col-chev{margin-left:auto;transition:transform .15s}
+.collapse.open .collapse-h .col-chev{transform:rotate(90deg)}
+.collapse-body{display:none;padding-top:10px}
+.collapse.open .collapse-body{display:block;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+
+/* Knowledge check */
+.kc h3{margin:.1em 0 .4em}
+.kc-intro{color:var(--muted);font-size:14px;margin:0 0 12px}
+.kc-score{font-size:13px;color:var(--ok);font-weight:600;margin-bottom:10px}
+.kc-item{border-top:1px solid var(--border);padding:13px 0}
+.kc-item:first-of-type{border-top:none}
+.kc-q{font-weight:600;font-size:14.5px;margin-bottom:9px;display:flex;gap:8px}
+.kc-n{flex:none;background:var(--ok);color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:1px 7px;height:fit-content}
+.kc-opts{display:flex;flex-direction:column;gap:7px}
+.kc-opt{text-align:left;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;padding:9px 12px;border-radius:9px;cursor:pointer;transition:border-color .12s,background .12s}
+.kc-opt:hover{border-color:var(--accent)}
+.kc-opt.correct{border-color:var(--ok);background:var(--ok-weak);color:#0f6e4f}
+.kc-opt.wrong{border-color:var(--danger);background:var(--danger-weak);color:var(--danger)}
+.kc-opt[disabled]{cursor:default;opacity:.85}
+.kc-free{display:flex;flex-direction:column;gap:8px}
+.kc-input{border:1px solid var(--border-strong);border-radius:9px;font:inherit;font-size:14px;padding:9px 11px;resize:vertical;background:var(--surface);color:var(--ink)}
+.kc-input:focus{outline:none;border-color:var(--accent)}
+.kc-submit{align-self:flex-start;border:none;background:var(--accent);color:#fff;font:inherit;font-size:13px;font-weight:600;padding:7px 15px;border-radius:9px;cursor:pointer}
+.kc-submit[disabled]{opacity:.6;cursor:default}
+.kc-feedback{font-size:13.5px;font-weight:600;margin-bottom:8px;padding:8px 11px;border-radius:8px}
+.kc-feedback.ok{background:var(--ok-weak);color:#0f6e4f}
+.kc-feedback.no{background:var(--danger-weak);color:var(--danger)}
+.kc-feedback.grading{background:var(--accent-weak);color:var(--accent-2)}
+.kc-explain{font-size:13.5px;color:var(--muted);margin-top:9px;padding-left:11px;border-left:2px solid var(--border-strong)}
+
+/* Scroll-reveal — blocks ease in as you reach them */
+.reveal{opacity:0;transform:translateY(10px);transition:opacity .45s ease,transform .45s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+/* Module head icon + reading time */
+.module-head{display:flex;gap:13px;align-items:flex-start}
+.module-head .m-ico{flex:none;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--accent-weak);border-radius:11px}
+.module-head .mh-text{min-width:0}
+.m-time{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* Overview: node icons, layman card, animated current-flow connector */
+.mn-ico{margin-right:7px}
+.mn-layman{margin-top:7px;font-size:12.5px;color:var(--ink-soft);background:var(--accent-weak);border-radius:8px;padding:6px 9px;line-height:1.4}
+.mn-layman .mn-lay-ico{margin-right:5px}
+.map-arrow.flow{position:relative;overflow:hidden}
+.map-arrow.flow .spark{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px 2px var(--accent);opacity:.9}
+@media (min-width:821px){
+  #overview .map-flow .map-arrow.flow{align-self:center;width:34px;height:3px;background:linear-gradient(90deg,var(--border-strong),var(--accent));border-radius:2px}
+  #overview .map-flow .map-arrow.flow::before{content:"";position:absolute;right:-2px;top:50%;transform:translateY(-50%);border-left:7px solid var(--accent);border-top:4px solid transparent;border-bottom:4px solid transparent}
+  #overview .map-flow .map-arrow.flow .spark{top:50%;margin-top:-3px;animation:flowx 1.8s linear infinite}
+  @keyframes flowx{0%{left:-8px;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:34px;opacity:0}}
+}
+
+/* Course recap card (overview top, lessons 2..N) */
+.recap{background:var(--accent-weak);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:12px 0 0}
+.recap-h{font-weight:700;font-size:13px;color:var(--accent-2);margin-bottom:6px}
+.recap ul{margin:0;padding-left:18px;font-size:13px;color:var(--ink-soft)}
+.recap li{margin:2px 0}
+
+/* ===== Overview structure (advance organizer) ===== */
+.map-body{margin-top:8px}
+/* ordered path — a numbered vertical spine with connectors */
+.map-path{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-width:760px}
+.map-step{display:flex;flex-direction:column}
+.map-conn{width:2px;height:16px;margin:2px 0 2px 31px;background:linear-gradient(var(--accent),var(--border-strong));position:relative;overflow:hidden}
+.map-conn .spark{position:absolute;left:-2px;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 7px 1px var(--accent);animation:flowy 1.8s linear infinite}
+@keyframes flowy{0%{top:-8px;opacity:0}20%{opacity:1}80%{opacity:1}100%{top:16px;opacity:0}}
+.map-path .map-node{width:100%}
+/* conceptual / comparative — responsive card grid */
+.map-concept,.map-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:12px}
+/* the minimal card */
+.map .map-node{display:flex;flex-direction:column;gap:7px;align-items:stretch}
+.mn-head{display:flex;align-items:center;gap:10px}
+.mn-num{flex:none;width:27px;height:27px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+.map-node.is-start .mn-num{box-shadow:0 0 0 4px var(--accent-weak)}
+.mn-start{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:var(--ok);border-radius:99px;padding:2px 8px;margin-left:auto}
+.mn-orient{font-size:12.5px;color:var(--muted);line-height:1.42}
+.mn-go{font-size:11px;color:var(--accent-2);font-weight:700;align-self:flex-start;background:var(--accent-weak);border-radius:99px;padding:3px 10px}
+.map-node:hover .mn-go{background:var(--accent);color:#fff}
+
+/* ===== Spine inside the module ===== */
+.m-spine{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:5px}
+.m-pos{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent-2);background:var(--accent-weak);border-radius:99px;padding:2px 9px}
+.m-prev{font-size:12px;color:var(--muted)}
+.m-what{font-size:15.5px;color:var(--ink-soft);margin:12px 0 0;line-height:1.5}
+.m-rel{margin-top:10px;font-size:13.5px;color:var(--ink-soft);background:var(--surface-2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:8px 12px}
+.m-rel-lab{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-2);margin-bottom:2px}
+.next-step{margin-top:20px;border:1px solid var(--accent);background:var(--accent-weak);color:var(--accent-2);font:inherit;font-weight:700;font-size:13.5px;padding:10px 16px;border-radius:10px;cursor:pointer}
+.next-step:hover{background:var(--accent);color:#fff}
+
+/* Key terms — subtle attention pulse on hover */
+.term-chip,.term{transition:background .15s,color .15s,transform .12s}
+.term-chip:hover,.term:hover{transform:translateY(-1px)}
+
+@media print{
+  .topbar,.tbtn,.copy,.deeper-toggle,.map-node .mn-go{display:none!important}
+  .deeper{display:block!important}.quiz .answer{display:block!important}
+  .syntax-panel{display:block!important}.collapse-body{display:block!important}
+  .reveal{opacity:1!important;transform:none!important}
+  .ex-pane{display:block!important}.module{break-inside:avoid;box-shadow:none}
+}
+@media (max-width:560px){.dcall{grid-template-columns:1fr}.module-head h2{font-size:20px}}
+
+/* ============================================================================
+   HORIZONTAL reading mode — a fixed-viewport paged deck (additive; vertical mode
+   never sees these rules). The learner stays on one in-viewport screen the whole
+   time; only the left TOC stays put. Heavy blocks open in a modal, not inline.
+   ============================================================================ */
+.h-mode-tag{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent-2);background:var(--accent-weak);border-radius:99px;padding:3px 10px}
+/* pages are fixed in the viewport, so force scroll-reveal blocks visible up front */
+[data-reading="horizontal"] .reveal{opacity:1!important;transform:none!important}
+#hworkbench{display:grid;grid-template-columns:248px 1fr;align-items:stretch}
+#hworkbench #blocknav{position:sticky;top:53px;align-self:start;max-height:calc(100vh - 53px);overflow:auto;border-right:1px solid var(--border);padding:16px 10px;display:flex;flex-direction:column;gap:3px;background:var(--surface)}
+.h-stage{position:relative;overflow:hidden;height:calc(100dvh - 55px)}
+.h-track{display:flex;height:100%;transition:transform .38s cubic-bezier(.4,0,.2,1);will-change:transform}
+@media (prefers-reduced-motion:reduce){.h-track{transition:none}}
+.h-page{flex:0 0 100%;width:100%;height:100%;display:flex;flex-direction:column;min-width:0}
+.h-page-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:24px 40px;width:100%;max-width:1000px;margin:0 auto}
+.h-page-body .block p,.h-page-body .block ul,.h-page-body .block ol,.h-page-body .module-body>p{max-width:760px}
+.h-page .h-next{flex:none;align-self:flex-end;margin:8px 40px 18px auto;border:1px solid var(--accent);background:var(--accent);color:#fff;font:inherit;font-weight:700;font-size:13.5px;padding:10px 20px;border-radius:10px;cursor:pointer}
+.h-page .h-next:hover{filter:brightness(1.06)}
+/* the module's own "Next" (.next-step from moduleInner) sits inside the body and advances the deck */
+.h-page .next-step{display:inline-block}
+/* in horizontal mode a collapsible advertises that it opens in a modal */
+[data-reading="horizontal"] .collapse-h .col-chev{transform:none;font-size:0}
+[data-reading="horizontal"] .collapse-h .col-chev::after{content:"⤢ open";font-size:12px;color:var(--accent-2);font-weight:700}
+[data-reading="horizontal"] .collapse-body{display:none!important}
+
+/* modal that heavy/expandable blocks open into (examples, code, "go deeper") */
+.hmodal{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;background:rgba(8,12,24,.55);padding:24px}
+.hmodal[hidden]{display:none}
+.hmodal-card{position:relative;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius);box-shadow:var(--shadow);width:100%;max-width:780px;max-height:86vh;overflow:auto;padding:22px 24px}
+.hmodal-x{position:absolute;top:12px;right:14px;border:1px solid var(--border-strong);background:var(--surface);color:var(--muted);font:inherit;font-size:18px;line-height:1;width:30px;height:30px;border-radius:8px;cursor:pointer}
+.hmodal-x:hover{border-color:var(--accent);color:var(--accent-2)}
+.hmodal-title{font-family:var(--font-head);font-weight:700;font-size:17px;margin:0 40px 14px 0;color:var(--ink)}
+.hmodal-body .collapse-body,.hmodal-body .deeper{display:block!important}
+.hmodal-body .deeper-toggle{display:none}
+.kc-pending .kc-intro{color:var(--muted)}
+
+@media (max-width:820px){
+  #hworkbench{grid-template-columns:1fr}
+  #hworkbench #blocknav{position:static;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;max-height:none;border-right:none;border-bottom:1px solid var(--border);gap:6px;padding:10px}
+  #hworkbench #blocknav .navitem{flex:0 0 auto}
+  .h-stage{height:calc(100dvh - 112px)}
+  .h-page-body{padding:18px 18px}
+  .h-page .h-next{margin:8px 18px 14px auto}
+}
+</style>
+</head>
+<body data-level="intermediate" data-depth="conceptual_technical" data-examples="functional_code" data-reading="vertical" data-theme="light">
+
+  <div class="topbar"><div class="topbar-in">
+    <div class="tb-left"><button class="tbtn nav-back" id="to-overview" hidden>← Overview</button></div>
+    <div class="tb-center"><span class="brand-mini">Build with the Agent2Agent (A2A) Protocol</span></div>
+    <div class="tb-right">
+      <div class="toggle-group" role="group" aria-label="Show or hide content"><button class="tbtn toggle" id="t-concept" aria-pressed="true">Concept</button><button class="tbtn toggle" id="t-funcex" aria-pressed="true">Functional</button><button class="tbtn toggle" id="t-code" aria-pressed="true">Code</button><button class="tbtn toggle" id="t-syntax" aria-pressed="false">Explain syntax</button></div>
+      <div class="progress" title="Progress"><i></i></div>
+      <button class="tbtn" id="theme">☾ Dark</button>
+    </div>
+  </div></div>
+
+  <div id="overview">
+    <main class="shell">
+      <div class="hero">
+        <div class="eyebrow">Interactive lesson</div>
+        <h1>Build with the Agent2Agent (A2A) Protocol</h1>
+        <p class="thesis">A2A is an open protocol that lets AI agents discover each other, delegate tasks, and exchange structured messages — giving you a standard backbone for multi-agent systems.</p>
+        <div class="meta-line"><span>intermediate</span><span>conceptual + technical</span><span>functional + code</span><span>55 min read</span><span>for e-commerce</span></div>
+      </div>
+      
+      
+      
+      <div class="map"><div class="eyebrow">Your build path · start at step 1</div><h2>A2A Protocol Build Map</h2><p class="cap">Follow these steps in order — each builds on the one before.</p><div class="map-body map-procedural"><ol class="map-path"><li class="map-step"><button class="map-node spine is-start" data-deepdive="mod-what-a2a"><div class="mn-head"><span class="mn-num">1</span><span class="mn-title">What is A2A?</span><span class="mn-start">Start here</span></div><div class="mn-orient">Starting point — the problem A2A solves and why it exists</div><span class="mn-go">Open →</span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div></li><li class="map-step"><button class="map-node spine" data-deepdive="mod-architecture"><div class="mn-head"><span class="mn-num">2</span><span class="mn-title">Core Architecture</span></div><div class="mn-orient">The communication model — how agents talk, listen, and hand off work</div><span class="mn-go">Open →</span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div></li><li class="map-step"><button class="map-node spine" data-deepdive="mod-agent-cards"><div class="mn-head"><span class="mn-num">3</span><span class="mn-title">Agent Cards &amp; Discovery</span></div><div class="mn-orient">How agents advertise what they can do so others can find and call them</div><span class="mn-go">Open →</span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div></li><li class="map-step"><button class="map-node spine" data-deepdive="mod-task-lifecycle"><div class="mn-head"><span class="mn-num">4</span><span class="mn-title">Task Lifecycle &amp; Messages</span></div><div class="mn-orient">How a task is created, progressed, streamed, and completed between agents</div><span class="mn-go">Open →</span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div></li><li class="map-step"><button class="map-node" data-deepdive="mod-a2a-vs-mcp"><div class="mn-head"><span class="mn-num">5</span><span class="mn-title">A2A vs MCP</span></div><div class="mn-orient">When to use A2A, when to use MCP, and when to use both together</div><span class="mn-go">Open →</span></button><div class="map-conn" aria-hidden="true"><span class="spark"></span></div></li><li class="map-step"><button class="map-node spine" data-deepdive="mod-implementation"><div class="mn-head"><span class="mn-num">6</span><span class="mn-title">Step-by-Step Implementation</span></div><div class="mn-orient">Build a Client Agent, Remote Agent, and Task Manager in Python</div><span class="mn-go">Open →</span></button></li></ol></div></div>
+      <p class="ov-hint">Pick a building block above to dive in — or use the menu that appears on the left.</p>
+    </main>
+  </div>
+
+  <div id="workbench" hidden>
+    <nav id="blocknav"><button class="navitem" data-goto="mod-what-a2a"><span class="ni-num">1</span><span class="ni-label">What is A2A and Why Does It Exist?</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="mod-architecture"><span class="ni-num">2</span><span class="ni-label">Core Architecture and Communication Model</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="mod-agent-cards"><span class="ni-num">3</span><span class="ni-label">Agent Cards and Capability Discovery</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="mod-task-lifecycle"><span class="ni-num">4</span><span class="ni-label">Task Lifecycle and Message Exchange</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="mod-a2a-vs-mcp"><span class="ni-num">5</span><span class="ni-label">A2A vs MCP: Picking the Right Protocol</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem" data-goto="mod-implementation"><span class="ni-num">6</span><span class="ni-label">Step-by-Step: Building an A2A Implementation</span><span class="ni-status" aria-hidden="true"></span></button><button class="navitem nav-special" data-goto="_synth"><span class="ni-num">✦</span><span class="ni-label">Putting it together</span></button><button class="navitem nav-special" data-goto="_sources"><span class="ni-num">⌕</span><span class="ni-label">Sources</span></button></nav>
+    <div id="blockmain"><section class="panel module" data-panel="mod-what-a2a" data-module="mod-what-a2a" id="panel-mod-what-a2a"><div class="module-head"><div class="num">1</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 1 of 6</span></div><h2>What is A2A and Why Does It Exist?</h2><p class="sub">The problem, the protocol, and the promise</p><div class="m-time">⏱ ~4 min read</div></div></div><p class="m-what">A2A is Google's open protocol that gives AI agents a shared language for delegating tasks and sharing results across frameworks.</p><div class="analogy"><span class="an-lab">In plain words</span>A2A is like a universal phone standard: any two agents can call each other without needing a custom cable for every pair.</div><div class="m-rel"><span class="m-rel-lab">Why this matters for you</span>Understanding A2A lets you scope multi-agent features accurately — knowing what integration work disappears and what new capabilities become plug-and-play.</div><div class="module-body"><p>A2A is an open protocol from Google that standardizes how AI agents communicate, delegate tasks, and share results across different frameworks and vendors. Without it, every multi-agent integration requires custom glue code — A2A replaces that with a shared contract.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>Explain the coordination problem A2A solves in multi-agent systems</li><li>Describe A2A's position in the AI agent ecosystem</li><li>Identify the key design principles behind the protocol</li></ul></div><div class="keyterms"><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="agent">Agent<span class="i">i</span></button><button class="term-chip" data-term="protocol">Protocol<span class="i">i</span></button><button class="term-chip" data-term="multi-agent-system">Multi-Agent System<span class="i">i</span></button><button class="term-chip" data-term="interoperability">Interoperability<span class="i">i</span></button></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>The Coordination Problem A2A Solves</h3><div class="analogy"><span class="an-lab">In plain words</span>A2A is like a universal power adapter standard — without it, every device needs its own custom plug, but with it, anything connects to anything.</div><p>Modern AI products rarely run on a single agent. A checkout assistant might hand off to a fraud-detection agent, which consults an inventory agent, which calls a pricing agent. Each of these may be built on different frameworks — LangGraph, ag2, a custom Python service — by different teams or vendors.</p><p>Without a shared contract, every pair of agents needs custom glue code: bespoke HTTP calls, hand-rolled serialization, and one-off auth schemes. That's an <strong>O(n²)</strong> integration problem — ten agents means up to 45 custom bridges.</p><p><button class="term" data-term="a2a">A2A<span class="i">i</span></button> is Google's open <button class="term" data-term="protocol">protocol<span class="i">i</span></button> that collapses this to O(n): every agent speaks the same language, so any two can interoperate without custom code. It defines how agents advertise capabilities, delegate <button class="term" data-term="task">tasks<span class="i">i</span></button>, stream results, and authenticate — all over standard <button class="term" data-term="http-transport">HTTP<span class="i">i</span></button>.</p><p>A2A sits at the <strong>agent-to-agent</strong> layer. It complements <button class="term" data-term="mcp">MCP<span class="i">i</span></button> (which handles agent-to-tool calls) rather than replacing it. Think of MCP as how an agent picks up a tool, and A2A as how one agent hands work to another agent.</p></div><div class="block reveal needs-technical blk-explain"><h3>A2A's Core Design Principles</h3><div class="analogy"><span class="an-lab">In plain words</span>Designing A2A around existing web standards is like building a new shipping container on the same dimensions as every existing truck and crane — instant compatibility with the whole logistics network.</div><p>A2A is built on four deliberate design choices that make it practical to adopt without rewriting existing infrastructure.</p><ul><li><strong>Standard transport.</strong> All communication runs over <button class="term" data-term="http-transport">HTTP<span class="i">i</span></button> using <button class="term" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button>. No new wire protocol to learn or firewall-punch.</li><li><strong>Capability discovery via Agent Cards.</strong> Each agent publishes an <button class="term" data-term="agent-card">Agent Card<span class="i">i</span></button> at a <button class="term" data-term="well-known-url">well-known URL<span class="i">i</span></button> — a JSON document listing its <button class="term" data-term="skill">skills<span class="i">i</span></button>, input/output formats, and auth requirements. Callers discover what an agent can do before sending any work.</li><li><strong>Async-first task model.</strong> Work is wrapped in a <button class="term" data-term="task">Task<span class="i">i</span></button> object with a lifecycle (<button class="term" data-term="task-state">Task State<span class="i">i</span></button>). Long-running jobs stream incremental updates via <button class="term" data-term="sse">SSE<span class="i">i</span></button> rather than blocking the caller.</li><li><strong>Built-in auth.</strong> The protocol includes <button class="term" data-term="authentication">authentication<span class="i">i</span></button> hooks so agents can enforce access control without bolting on a separate security layer.</li></ul><p>These choices mean A2A agents are <strong>opaque by design</strong>: a <button class="term" data-term="client-agent">client agent<span class="i">i</span></button> delegates to a <button class="term" data-term="remote-agent">remote agent<span class="i">i</span></button> without knowing its internal implementation. The contract is the interface, not the internals.</p><div class="callout info"><strong>Key distinction: </strong>A2A governs <button class="term" data-term="agent-delegation">agent delegation<span class="i">i</span></button> (agent → agent). MCP governs <button class="term" data-term="tool-call">tool calls<span class="i">i</span></button> (agent → tool/API). Both can coexist in the same system.</div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">Real-World Scenario: Post-Purchase Agent Mesh</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>Imagine you're a PM at an e-commerce platform. You've shipped three AI agents: a <strong>Returns Agent</strong> (handles refund logic), an <strong>Inventory Agent</strong> (checks warehouse stock), and a <strong>Carrier Agent</strong> (books return shipments). Each was built by a different team.</p><p>Without A2A, the Returns Agent needs custom code to call each sibling. Each sibling has different request shapes, auth tokens, and error formats. Adding a fourth agent — say, a Fraud Agent — means writing three more custom integrations.</p><p>With A2A, each agent publishes an <button class="term" data-term="agent-card">Agent Card<span class="i">i</span></button> at its well-known URL. The Returns Agent reads those cards and delegates via standard A2A tasks. Adding the Fraud Agent means one new card — no new glue code.</p><p>Booking a shipment can take 30 seconds. Instead of blocking, the Carrier Agent streams <button class="term" data-term="task-state">task state<span class="i">i</span></button> updates (<code>submitted → working → completed</code>) over SSE. The customer sees a live status update, not a spinner.</p><p>For PMs, this changes the build calculus. Each new capability is a new agent to plug in — not a new integration sprint.</p></div></div></div><div class="block reveal"><h3>How A2A Connects Two Agents</h3><div class="viz" data-viz="stepped"><p class="viz-cap">The lifecycle of a single A2A delegation — from discovery to result delivery.</p><div class="viz-body"></div><script type="application/json" class="viz-data">{"steps":[{"label":"Publish Agent Card","detail":"The remote agent exposes a JSON Agent Card at /.well-known/agent.json, listing its skills, accepted input types, and auth method.","icon":"📋"},{"label":"Discover & Inspect","detail":"The client agent fetches the card and checks whether the remote agent has the right skill for the task at hand.","icon":"🔍"},{"label":"Send Task","detail":"The client agent posts a Task object via JSON-RPC 2.0 over HTTP, including a Message with the work to be done.","icon":"📤"},{"label":"Stream Progress","detail":"For long-running work, the remote agent pushes task state updates (submitted → working) over SSE so the caller isn't blocked.","icon":"📡"},{"label":"Return Artifact","detail":"On completion, the remote agent returns an Artifact — the structured result (e.g. a booking confirmation, a JSON report) — and sets state to completed.","icon":"✅"}]}</script></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">Fetching an Agent Card and Sending a Task</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code">import httpx, json
+
+# 1. Discover what the Carrier Agent can do
+card_url = "https://carrier-agent.example.com/.well-known/agent.json"
+card = httpx.get(card_url).json()
+
+print("Skills available:", [s["name"] for s in card["skills"]])
+# → Skills available: ['book_return_shipment', 'track_parcel']
+
+# 2. Build a Task message
+task_payload = {
+    "jsonrpc": "2.0",
+    "method": "tasks/send",
+    "id": "task-001",
+    "params": {
+        "message": {
+            "role": "user",
+            "parts": [
+                {
+                    "type": "text",
+                    "text": "Book a return shipment for order #ORD-9921 to warehouse WH-3."
+                }
+            ]
+        }
+    }
+}
+
+# 3. Send the task and receive the initial state
+response = httpx.post(
+    "https://carrier-agent.example.com/",
+    json=task_payload,
+    headers={"Authorization": "Bearer &lt;token&gt;"}
+).json()
+
+task_id = response["result"]["id"]
+state    = response["result"]["status"]["state"]
+print(f"Task {task_id} is now: {state}")
+# → Task task-001 is now: submitted
+
+# 4. Poll or stream for completion (streaming shown as comment)
+# For SSE streaming, open an EventSource to the agent's stream endpoint
+# and listen for state transitions: submitted → working → completed</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>/.well-known/agent.json</code></dt><dd>The standardized URL path where every A2A-compliant agent publishes its Agent Card — no configuration needed to find it.</dd><dt><code>"jsonrpc": "2.0"</code></dt><dd>Marks this as a JSON-RPC 2.0 request — the wire format A2A uses for all task operations.</dd><dt><code>"method": "tasks/send"</code></dt><dd>The A2A RPC method for submitting a new task to a remote agent.</dd><dt><code>"parts": [{ "type": "text", ... }]</code></dt><dd>A Message is made of one or more Parts — typed content chunks (text, file, data). This mirrors how multi-modal inputs are structured in A2A.</dd><dt><code>response["result"]["status"]["state"]</code></dt><dd>The Task State field — A2A's lifecycle tracker. It moves from submitted → working → completed (or failed/cancelled).</dd><dt><code>EventSource (SSE comment)</code></dt><dd>For long-running tasks, A2A uses Server-Sent Events so the remote agent can push state updates without the client polling repeatedly.</dd></dl></div><p>This snippet shows the full A2A handshake in miniature: discover the card, build a typed task, send it over JSON-RPC, and read the initial state. In production you'd replace the poll comment with an SSE listener to get live updates as the Carrier Agent works.</p><p>Notice that the Returns Agent (caller) knows nothing about how the Carrier Agent books shipments internally — it only knows the skill name and the expected message format. That's the A2A contract in action.</p></div></div></div><button class="next-step" data-deepdive="mod-architecture">Next · step 2: Core Architecture and Communication Model →</button></div></section><section class="panel module" data-panel="mod-architecture" data-module="mod-architecture" id="panel-mod-architecture"><div class="module-head"><div class="num">2</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 2 of 6</span><span class="m-prev">↳ builds on “What is A2A and Why Does It Exist?”</span></div><h2>Core Architecture and Communication Model</h2><p class="sub">How agents find, connect to, and talk with each other</p><div class="m-time">⏱ ~3 min read</div></div></div><p class="m-what">How A2A agents communicate: the Client/Remote Agent roles, JSON-RPC 2.0 message format, and SSE streaming over HTTP.</p><div class="analogy"><span class="an-lab">In plain words</span>Think of it as a post office system: there are senders, receivers, and a defined envelope format everyone agrees on.</div><div class="m-rel"><span class="m-rel-lab">Why this matters for you</span>Understanding this architecture lets you reason about how AI agents in your e-commerce platform hand off work, what the protocol guarantees, and where failures can occur.</div><div class="module-body"><p>A2A uses HTTP/HTTPS with JSON-RPC 2.0 as its transport layer, and supports both request-response and server-sent event streaming. The model separates the Client Agent (the caller) from the Remote Agent (the worker), with a well-defined message envelope tying them together.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>Describe the roles of Client Agent and Remote Agent in an A2A exchange</li><li>Explain how JSON-RPC 2.0 and SSE fit into the protocol's transport layer</li><li>Trace the path of a message from initiation to response</li></ul></div><div class="keyterms"><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button><button class="term-chip" data-term="sse">SSE<span class="i">i</span></button><button class="term-chip" data-term="http-transport">HTTP Transport<span class="i">i</span></button><button class="term-chip" data-term="message">Message<span class="i">i</span></button></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>Client Agent and Remote Agent: Who Does What</h3><div class="analogy"><span class="an-lab">In plain words</span>Think of the Client Agent as a store manager placing a work order, and the Remote Agent as the specialist warehouse team that fulfills it — each has a clear, separate role.</div><p>Every <button class="term" data-term="a2a">A2A<span class="i">i</span></button> exchange involves exactly two roles. The <button class="term" data-term="client-agent">Client Agent<span class="i">i</span></button> initiates work — it decides what needs doing and sends a structured request. The <button class="term" data-term="remote-agent">Remote Agent<span class="i">i</span></button> receives that request, executes the work, and returns a result.</p><p>Neither role is tied to a specific model or vendor. Any agent can act as a Client Agent in one exchange and a Remote Agent in another. This symmetry is what makes <button class="term" data-term="multi-agent-system">multi-agent systems<span class="i">i</span></button> composable: agents delegate to each other without a central controller.</p><p>The Remote Agent exposes its capabilities through an <button class="term" data-term="agent-card">Agent Card<span class="i">i</span></button> — a machine-readable manifest served at a <button class="term" data-term="well-known-url">well-known URL<span class="i">i</span></button>. The Client Agent reads this card before sending work, so it knows what <button class="term" data-term="skill">skills<span class="i">i</span></button> are available and how to authenticate.</p><ul><li><strong>Client Agent</strong> — the caller; owns the goal and decides when the task is complete.</li><li><strong>Remote Agent</strong> — the worker; owns execution and reports <button class="term" data-term="task-state">task state<span class="i">i</span></button> back.</li><li><strong>Agent Card</strong> — the contract; tells the caller what the worker can do.</li></ul><div class="keyterms"><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="well-known-url">Well-Known URL<span class="i">i</span></button><button class="term-chip" data-term="skill">Skill<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="multi-agent-system">Multi-Agent System<span class="i">i</span></button></div></div><div class="block reveal needs-technical blk-explain"><h3>Transport Layer: HTTP, JSON-RPC 2.0, and SSE</h3><div class="analogy"><span class="an-lab">In plain words</span>JSON-RPC 2.0 is like a standardized order form — every request has the same fields (method, params, id) so any system can read it without custom parsing.</div><p>A2A runs over plain <button class="term" data-term="http-transport">HTTP/HTTPS<span class="i">i</span></button> and uses <button class="term" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button> as its message format. Every call is a JSON object with a fixed envelope: <code>jsonrpc</code>, <code>method</code>, <code>params</code>, and <code>id</code>. This predictable shape means any HTTP client can speak A2A without a custom SDK.</p><p>For short tasks, the protocol uses standard request-response: the Client Agent POSTs a request and waits for a single JSON reply. For long-running or streaming tasks, A2A switches to <button class="term" data-term="sse">Server-Sent Events (SSE)<span class="i">i</span></button> — the server pushes incremental updates over a persistent HTTP connection.</p><p>SSE is one-directional (server → client) and works through standard HTTP, so it needs no WebSocket upgrade. The Remote Agent streams <button class="term" data-term="task-state">task state<span class="i">i</span></button> changes and partial <button class="term" data-term="artifact">artifacts<span class="i">i</span></button> as they become available, keeping the Client Agent informed without polling.</p><div class="callout info">Key tradeoff: <strong>request-response</strong> is simpler to implement and debug; <button class="term" data-term="streaming"><strong>SSE streaming</strong><span class="i">i</span></button> reduces perceived latency for tasks that produce output incrementally (e.g., generating a long product description).</div><div class="keyterms"><button class="term-chip" data-term="http-transport">HTTP Transport<span class="i">i</span></button><button class="term-chip" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button><button class="term-chip" data-term="sse">SSE<span class="i">i</span></button><button class="term-chip" data-term="streaming">Streaming<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button></div></div><div class="block reveal"><h3>Message Path: From Initiation to Response</h3><div class="viz" data-viz="stepped"><div class="viz-body"></div><script type="application/json" class="viz-data">{"steps":[{"label":"Discover","detail":"Client Agent fetches the Remote Agent's Agent Card from its well-known URL to learn available skills and auth requirements.","icon":"search"},{"label":"Authenticate","detail":"Client Agent attaches credentials (e.g., a bearer token) as specified in the Agent Card before sending any task.","icon":"lock"},{"label":"Send Task","detail":"Client Agent POSTs a JSON-RPC 2.0 request with method 'tasks/send', a unique task ID, and a Message containing one or more Parts.","icon":"send"},{"label":"Execute & Stream","detail":"Remote Agent processes the task. For long work, it opens an SSE stream and pushes state updates (working → completed) and partial artifacts back.","icon":"cpu"},{"label":"Receive Result","detail":"Client Agent reads the final Task object — including state 'completed' and any output Artifacts — and decides the next action.","icon":"check"}]}</script></div><div class="keyterms"><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="well-known-url">Well-Known URL<span class="i">i</span></button><button class="term-chip" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button><button class="term-chip" data-term="sse">SSE<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button><button class="term-chip" data-term="message">Message<span class="i">i</span></button><button class="term-chip" data-term="part">Part<span class="i">i</span></button><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button></div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">Scenario: Automated Product Description Generator</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>Imagine your platform has a <strong>Catalog Agent</strong> (the Client Agent) that orchestrates content tasks, and a <strong>Copywriting Agent</strong> (the Remote Agent) that generates product descriptions.</p><ol><li>The Catalog Agent fetches the Copywriting Agent's <button class="term" data-term="agent-card">Agent Card<span class="i">i</span></button> from <code>/.well-known/agent.json</code> and confirms it has a 'write-product-copy' <button class="term" data-term="skill">skill<span class="i">i</span></button>.</li><li>It POSTs a <button class="term" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button> request: method <code>tasks/send</code>, params include a <button class="term" data-term="message">Message<span class="i">i</span></button> with a text <button class="term" data-term="part">Part<span class="i">i</span></button> containing the product SKU and attributes.</li><li>Because descriptions can be long, the Copywriting Agent responds with an SSE stream. The Catalog Agent receives tokens as they arrive — no polling needed.</li><li>When the stream closes with <button class="term" data-term="task-state">task state<span class="i">i</span></button> = <code>completed</code>, the Catalog Agent reads the output <button class="term" data-term="artifact">Artifact<span class="i">i</span></button> and writes the copy to the product database.</li></ol><p>From a PM perspective: the two agents are independently deployable and replaceable. Swap the Copywriting Agent for a different vendor's model without touching the Catalog Agent — as long as the Agent Card contract is honored.</p></div></div><div class="keyterms"><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="skill">Skill<span class="i">i</span></button><button class="term-chip" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button><button class="term-chip" data-term="message">Message<span class="i">i</span></button><button class="term-chip" data-term="part">Part<span class="i">i</span></button><button class="term-chip" data-term="sse">SSE<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">Sending a Task via JSON-RPC 2.0 (Plain Python)</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code">import json, requests, sseclient
+
+REMOTE_AGENT_URL = "https://copywriter.example.com/a2a"
+AUTH_TOKEN = "Bearer &lt;token&gt;"
+
+# 1. Build the JSON-RPC 2.0 envelope
+payload = {
+    "jsonrpc": "2.0",
+    "id": "task-001",
+    "method": "tasks/send",
+    "params": {
+        "id": "task-001",
+        "message": {
+            "role": "user",
+            "parts": [
+                {"type": "text", "text": "Write a 50-word description for SKU-9821: noise-cancelling headphones."}
+            ]
+        }
+    }
+}
+
+# 2. POST and request an SSE stream
+headers = {
+    "Authorization": AUTH_TOKEN,
+    "Content-Type": "application/json",
+    "Accept": "text/event-stream"   # signals: stream the response
+}
+
+response = requests.post(REMOTE_AGENT_URL, json=payload, headers=headers, stream=True)
+
+# 3. Consume the SSE stream
+client = sseclient.SSEClient(response)
+for event in client.events():
+    data = json.loads(event.data)
+    state = data.get("status", {}).get("state")
+    print(f"State: {state}")
+    if state == "completed":
+        artifact_text = data["artifacts"][0]["parts"][0]["text"]
+        print("Result:", artifact_text)
+        break</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>"jsonrpc": "2.0"</code></dt><dd>Declares the JSON-RPC version; required on every request so the server knows which protocol rules apply.</dd><dt><code>"method": "tasks/send"</code></dt><dd>The A2A RPC method name — tells the Remote Agent to create and start a new task.</dd><dt><code>"id": "task-001"</code></dt><dd>A client-chosen identifier that links the request to its response; useful for correlating async replies.</dd><dt><code>"parts": [...]</code></dt><dd>The content units inside a Message. A Part can be text, a file, or structured data — here it's a plain text prompt.</dd><dt><code>"Accept": "text/event-stream"</code></dt><dd>HTTP header that tells the server to respond with an SSE stream instead of a single JSON blob.</dd><dt><code>stream=True</code></dt><dd>Keeps the HTTP connection open so the client can read chunks as they arrive, rather than waiting for the full body.</dd><dt><code>sseclient.SSEClient(response)</code></dt><dd>Wraps the raw streaming response and parses each SSE event into a structured object with a .data field.</dd><dt><code>data["artifacts"][0]["parts"][0]["text"]</code></dt><dd>Navigates the A2A Task object to the first Artifact's first Part — where the Remote Agent placed the generated text.</dd></dl></div><p>The code above shows the full round-trip: build the <button class="term" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button> envelope, POST it with an SSE accept header, then iterate over <button class="term" data-term="streaming">streamed<span class="i">i</span></button> events until the <button class="term" data-term="task-state">task state<span class="i">i</span></button> reaches <code>completed</code>. The output lands in an <button class="term" data-term="artifact">Artifact<span class="i">i</span></button> — a structured result object separate from the task metadata.</p><div class="callout warn">If the Remote Agent doesn't support SSE, omit the <code>Accept: text/event-stream</code> header. The server will return a single JSON response instead, and you can skip the SSEClient loop.</div></div></div><div class="keyterms"><button class="term-chip" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button><button class="term-chip" data-term="message">Message<span class="i">i</span></button><button class="term-chip" data-term="part">Part<span class="i">i</span></button><button class="term-chip" data-term="sse">SSE<span class="i">i</span></button><button class="term-chip" data-term="streaming">Streaming<span class="i">i</span></button><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button><button class="term-chip" data-term="http-transport">HTTP Transport<span class="i">i</span></button></div></div><button class="next-step" data-deepdive="mod-agent-cards">Next · step 3: Agent Cards and Capability Discovery →</button></div></section><section class="panel module" data-panel="mod-agent-cards" data-module="mod-agent-cards" id="panel-mod-agent-cards"><div class="module-head"><div class="num">3</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 3 of 6</span><span class="m-prev">↳ builds on “Core Architecture and Communication Model”</span></div><h2>Agent Cards and Capability Discovery</h2><p class="sub">How agents advertise themselves and how others find them</p><div class="m-time">⏱ ~3 min read</div></div></div><p class="m-what">An Agent Card is a JSON document every A2A agent publishes so other agents can discover its skills, supported data formats, and authentication requirements.</p><div class="analogy"><span class="an-lab">In plain words</span>An Agent Card is like a business card with a menu on the back — it tells you who I am and exactly what I can do for you.</div><div class="m-rel"><span class="m-rel-lab">Why this matters for you</span>Understanding Agent Cards lets you specify, evaluate, and scope AI agent integrations — the same way you'd review an API contract during vendor selection.</div><div class="module-body"><p>Every A2A-compliant agent publishes an Agent Card — a JSON document at a well-known URL that declares its name, skills, supported input/output modes, and authentication requirements. Discovery is the first step before any task can be delegated.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>Read and interpret an Agent Card JSON document</li><li>Explain how a Client Agent uses a card to decide whether to delegate a task</li><li>Write a minimal Agent Card for a custom agent</li></ul></div><div class="decision-forces"><strong>Decision this forces:</strong> What capabilities and modalities should your agent advertise, and what authentication scheme should it require?</div><div class="keyterms"><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="skill">Skill<span class="i">i</span></button><button class="term-chip" data-term="capability-discovery">Capability Discovery<span class="i">i</span></button><button class="term-chip" data-term="well-known-url">Well-Known URL<span class="i">i</span></button><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>What an Agent Card Is and Why It Exists</h3><div class="analogy"><span class="an-lab">In plain words</span>An Agent Card is like a product listing on a marketplace — it tells buyers exactly what the product does, what formats it accepts, and what credentials are needed to purchase.</div><p>In the <button class="term" data-term="a2a">A2A Protocol<span class="i">i</span></button>, every agent publishes an <button class="term" data-term="agent-card">Agent Card<span class="i">i</span></button>. This is a structured JSON document served at a <button class="term" data-term="well-known-url">well-known URL<span class="i">i</span></button> (typically <code>/.well-known/agent.json</code>). It is the agent's public contract: capabilities, communication method, and required credentials.</p><p><button class="term" data-term="capability-discovery">Capability discovery<span class="i">i</span></button> happens before any task is delegated. A <button class="term" data-term="client-agent">client agent<span class="i">i</span></button> fetches the card and inspects it. It checks whether the <button class="term" data-term="remote-agent">remote agent<span class="i">i</span></button> has the right <button class="term" data-term="skill">skills<span class="i">i</span></button> and acceptable <button class="term" data-term="authentication">authentication<span class="i">i</span></button> requirements before sending any message.</p><h3>Core fields in an Agent Card</h3><ul><li><code>name / description</code> — human-readable identity of the agent.</li><li><code>url</code> — the base endpoint for <button class="term" data-term="json-rpc">JSON-RPC<span class="i">i</span></button> calls.</li><li><code>skills[]</code> — array of <button class="term" data-term="skill">skill<span class="i">i</span></button> objects, each with an id, name, description, and supported input/output modes.</li><li><code>capabilities</code> — flags for <button class="term" data-term="streaming">streaming<span class="i">i</span></button> or push-notification support.</li><li><code>authentication</code> — the required scheme (e.g. Bearer token, API key, none).</li><li><code>version</code> — the agent's version string, used for compatibility checks.</li></ul><div class="callout info">The card is read-only and public by design. Sensitive credentials are never stored in it. Only the <strong>scheme</strong> is included (e.g. "Bearer") so callers know how to authenticate.</div><div class="keyterms"><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="capability-discovery">Capability Discovery<span class="i">i</span></button><button class="term-chip" data-term="well-known-url">Well-Known URL<span class="i">i</span></button><button class="term-chip" data-term="skill">Skill<span class="i">i</span></button><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button></div></div><div class="block reveal needs-technical blk-explain"><h3>How a Client Agent Uses a Card to Decide on Delegation</h3><div class="analogy"><span class="an-lab">In plain words</span>Reading an Agent Card before delegating is like checking a contractor's license and specialties before hiring them for a job — you verify fit before committing.</div><p>When a <button class="term" data-term="client-agent">client agent<span class="i">i</span></button><button class="term" data-term="task"> needs to delegate a <span class="i">i</span></button>task, it runs a lightweight matching process against the card.</p><ol><li><strong>Fetch</strong><code> the card from </code><code>/.well-known/agent.json</code>.</li><li><strong>Match skills</strong><button class="term" data-term="skill"> — check whether any <span class="i">i</span></button>skill id or description aligns with the task intent.</li><li><strong>Check modalities</strong> — confirm the skill accepts the required input type (text, file, structured data).</li><li><strong>Evaluate auth</strong><button class="term" data-term="authentication"> — verify the client can satisfy the declared <span class="i">i</span></button>authentication scheme.</li><li><strong>Delegate or skip</strong> — if all checks pass, send the task; otherwise try another agent or fail gracefully.</li></ol><p>This process is what makes <button class="term" data-term="interoperability">interoperability<span class="i">i</span></button> real: agents from different vendors can collaborate because the card provides a shared, machine-readable contract.</p><div class="callout warn">A mismatch on <strong>any</strong> of the three checks (skill, modality, auth) should abort delegation. Partial matches lead to runtime errors that are hard to debug.</div><div class="keyterms"><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="agent-delegation">Agent Delegation<span class="i">i</span></button><button class="term-chip" data-term="skill">Skill<span class="i">i</span></button><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="interoperability">Interoperability<span class="i">i</span></button></div></div><div class="block reveal"><h3>Agent Card Discovery Flow</h3><div class="viz" data-viz="stepped"><p class="viz-cap">The sequence a client agent follows from discovery to delegation.</p><div class="viz-body"></div><script type="application/json" class="viz-data">{"steps":[{"label":"Fetch Card","detail":"HTTP GET /.well-known/agent.json on the remote agent's host. No auth needed for the card itself.","icon":"download"},{"label":"Parse & Validate","detail":"Deserialize the JSON and confirm required fields (name, url, skills, authentication) are present.","icon":"check-circle"},{"label":"Match Skills","detail":"Compare the task's intent against each skill's id, name, and description. Check input/output mode compatibility.","icon":"search"},{"label":"Verify Auth Capability","detail":"Confirm the client holds credentials matching the declared authentication scheme (Bearer, API key, etc.).","icon":"lock"},{"label":"Delegate Task","detail":"Send the task via JSON-RPC to the agent's url endpoint. The agent card's url field is the exact target.","icon":"send"}]}</script></div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">Scenario: Orchestrating an E-Commerce Return Flow</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>Imagine an AI-powered post-purchase assistant for an e-commerce platform. The orchestrator (<button class="term" data-term="client-agent">client agent<span class="i">i</span></button>) must handle a customer return request.</p><p>Three specialist agents are available: a <strong>Returns Agent</strong>, a <strong>Logistics Agent</strong>, and a <strong>Refund Agent</strong>. Each publishes an Agent Card.</p><p>The orchestrator fetches all three cards and reads their <code>skills[]</code> arrays. The Returns Agent advertises <code>validate-return-eligibility</code>, accepting structured order data. The Logistics Agent has <code>schedule-pickup</code>, accepting an address string. The Refund Agent has <code>issue-refund</code>, requiring a Bearer token for payment auth.</p><p>The orchestrator delegates each sub-task to the matching agent in sequence. No hardcoded routing logic is needed. If the Refund Agent's auth scheme changes to OAuth, the orchestrator detects the mismatch at discovery time. The product team is alerted before any customer is affected.</p><div class="callout good"><strong>From a PM perspective: Agent Cards are the API contract you review during vendor evaluation.</strong> Checking skills and auth requirements is the technical equivalent of reading a third-party capability spec.</div></div></div><div class="keyterms"><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="skill">Skill<span class="i">i</span></button><button class="term-chip" data-term="agent-delegation">Agent Delegation<span class="i">i</span></button><button class="term-chip" data-term="capability-discovery">Capability Discovery<span class="i">i</span></button></div></div><div class="block reveal"><h3>Choosing an Authentication Scheme for Your Agent Card</h3><div class="matrix"><table class="dm"><thead><tr><th>Option</th><th>Security level</th><th>Implementation effort</th><th>Suitable for internal agents</th><th>Suitable for public/third-party agents</th><th>Token expiry / rotation</th><th>When to choose</th><th>Cost</th><th>Complexity</th></tr></thead><tbody><tr><td><strong>No Auth (none)</strong></td><td><span class="rate bad"></span>None — any caller can invoke</td><td><span class="rate good"></span>Zero setup required</td><td><span class="rate ok"></span>Only for sandboxed dev environments</td><td><span class="rate bad"></span>Not recommended</td><td><span class="rate ok"></span>N/A</td><td class="when">Internal dev/test environments or fully public read-only agents with no sensitive data.</td><td>None</td><td>Minimal</td></tr><tr><td><strong>API Key (Bearer static)</strong></td><td><span class="rate ok"></span>Moderate — key must be kept secret</td><td><span class="rate good"></span>Low — add a header check</td><td><span class="rate good"></span>Good fit for service-to-service calls</td><td><span class="rate ok"></span>Acceptable with key rotation policy</td><td><span class="rate ok"></span>Manual rotation required</td><td class="when">Internal microservices or B2B integrations where the caller is a known, trusted system.</td><td>Low — key management only</td><td>Low</td></tr><tr><td><strong>OAuth 2.0 / OIDC (Bearer dynamic)</strong></td><td><span class="rate good"></span>High — short-lived, scoped tokens</td><td><span class="rate bad"></span>High — requires auth server and token validation</td><td><span class="rate ok"></span>Overkill for purely internal use</td><td><span class="rate good"></span>Best choice for external exposure</td><td><span class="rate good"></span>Automatic via token TTL</td><td class="when">Production agents exposed to external partners or handling sensitive data (payments, PII).</td><td>Medium — auth server infrastructure needed</td><td>High</td></tr></tbody></table></div><div class="keyterms"><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">Writing a Minimal Agent Card (Python dict → JSON)</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code">import json
+
+agent_card = {
+    "name": "Returns Eligibility Agent",
+    "description": "Validates whether an order qualifies for a return under store policy.",
+    "url": "https://agents.example.com/returns",
+    "version": "1.0.0",
+    "capabilities": {
+        "streaming": False,
+        "pushNotifications": False
+    },
+    "authentication": {
+        "schemes": ["Bearer"]
+    },
+    "skills": [
+        {
+            "id": "validate-return-eligibility",
+            "name": "Validate Return Eligibility",
+            "description": "Checks order age, item condition, and policy rules to approve or deny a return.",
+            "inputModes": ["application/json"],
+            "outputModes": ["application/json"]
+        }
+        # TODO: add a second skill for 'fetch-return-status' here
+    ]
+}
+
+# Serve this at /.well-known/agent.json
+print(json.dumps(agent_card, indent=2))</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>"capabilities": { "streaming": False }</code></dt><dd>Declares whether this agent supports streaming responses (SSE). False means it only returns complete responses.</dd><dt><code>"authentication": { "schemes": ["Bearer"] }</code></dt><dd>Lists accepted auth schemes. 'Bearer' means the caller must supply an Authorization: Bearer &lt;token&gt; HTTP header.</dd><dt><code>"skills": [{ "id": ..., "inputModes": [...], "outputModes": [...] }]</code></dt><dd>Each skill object is a discrete capability. inputModes/outputModes are MIME type strings that tell callers what data formats are accepted and returned.</dd><dt><code>json.dumps(agent_card, indent=2)</code></dt><dd>Serializes the Python dict to a formatted JSON string — the exact format that must be served at /.well-known/agent.json.</dd></dl></div><p>This card declares a single-skill agent for an e-commerce returns flow. The <code>TODO</code> comment marks where you'd add a second skill — practice by completing it.</p><p>The <code>inputModes</code> and <code>outputModes</code> fields use MIME types. A client agent checks these to confirm it can serialize its payload in a format the skill accepts.</p></div></div><div class="keyterms"><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="skill">Skill<span class="i">i</span></button><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button><button class="term-chip" data-term="well-known-url">Well-Known URL<span class="i">i</span></button><button class="term-chip" data-term="streaming">Streaming<span class="i">i</span></button><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button></div></div><button class="next-step" data-deepdive="mod-task-lifecycle">Next · step 4: Task Lifecycle and Message Exchange →</button></div></section><section class="panel module" data-panel="mod-task-lifecycle" data-module="mod-task-lifecycle" id="panel-mod-task-lifecycle"><div class="module-head"><div class="num">4</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 4 of 6</span><span class="m-prev">↳ builds on “Agent Cards and Capability Discovery”</span></div><h2>Task Lifecycle and Message Exchange</h2><p class="sub">From task creation to completion — states, messages, and artifacts</p><div class="m-time">⏱ ~3 min read</div></div></div><p class="m-what">How A2A tasks move through a defined state machine and how agents exchange Messages and Artifacts along the way.</p><div class="analogy"><span class="an-lab">In plain words</span>Like tracking a package: the task gets a tracking ID, moves through statuses, and you get updates until it's delivered.</div><div class="m-rel"><span class="m-rel-lab">Why this matters for you</span>Understanding the task lifecycle lets you design reliable multi-turn agent flows — critical for e-commerce automations like AI copywriting or order processing that need mid-task human input.</div><div class="module-body"><p>A2A tasks move through a defined state machine: submitted → working → input-required → completed (or failed/cancelled). Agents exchange structured Message objects containing Parts (text, file, or data), and completed work is returned as Artifacts.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>Map the full A2A task state machine and its valid transitions</li><li>Distinguish between Messages (in-flight exchange) and Artifacts (final outputs)</li><li>Handle the input-required state to build interactive multi-turn agent flows</li></ul></div><div class="decision-forces"><strong>Decision this forces:</strong> Should your task flow be synchronous (request-response) or streaming (SSE), and how will you handle mid-task input requests?</div><div class="keyterms"><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="message">Message<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button><button class="term-chip" data-term="part">Part<span class="i">i</span></button><button class="term-chip" data-term="streaming">Streaming<span class="i">i</span></button></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>The A2A Task State Machine</h3><div class="analogy"><span class="an-lab">In plain words</span>A task is like a customer order: it's submitted, the warehouse works on it, it might pause waiting for your address confirmation, and finally it's either delivered or cancelled.</div><p>Every <button class="term" data-term="a2a">A2A<span class="i">i</span></button> task moves through a defined state machine managed by the <button class="term" data-term="remote-agent">remote agent's<span class="i">i</span></button> <button class="term" data-term="task-manager">Task Manager<span class="i">i</span></button>. The valid states are <strong>submitted</strong>, <strong>working</strong>, <strong>input-required</strong>, <strong>completed</strong>, <strong>failed</strong>, and <strong>cancelled</strong>. Transitions only flow forward — a task can't go back to submitted once it's working.</p><p>The <strong>input-required</strong><button class="term" data-term="client-agent">client agent<span class="i">i</span></button><button class="term" data-term="message"> message<span class="i">i</span></button> and the task resumes to <strong>working</strong>.</p><ul><li><strong>submitted</strong> → task received, not yet processed</li><li><strong>working</strong> → agent is actively executing</li><li><strong>input-required</strong> → agent paused, waiting for caller input</li><li><strong>completed</strong><button class="term" data-term="artifact">artifact<span class="i">i</span></button> ready for pickup</li><li><strong>failed</strong> → unrecoverable error; inspect the status message</li><li><strong>cancelled</strong> → caller or system aborted the task</li></ul><div class="callout info">Only <strong>completed</strong> and <strong>failed</strong> are terminal states. <strong>cancelled</strong> is also terminal but is initiated externally, not by the agent's own logic.</div><div class="keyterms"><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="task-manager">Task Manager<span class="i">i</span></button></div></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>Messages vs. Artifacts: In-Flight vs. Final</h3><div class="analogy"><span class="an-lab">In plain words</span>Messages are the back-and-forth emails during a project; the Artifact is the finished deliverable you actually ship.</div><p>A2A distinguishes two kinds of content: <button class="term" data-term="message"><strong>Messages</strong><span class="i">i</span></button> and <button class="term" data-term="artifact"><strong>Artifacts</strong><span class="i">i</span></button>. Messages carry the conversational exchange — instructions, clarifying questions, status updates. Artifacts carry the completed output the caller actually consumes.</p><p>Both are composed of <button class="term" data-term="part"><strong>Parts</strong><span class="i">i</span></button>: typed content units that can be <strong>text</strong>, <strong>file</strong>, or structured <strong>data</strong>. A single Message or Artifact can mix Part types — for example, a text summary alongside a JSON data payload.</p><ul><li><strong>Message</strong> — role is <strong>user</strong> or <strong>agent</strong>; used during task execution</li><li><strong>Artifact</strong> — produced only on <strong>completed</strong>; has a name and optional index for multi-part outputs</li></ul><div class="callout warn">Don't treat a streaming Message chunk as a finished Artifact. Wait for the <strong>completed</strong> state before reading Artifacts — intermediate Messages may still change.</div><div class="keyterms"><button class="term-chip" data-term="message">Message<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button><button class="term-chip" data-term="part">Part<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button></div></div><div class="block reveal"><h3>A2A Task Lifecycle: End-to-End</h3><div class="viz" data-viz="stepped"><div class="viz-body"></div><script type="application/json" class="viz-data">{"steps":[{"label":"Client sends tasks/send","detail":"The client agent posts a new task with an initial Message (e.g., 'Generate a product description for SKU-4821'). The task enters submitted state.","icon":"send"},{"label":"Task enters working","detail":"The remote agent's Task Manager picks up the task and begins execution. The state transitions to working. If streaming is enabled, SSE events start flowing.","icon":"cog"},{"label":"input-required pause (optional)","detail":"The agent lacks a required detail — say, the target audience for the copy. It sets state to input-required and sends a clarifying Message back. The client must reply to unblock the task.","icon":"pause"},{"label":"Task resumes to working","detail":"The client sends the missing input as a new Message on the same task ID. The agent transitions back to working and continues.","icon":"play"},{"label":"completed + Artifact returned","detail":"The agent finishes and sets state to completed. The finished product description is attached as an Artifact (text Part). The client reads it from the task response.","icon":"check"}]}</script></div><div class="keyterms"><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="message">Message<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button></div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">Scenario: AI Copywriting Agent for a Product Launch</span><span class="col-chev">▸</span></button><div class="collapse-body"><p><button class="term" data-term="remote-agent">remote agent<span class="i">i</span></button> via A2A. Here's how the lifecycle plays out for one SKU.</p><ol><li><button class="term" data-term="client-agent">client agent<span class="i">i</span></button>) calls <code>tasks/send</code> with a Message containing the product spec as a text Part.</li><li>The copywriting agent enters <strong>working</strong> and starts drafting. You poll or stream for updates.</li><li>The agent hits <strong>input-required</strong>: it needs to know whether the tone should be 'performance' or 'lifestyle'. It sends a clarifying Message.</li><li>Your orchestrator reads the question, looks up the campaign brief, and replies with a follow-up Message: 'lifestyle, Gen Z audience'.</li><li><button class="term" data-term="artifact">completed Artifact<span class="i">i</span></button> — a text Part with the final copy, ready to push to your PIM system.</li></ol><p><button class="term" data-term="streaming">streaming<span class="i">i</span></button> (<code>tasks/sendSubscribe</code><button class="term" data-term="sse">SSE<span class="i">i</span></button> events as the agent writes — useful for a live preview UI. Synchronous <code>tasks/send</code> is simpler but blocks until the task resolves, which could be seconds or minutes for long copy.</p></div></div><div class="keyterms"><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="message">Message<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button><button class="term-chip" data-term="part">Part<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="sse">SSE<span class="i">i</span></button><button class="term-chip" data-term="streaming">Streaming<span class="i">i</span></button></div></div><div class="block reveal"><div class="dcall"><div class="use"><div class="lab">Use when</div>Use synchronous tasks/send when the task is short-lived (under ~5 s), the caller can block, and you don't need incremental output — simpler to implement and debug.</div><div class="avoid"><div class="lab">Avoid when</div>Avoid synchronous mode for long-running tasks, tasks that may hit input-required mid-flight, or any UX that needs a live progress indicator — the caller will time out or stall.</div><div class="rot"><div class="lab">Rule of thumb</div>If the task could pause for human input or run longer than a few seconds, default to streaming (tasks/sendSubscribe + SSE) and handle state events as they arrive.</div></div><div class="keyterms"><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="streaming">Streaming<span class="i">i</span></button><button class="term-chip" data-term="sse">SSE<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">Handling the Full Task Lifecycle in Python (Pseudocode)</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code">import httpx, json
+
+AGENT_URL = "https://copy-agent.example.com/a2a"
+
+def send_message(task_id, text, session_id=None):
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "tasks/send",
+        "id": 1,
+        "params": {
+            "id": task_id,
+            "sessionId": session_id,
+            "message": {
+                "role": "user",
+                "parts": [{"type": "text", "text": text}]
+            }
+        }
+    }
+    response = httpx.post(AGENT_URL, json=payload)
+    return response.json()["result"]
+
+def run_task(initial_prompt):
+    import uuid
+    task_id = str(uuid.uuid4())
+
+    task = send_message(task_id, initial_prompt)
+
+    while task["status"]["state"] not in ("completed", "failed", "cancelled"):
+        state = task["status"]["state"]
+
+        if state == "input-required":
+            # Agent is waiting — read its clarifying question
+            question = task["status"]["message"]["parts"][0]["text"]
+            print(f"Agent asks: {question}")
+            user_reply = input("Your answer: ")  # or fetch from campaign brief
+            task = send_message(task_id, user_reply)
+
+        elif state == "working":
+            # Poll again after a short wait
+            import time; time.sleep(2)
+            task = send_message(task_id, "")  # empty re-poll
+
+    if task["status"]["state"] == "completed":
+        for artifact in task.get("artifacts", []):
+            for part in artifact["parts"]:
+                if part["type"] == "text":
+                    print("Final copy:", part["text"])
+    else:
+        print("Task ended with state:", task["status"]["state"])
+
+run_task("Write a lifestyle product description for SKU-4821, a Gen Z sneaker.")</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>"jsonrpc": "2.0"</code></dt><dd>Marks this as a JSON-RPC 2.0 request — the wire format A2A uses for all method calls.</dd><dt><code>"method": "tasks/send"</code></dt><dd>The A2A method name for sending a message to a task (creating it on first call, continuing it on subsequent calls).</dd><dt><code>"id": task_id</code></dt><dd>The stable task identifier — reuse the same ID across all turns of a multi-turn conversation.</dd><dt><code>"role": "user"</code></dt><dd>Marks this Message as coming from the caller side; the agent's replies carry role: 'agent'.</dd><dt><code>"parts": [{"type": "text", ...}]</code></dt><dd>A Message is a list of Parts; here just one text Part, but you could add file or data Parts alongside it.</dd><dt><code>task["status"]["state"]</code></dt><dd>The current task state string — poll this to drive the while-loop through the state machine.</dd><dt><code>task.get("artifacts", [])</code></dt><dd>Artifacts only appear when state is 'completed'; each has its own parts list with the final output content.</dd></dl></div><p>The loop polls the task state and branches on <strong>input-required</strong> vs. <strong>working</strong>. In production you'd replace the <code>input()</code> call with a lookup against your campaign brief store or a human-in-the-loop queue.</p><div class="callout info">For streaming, replace <code>tasks/send</code> with <code>tasks/sendSubscribe</code><button class="term" data-term="sse">SSE<span class="i">i</span></button> event stream. Each event carries a partial task object with the current state — the same state machine applies.</div></div></div><div class="keyterms"><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="message">Message<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button><button class="term-chip" data-term="part">Part<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="sse">SSE<span class="i">i</span></button><button class="term-chip" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button></div></div><button class="next-step" data-deepdive="mod-a2a-vs-mcp">Next · step 5: A2A vs MCP: Picking the Right Protocol →</button></div></section><section class="panel module" data-panel="mod-a2a-vs-mcp" data-module="mod-a2a-vs-mcp" id="panel-mod-a2a-vs-mcp"><div class="module-head"><div class="num">5</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 5 of 6</span><span class="m-prev">↳ builds on “Task Lifecycle and Message Exchange”</span></div><h2>A2A vs MCP: Picking the Right Protocol</h2><p class="sub">Understand the boundary between agent-to-tool and agent-to-agent communication</p><div class="m-time">⏱ ~3 min read</div></div></div><p class="m-what">A side-by-side breakdown of MCP (agent-to-tool) and A2A (agent-to-agent) protocols, with a decision framework for choosing between them.</p><div class="analogy"><span class="an-lab">In plain words</span>MCP is the plug that connects an agent to tools; A2A is the network that connects agents to each other — different layers, often used together.</div><div class="m-rel"><span class="m-rel-lab">Why this matters for you</span>Picking the wrong protocol at an integration point creates rework; this module gives you the mental model to make the right call in your system design.</div><div class="module-body"><p>MCP (Model Context Protocol) connects an agent to tools and data sources; A2A connects agents to other agents. They operate at different layers and are often used together — MCP inside an agent, A2A between agents.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>Articulate the architectural difference between A2A and MCP</li><li>Decide which protocol (or both) fits a given multi-agent design</li><li>Identify where mcp-context-forge fits as a combined gateway</li></ul></div><div class="decision-forces"><strong>Decision this forces:</strong> For each integration point in your system, choose: is this an agent-to-tool call (use MCP) or an agent-to-agent delegation (use A2A)?</div><div class="keyterms"><button class="term-chip" data-term="mcp">MCP<span class="i">i</span></button><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="tool-call">Tool Call<span class="i">i</span></button><button class="term-chip" data-term="agent-delegation">Agent Delegation<span class="i">i</span></button><button class="term-chip" data-term="interoperability">Interoperability<span class="i">i</span></button></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>Two Protocols, Two Layers</h3><div class="analogy"><span class="an-lab">In plain words</span>MCP is like a power outlet — it gives an agent a standard way to plug into any tool; A2A is like a phone line between offices — it lets one agent hand a job to another agent entirely.</div><p><button class="term" data-term="mcp">MCP<span class="i">i</span></button> and <button class="term" data-term="a2a">A2A<span class="i">i</span></button> solve different problems at different layers of a <button class="term" data-term="multi-agent-system">multi-agent system<span class="i">i</span></button>.</p><p>MCP connects an <button class="term" data-term="agent">agent<span class="i">i</span></button> to external tools and data — think search APIs, databases, or inventory feeds. It standardises how the agent makes a <button class="term" data-term="tool-call">tool call<span class="i">i</span></button> and reads the result back.</p><p>A2A connects agents to other agents. One <button class="term" data-term="client-agent">client agent<span class="i">i</span></button> delegates a whole <button class="term" data-term="task">task<span class="i">i</span></button> to a <button class="term" data-term="remote-agent">remote agent<span class="i">i</span></button>, which owns execution and reports back a <button class="term" data-term="task-state">task state<span class="i">i</span></button> and an <button class="term" data-term="artifact">artifact<span class="i">i</span></button>.</p><p>The key distinction: MCP is about calling a function; A2A is about delegating a goal. In practice, an agent often uses MCP internally while being reachable via A2A from the outside.</p><ul><li>MCP scope: agent ↔ tool/data source (one hop, synchronous or streamed result)</li><li>A2A scope: agent ↔ agent (multi-step task, stateful, asynchronous-friendly)</li><li>They are complementary — not competing — and are routinely layered together</li></ul><div class="keyterms"><button class="term-chip" data-term="mcp">MCP<span class="i">i</span></button><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="agent">Agent<span class="i">i</span></button><button class="term-chip" data-term="multi-agent-system">Multi-Agent System<span class="i">i</span></button><button class="term-chip" data-term="tool-call">Tool Call<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button></div></div><div class="block reveal"><h3>Protocol Layers in a Multi-Agent System</h3><div class="map-row"><div class="map-node"><div class="mn-title">Orchestrator Agent</div><div class="mn-sub">Uses A2A to reach specialist agents</div></div><div class="map-node"><div class="mn-title">Pricing Agent</div><div class="mn-sub">Receives tasks via A2A</div></div><div class="map-node"><div class="mn-title">Inventory Agent</div><div class="mn-sub">Receives tasks via A2A</div></div><div class="map-node"><div class="mn-title">Pricing API (MCP Tool)</div><div class="mn-sub">Called by Pricing Agent via MCP</div></div><div class="map-node"><div class="mn-title">Inventory DB (MCP Tool)</div><div class="mn-sub">Called by Inventory Agent via MCP</div></div><div class="map-node"><div class="mn-title">mcp-context-forge</div><div class="mn-sub">Centralises tool discovery and agent routing</div></div></div></div><div class="block reveal"><h3>A2A vs MCP: Choosing the Right Protocol</h3><div class="matrix"><table class="dm"><thead><tr><th>Option</th><th>Integration target</th><th>Statefulness</th><th>Complexity of work</th><th>Discovery mechanism</th><th>Typical latency profile</th><th>When to choose</th><th>Cost</th><th>Complexity</th></tr></thead><tbody><tr><td><strong>MCP</strong></td><td><span class="rate good"></span>Tool or data source (API, DB, function)</td><td><span class="rate ok"></span>Stateless per call; agent tracks state</td><td><span class="rate good"></span>Single-function result</td><td><span class="rate good"></span>Tool manifest / capability list</td><td><span class="rate good"></span>Low — synchronous or SSE stream</td><td class="when">When your agent needs to call a tool, query a data source, or invoke an API — and you own or control that endpoint.</td><td>Minimal overhead; one round-trip per tool call</td><td>Low — single request/response or streamed result</td></tr><tr><td><strong>A2A</strong></td><td><span class="rate good"></span>Another autonomous agent</td><td><span class="rate good"></span>Stateful task lifecycle managed by remote agent</td><td><span class="rate good"></span>Multi-step goal with artifacts</td><td><span class="rate good"></span>Agent card at well-known URL</td><td><span class="rate ok"></span>Higher — async, polling, or SSE updates</td><td class="when">When you want to delegate an entire goal to another agent that has its own reasoning loop, tools, and state.</td><td>More setup; requires agent card publication and task management</td><td>Higher — task lifecycle, agent cards, JSON-RPC messaging</td></tr><tr><td><strong>Both (layered)</strong></td><td><span class="rate good"></span>Agents AND tools in the same system</td><td><span class="rate good"></span>Full stateful task + stateless tool calls</td><td><span class="rate good"></span>End-to-end workflows spanning agents and APIs</td><td><span class="rate good"></span>Agent cards + tool manifests unified in gateway</td><td><span class="rate ok"></span>Mixed — depends on task depth</td><td class="when">When you have a multi-agent system where orchestrators delegate via A2A and each specialist agent calls its own tools via MCP.</td><td>Higher engineering investment; mcp-context-forge can reduce this significantly</td><td>Highest — requires both protocol stacks</td></tr></tbody></table></div><div class="keyterms"><button class="term-chip" data-term="mcp">MCP<span class="i">i</span></button><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="tool-call">Tool Call<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button><button class="term-chip" data-term="sse">SSE<span class="i">i</span></button><button class="term-chip" data-term="capability-discovery">Capability Discovery<span class="i">i</span></button><button class="term-chip" data-term="well-known-url">Well-Known URL<span class="i">i</span></button></div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">E-Commerce Order Orchestration: Protocols in Action</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>Imagine a customer tells your AI shopping assistant: "Find the cheapest in-stock running shoes under £80 and place the order." That single request fans out across multiple agents and tools.</p><h4>Step 1 — Orchestrator delegates via A2A</h4><p>The shopping assistant reads the Inventory Agent's <button class="term" data-term="agent-card">agent card<span class="i">i</span></button> from its <button class="term" data-term="well-known-url">well-known URL<span class="i">i</span></button>. It then sends a task: "find cheapest in-stock running shoes under £80." This is <button class="term" data-term="agent-delegation">agent delegation<span class="i">i</span></button> — the orchestrator hands off the goal entirely.</p><h4>Step 2 — Inventory Agent calls tools via MCP</h4><p>The Inventory Agent uses MCP to call two tools: a product-search API and a stock-level DB. Each <button class="term" data-term="tool-call">tool call<span class="i">i</span></button> is a single request/response. The agent assembles the results itself.</p><h4>Step 3 — Result flows back as an A2A artifact</h4><p>The Inventory Agent returns a completed <button class="term" data-term="task">task<span class="i">i</span></button> with an <button class="term" data-term="artifact">artifact<span class="i">i</span></button>: a ranked product list. The orchestrator passes this to the Order Agent via A2A. The Order Agent then calls a checkout MCP tool to place the order.</p><div class="callout info">A2A moves goals between agents. MCP moves data between an agent and a tool. The key question: does the other side have its own reasoning loop? If yes, use A2A.</div></div></div><div class="keyterms"><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="mcp">MCP<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="well-known-url">Well-Known URL<span class="i">i</span></button><button class="term-chip" data-term="agent-delegation">Agent Delegation<span class="i">i</span></button><button class="term-chip" data-term="tool-call">Tool Call<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">Routing a Request: A2A Delegation vs MCP Tool Call</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code"># ── Scenario: Orchestrator decides which protocol to use ──────────────────
+
+def handle_user_request(request: str, context: dict):
+    """
+    Route an incoming request to the right protocol layer.
+    """
+    if requires_specialist_agent(request):
+        # A2A path — delegate the whole task to a remote agent
+        agent_card = discover_agent(well_known_url="https://agents.example.com/inventory/.well-known/agent.json")
+        task = send_a2a_task(
+            agent_card=agent_card,
+            message={"role": "user", "parts": [{"text": request}]},
+        )
+        result = poll_until_done(task_id=task["id"])   # returns artifact when complete
+        return result["artifact"]
+
+    else:
+        # MCP path — call a tool directly
+        tool_result = call_mcp_tool(
+            tool_name="product_search",
+            params={"query": request, "max_price": context.get("budget")},
+        )
+        return tool_result
+
+
+def requires_specialist_agent(request: str) -&gt; bool:
+    # Heuristic: multi-step goals go to an agent; simple lookups stay as tool calls
+    multi_step_keywords = ["find and order", "compare and recommend", "check then book"]
+    return any(kw in request.lower() for kw in multi_step_keywords)
+
+
+# ── mcp-context-forge as unified gateway ──────────────────────────────────
+# Both send_a2a_task() and call_mcp_tool() can point at the same
+# mcp-context-forge endpoint, which proxies MCP tools AND registers A2A agents.
+GATEWAY_URL = "https://gateway.example.com/gateway"
+</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>discover_agent(well_known_url=...)</code></dt><dd>Fetches the remote agent's agent card — a JSON descriptor of its skills and endpoint — from a standard URL path.</dd><dt><code>send_a2a_task(agent_card=..., message=...)</code></dt><dd>Sends a task to the remote agent over A2A (JSON-RPC under the hood); the message follows the A2A parts/role structure.</dd><dt><code>poll_until_done(task_id=...)</code></dt><dd>Waits for the remote agent to finish; A2A tasks are async, so you check task state until it reaches 'completed'.</dd><dt><code>result["artifact"]</code></dt><dd>The structured output the remote agent produced — could be a product list, a report, or any typed payload.</dd><dt><code>call_mcp_tool(tool_name=..., params=...)</code></dt><dd>Invokes a single MCP-exposed function with named parameters; returns the tool's response directly.</dd><dt><code>GATEWAY_URL</code></dt><dd>A single mcp-context-forge endpoint that proxies both MCP tool calls and A2A agent tasks, centralising discovery and governance.</dd></dl></div><p>The router function is the key decision point every multi-agent system needs. It asks one question: does this request need a reasoning loop on the other side?</p><p>When yes, it uses A2A — discovering the remote agent via its <button class="term" data-term="agent-card">agent card<span class="i">i</span></button> and polling for a completed <button class="term" data-term="task">task<span class="i">i</span></button>. When no, it calls an MCP tool directly and gets a result in one hop.</p><p><strong>mcp-context-forge</strong> acts as a unified gateway for both paths, so your orchestrator talks to one endpoint regardless of protocol.</p></div></div><div class="keyterms"><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="mcp">MCP<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button><button class="term-chip" data-term="tool-call">Tool Call<span class="i">i</span></button><button class="term-chip" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button><button class="term-chip" data-term="well-known-url">Well-Known URL<span class="i">i</span></button></div></div><div class="block reveal"><div class="callout info"><p><strong>mcp-context-forge</strong> is an MCP + A2A gateway that sits in front of both protocol layers. It centralises tool discovery, agent registration, proxying, and governance in one place.</p><p>For a product team, this means one URL to configure, one place to add auth, and one dashboard to audit what agents are calling. It's marked Emerging, so validate its security model before production use.</p><ul><li>Proxies MCP tool servers — agents call forge, forge calls the tool</li><li>Registers A2A agents — orchestrators discover specialist agents through forge</li><li>Adds governance: auth, rate-limiting, and observability across both protocols</li></ul></div><div class="keyterms"><button class="term-chip" data-term="mcp">MCP<span class="i">i</span></button><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="capability-discovery">Capability Discovery<span class="i">i</span></button><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button></div></div><button class="next-step" data-deepdive="mod-implementation">Next · step 6: Step-by-Step: Building an A2A Implementation →</button></div></section><section class="panel module" data-panel="mod-implementation" data-module="mod-implementation" id="panel-mod-implementation"><div class="module-head"><div class="num">6</div><div class="mh-text"><div class="m-spine"><span class="m-pos">Step 6 of 6</span><span class="m-prev">↳ builds on “A2A vs MCP: Picking the Right Protocol”</span></div><h2>Step-by-Step: Building an A2A Implementation</h2><p class="sub">Wire together a Client Agent, Remote Agent, and Task Manager in Python</p><div class="m-time">⏱ ~4 min read</div></div></div><p class="m-what">A step-by-step guide to building a working A2A system: Remote Agent server, Task Manager state machine, and Client Agent delegation.</p><div class="analogy"><span class="an-lab">In plain words</span>This is the assembly line: you build each part — the caller, the worker, and the coordinator — then connect them.</div><div class="m-rel"><span class="m-rel-lab">Why this matters for you</span>Gives you a concrete, runnable mental model of how A2A components connect — so you can evaluate build vs. buy decisions and spec the right requirements for your engineering team.</div><div class="module-body"><p>This module walks through building a working A2A system: scaffolding the Remote Agent with an Agent Card endpoint, implementing the Task Manager state machine, and writing a Client Agent that discovers and delegates tasks. An e-commerce order-routing scenario ties the pieces together.</p><div class="objectives"><b>After this you'll be able to</b><ul><li>Scaffold a Remote Agent server that serves an Agent Card and handles task requests</li><li>Implement a Task Manager that tracks task state transitions</li><li>Write a Client Agent that discovers a remote agent and delegates a task end-to-end</li></ul></div><div class="decision-forces"><strong>Decision this forces:</strong> How will you persist task state (in-memory vs. durable store), and how will you secure agent-to-agent calls in production?</div><div class="keyterms"><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="task-manager">Task Manager<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button><button class="term-chip" data-term="sse">SSE<span class="i">i</span></button></div><div class="block reveal needs-conceptual b-concept blk-explain"><h3>The Three Moving Parts of an A2A System</h3><div class="analogy"><span class="an-lab">In plain words</span>Building an A2A system is like setting up a franchise network: the Remote Agent is the branch store with a posted menu (Agent Card), the Task Manager is the kitchen tracking each order's status, and the Client Agent is the customer-facing rep who reads the menu and places the order.</div><p>An <button class="term" data-term="a2a">A2A<span class="i">i</span></button> implementation has three concrete pieces that must fit together. The <button class="term" data-term="remote-agent">Remote Agent<span class="i">i</span></button> is an HTTP server that advertises its capabilities and accepts task requests. The <button class="term" data-term="task-manager">Task Manager<span class="i">i</span></button> is the state machine inside that server, tracking every <button class="term" data-term="task">task<span class="i">i</span></button> from submission to completion. The <button class="term" data-term="client-agent">Client Agent<span class="i">i</span></button> is the caller that discovers the remote agent and delegates work to it.</p><p>Discovery happens via the <button class="term" data-term="agent-card">Agent Card<span class="i">i</span></button> — a JSON document served at a <button class="term" data-term="well-known-url">well-known URL<span class="i">i</span></button> (typically <code>/.well-known/agent.json</code>). It declares the agent's name, supported <button class="term" data-term="skill">skills<span class="i">i</span></button>, and <button class="term" data-term="authentication">authentication<span class="i">i</span></button> requirements. A Client Agent fetches this card before sending any task.</p><p>Tasks flow over <button class="term" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button> on an <button class="term" data-term="http-transport">HTTP transport<span class="i">i</span></button>. Each task carries a unique ID, a <button class="term" data-term="message">message<span class="i">i</span></button> with one or more <button class="term" data-term="part">parts<span class="i">i</span></button>, and moves through defined <button class="term" data-term="task-state">task states<span class="i">i</span></button>: submitted → working → completed (or failed/canceled).</p><p>Long-running tasks can push incremental updates via <button class="term" data-term="sse">SSE<span class="i">i</span></button> (Server-Sent Events), so the client doesn't have to poll. This <button class="term" data-term="streaming">streaming<span class="i">i</span></button> path is optional but important for tasks that take more than a few seconds.</p><div class="keyterms"><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="task-manager">Task Manager<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="well-known-url">Well-Known URL<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button><button class="term-chip" data-term="http-transport">HTTP Transport<span class="i">i</span></button><button class="term-chip" data-term="message">Message<span class="i">i</span></button><button class="term-chip" data-term="part">Part<span class="i">i</span></button><button class="term-chip" data-term="sse">SSE<span class="i">i</span></button><button class="term-chip" data-term="streaming">Streaming<span class="i">i</span></button><button class="term-chip" data-term="skill">Skill<span class="i">i</span></button><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button></div></div><div class="block reveal"><h3>End-to-End A2A Request Lifecycle</h3><div class="viz" data-viz="stepped"><p class="viz-cap">How a Client Agent discovers, delegates, and receives results from a Remote Agent.</p><div class="viz-body"></div><script type="application/json" class="viz-data">{"steps":[{"label":"Discover","detail":"Client Agent fetches GET /.well-known/agent.json from the Remote Agent's base URL. It reads the Agent Card to confirm the agent has the needed skill and to learn the auth scheme.","icon":"search"},{"label":"Authenticate","detail":"Client Agent attaches credentials (e.g., a Bearer token) as required by the Agent Card. Without this step, the Remote Agent rejects the request.","icon":"lock"},{"label":"Submit Task","detail":"Client Agent sends a tasks/send JSON-RPC call with a unique task ID and a message payload. The Remote Agent's Task Manager creates a task record in 'submitted' state.","icon":"send"},{"label":"Process","detail":"The Task Manager transitions the task to 'working' and runs the agent logic — calling tools, querying databases, or invoking sub-agents. State is updated at each step.","icon":"cog"},{"label":"Stream or Poll","detail":"For long tasks, the Remote Agent pushes SSE events with intermediate artifacts. For short tasks, the client simply waits for the synchronous response.","icon":"activity"},{"label":"Receive Artifact","detail":"On completion, the Task Manager sets state to 'completed' and attaches an artifact — the structured output — to the task. The Client Agent reads it and continues its own workflow.","icon":"check"}]}</script></div><div class="keyterms"><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="well-known-url">Well-Known URL<span class="i">i</span></button><button class="term-chip" data-term="task-manager">Task Manager<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button><button class="term-chip" data-term="sse">SSE<span class="i">i</span></button><button class="term-chip" data-term="streaming">Streaming<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button></div></div><div class="block reveal needs-functional b-funcex blk-example"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">💡</span><span class="col-lab">E-Commerce Order Routing: Putting the Pieces Together</span><span class="col-chev">▸</span></button><div class="collapse-body"><p>Imagine your platform has an <strong>Orchestrator Agent</strong> that handles incoming customer orders. When an order needs fraud screening, it delegates to a specialist <strong>Fraud-Check Remote Agent</strong> — a separate service owned by the risk team.</p><h4>Step 1 — Remote Agent scaffolding</h4><p>The Fraud-Check Remote Agent serves an Agent Card at <code>/.well-known/agent.json</code>. The card lists one skill: <code>"screen_order"</code>, and declares it requires a Bearer token. Any caller — including your Orchestrator — reads this card first.</p><h4>Step 2 — Task Manager state machine</h4><p>When a task arrives, the Task Manager creates a record: <code>{ id, state: 'submitted', messages: [...] }</code>. It immediately moves to <code>'working'</code>, runs the fraud model, then writes <code>'completed'</code> with a risk-score artifact. If the model call times out, it writes <code>'failed'</code> so the caller knows to retry or escalate.</p><h4>Step 3 — Client Agent delegation</h4><p>The Orchestrator Agent fetches the card, confirms the skill exists, attaches its token, and sends a <code>tasks/send</code> call with the order payload. It waits for the completed artifact, then routes the order: approve, flag, or reject.</p><div class="callout info"><strong>Product angle: </strong>The risk team can update their fraud model independently. As long as the Agent Card and task schema stay stable, the Orchestrator needs zero changes — that's the <button class="term" data-term="interoperability">interoperability<span class="i">i</span></button> payoff of A2A.</div></div></div><div class="keyterms"><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="task-manager">Task Manager<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button><button class="term-chip" data-term="skill">Skill<span class="i">i</span></button><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button><button class="term-chip" data-term="interoperability">Interoperability<span class="i">i</span></button><button class="term-chip" data-term="agent-delegation">Agent Delegation<span class="i">i</span></button></div></div><div class="block reveal needs-code b-code blk-code"><div class="collapse"><button class="collapse-h" aria-expanded="false"><span class="col-ico">⟨⟩</span><span class="col-lab">Remote Agent: Agent Card + Task Handler (Python pseudocode)</span><span class="col-chev">▸</span></button><div class="collapse-body"><div class="ex"><button class="copy">Copy</button><pre class="code">import json, uuid
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+# --- In-memory task store (swap for Redis/DB in production) ---
+task_store = {}
+
+AGENT_CARD = {
+    "name": "Fraud-Check Agent",
+    "version": "1.0",
+    "skills": [{"id": "screen_order", "description": "Scores an order for fraud risk"}],
+    "authentication": {"schemes": ["Bearer"]},
+    "endpoint": "http://fraud-agent.example.com/tasks"
+}
+
+def handle_agent_card(handler):
+    """Serve the Agent Card at the well-known URL."""
+    handler.send_response(200)
+    handler.send_header("Content-Type", "application/json")
+    handler.end_headers()
+    handler.wfile.write(json.dumps(AGENT_CARD).encode())
+
+def handle_task_send(payload, auth_token):
+    """Receive a task, run the state machine, return result."""
+    if not validate_token(auth_token):
+        return {"error": {"code": -32001, "message": "Unauthorized"}}
+
+    task_id = payload.get("id", str(uuid.uuid4()))
+    messages = payload["message"]["parts"]
+
+    # State: submitted → working
+    task_store[task_id] = {"id": task_id, "state": "submitted", "messages": messages}
+    task_store[task_id]["state"] = "working"
+
+    try:
+        risk_score = run_fraud_model(messages)          # your model call here
+        artifact = {"type": "data", "risk_score": risk_score}
+        task_store[task_id]["state"] = "completed"
+        task_store[task_id]["artifact"] = artifact
+        return {"id": task_id, "state": "completed", "artifact": artifact}
+    except Exception as e:
+        task_store[task_id]["state"] = "failed"
+        return {"id": task_id, "state": "failed", "error": str(e)}
+
+def validate_token(token):
+    return token == "expected-secret-token"   # replace with real auth
+
+def run_fraud_model(parts):
+    # TODO: call your fraud-scoring LLM or rule engine here
+    return 0.12   # placeholder risk score
+
+# --- Client Agent side ---
+import urllib.request
+
+def discover_and_delegate(base_url, order_payload, token):
+    """Fetch Agent Card, then send a task."""
+    # 1. Capability discovery
+    card_url = base_url + "/.well-known/agent.json"
+    with urllib.request.urlopen(card_url) as r:
+        card = json.loads(r.read())
+
+    assert any(s["id"] == "screen_order" for s in card["skills"]), \
+        "Remote agent lacks required skill"
+
+    # 2. Delegate the task
+    rpc_body = json.dumps({
+        "jsonrpc": "2.0", "method": "tasks/send", "id": 1,
+        "params": {
+            "id": str(uuid.uuid4()),
+            "message": {"parts": [{"type": "text", "text": json.dumps(order_payload)}]}
+        }
+    }).encode()
+
+    req = urllib.request.Request(
+        card["endpoint"],
+        data=rpc_body,
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
+    )
+    with urllib.request.urlopen(req) as r:
+        result = json.loads(r.read())
+
+    return result   # contains state + artifact</pre></div><div class="syntax-panel"><div class="sp-h">Syntax breakdown</div><dl><dt><code>AGENT_CARD</code></dt><dd>A plain dict that becomes the JSON document served at /.well-known/agent.json — it tells callers what this agent can do and how to authenticate.</dd><dt><code>task_store = {}</code></dt><dd>In-memory dictionary keyed by task ID. Stores state and artifacts. Loses data on restart — the simplest possible Task Manager backing store.</dd><dt><code>handle_task_send(payload, auth_token)</code></dt><dd>Implements the Task Manager state machine: submitted → working → completed (or failed). Each state change is written to task_store.</dd><dt><code>"jsonrpc": "2.0", "method": "tasks/send"</code></dt><dd>JSON-RPC 2.0 envelope. 'method' tells the Remote Agent which operation to run; 'params' carries the task payload.</dd><dt><code>card["endpoint"]</code></dt><dd>The URL the Client Agent reads from the Agent Card to know where to POST tasks — avoids hardcoding the remote address.</dd><dt><code>"Authorization": f"Bearer {token}"</code></dt><dd>Attaches the credential the Agent Card declared as required. The Remote Agent's validate_token checks this before processing.</dd><dt><code>assert any(s["id"] == "screen_order" ...)</code></dt><dd>Capability discovery check — the Client Agent verifies the remote agent actually supports the needed skill before sending work.</dd></dl></div><p>This single file shows both sides of an A2A exchange. The top half is the Remote Agent server; the bottom half is the Client Agent caller. In production these live in separate services.</p><p>The <code>task_store</code> dict is intentionally simple — it's the first decision point the module flags. Replace it with Redis or a database for durability across restarts.</p><div class="callout warn">The <code>validate_token</code> stub is a placeholder. In production, verify a signed JWT or call your identity provider — never compare raw strings.</div></div></div><div class="keyterms"><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="agent-card">Agent Card<span class="i">i</span></button><button class="term-chip" data-term="task-manager">Task Manager<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="artifact">Artifact<span class="i">i</span></button><button class="term-chip" data-term="json-rpc">JSON-RPC 2.0<span class="i">i</span></button><button class="term-chip" data-term="http-transport">HTTP Transport<span class="i">i</span></button><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button><button class="term-chip" data-term="well-known-url">Well-Known URL<span class="i">i</span></button><button class="term-chip" data-term="capability-discovery">Capability Discovery<span class="i">i</span></button><button class="term-chip" data-term="agent-delegation">Agent Delegation<span class="i">i</span></button><button class="term-chip" data-term="skill">Skill<span class="i">i</span></button></div></div><div class="block reveal"><h3>Task State Persistence: In-Memory vs. Durable Store</h3><div class="matrix"><table class="dm"><thead><tr><th>Option</th><th>Survives restarts</th><th>Query speed</th><th>Operational complexity</th><th>Horizontal scaling</th><th>Cost to add</th><th>When to choose</th><th>Cost</th><th>Complexity</th></tr></thead><tbody><tr><td><strong>In-Memory Dict / Variable</strong></td><td><span class="rate bad"></span>No — state is wiped on process exit</td><td><span class="rate good"></span>Fastest — pure in-process lookup</td><td><span class="rate good"></span>None — just a dict</td><td><span class="rate bad"></span>Broken — each instance has its own isolated store</td><td><span class="rate good"></span>Zero</td><td class="when">Prototypes, single-process demos, or tasks that complete within one request lifecycle.</td><td>Zero</td><td>Minimal — no infrastructure needed</td></tr><tr><td><strong>Redis (or Memcached)</strong></td><td><span class="rate ok"></span>Yes with AOF/RDB enabled; no by default</td><td><span class="rate good"></span>Very fast — sub-millisecond over local network</td><td><span class="rate ok"></span>Low — use a managed cloud offering</td><td><span class="rate good"></span>Good — all instances share one store</td><td><span class="rate good"></span>Low — ~$15–50/mo for a small managed instance</td><td class="when">Production systems needing fast shared state across multiple agent instances, with acceptable data-loss risk on Redis restart (without AOF/RDB).</td><td>Low — managed Redis is cheap at moderate scale</td><td>Low-medium — one managed service, simple key-value API</td></tr><tr><td><strong>Relational DB (Postgres / MySQL)</strong></td><td><span class="rate good"></span>Yes — ACID-compliant writes</td><td><span class="rate ok"></span>Good with indexes; slower than Redis for simple lookups</td><td><span class="rate ok"></span>Medium — migrations, backups, connection pools</td><td><span class="rate ok"></span>Good with read replicas; write bottleneck at very high scale</td><td><span class="rate ok"></span>Medium — often reuses existing DB; adds load</td><td class="when">Production systems where task history, audit trails, and complex queries matter — e.g., compliance-sensitive e-commerce order routing.</td><td>Medium — more than Redis but often already present in the stack</td><td>Medium — schema design, migrations, connection pooling</td></tr></tbody></table></div><div class="keyterms"><button class="term-chip" data-term="task-manager">Task Manager<span class="i">i</span></button><button class="term-chip" data-term="task-state">Task State<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button></div></div><div class="block reveal"><div class="dcall"><div class="use"><div class="lab">Use when</div>Use signed JWTs (or mTLS) when Remote Agents are exposed beyond a single trusted internal network — especially when crossing team or org boundaries.</div><div class="avoid"><div class="lab">Avoid when</div>Avoid raw shared-secret strings (like the stub in the code example) in any environment where the token could appear in logs, error messages, or version control.</div><div class="rot"><div class="lab">Rule of thumb</div>Treat every agent-to-agent call like an API call from an untrusted client: authenticate the caller, authorize the skill, and log the task ID for audit.</div></div><div class="keyterms"><button class="term-chip" data-term="authentication">Authentication<span class="i">i</span></button><button class="term-chip" data-term="a2a">A2A Protocol<span class="i">i</span></button><button class="term-chip" data-term="remote-agent">Remote Agent<span class="i">i</span></button><button class="term-chip" data-term="client-agent">Client Agent<span class="i">i</span></button><button class="term-chip" data-term="task">Task<span class="i">i</span></button><button class="term-chip" data-term="skill">Skill<span class="i">i</span></button></div></div><button class="next-step" data-goto="_synth">Finish → Putting it together</button></div></section><section class="panel" data-panel="_synth" id="panel-_synth"><div class="eyebrow">Putting it together</div><h2>Synthesis</h2><p>A2A gives multi-agent systems a shared contract for discovery, delegation, and task tracking — replacing ad-hoc integrations with a standard protocol.</p><p>The key moving parts are the Agent Card (who I am and what I do), the Task Manager (state machine), and the Client/Remote Agent pair communicating over HTTP + JSON-RPC.</p><p>Use A2A between agents and MCP within an agent for tools — they complement each other at different layers of your stack.</p><h3>Suggested build order</h3><div class="walk"><div class="step"><div class="n"></div><div><strong>Understand A2A's purpose</strong><div class="muted">Clarify the coordination problem and why a standard protocol beats custom glue code.</div></div></div><div class="step"><div class="n"></div><div><strong>Map the architecture</strong><div class="muted">Identify your Client Agent, Remote Agent, and the HTTP/JSON-RPC transport between them.</div></div></div><div class="step"><div class="n"></div><div><strong>Design your Agent Card</strong><div class="muted">Declare your agent's skills, input/output modes, and auth scheme at /.well-known/agent.json.</div></div></div><div class="step"><div class="n"></div><div><strong>Implement the Task Manager</strong><div class="muted">Build the state machine: submitted → working → input-required → completed/failed.</div></div></div><div class="step"><div class="n"></div><div><strong>Choose A2A vs MCP per integration point</strong><div class="muted">Use MCP for tool calls inside an agent; use A2A for agent-to-agent delegation.</div></div></div><div class="step"><div class="n"></div><div><strong>Wire Client and Remote Agents</strong><div class="muted">Write the Client Agent discovery + delegation logic and the Remote Agent handler, then test end-to-end.</div></div></div></div><h3>Decision checklist</h3><ul class="checklist"><li>Decided what skills and auth scheme your Agent Card advertises</li><li>Chose synchronous vs. streaming task flow and planned input-required handling</li><li>Mapped each integration point to A2A (agent↔agent) or MCP (agent↔tool)</li><li>Decided on in-memory vs. durable task state storage and production auth strategy</li></ul><div class="capstone"><strong>Try it:</strong> Build a minimal A2A system with two agents: an Orchestrator Agent (Client) that receives an e-commerce order query and delegates it to a Fulfillment Agent (Remote). The Fulfillment Agent must serve a valid Agent Card, implement the task state machine, and return an Artifact with order status. Bonus: add SSE streaming for the working state.</div></section><section class="panel" data-panel="_sources" id="panel-_sources"><div class="eyebrow">Provenance</div><h2>Sources</h2><div class="cites"><ol><li class=""><a href="https://github.com/modelcontextprotocol/python-sdk">MCP Python SDK (Official)</a> <span class="muted">· knowledge base · 2026-06-19</span></li><li class=""><a href="https://github.com/IBM/mcp-context-forge">mcp-context-forge — MCP, A2A, and API Gateway</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class=""><a href="https://google.github.io/A2A/">Agent2Agent Protocol — Google Open Source</a> <span class="muted">· reference</span></li><li class=""><a href="https://github.com/Agenta-AI/agenta">agenta</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class=""><a href="https://github.com/ag2ai/ag2">ag2</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class="">00_agentic_systems_overview.md <span class="muted">· knowledge base</span></li><li class=""><a href="https://github.com/e2b-dev/awesome-ai-agents">awesome-ai-agents</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class=""><a href="https://github.com/Eigenwise/atomic-agents">atomic-agents</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class=""><a href="https://github.com/huggingface/smolagents">smolagents</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class=""><a href="https://github.com/transitive-bullshit/agentic">agentic</a> <span class="muted">· knowledge base · 2026-06-18</span></li><li class=""><a href="https://github.com/stacklok/toolhive">toolhive</a> <span class="muted">· knowledge base · 2026-06-18</span></li></ol></div></section></div>
+  </div>
+<div id="popover" role="dialog" aria-label="Definition"></div>
+<script type="application/json" id="glossary-data">{"a2a":{"id":"a2a","label":"A2A Protocol","acronymExpansion":"Agent2Agent Protocol","laymanDefinition":"An open standard that lets AI agents from different frameworks talk to each other using a shared message format and task model.","wrapPolicy":"firstOnly"},"agent":{"id":"agent","label":"Agent","laymanDefinition":"An AI system that can reason, make decisions, and take actions autonomously to complete a goal.","wrapPolicy":"firstOnly"},"protocol":{"id":"protocol","label":"Protocol","laymanDefinition":"A formal agreement on how two systems exchange information — like a shared language with grammar rules both sides must follow.","wrapPolicy":"firstOnly"},"multi-agent-system":{"id":"multi-agent-system","label":"Multi-Agent System","laymanDefinition":"An architecture where multiple specialized AI agents collaborate, each handling a slice of a larger task.","wrapPolicy":"firstOnly"},"interoperability":{"id":"interoperability","label":"Interoperability","laymanDefinition":"The ability of systems built by different teams or vendors to work together without custom integration code.","wrapPolicy":"firstOnly"},"client-agent":{"id":"client-agent","label":"Client Agent","laymanDefinition":"The agent that initiates a task and delegates it to another agent — the 'caller' in an A2A exchange.","wrapPolicy":"all"},"remote-agent":{"id":"remote-agent","label":"Remote Agent","laymanDefinition":"The agent that receives a delegated task, executes it, and returns results — the 'worker' in an A2A exchange.","wrapPolicy":"all"},"task-manager":{"id":"task-manager","label":"Task Manager","laymanDefinition":"The component inside a Remote Agent that tracks task state, routes messages, and stores artifacts.","wrapPolicy":"all"},"agent-card":{"id":"agent-card","label":"Agent Card","laymanDefinition":"A JSON document published by an agent that declares its name, skills, supported formats, and authentication needs — the agent's public profile.","wrapPolicy":"all"},"task":{"id":"task","label":"Task","laymanDefinition":"The core unit of work in A2A — a uniquely identified job that a Client Agent sends to a Remote Agent to complete.","wrapPolicy":"firstOnly"},"task-state":{"id":"task-state","label":"Task State","laymanDefinition":"The current status of a task in its lifecycle: submitted, working, input-required, completed, failed, or cancelled.","wrapPolicy":"all"},"artifact":{"id":"artifact","label":"Artifact","laymanDefinition":"The final output of a completed task — a structured result (text, file, or data) returned by the Remote Agent.","wrapPolicy":"all"},"json-rpc":{"id":"json-rpc","label":"JSON-RPC 2.0","acronymExpansion":"JavaScript Object Notation Remote Procedure Call","laymanDefinition":"A lightweight protocol for calling functions over a network using JSON-formatted request and response objects.","wrapPolicy":"firstOnly"},"sse":{"id":"sse","label":"SSE","acronymExpansion":"Server-Sent Events","laymanDefinition":"A web standard that lets a server push a stream of updates to a client over a single HTTP connection — used in A2A for streaming task progress.","wrapPolicy":"firstOnly"},"mcp":{"id":"mcp","label":"MCP","acronymExpansion":"Model Context Protocol","laymanDefinition":"An open standard for connecting an AI agent to external tools and data sources — operates within a single agent, not between agents.","wrapPolicy":"firstOnly"},"message":{"id":"message","label":"Message","laymanDefinition":"A structured envelope in A2A carrying one or more Parts (text, file, or data) exchanged between agents during a task.","wrapPolicy":"firstOnly"},"part":{"id":"part","label":"Part","laymanDefinition":"The content unit inside a Message — can be plain text, a file reference, or structured data.","wrapPolicy":"firstOnly"},"streaming":{"id":"streaming","label":"Streaming","laymanDefinition":"Delivering task updates incrementally as they are produced, rather than waiting for the full result — powered by SSE in A2A.","wrapPolicy":"firstOnly"},"skill":{"id":"skill","label":"Skill","laymanDefinition":"A named capability declared in an Agent Card — describes one specific thing the agent knows how to do.","wrapPolicy":"all"},"capability-discovery":{"id":"capability-discovery","label":"Capability Discovery","laymanDefinition":"The process by which a Client Agent reads another agent's Agent Card to learn what it can do before delegating a task.","wrapPolicy":"firstOnly"},"well-known-url":{"id":"well-known-url","label":"Well-Known URL","laymanDefinition":"A standardized path (/.well-known/agent.json) where an A2A agent always publishes its Agent Card so others can find it automatically.","wrapPolicy":"firstOnly"},"authentication":{"id":"authentication","label":"Authentication","laymanDefinition":"The mechanism an agent requires callers to prove their identity — declared in the Agent Card and enforced on every request.","wrapPolicy":"firstOnly"},"http-transport":{"id":"http-transport","label":"HTTP Transport","laymanDefinition":"The network layer A2A runs on — standard HTTPS requests carry JSON-RPC calls between agents.","wrapPolicy":"firstOnly"},"tool-call":{"id":"tool-call","label":"Tool Call","laymanDefinition":"An agent invoking an external function or API — the domain of MCP, not A2A.","wrapPolicy":"firstOnly"},"agent-delegation":{"id":"agent-delegation","label":"Agent Delegation","laymanDefinition":"One agent handing a task to another agent to complete — the core pattern A2A is designed to standardize.","wrapPolicy":"firstOnly"}}</script>
+<script type="application/json" id="lesson-config">{"stubModuleIds":[]}</script>
+<script>
+(function(){
+  "use strict";
+  var glossary = {};
+  try { glossary = JSON.parse(document.getElementById("glossary-data").textContent || "{}"); } catch(e){}
+  var depth = document.body.getAttribute("data-depth") || "conceptual_technical";
+  var showTech = depth.indexOf("technical") !== -1;
+  var pop = document.getElementById("popover");
+
+  function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+  function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+  // ---- theme ----
+  function applyTheme(t){ document.body.setAttribute("data-theme", t); document.documentElement.setAttribute("data-theme", t); var b=document.getElementById("theme"); if(b) b.textContent = t==="dark" ? "☀ Light" : "☾ Dark"; }
+  applyTheme(lsGet("als-theme") || "light");
+
+  // ---- progress (which building blocks have been opened) ----
+  var moduleIds = Array.prototype.map.call(document.querySelectorAll(".navitem:not(.nav-special)"), function(b){ return b.getAttribute("data-goto"); });
+  var total = moduleIds.length || 1;
+  var visited = {};
+  function markVisited(id){ if(moduleIds.indexOf(id) !== -1 && !visited[id]){ visited[id]=1; setProgress(); } }
+  function setProgress(){ var n=Object.keys(visited).length; var bar=document.querySelector(".progress > i"); if(bar) bar.style.width = Math.round(n/total*100)+"%"; }
+
+  // ---- HORIZONTAL reading mode (paged deck): nav + modal + per-page Next ----
+  var HORIZ = document.body.getAttribute("data-reading")==="horizontal";
+  var hTrack = document.querySelector(".h-track");
+  var hPages = HORIZ ? Array.prototype.slice.call(document.querySelectorAll(".h-page")) : [];
+  var hOrder = hPages.map(function(p){ return p.getAttribute("data-panel"); });
+  var hIndex = 0;
+  var hModal = document.getElementById("hmodal");
+  function hRender(){
+    if(hTrack) hTrack.style.transform = "translateX(-"+(hIndex*100)+"%)";
+    hPages.forEach(function(p,i){ p.classList.toggle("active", i===hIndex); });
+    var cur = hOrder[hIndex];
+    document.querySelectorAll(".navitem").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-goto")===cur); });
+    markVisited(cur);
+    closePopover();
+    var body = hPages[hIndex] && hPages[hIndex].querySelector(".h-page-body"); if(body) body.scrollTop=0;
+  }
+  function hGoto(id){
+    var i = hOrder.indexOf(id);
+    if(i<0) return false;
+    hIndex=i; hRender();
+    if(isStub(id)) prioritize(id);
+    return true;
+  }
+  function hNext(){ if(hIndex < hPages.length-1){ hIndex++; hRender(); var id=hOrder[hIndex]; if(isStub(id)) prioritize(id); } }
+  // Modal: heavy/expandable blocks (examples, code, "go deeper") open here instead of inline.
+  function openModal(title, html){
+    if(!hModal) return;
+    var tt=hModal.querySelector(".hmodal-title"), bd=hModal.querySelector(".hmodal-body");
+    if(tt) tt.textContent=title||"";
+    if(bd){ bd.innerHTML=html||""; }
+    hModal.hidden=false;
+    if(bd){ hydrate(bd); bd.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); }); }
+  }
+  function closeModal(){ if(hModal && !hModal.hidden){ hModal.hidden=true; var bd=hModal.querySelector(".hmodal-body"); if(bd) bd.innerHTML=""; } }
+  function openCollapseModal(col){ if(!col) return; var lab=col.querySelector(".col-lab"), body=col.querySelector(".collapse-body"); openModal(lab?lab.textContent:"Details", body?body.innerHTML:""); }
+  function openDeeperModal(btn){ var d=btn && (btn.nextElementSibling && btn.nextElementSibling.classList.contains("deeper") ? btn.nextElementSibling : (btn.parentElement && btn.parentElement.querySelector(".deeper"))); openModal("Going deeper", d?d.innerHTML:""); }
+
+  // ---- overview <-> workbench ----
+  function enterWorkbench(id){
+    var ov=document.getElementById("overview"), wb=document.getElementById("workbench"), back=document.getElementById("to-overview");
+    if(ov) ov.hidden=true; if(wb) wb.hidden=false; if(back) back.hidden=false;
+    activatePanel(id);
+    window.scrollTo(0,0);
+  }
+  function showOverview(){
+    var ov=document.getElementById("overview"), wb=document.getElementById("workbench"), back=document.getElementById("to-overview");
+    if(ov) ov.hidden=false; if(wb) wb.hidden=true; if(back) back.hidden=true;
+    closePopover(); window.scrollTo(0,0);
+  }
+  function activatePanel(id){
+    var found=false;
+    document.querySelectorAll(".panel").forEach(function(p){ var on = p.getAttribute("data-panel")===id; p.classList.toggle("active", on); if(on) found=true; });
+    document.querySelectorAll(".navitem").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-goto")===id); });
+    if(found) markVisited(id);
+    var main=document.getElementById("blockmain"); if(main) main.scrollTop=0;
+  }
+
+  // ---- term popover ----
+  function openPopover(btn){
+    var t = glossary[btn.getAttribute("data-term")];
+    if(!t){ return; }
+    var tech = (showTech && t.technicalNote) ? '<div class="ptech">'+esc(t.technicalNote)+'</div>' : '';
+    var acr = t.acronymExpansion ? '<div class="px">'+esc(t.acronymExpansion)+'</div>' : '';
+    var src = (t.sources && t.sources.length) ? '<div class="psrc">Source: '+esc(t.sources.join(", "))+'</div>' : '';
+    pop.innerHTML = '<div class="pt">'+esc(t.label)+'</div>'+acr+'<div class="pn">'+esc(t.laymanDefinition)+'</div>'+tech+src;
+    pop.classList.add("on");
+    var r = btn.getBoundingClientRect();
+    var top = r.bottom + 8, left = Math.min(r.left, window.innerWidth - 320);
+    if(top + pop.offsetHeight > window.innerHeight) top = r.top - pop.offsetHeight - 8;
+    pop.style.top = Math.max(8, top) + "px";
+    pop.style.left = Math.max(8, left) + "px";
+  }
+  function closePopover(){ pop.classList.remove("on"); pop._for=null; }
+
+  function copyCode(btn){
+    var pre = btn.parentElement.querySelector("pre.code"); if(!pre) return;
+    var txt = pre.innerText;
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){flash(btn);}); }
+    else { var ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); flash(btn); }
+  }
+  function flash(btn){ var o=btn.textContent; btn.textContent="Copied"; setTimeout(function(){btn.textContent=o;},1200); }
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  // ---- one delegated click handler ----
+  document.addEventListener("click", function(ev){
+    // Horizontal modal: a backdrop or close-button click dismisses it (handle before .closest).
+    if(HORIZ){
+      if(ev.target.closest(".hmodal-x")){ closeModal(); return; }
+      if(ev.target.id==="hmodal"){ closeModal(); return; }
+    }
+    var t = ev.target.closest("[data-deepdive],[data-goto],#to-overview,.term,.term-chip,.deeper-toggle,.quiz .opt,.quiz .reveal,#theme,.copy,.toggle,.building,.collapse-h,.kc-opt,.kc-submit,.h-next");
+    if(!t){ if(!ev.target.closest("#popover")) closePopover(); return; }
+
+    if(t.matches(".h-next")){ hNext(); return; }
+    if(t.matches(".collapse-h")){
+      if(HORIZ){ openCollapseModal(t.closest(".collapse")); return; }
+      var col=t.closest(".collapse"); var open=col.classList.toggle("open"); t.setAttribute("aria-expanded", String(open)); return;
+    }
+    if(t.matches(".kc-opt")){ kcAnswerMcq(t); return; }
+    if(t.matches(".kc-submit")){ kcAnswerFree(t); return; }
+
+    if(t.matches("[data-deepdive],[data-goto]")){ ev.preventDefault(); var gid=t.getAttribute("data-deepdive")||t.getAttribute("data-goto"); if(HORIZ){ hGoto(gid); } else { enterWorkbench(gid); if(isStub(gid)) prioritize(gid); } return; }
+    if(t.matches(".building")){ var bp_=t.closest(".panel[data-module]"); if(bp_){ var mid=bp_.getAttribute("data-module"); t.classList.remove("failed"); t.innerHTML='<span class="bspin"></span> Building this section…'; prioritize(mid); } return; }
+    if(t.id==="to-overview"){ showOverview(); return; }
+    if(t.matches(".term,.term-chip")){ ev.preventDefault(); ev.stopPropagation(); if(pop.classList.contains("on") && pop._for===t){ closePopover(); } else { openPopover(t); pop._for=t; } return; }
+    if(t.matches(".deeper-toggle")){
+      if(HORIZ){ openDeeperModal(t); return; }
+      var mod=t.closest(".panel"); mod.classList.toggle("show-deeper"); t.textContent = mod.classList.contains("show-deeper") ? "Hide advanced detail" : t.getAttribute("data-label"); return;
+    }
+    if(t.matches(".quiz .reveal")){ t.closest(".quiz").classList.add("revealed"); return; }
+    if(t.matches(".quiz .opt")){
+      var correct = t.getAttribute("data-correct")==="1";
+      t.classList.add(correct?"correct":"wrong");
+      if(!correct){ var c=t.closest(".quiz").querySelector('.opt[data-correct="1"]'); if(c) c.classList.add("correct"); }
+      t.closest(".quiz").classList.add("revealed"); return;
+    }
+    if(t.id==="theme"){ var cur=document.body.getAttribute("data-theme")==="dark"?"light":"dark"; applyTheme(cur); lsSet("als-theme",cur); return; }
+    if(t.matches(".copy")){ copyCode(t); return; }
+    // ---- in-lesson content toggles: Concept / Functional / Code / Explain-syntax ----
+    if(t.classList.contains("toggle")){
+      ev.preventDefault();
+      var pressed = t.getAttribute("aria-pressed")==="true";
+      if(t.id==="t-concept"){ document.body.classList.toggle("hide-concept", pressed); t.setAttribute("aria-pressed", String(!pressed)); }
+      else if(t.id==="t-funcex"){ document.body.classList.toggle("hide-funcex", pressed); t.setAttribute("aria-pressed", String(!pressed)); }
+      else if(t.id==="t-code"){ document.body.classList.toggle("hide-code", pressed); t.setAttribute("aria-pressed", String(!pressed)); }
+      else if(t.id==="t-syntax"){ document.body.classList.toggle("show-syntax", !pressed); t.setAttribute("aria-pressed", String(!pressed)); }
+      return;
+    }
+  });
+
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ if(HORIZ && hModal && !hModal.hidden){ closeModal(); } else { closePopover(); } } });
+  window.addEventListener("resize", closePopover);
+
+  // ---- knowledge check (grades via /api/check; MCQ vs the stored Blueprint, freeText by LLM) ----
+  function kcBumpScore(kc){
+    var items=kc.querySelectorAll(".kc-item"), got=0;
+    items.forEach(function(it){ if(it.getAttribute("data-result")==="ok") got++; });
+    var sc=kc.querySelector(".kc-score"); if(sc){ sc.hidden=false; var b=sc.querySelector("b"); if(b) b.textContent=String(got); }
+  }
+  function kcShow(item, ok, msg){
+    var fb=item.querySelector(".kc-feedback"); if(fb){ fb.hidden=false; fb.className="kc-feedback "+(ok?"ok":"no"); fb.textContent=msg||(ok?"Correct ✓":"Not quite"); }
+    var ex=item.querySelector(".kc-explain"); if(ex) ex.hidden=false;
+    item.setAttribute("data-result", ok?"ok":"no");
+    kcBumpScore(item.closest(".kc"));
+  }
+  function kcCheck(payload){
+    return fetch("/api/check",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).then(function(r){ return r.json(); });
+  }
+  function kcAnswerMcq(btn){
+    var item=btn.closest(".kc-item"); if(item.getAttribute("data-done")) return;
+    var kc=btn.closest(".kc"), bid=item.getAttribute("data-block")||kc.getAttribute("data-block"), qid=btn.getAttribute("data-qid"), choice=+btn.getAttribute("data-choice");
+    item.setAttribute("data-done","1");
+    item.querySelectorAll(".kc-opt").forEach(function(o){ o.setAttribute("disabled","1"); });
+    if(!ARTIFACT_ID){ kcShow(item,true,"Saved (grading needs the live app)."); btn.classList.add("correct"); return; }
+    kcCheck({artifactId:ARTIFACT_ID,blockId:bid,questionId:qid,choiceIndex:choice}).then(function(res){
+      if(res.correct){ btn.classList.add("correct"); }
+      else{ btn.classList.add("wrong"); if(typeof res.correctIndex==="number"){ var c=item.querySelectorAll(".kc-opt")[res.correctIndex]; if(c) c.classList.add("correct"); } }
+      kcShow(item,!!res.correct);
+    }).catch(function(){ item.removeAttribute("data-done"); item.querySelectorAll(".kc-opt").forEach(function(o){ o.removeAttribute("disabled"); }); });
+  }
+  function kcAnswerFree(btn){
+    var item=btn.closest(".kc-item"), inp=item.querySelector(".kc-input"); if(!inp||!inp.value.trim()) return;
+    var kc=btn.closest(".kc"), bid=item.getAttribute("data-block")||kc.getAttribute("data-block"), qid=btn.getAttribute("data-qid");
+    var fb=item.querySelector(".kc-feedback"); if(fb){ fb.hidden=false; fb.className="kc-feedback grading"; fb.textContent="Grading your answer…"; }
+    btn.setAttribute("disabled","1");
+    if(!ARTIFACT_ID){ kcShow(item,true,"Saved (grading needs the live app)."); return; }
+    kcCheck({artifactId:ARTIFACT_ID,blockId:bid,questionId:qid,text:inp.value.trim()}).then(function(res){
+      kcShow(item,!!res.correct,res.feedback||(res.correct?"Correct ✓":"Not quite"));
+    }).catch(function(){ btn.removeAttribute("disabled"); if(fb){ fb.className="kc-feedback no"; fb.textContent="Couldn't grade — try again."; } });
+  }
+
+  // ---- scroll-reveal: blocks ease in as they enter the viewport ----
+  var revObs=null;
+  if("IntersectionObserver" in window){
+    revObs=new IntersectionObserver(function(entries){ entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); revObs.unobserve(e.target); } }); }, {rootMargin:"0px 0px -8% 0px"});
+  }
+  function observeReveals(root){
+    var els=(root||document).querySelectorAll(".reveal:not(.in)");
+    if(!revObs){ els.forEach(function(el){ el.classList.add("in"); }); return; }
+    els.forEach(function(el){ revObs.observe(el); });
+  }
+
+  // ---- hydrate interactive visual blocks (data-only → live SVG/controls) ----
+  function vEsc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function buildScatter(body, data){
+    var pts=(data.points||[]), qs=(data.queries||[]);
+    if(pts.length<1||qs.length<1){ return; }
+    var W=460,H=300,PAD=34;
+    function sx(x){ return PAD + (Math.max(0,Math.min(100,x))/100)*(W-2*PAD); }
+    function sy(y){ return PAD + (Math.max(0,Math.min(100,y))/100)*(H-2*PAD); }
+    body.innerHTML = '<div class="viz-controls">'+qs.map(function(q,i){return '<button class="viz-qbtn'+(i===0?' sel':'')+'" data-qi="'+i+'">'+vEsc(q.label)+'</button>';}).join("")+'</div>'+
+      '<div class="viz-scatter-grid"><svg class="scatter" viewBox="0 0 '+W+' '+H+'"></svg><div><div class="viz-near-lab">Nearest matches</div><ol class="viz-near"></ol></div></div>';
+    var svg=body.querySelector("svg.scatter"), near=body.querySelector(".viz-near"), maxD=Math.hypot(100,100);
+    function draw(qi){
+      var q=qs[qi];
+      var ranked=pts.map(function(p){return {p:p,d:Math.hypot((p.x||0)-q.x,(p.y||0)-q.y)};}).sort(function(a,b){return a.d-b.d;});
+      var nearSet={}; ranked.slice(0,3).forEach(function(r){ nearSet[r.p.label]=1; });
+      var h="";
+      ranked.slice(0,3).forEach(function(r){ h+='<line x1="'+sx(q.x)+'" y1="'+sy(q.y)+'" x2="'+sx(r.p.x)+'" y2="'+sy(r.p.y)+'" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.5"/>'; });
+      pts.forEach(function(p){ var on=nearSet[p.label]; h+='<circle cx="'+sx(p.x)+'" cy="'+sy(p.y)+'" r="'+(on?7:5)+'" fill="'+(on?'var(--accent)':'var(--border-strong)')+'" stroke="var(--surface)" stroke-width="2"/><text x="'+(sx(p.x)+9)+'" y="'+(sy(p.y)+4)+'" font-size="10.5" fill="'+(on?'var(--accent-2)':'var(--muted)')+'" font-weight="'+(on?700:500)+'">'+vEsc(p.label)+'</text>'; });
+      h+='<text x="'+sx(q.x)+'" y="'+(sy(q.y)+6)+'" font-size="20" text-anchor="middle" fill="var(--accent)">★</text>';
+      svg.innerHTML=h;
+      near.innerHTML=ranked.slice(0,3).map(function(r){ return '<li>'+vEsc(r.p.label)+' <span style="color:var(--faint)">· '+Math.max(0,1-r.d/maxD).toFixed(2)+'</span></li>'; }).join("");
+    }
+    body.querySelector(".viz-controls").addEventListener("click", function(e){ var b=e.target.closest(".viz-qbtn"); if(!b)return; body.querySelectorAll(".viz-qbtn").forEach(function(x){x.classList.remove("sel");}); b.classList.add("sel"); draw(+b.getAttribute("data-qi")); });
+    draw(0);
+  }
+  function buildSlider(body, data){
+    var min=+data.min, max=+data.max, unit=data.unit||"", stops=(data.stops||[]).slice().sort(function(a,b){return a.at-b.at;});
+    if(stops.length<2||!(max>min)){ return; }
+    var step=(max-min)/100; if(!(step>0)) step=1;
+    body.innerHTML='<div class="viz-slider-row"><span class="viz-readout">'+vEsc(String(min))+'</span><input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+stops[0].at+'"><span class="viz-readout">'+vEsc(String(max))+'</span></div>'+
+      '<div class="viz-readout" style="margin-top:8px">Value: <b class="vs-val"></b> '+vEsc(unit)+'</div>'+
+      '<div class="viz-stop-note"><span class="vsn-label vs-lab"></span><span class="vs-note"></span></div>';
+    var range=body.querySelector("input"), val=body.querySelector(".vs-val"), lab=body.querySelector(".vs-lab"), note=body.querySelector(".vs-note");
+    function nearest(v){ var best=stops[0],bd=Math.abs(v-stops[0].at); for(var i=1;i<stops.length;i++){var d=Math.abs(v-stops[i].at); if(d<bd){bd=d;best=stops[i];}} return best; }
+    function upd(){ var v=+range.value; val.textContent=Math.round(v*100)/100; var s=nearest(v); lab.textContent=s.label+" — "; note.textContent=s.note; }
+    range.addEventListener("input", upd); upd();
+  }
+  function buildStepped(body, data){
+    var steps=(data.steps||[]); if(steps.length<2){ return; }
+    body.innerHTML='<div class="viz-steps-nav">'+steps.map(function(s,i){return '<button class="viz-step-btn'+(i===0?' active':'')+'" data-si="'+i+'"><span class="vsb-n">'+(i+1)+'</span>'+(s.icon?vEsc(s.icon)+' ':'')+vEsc(s.label)+'</button>';}).join("")+'</div><div class="viz-step-detail"></div>';
+    var detail=body.querySelector(".viz-step-detail");
+    function show(i){ var s=steps[i]; detail.innerHTML='<h4>'+(s.icon?vEsc(s.icon)+' ':'')+vEsc(s.label)+'</h4>'+vEsc(s.detail); body.querySelectorAll(".viz-step-btn").forEach(function(b,bi){b.classList.toggle("active", bi===i);}); }
+    body.querySelector(".viz-steps-nav").addEventListener("click", function(e){ var b=e.target.closest(".viz-step-btn"); if(!b)return; show(+b.getAttribute("data-si")); });
+    show(0);
+  }
+  function hydrateViz(viz){
+    var kind=viz.getAttribute("data-viz"), dataEl=viz.querySelector(".viz-data"), body=viz.querySelector(".viz-body");
+    if(!dataEl||!body||viz._hydrated) return;
+    viz._hydrated=true;
+    var data; try { data=JSON.parse(dataEl.textContent||"{}"); } catch(e){ return; }
+    try {
+      if(kind==="scatter") buildScatter(body,data);
+      else if(kind==="slider") buildSlider(body,data);
+      else if(kind==="stepped") buildStepped(body,data);
+    } catch(e){ /* a bad payload never breaks the page */ }
+  }
+  // Hydrate every .viz under a root (whole doc at init, or a freshly-injected panel).
+  function hydrate(root){ Array.prototype.forEach.call((root||document).querySelectorAll(".viz"), hydrateViz); }
+
+  // ---- progressive background build queue (this iframe calls the server directly) ----
+  var cfg={}; try { cfg=JSON.parse(document.getElementById("lesson-config").textContent||"{}"); } catch(e){}
+  // The artifactId is in this iframe's own URL: /api/artifact/<id>. (A downloaded
+  // file:// page has no match → ARTIFACT_ID "" → no fetching, which is correct.)
+  var _m=(location.pathname||"").match(/\/api\/artifact\/([^\/?#]+)/);
+  var ARTIFACT_ID=_m?_m[1]:"";
+  var queue=(cfg.stubModuleIds||[]).slice();
+  var busy=false;
+  function cssEsc(s){ return String(s).replace(/["\\]/g,"\\$&"); }
+  function navItem(id){ return document.querySelector('.navitem[data-goto="'+cssEsc(id)+'"]'); }
+  // Matches both the vertical workbench panel and the horizontal h-page (both carry data-module).
+  function panelEl(id){ return document.querySelector('[data-module="'+cssEsc(id)+'"]'); }
+  function isStub(id){ var p=panelEl(id); return !!(p && p.classList.contains("is-stub")); }
+  function pump(){
+    if(busy || !ARTIFACT_ID) return;
+    var id=queue.shift(); if(!id) return;
+    if(!isStub(id)){ pump(); return; }            // already built (e.g. via priority) — skip
+    busy=true;
+    var nav=navItem(id);
+    fetch("/api/module",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({artifactId:ARTIFACT_ID,moduleId:id})})
+      .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+      .then(function(data){
+        var panel=panelEl(id);
+        // Inject into the page body when present (horizontal h-page), else the panel itself.
+        var target=panel ? (panel.querySelector(".h-page-body")||panel) : null;
+        if(target && data && data.fragmentHtml){ target.innerHTML=data.fragmentHtml; if(panel) panel.classList.remove("is-stub"); hydrate(target); observeReveals(target); }
+        if(nav){ nav.classList.remove("building","failed"); }
+      })
+      .catch(function(){
+        if(nav){ nav.classList.remove("building"); nav.classList.add("failed"); }
+        var panel=panelEl(id), b=panel&&panel.querySelector(".building");
+        if(b){ b.classList.add("failed"); b.textContent="⚠ Couldn't build this section — tap to retry."; }
+      })
+      .then(function(){ busy=false; pump(); });
+  }
+  function prioritize(id){
+    var i=queue.indexOf(id);
+    if(i>0){ queue.splice(i,1); queue.unshift(id); }
+    else if(i===-1 && isStub(id)){ queue.unshift(id); }
+    pump();
+  }
+
+  hydrate(document);
+  observeReveals(document);
+  setProgress();
+  if(HORIZ) hRender(); // sync nav highlight + progress to the first page
+  pump();             // start building the remaining modules, one by one
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1184 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "AutoGen/AG2 and Multi-agent Patterns",
+    "title": "AutoGen/AG2 and Multi-agent Patterns",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 38,
+    "thesis": "AutoGen/AG2 and Multi-agent Patterns is practical when learners can apply it to this concrete case: A research workflow uses planner, researcher, writer, and critic agents to produce a migration brief. By the end, they should be able to build or review AutoGen-style role and handoff protocol, measure reviewer catches missing evidence before final answer, and catch the failure where agents talk endlessly because no one owns termination."
+  },
+  "learnerProfile": {
+    "level": "advanced",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "AutoGen/AG2 and Multi-agent Patterns",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": false,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "AutoGen/AG2 and Multi-agent Patterns: mental map",
+    "caption": "Teach AutoGen/AG2 as conversation-based multi-agent orchestration with user proxies, tools, termination, and version caveats.",
+    "oneLineThesis": "AutoGen and AG2 are useful when the lesson is about agents talking, delegating, using tools, and stopping through conversation protocols.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Conversation is the orchestration surface",
+        "sub": "Agents coordinate by messages rather than graph edges.",
+        "what": "Learners identify AutoGen/AG2 as a conversational topology.",
+        "relevance": "This prevents teaching it as a generic framework with no distinctive control model.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Start with who speaks, who acts, and who can stop the chat.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Conversable agents need roles, tools, and termination",
+        "sub": "A team is safe only when each participant has boundaries.",
+        "what": "Learners design bounded conversational participants.",
+        "relevance": "Loose roles and missing termination create runaway chats and duplicated work.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Define role prompts, allowed tools, and stop conditions together.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Version names and AG2 continuity matter",
+        "sub": "AutoGen examples can point to different APIs.",
+        "what": "Learners avoid mixing old tutorials with current AG2/AutoGen APIs.",
+        "relevance": "Version confusion is a known gotcha in AutoGen-style teaching.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Date-stamp the framework family before copying patterns.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code execution belongs in a sandboxed participant",
+        "sub": "The executor role is a security boundary when designed correctly.",
+        "what": "Learners implement a tiny message/team simulator.",
+        "relevance": "Conversation does not remove the need for tool security.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Keep risky tools away from planning and review agents.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Evaluate conversation traces, not only final text",
+        "sub": "Multi-agent chat can look smart while hiding duplicated or unsupported work.",
+        "what": "Learners create production checks for AutoGen/AG2-style systems.",
+        "relevance": "Final answers alone miss looping, unsafe tools, and weak human review.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Review roles, tool calls, evidence, turns, and termination.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "dependency",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Conversation is the orchestration surface",
+      "sub": "Agents coordinate by messages rather than graph edges.",
+      "summary": "AutoGen/AG2 makes agent collaboration look like structured conversation.",
+      "objectives": [
+        "Describe conversation-based multi-agent orchestration.",
+        "Explain user proxy and assistant roles.",
+        "Name the risk of open-ended chats."
+      ],
+      "termIds": [
+        "framework",
+        "orchestration",
+        "handoff",
+        "sdk"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "AutoGen-style agents negotiate through messages",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a data analyst agent writes a query, a code executor runs it, and a human user proxy approves the final chart before it is shared. The interesting part is not just tool calling; it is who speaks next and when the conversation ends."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "AutoGen and AG2 belong to the conversational-agent family. Agents exchange messages, request tools, ask humans, and stop when a termination rule or workflow condition fires."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If the task does not need conversation among participants, a simpler chain or graph may be clearer."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ],
+          "analogy": "AutoGen is closer to a moderated meeting than a conveyor belt."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Case study: analyst, executor, and user proxy",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The analyst proposes SQL, the executor runs it in a sandbox, and the user proxy approves the externally shared summary. Each participant has a bounded role."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The conversation ends when the analyst sends a final answer that passes an evidence check and the user proxy approves sharing."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Name participants and authorities."
+                  }
+                ],
+                [
+                  {
+                    "text": "Register tools only with the executor that needs them."
+                  }
+                ],
+                [
+                  {
+                    "text": "Define human proxy approval behavior."
+                  }
+                ],
+                [
+                  {
+                    "text": "Set a concrete termination condition."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Conversation fit",
+          "prompt": "What makes AutoGen/AG2 distinctive for this lesson?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It is only a vector database.",
+              "correct": false
+            },
+            {
+              "text": "Agents coordinate through message exchange, tools, user proxies, and termination rules.",
+              "correct": true
+            },
+            {
+              "text": "It removes the need for human approval.",
+              "correct": false
+            }
+          ],
+          "explanation": "The core abstraction is conversational orchestration.",
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Conversable agents need roles, tools, and termination",
+      "sub": "A team is safe only when each participant has boundaries.",
+      "summary": "The team contract lives in agent roles and termination logic.",
+      "objectives": [
+        "Create role boundaries.",
+        "Assign tools to the right agent.",
+        "Define max turns and final markers."
+      ],
+      "termIds": [
+        "framework",
+        "orchestration",
+        "handoff",
+        "sdk"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Every participant needs an exit condition",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "AG2-style `ConversableAgent` patterns are powerful because any participant can reply, call tools, or hand work to another participant. That also means the system needs clear termination: max turns, keywords, evaluator pass, approval, or explicit state."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Tools should be assigned by responsibility. A reviewer does not need code execution; a user proxy does not need broad database credentials."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Write the phrase that ends the conversation and the condition that makes it valid."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ],
+          "analogy": "A group chat without a stop rule becomes a meeting with no agenda."
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Conversation participant boundaries",
+          "criteria": [
+            "Participant",
+            "Owns",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Planner/assistant",
+              "cells": [
+                {
+                  "criterion": "Participant",
+                  "text": "Breaks task down and proposes next work.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Owns",
+                  "text": "Reasoning and coordination.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Can overdelegate or loop.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when task needs decomposition.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Executor",
+              "cells": [
+                {
+                  "criterion": "Participant",
+                  "text": "Runs code or tools in sandbox.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Owns",
+                  "text": "External action under policy.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Unsafe code if sandbox is weak.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use for tool-heavy tasks.",
+              "cost": "Medium",
+              "complexity": "High"
+            },
+            {
+              "name": "User proxy",
+              "cells": [
+                {
+                  "criterion": "Participant",
+                  "text": "Represents human approval or input.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Owns",
+                  "text": "Review and termination authority.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Rubber-stamp if packet is vague.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for HITL decisions.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Termination rule",
+          "prompt": "Why is max-turn or final-marker logic important?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It lets every tool run without validation.",
+              "correct": false
+            },
+            {
+              "text": "It prevents unbounded conversations and makes completion testable.",
+              "correct": true
+            },
+            {
+              "text": "It hides all intermediate messages.",
+              "correct": false
+            }
+          ],
+          "explanation": "Conversational teams need explicit stopping conditions.",
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Version names and AG2 continuity matter",
+      "sub": "AutoGen examples can point to different APIs.",
+      "summary": "AutoGen, AgentChat, Core, AG2, and Microsoft Agent Framework are not interchangeable.",
+      "objectives": [
+        "Identify AutoGen maintenance and AG2 continuity caveats.",
+        "Choose docs by version family.",
+        "Avoid greenfield Microsoft confusion."
+      ],
+      "termIds": [
+        "framework",
+        "orchestration",
+        "handoff",
+        "sdk"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "The name changed faster than the concept",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Microsoft AutoGen has multiple eras, and AG2 continues the classic AutoGen lineage. Microsoft also points new production agent work toward Microsoft Agent Framework. A lesson should say which family it is teaching."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Do not mix AutoGen 0.2 snippets, current stable AutoGen AgentChat, AG2 docs, and Agent Framework workflows without explanation. Learners will install the wrong package or follow the wrong API shape."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Include the package, docs family, and date on every practical example."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ],
+          "analogy": "Framework names are street signs; follow the one on the current map."
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Worked version note for a lesson",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A lesson that says “AG2-style ConversableAgent” should link to AG2 docs and explain the relation to older AutoGen. A Microsoft production lesson should instead point to Microsoft Agent Framework."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This avoids sending greenfield learners toward a maintenance-mode path when the subject is not legacy AutoGen literacy."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Choose AutoGen AgentChat, AutoGen Core, AG2, or Microsoft Agent Framework."
+                  }
+                ],
+                [
+                  {
+                    "text": "Pin package and docs family."
+                  }
+                ],
+                [
+                  {
+                    "text": "State what the example is not covering."
+                  }
+                ],
+                [
+                  {
+                    "text": "Run a smoke test after dependency updates."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Version caution",
+          "prompt": "Why should a lesson date-stamp AutoGen/AG2 claims?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Dates make tool schemas invalid.",
+              "correct": false
+            },
+            {
+              "text": "Tutorials and APIs span different framework generations and can conflict.",
+              "correct": true
+            },
+            {
+              "text": "AG2 has no documentation.",
+              "correct": false
+            }
+          ],
+          "explanation": "Version clarity prevents learners from copying incompatible examples.",
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code execution belongs in a sandboxed participant",
+      "sub": "The executor role is a security boundary when designed correctly.",
+      "summary": "A multi-agent chat still needs runtime policy.",
+      "objectives": [
+        "Route tool execution through a bounded executor.",
+        "Predict the termination marker.",
+        "Record evidence from the executor."
+      ],
+      "termIds": [
+        "framework",
+        "orchestration",
+        "handoff",
+        "sdk"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Tool authority should not leak across the chat",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If a planner can both invent code and run it with full filesystem access, the “team” has no safety separation. Put execution behind a participant with sandbox limits, allowed tools, and structured results."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from agent safety, tool output is untrusted. The planner may read executor output, but policy still controls follow-up side effects."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "The final answer should cite executor output or human approval, not only chat confidence."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Tiny conversation loop with final marker",
+          "language": "python",
+          "code": "participants = [\"planner\", \"executor\", \"reviewer\"]\nmessages = []\n\ndef planner(goal):\n    return {\"speaker\": \"planner\", \"text\": \"Ask executor to run the report query.\"}\n\ndef executor(message):\n    return {\"speaker\": \"executor\", \"text\": \"Query complete: activation=42%. Evidence: report-17.\"}\n\ndef reviewer(message):\n    if \"Evidence:\" in message[\"text\"]:\n        return {\"speaker\": \"reviewer\", \"text\": \"FINAL approved with evidence report-17\"}\n    return {\"speaker\": \"reviewer\", \"text\": \"Need evidence before FINAL\"}\n\nmessages.append(planner(\"weekly activation\"))\nmessages.append(executor(messages[-1]))\nmessages.append(reviewer(messages[-1]))\nprint(messages[-1][\"text\"])\n",
+          "explanation": "The toy loop makes speaker ownership and termination visible; a real AG2/AutoGen app would use framework agents and sandboxed executors.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict whether the reviewer sends FINAL.",
+            "answer": "The reviewer sends FINAL because the executor message includes evidence."
+          },
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Executor boundary",
+          "prompt": "Which participant should usually own code execution?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Every participant equally.",
+              "correct": false
+            },
+            {
+              "text": "A bounded executor with sandbox and tool policy.",
+              "correct": true
+            },
+            {
+              "text": "The final reviewer with no logs.",
+              "correct": false
+            }
+          ],
+          "explanation": "Execution is authority and should be scoped.",
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Evaluate conversation traces, not only final text",
+      "sub": "Multi-agent chat can look smart while hiding duplicated or unsupported work.",
+      "summary": "Conversation orchestration needs trace-level evaluation.",
+      "objectives": [
+        "Inspect per-agent messages and tools.",
+        "Measure turn count and cost.",
+        "Check human approval and sandbox use."
+      ],
+      "termIds": [
+        "framework",
+        "orchestration",
+        "handoff",
+        "sdk"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The trace is the product evidence",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A healthy AutoGen/AG2 trace shows each participant doing its job, tools running under the right participant, evidence flowing into the final answer, and termination happening for the intended reason."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Failure modes include runaway chats, repeated planning, executor overreach, unsupported final claims, weak user-proxy approval, and version drift after package updates."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Compare the conversation team against a single-agent or deterministic baseline on the same task."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output from AutoGen/AG2",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Read the final answer with the conversation trace open."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Each participant had a distinct role, allowed tools, and stop rule."
+                  }
+                ],
+                [
+                  {
+                    "text": "Code or browser execution happened only in sandboxed executor roles."
+                  }
+                ],
+                [
+                  {
+                    "text": "The user proxy approved exact artifacts or actions, not vague intent."
+                  }
+                ],
+                [
+                  {
+                    "text": "The final answer cites evidence produced or verified in the conversation."
+                  }
+                ],
+                [
+                  {
+                    "text": "Turn count, cost, and failures beat or justify a simpler baseline."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Trace review",
+          "prompt": "What should block release of a conversational agent team?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A trace that includes useful evidence.",
+              "correct": false
+            },
+            {
+              "text": "A final answer that relies on unsupported worker claims or unauthorized tool execution.",
+              "correct": true
+            },
+            {
+              "text": "A clear termination marker.",
+              "correct": false
+            }
+          ],
+          "explanation": "Conversation style does not exempt the system from grounding and safety checks.",
+          "termIds": [
+            "framework",
+            "orchestration",
+            "handoff",
+            "sdk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4"
+      ]
+    }
+  ],
+  "glossary": {
+    "framework": {
+      "id": "framework",
+      "label": "Framework",
+      "laymanDefinition": "A library or platform that provides agent building blocks and conventions.",
+      "technicalNote": "Framework choice affects state handling, tools, tracing, deployment model, ecosystem fit, and how much control the application keeps.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "graph": {
+      "id": "graph",
+      "label": "Graph",
+      "laymanDefinition": "A workflow shape where nodes and edges define how work moves between steps.",
+      "technicalNote": "Graph-based agents make branching, retries, checkpoints, and human review more explicit than a single loose loop.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "checkpoint": {
+      "id": "checkpoint",
+      "label": "Checkpoint",
+      "laymanDefinition": "A saved workflow state that lets execution resume or be inspected later.",
+      "technicalNote": "Checkpoints are essential for durable agents because retries, approvals, and debugging need the exact state at a step boundary.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "handoff": {
+      "id": "handoff",
+      "label": "Handoff",
+      "laymanDefinition": "Passing work from one agent, tool, or human role to another.",
+      "technicalNote": "Handoffs need a typed payload, ownership transfer, stop condition, and audit trail so context does not vanish between actors.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "sdk": {
+      "id": "sdk",
+      "label": "SDK",
+      "laymanDefinition": "A software development kit with APIs and helpers for building applications.",
+      "technicalNote": "Agent SDKs encode assumptions about models, tools, sessions, tracing, and deployment, so evaluate those assumptions against the product architecture.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Software development kit"
+    },
+    "orchestration": {
+      "id": "orchestration",
+      "label": "Orchestration",
+      "laymanDefinition": "Coordinating steps, agents, tools, state, and decisions in a workflow.",
+      "technicalNote": "Orchestration owns sequencing, parallelism, retries, timeouts, approvals, and failure visibility across the agent system.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for AutoGen/AG2 and Multi-agent Patterns",
+    "themes": [
+      {
+        "name": "Conversational team fit",
+        "questions": [
+          {
+            "q": "Does this task benefit from message-passing agents and human/user-proxy participation?",
+            "why": "AutoGen-style systems add conversation state and termination risks, so they should solve a real collaboration problem.",
+            "opts": [
+              "AutoGen/AG2 conversation team",
+              "CrewAI role/task workflow",
+              "LangGraph explicit state graph"
+            ],
+            "rot": "Use AutoGen/AG2 when who speaks next, human proxy behavior, and group-chat termination are the core learning target."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct AutoGen/AG2 by naming conversable agents, user proxy, tools, group chat/team pattern, termination, version caveats, and sandboxing."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "AutoGen/AG2 path from agents to terminated conversation",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Conversation is the orchestration surface",
+          "sub": "Agents coordinate by messages rather than graph edges.",
+          "what": "Learners identify AutoGen/AG2 as a conversational topology.",
+          "relevance": "This prevents teaching it as a generic framework with no distinctive control model.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Start with who speaks, who acts, and who can stop the chat.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Conversable agents need roles, tools, and termination",
+          "sub": "A team is safe only when each participant has boundaries.",
+          "what": "Learners design bounded conversational participants.",
+          "relevance": "Loose roles and missing termination create runaway chats and duplicated work.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Define role prompts, allowed tools, and stop conditions together.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Version names and AG2 continuity matter",
+          "sub": "AutoGen examples can point to different APIs.",
+          "what": "Learners avoid mixing old tutorials with current AG2/AutoGen APIs.",
+          "relevance": "Version confusion is a known gotcha in AutoGen-style teaching.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Date-stamp the framework family before copying patterns.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code execution belongs in a sandboxed participant",
+          "sub": "The executor role is a security boundary when designed correctly.",
+          "what": "Learners implement a tiny message/team simulator.",
+          "relevance": "Conversation does not remove the need for tool security.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Keep risky tools away from planning and review agents.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Evaluate conversation traces, not only final text",
+          "sub": "Multi-agent chat can look smart while hiding duplicated or unsupported work.",
+          "what": "Learners create production checks for AutoGen/AG2-style systems.",
+          "relevance": "Final answers alone miss looping, unsafe tools, and weak human review.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Review roles, tool calls, evidence, turns, and termination.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Conversation is the orchestration surface",
+        "detail": "AutoGen/AG2 makes agent collaboration look like structured conversation."
+      },
+      {
+        "step": 2,
+        "label": "Conversable agents need roles, tools, and termination",
+        "detail": "The team contract lives in agent roles and termination logic."
+      },
+      {
+        "step": 3,
+        "label": "Version names and AG2 continuity matter",
+        "detail": "AutoGen, AgentChat, Core, AG2, and Microsoft Agent Framework are not interchangeable."
+      },
+      {
+        "step": 4,
+        "label": "Code execution belongs in a sandboxed participant",
+        "detail": "A multi-agent chat still needs runtime policy."
+      },
+      {
+        "step": 5,
+        "label": "Evaluate conversation traces, not only final text",
+        "detail": "Conversation orchestration needs trace-level evaluation."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_fit",
+        "label": "Can you justify the fit described in \"Conversation is the orchestration surface\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_impl",
+        "label": "Can you inspect the implementation surface in \"Code execution belongs in a sandboxed participant\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Evaluate conversation traces, not only final text\" define production checks?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Design a three-participant AG2-style review: planner, executor, and user proxy. Define tools, who may execute code, termination condition, human approval point, and trace checks. Next rung: compare it against LangGraph and CrewAI for the same task.",
+      "scopedTo": "AutoGen/AG2 and Multi-agent Patterns"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LangGraph documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "kb3": {
+      "id": "kb3",
+      "kind": "kb",
+      "title": "KB: AutoGen and AG2",
+      "url": "https://microsoft.github.io/autogen/stable/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb4": {
+      "id": "kb4",
+      "kind": "kb",
+      "title": "KB: Multi-Agent Topologies",
+      "url": "https://www.anthropic.com/engineering/multi-agent-research-system",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

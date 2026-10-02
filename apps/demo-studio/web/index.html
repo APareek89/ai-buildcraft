@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" class="lovable-ui" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/web/vendor/lovable-tokens.css">
+<link rel="stylesheet" href="/web/vendor/lovable-components.css">
+<link rel="stylesheet" href="/web/styles.css?v=3d7">
+<link rel="stylesheet" href="/web/design-system.css">
+<link rel="stylesheet" href="/web/studio-ui.css">
+<link rel="stylesheet" href="/web/insights-ui.css">
+<link rel="stylesheet" href="/web/player-ui.css">
+<link rel="stylesheet" href="/web/portfolio-theme.css">
+<link rel="icon" type="image/svg+xml" href="/web/brand.svg">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="top">
+  <a class="brand" href="#/home" aria-label="Demo Studio home"><img src="/web/brand.svg" alt="" width="34" height="34"><span>Demo<span class="brand-accent">Studio</span><small>PRODUCT EXPERIENCES</small></span></a>
+  <nav class="tabs" id="tabs" aria-label="Main navigation">
+    <a href="#/home" data-tab="home">Home</a>
+    <a href="#/demos" data-tab="demos">My demos</a>
+    <a href="#/studio" data-tab="studio">Studio</a>
+    <a href="#/playground" data-tab="playground">Playground</a>
+    <a href="#/observability" data-tab="observability">Observability</a>
+  </nav>
+  <div class="portfolio-account">
+    <button class="btn icon-only" id="themeToggle" type="button" aria-label="Switch to dark theme"></button>
+    <span id="accountEmail" class="account-email"></span>
+    <button class="btn" id="accountAction" type="button">Sign in</button>
+  </div>
+</header>
+<main id="main" tabindex="-1"></main>
+<div id="toasts" class="toasts"></div>
+<script src="/web/vendor/lucide.min.js"></script>
+<script type="module" src="/web/app.js?v=portfolio1"></script>
+</body>
+</html>

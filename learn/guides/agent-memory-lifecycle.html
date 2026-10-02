@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent memory — the lifecycle, live</title>
+<style>
+  :root{
+    --bg:#faf9f6; --card:#ffffff; --ink:#2c2c2a; --muted:#77766f; --line:#e6e4dc;
+    --user:#185fa5; --userbg:#e6f1fb; --agent:#534ab7; --agentbg:#eeedfe;
+    --tool:#854f0b; --toolbg:#faeeda; --mem:#0f6e56; --membg:#e1f5ee;
+    --state:#993c1d; --statebg:#faece7; --sum:#0c447c; --sumbg:#dcebfa;
+    --warn:#a32d2d; --warnbg:#fcebeb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.55}
+  header{padding:26px 28px 10px}
+  header h1{margin:0 0 6px;font-size:22px;font-weight:600}
+  header p{margin:0;color:var(--muted);max-width:880px}
+  .hint{background:var(--membg);color:var(--mem);border-radius:8px;padding:8px 14px;margin:12px 28px 0;display:inline-block;font-size:13.5px}
+
+  /* timeline */
+  #timeline{display:flex;gap:6px;overflow-x:auto;padding:18px 28px 6px;align-items:flex-end}
+  .day-group{display:flex;flex-direction:column;gap:6px}
+  .day-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-left:4px}
+  .day-nodes{display:flex;gap:6px}
+  .tnode{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:7px 11px;font-size:12.5px;cursor:pointer;white-space:nowrap;color:var(--ink)}
+  .tnode:hover{border-color:#b9b6aa}
+  .tnode.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tnode.special{border-color:var(--mem);color:var(--mem);font-weight:600}
+  .tnode.special.active{background:var(--mem);color:#fff}
+
+  #narration{margin:14px 28px;padding:16px 18px;background:var(--card);border:1px solid var(--line);border-radius:12px;max-width:1200px}
+  #narration h2{margin:0 0 6px;font-size:16px;font-weight:600}
+  #narration p{margin:0;color:#4c4b45}
+  .biganswer{margin-top:12px;background:var(--membg);border:1px solid #9fe1cb;border-radius:10px;padding:12px 16px}
+  .biganswer h3{margin:0 0 8px;font-size:14px;color:var(--mem)}
+  .cols2{display:flex;gap:22px;flex-wrap:wrap}
+  .cols2 ul{margin:4px 0;padding-left:18px;font-size:13.5px}
+  .cols2 .no li{color:var(--warn)}
+  .cols2 .yes li{color:var(--mem)}
+
+  main{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:14px;padding:4px 28px 10px;align-items:start}
+  @media(max-width:1000px){main{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-height:220px}
+  .panel h3{margin:0 0 4px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .panel .sub{font-size:12px;color:var(--muted);margin:0 0 12px}
+
+  .chip{border-radius:9px;padding:8px 11px;margin:6px 0;font-size:13px;cursor:pointer;border:1px solid transparent;position:relative}
+  .chip:hover{filter:brightness(.97);border-color:rgba(0,0,0,.15)}
+  .chip small{display:block;font-size:11px;opacity:.75;margin-top:2px}
+  .c-user{background:var(--userbg);color:#0c447c}
+  .c-agent{background:var(--agentbg);color:#3c3489}
+  .c-tool{background:var(--toolbg);color:#633806}
+  .c-mem{background:var(--membg);color:#085041}
+  .c-state{background:var(--statebg);color:#712b13}
+  .c-sum{background:var(--sumbg);color:#0c447c}
+  .c-sys{background:#f1efe8;color:#444441}
+  .c-dead{background:#f1efe8;color:#9a988e;text-decoration:line-through}
+  .c-reject{background:var(--warnbg);color:var(--warn)}
+  .ghost{opacity:.45}
+
+  .meter{height:10px;background:#eeece4;border-radius:6px;overflow:hidden;margin:6px 0 2px;cursor:pointer}
+  .meter div{height:100%;background:#1d9e75;border-radius:6px;transition:width .4s}
+  .meter.hot div{background:#e24b4a}
+  .meterlbl{font-size:11.5px;color:var(--muted);cursor:pointer}
+
+  .dbtable{margin:0 0 12px}
+  .dbtable .tname{font-size:12px;font-weight:600;margin:8px 0 4px;color:var(--ink);cursor:pointer}
+  .dbtable .tname:hover{text-decoration:underline}
+  .empty{font-size:12px;color:#b0aea3;font-style:italic}
+
+  .nav{display:flex;gap:10px;padding:6px 28px 20px}
+  .nav button{font:inherit;padding:9px 18px;border-radius:9px;border:1px solid var(--line);background:var(--card);cursor:pointer}
+  .nav button:hover{background:#f4f2ec}
+  .nav button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .toggle{margin:10px 0;font-size:13px}
+  .toggle label{margin-right:14px;cursor:pointer}
+
+  #faq{padding:10px 28px 60px;max-width:900px}
+  #faq h2{font-size:18px}
+  details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:8px 0}
+  summary{cursor:pointer;font-weight:600;font-size:14px}
+  details p{color:#4c4b45;font-size:14px}
+
+  /* modal */
+  #overlay{position:fixed;inset:0;background:rgba(30,30,28,.45);display:none;z-index:50}
+  #modal{position:fixed;top:6vh;left:50%;transform:translateX(-50%);width:min(760px,92vw);max-height:86vh;overflow-y:auto;background:var(--card);border-radius:14px;padding:22px 26px;display:none;z-index:60;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  #modal h2{margin:0 0 4px;font-size:18px}
+  #modal .tag{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;margin-bottom:10px}
+  #modal .simple{font-size:14.5px;color:#3c3b36}
+  #modal pre{background:#23231f;color:#e8e6dd;padding:14px 16px;border-radius:10px;overflow-x:auto;font-size:12.5px;line-height:1.55}
+  #modal .codenote{font-size:13px;color:var(--muted)}
+  #modal .close{position:sticky;float:right;top:0;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted)}
+  #modal details{border:none;background:#f6f5f0;margin-top:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Agent memory — the lifecycle, live</h1>
+  <p>One shopper, three days, every memory operation visible. Step through the timeline. The middle panel is the star: it shows <b>exactly what the model receives on each API call</b> — which is rebuilt from scratch every single time, because the model itself remembers nothing.</p>
+</header>
+<div class="hint">Click ANY element — a message, a table row, the meter, a memory fact — to see the plain-English explanation and the code behind it.</div>
+
+<div id="timeline"></div>
+<div id="narration"></div>
+
+<main>
+  <section class="panel">
+    <h3>The chat</h3>
+    <p class="sub">What Alex and the agent say (this session only)</p>
+    <div id="chat"></div>
+  </section>
+  <section class="panel">
+    <h3>Context window → sent to the model</h3>
+    <p class="sub">Rebuilt and re-sent in full on EVERY api call</p>
+    <div id="ctx"></div>
+  </section>
+  <section class="panel">
+    <h3>The databases (the record)</h3>
+    <p class="sub">Permanent tables in DynamoDB — nothing here is "in the model"</p>
+    <div id="db"></div>
+  </section>
+</main>
+
+<div class="nav">
+  <button id="prev">← Back</button>
+  <button id="next" class="primary">Next step →</button>
+</div>
+
+<section id="faq">
+  <h2>Questions you were probably about to ask</h2>
+  <details><summary>Does tomorrow's session load yesterday's summary?</summary>
+  <p><b>No.</b> The compaction summary is a space-saving artifact of session 1's <i>view</i>. When a new session starts, its message list starts empty. The summary stays in the DB attached to s1 — used only if the product offers "resume yesterday's conversation" (which literally means: reload s1's view and keep going). The bridges between days are: the <b>profile</b> (long-term memory), <b>episodes</b> (if recalled), and <b>state</b> (cart, orders — fetched by tools).</p></details>
+  <details><summary>Then how did the agent know about the Herrera brogues on Day 2?</summary>
+  <p>Two honest routes, and neither is "it remembered the conversation": (1) the user's question forced a <b>get_cart tool call</b> — the cart is state in the commerce backend, and it still holds the Herrera; (2) the <b>episode</b> written at session end ("researched brogues, chose Herrera") can be recalled if the new query is similar. The transcript itself was never loaded.</p></details>
+  <details><summary>Is the model remembering anything between API calls?</summary>
+  <p><b>Nothing.</b> The API is stateless. The only reason turn 12 "remembers" turn 3 is that your code re-sends turns 1–11 (or their summary) with every call. That's why the middle panel is rebuilt at every step — that rebuild IS the memory system.</p></details>
+  <details><summary>What if the conversation grows past the budget again after compacting?</summary>
+  <p>Compaction just runs again. The next pass summarizes [old summary + the turns after it] into a new summary row with a higher covers_up_to. A very long conversation ends up as: newest summary + recent turns — always bounded, indefinitely.</p></details>
+  <details><summary>Alex said "size 9" on Day 1, turn 4. Why wasn't it in memory immediately?</summary>
+  <p>Because at that moment it lives in the <b>transcript</b> — which is enough for the rest of that session (it's in the context). It becomes long-term memory only when <b>extraction</b> runs at session end and promotes it to the profile. (A production system can also write mid-session when the user says "remember this" — that's an optimization, same pipeline.)</p></details>
+  <details><summary>What ever gets deleted?</summary>
+  <p>Raw conversation rows (and their summary rows) — via TTL after the retention window, ~90 days. The profile is never bulk-deleted, only <i>curated</i>: merged, expired ("wedding Sept 14" after Sept 14), decayed (year-old unconfirmed inferences), or deleted on user request. Episodes persist (small). Orders are a business ledger — kept per accounting rules, untouchable by "forget me".</p></details>
+  <details><summary>Where do prices live in all this?</summary>
+  <p>Nowhere. Prices are <b>state owned by the catalog system</b> — fetched by a tool inside the turn that needs them, never stored in any memory layer. Stored prices are stale prices.</p></details>
+</section>
+
+<div id="overlay"></div>
+<div id="modal">
+  <button class="close" onclick="closeModal()">×</button>
+  <div id="modalBody"></div>
+</div>
+
+<script>
+// ---------- explanations + code (INFO) ----------
+const INFO = {
+  userMsg:{t:"A user message arrives",tag:"short-term memory",c:"c-user",
+    s:"Two things happen instantly: (1) the message is APPENDED to the in-memory history list, and (2) it is SAVED as one new row in the conversations table — session_id says which conversation, turn_no says where in it. One row per message, many rows per session. The DB write means a crash loses nothing.",
+    code:`def save_message(session_id, turn_no, role, content, kind="chat"):
+    table.put_item(Item={
+        "session_id": session_id,   # partition key: WHICH conversation
+        "turn_no":    turn_no,      # sort key: position inside it
+        "role":       role,         # "user" / "assistant"
+        "kind":       kind,         # "chat" / "tool_call" / "tool_output" / "summary"
+        "content":    content,
+        "ts":         int(time.time()),
+        "expires_at": int(time.time()) + 90*86_400,   # TTL: auto-delete in 90 days
+    })`,
+    n:"put_item writes one row. The kind field matters later: compaction uses it to find tool junk, and the loader uses it to find summaries."},
+  agentMsg:{t:"The agent's reply",tag:"short-term memory",c:"c-agent",
+    s:"The model returned stop_reason \"end_turn\" — it's done with this turn. The reply text is shown to the user AND saved as a row, exactly like a user message. The transcript records both sides.",
+    code:`response = client.messages.create(
+    model="claude-sonnet-4-5", max_tokens=1024,
+    system=system_prompt, messages=history, tools=TOOLS)
+
+if response.stop_reason == "end_turn":          # model is done
+    reply = response.content[0].text
+    save_message(session_id, next_turn(), "assistant", reply)`,
+    n:"The loop's normal exit: end_turn. If it had been tool_use instead, we'd run the tool and call again."},
+  toolCall:{t:"Tool call + tool result",tag:"state, fetched live",c:"c-tool",
+    s:"The model answered with stop_reason \"tool_use\": it wants search_catalog run. YOUR code executes it (the model can't touch a database), appends the chunky JSON result to the history, and calls the model again. Both the request and the result are saved as rows too — they are part of the turns. Notice: tool outputs are the FATTEST content in the context. That's why compaction clears them first.",
+    code:`while response.stop_reason == "tool_use":
+    call = next(b for b in response.content if b.type == "tool_use")
+    result = run_tool(call.name, call.input)        # my code hits DynamoDB
+    save_message(session_id, next_turn(), "assistant", str(call.input), kind="tool_call")
+    save_message(session_id, next_turn(), "user",      str(result),     kind="tool_output")
+    history.append(tool_result_block(call.id, result))
+    response = client.messages.create(..., messages=history, tools=TOOLS)`,
+    n:"The inner tool loop from your P1 build. Prices arrive here, live, and only here — never from memory."},
+  sysBase:{t:"Base instructions",tag:"system prompt",c:"c-sys",
+    s:"The static part of the system prompt: who the agent is, its rules, its tone. Same every call. In production this stable prefix is also what prompt caching rewards.",
+    code:`BASE_INSTRUCTIONS = """You are Sam, a shopping assistant for men's
+accessories. Prices and stock ALWAYS come from tools — never state a
+price from memory. If the user asks for a human, escalate immediately."""`,
+    n:"Plain string constant. Guardrail-flavored lines live here too."},
+  sysProfile:{t:"Profile block (long-term memory)",tag:"long-term → system prompt",c:"c-mem",
+    s:"This is HOW long-term memory is invoked: the small, curated profile is formatted as a few text lines and concatenated into the system prompt. Not 45 raw memories — a handful of facts, each carrying provenance (stated beats inferred). This block is why the Day-2 agent knows Alex's size without any transcript.",
+    code:`profile = load_profile(user_id)          # one small dict from memlab_profile
+
+profile_block = "\\n## Known about this shopper\\n" + "\\n".join(
+    f"- {m['fact']} ({m['provenance']})" for m in profile.values())
+
+system = BASE_INSTRUCTIONS + profile_block + case_facts_block`,
+    n:"A generator expression inside join() builds one line per fact. The whole block is usually under 100 tokens."},
+  ctxMessages:{t:"The messages list (the view)",tag:"short-term memory",c:"c-user",
+    s:"This is the conversation as the model will see it — the VIEW, rebuilt from the DB rows. Early in a session it's simply every turn. After compaction it becomes: latest summary + turns after it. The model can't tell the difference; it just reads messages in order.",
+    code:`def load_context_for_model(session_id):
+    rows = load_conversation(session_id)              # ALL rows, ordered
+    summaries = [r for r in rows if r["kind"] == "summary"]
+    if not summaries:
+        return rows                                    # nothing compacted yet
+    latest = max(summaries, key=lambda s: s["covers_up_to"])
+    recent = [r for r in rows
+              if r["turn_no"] > latest["covers_up_to"] and r["kind"] != "summary"]
+    return [latest] + recent                           # summary + newer turns`,
+    n:"The record (all rows) stays intact; this function only decides what the model gets shown."},
+  meter:{t:"The token meter — compaction's trigger",tag:"trigger",c:"c-sys",
+    s:"Before every API call we estimate the view's size (~4 characters per token) and compare against the budget. Cross ~80% and compaction fires BEFORE the call. Tokens, never turn-count — one fat tool result outweighs twenty short messages.",
+    code:`MAX_TOKENS = 6_000        # deliberately small in the lab so you see it fire
+COMPACT_AT = 0.8
+
+def estimate_tokens(history):
+    return sum(len(str(m)) for m in history) // 4
+
+if estimate_tokens(history) >= COMPACT_AT * MAX_TOKENS:
+    history = compact(history, client)     # see the compaction step`,
+    n:"Real systems use exact token counting APIs; the 4-chars heuristic is fine to learn with."},
+  compaction:{t:"Compaction — two moves",tag:"context operation",c:"c-sum",
+    s:"Move 1: drop old tool_output rows from the view — search dumps already served their purpose. Move 2: summarize the remaining old turns with a cheap model, keeping the last ~10 verbatim. Critical: this changes the VIEW only. Look at the right panel — the DB rows for turns 1–9 are all still there, plus ONE new row: the summary.",
+    code:`def compact(history, client):
+    old, recent = history[:-10], history[-10:]
+    old = [m for m in old if m.get("kind") != "tool_output"]   # move 1
+
+    summary = client.messages.create(                          # move 2
+        model="claude-haiku-4-5", max_tokens=500,
+        messages=[{"role":"user","content":
+          "Summarize this shopping chat. Keep names and numbers EXACT:\\n"+str(old)}]
+    ).content[0].text
+
+    save_summary(session_id, summary, covers_up_to=old_last_turn)   # persist it
+    return [{"role":"user","kind":"summary","content":summary}] + recent`,
+    n:"Summaries can drift on exact figures — which is why order IDs and amounts also live in a separate case-facts block."},
+  sumRow:{t:"The summary row",tag:"stored artifact",c:"c-sum",
+    s:"The summary is persisted as its own row with covers_up_to = 9, meaning \"I replace turns 1–9 in the view.\" Why store it? So a resumed or crashed session rebuilds the same compacted view instantly instead of paying to re-summarize. It lives and dies WITH this conversation — it is not long-term memory and is never loaded into other sessions.",
+    code:`def save_summary(session_id, summary_text, covers_up_to):
+    table.put_item(Item={
+        "session_id": session_id,
+        "turn_no":    covers_up_to,      # sits at the position it replaces
+        "kind":       "summary",
+        "content":    summary_text,
+        "covers_up_to": covers_up_to,
+        "expires_at": ...                # same TTL as its conversation
+    })`,
+    n:"Same table, same TTL — when the conversation's rows expire, its summaries go too."},
+  cartRow:{t:"The cart — state, not memory",tag:"state",c:"c-state",
+    s:"\"Add the Herrera in size 9\" produced a row in the CART table — owned by the commerce backend, written through the add_to_cart tool. It is not a memory of any kind: it's a live business object that checkout, stock and pricing must act on exactly. This is why it survives to Day 2 even though the conversation doesn't get loaded. (This is the lesson you've missed twice in quizzes — here it's physically a different table.)",
+    code:`def add_to_cart(user_id, product_id, size):
+    cart_table.put_item(Item={
+        "user_id": user_id, "product_id": product_id,
+        "size": size, "added_ts": int(time.time()),
+    })
+# no TTL, no provenance, no curation — business rules govern this table`,
+    n:"Ask of any fact: 'about the person, or a live object another system owns?' Cart = the second → state."},
+  extraction:{t:"Session-end extraction — the gate",tag:"long-term pipeline",c:"c-mem",
+    s:"Thirty quiet minutes closed the session, and only NOW does long-term memory get written. A cheap model reads the transcript and proposes candidate facts, each tagged with provenance and a one_time flag. The gate: one_time facts are dropped before any write. \"Size 9\" (stated, about him) passes. \"Earthy tones\" (inferred from choices) passes. \"Brother wears size 8\" (one-off, about someone else) is REJECTED — exactly your L-size-gift scenario.",
+    code:`EXTRACT_PROMPT = """List durable facts about the shopper as JSON:
+{fact, provenance: "stated"|"inferred", one_time: true|false, evidence}.
+one_time=true for anything tied to one purchase or another person.
+When in doubt, mark one_time=true."""
+
+candidates = json.loads(llm(EXTRACT_PROMPT + str(transcript)))
+keepers = [c for c in candidates if not c["one_time"]]   # the gate
+for fact in keepers:
+    profile = merge_memory(profile, fact)                # merge, don't pile`,
+    n:"merge_memory: a stated fact overwrites; a contradicting inferred fact only sets needs_confirmation."},
+  profileFact:{t:"A profile fact",tag:"long-term memory",c:"c-mem",
+    s:"One curated fact with provenance and dates. Stated facts (the user's own words) outrank inferred ones (patterns we guessed). Facts can expire (an event date) or decay (a year-old inference nobody re-confirmed). The whole profile stays tiny — that's what makes it loadable into every future session's system prompt.",
+    code:`{"key": "shoe_size",
+ "fact": "shoe size 9",
+ "provenance": "stated",          # his words, turn 4
+ "evidence": "I'm usually size 9",
+ "last_seen": "2026-08-08",
+ "expires": None}`,
+    n:"Just a dict/row. The intelligence is the policy around it: what gets written, merged, expired."},
+  rejected:{t:"Rejected: 'brother wears size 8'",tag:"one_time gate",c:"c-reject",
+    s:"The extractor flagged this one_time (a purchase for someone else) so it never reached the profile. If it had slipped in, every future session would 'know' a wrong size fact. Missing a memory is cheaper than storing a wrong one — the gate errs toward rejection. Had he NOT said 'for my brother', the merge rule is the backstop: one odd signal can't overwrite an established stated fact — it only flags needs_confirmation.",
+    code:`# extractor output for this candidate:
+{"fact": "buys size 8 sneakers",
+ "provenance": "inferred",
+ "one_time": true,                      # <- "for my brother"
+ "evidence": "white sneakers size 8 for my brother"}
+
+keepers = [c for c in candidates if not c["one_time"]]   # dies here`,
+    n:"Two layers of defense: the extraction gate, then the merge rule."},
+  episode:{t:"An episode row",tag:"episodic memory",c:"c-mem",
+    s:"Alongside the profile, session end writes ONE compact episode: what was researched, what was decided, key items. Future sessions don't load all episodes — they embed the new query and recall only the top-k most similar (selective recall). This is how 'what did we find about brogues?' works next week without loading any transcript.",
+    code:`episode = {"user_id": user_id, "session_id": session_id,
+    "date": today(), "summary": "Researched tan brogues under Rs.3000; "
+    "chose Herrera (BRG-104, Rs.2799, size 9); added to cart.",
+    "embedding": embed(summary)}          # local sentence-transformers vector
+
+# next session, before answering:
+relevant = top_k(embed(new_query), all_episodes(user_id), k=2)`,
+    n:"cosine similarity over local embeddings — no vector database needed at this scale."},
+  day2load:{t:"Day 2: what actually loads",tag:"the big answer",c:"c-mem",
+    s:"A NEW session (s2) starts. Loaded into context: base instructions + the PROFILE block + procedural preferences — that's it in the system prompt — plus an EMPTY messages list. NOT loaded: yesterday's turns, yesterday's summary (both belong to s1's view), the cart (state — a tool fetches it only when needed), episodes (recalled only if the new query matches). Yesterday exists only through what extraction chose to keep.",
+    code:`def start_session(user_id):
+    session_id = new_session_id()
+    profile    = load_profile(user_id)        # LOADED  (long-term)
+    procedural = load_prefs(user_id)          # LOADED  (how he likes to work)
+    history    = []                           # EMPTY — new conversation
+    # NOT loaded: s1 rows, s1 summary, cart, episodes
+    # cart  -> get_cart tool, mid-turn, when relevant
+    # episodes -> top_k recall, only if the new query is similar
+    return session_id, profile, history`,
+    n:"If the product offers 'resume yesterday', history = load_context_for_model(s1) instead — that's the toggle above."},
+  day2cart:{t:"'Should I buy it?' — state saves the day",tag:"state via tool",c:"c-state",
+    s:"There is no 'it' anywhere in s2's context — the conversation is one message old. But the model knows a cart tool exists, calls get_cart, and the Herrera is right there, because the CART never depended on the conversation. The two bridges across days, visible in one exchange: profile told it his size; state told it what 'it' is.",
+    code:`# model's first move on this turn:
+{"type":"tool_use","name":"get_cart","input":{"user_id":"alex"}}
+# tool result (from the cart table, live):
+[{"product_id":"BRG-104","name":"Herrera tan brogues",
+  "size":"9","price_inr":2799}]
+# model's reply:
+"The Herrera tan brogues (Rs.2,799, size 9) in your cart? Happy to place it."`,
+    n:"Had the price changed overnight, this fetch would show the NEW price — stored prices are stale prices."},
+  ttl:{t:"Day 30–90: TTL reaps the old rows",tag:"retention",c:"c-dead",
+    s:"DynamoDB's TTL feature auto-deletes rows whose expires_at has passed — s1's turns AND its summary vanish together (same conversation, same TTL). What persists: the profile (tiny, curated, indefinite), episodes (small), orders (a business ledger with its own rules). Before reaping, an archive job can copy interesting transcripts to S3 — your P6 evals want them as a golden set.",
+    code:`# one-time table setting (console or CLI):
+aws dynamodb update-time-to-live --table-name memlab_conversations \\
+  --time-to-live-specification "Enabled=true, AttributeName=expires_at"
+
+# nothing else to run - DynamoDB deletes expired rows itself.
+# SAA exam nugget: TTL deletions are FREE (no write capacity consumed).`,
+    n:"Deletion by timestamp column, no cleanup job. The retention window is a product/compliance choice."},
+  procedural:{t:"Procedural preference",tag:"procedural memory",c:"c-mem",
+    s:"A 'how I like to work' fact — not about who Alex is, but about how he wants the agent to behave. Stored when stated, appended to the system prompt every session. Smallest of the four memory types, big effect on feel.",
+    code:`prefs_table.put_item(Item={"user_id":"alex",
+    "pref":"always show a comparison table for multi-product answers"})
+# at session start:
+system += "\\n## Working preferences\\n- " + "\\n- ".join(load_prefs(user_id))`,
+    n:"Same invocation channel as the profile: a few lines in the system prompt."},
+  turnsCondensed:{t:"Turns 5–9 (condensed here)",tag:"short-term memory",c:"c-agent",
+    s:"Five more exchanges — belt matching, watch questions — each with tool calls and fat tool outputs. Every one became rows in the conversations table and grew the context view. Watch the token meter: this is how ordinary chatting walks a session toward the compaction trigger.",
+    code:`# nothing new here - the same two functions ran ten more times:
+save_message(...)     # once per message, tool call, tool output
+history.append(...)   # and the view grew accordingly`,
+    n:"No new machinery — volume alone creates the compaction problem."}
+};
+
+// ---------- timeline events ----------
+const E = [];
+function ev(day,title,special,narr,chat,ctx,db,extra){E.push({day,title,special,narr,chat,ctx,db,extra:extra||{}})}
+
+const sys0=[{l:"Base instructions",c:"c-sys",i:"sysBase"}];
+const sysP=[{l:"Base instructions",c:"c-sys",i:"sysBase"},
+            {l:"Profile: size 9 (stated) · earthy tones (inferred)",c:"c-mem",i:"sysProfile"},
+            {l:"Preference: show comparison tables",c:"c-mem",i:"procedural"}];
+
+const chat1=[{l:"Alex: show me tan brogues under ₹3,000",c:"c-user",i:"userMsg"}];
+const chat2=chat1.concat([{l:"⚙ search_catalog(colour=tan, max=3000) → 3 results",c:"c-tool",i:"toolCall"}]);
+const chat3=chat2.concat([{l:"Agent: three options — the Herrera at ₹2,799…",c:"c-agent",i:"agentMsg"}]);
+const chat4=chat3.concat([{l:"Alex: I'm usually size 9 — add the Herrera",c:"c-user",i:"userMsg"},
+                          {l:"⚙ add_to_cart(BRG-104, size 9) ✓",c:"c-tool",i:"cartRow"}]);
+const chat5=chat4.concat([{l:"…turns 5–9: belts, watches, more tool calls…",c:"c-agent",i:"turnsCondensed"}]);
+const chat7=chat5.concat([{l:"Alex: also white sneakers size 8 — for my brother",c:"c-user",i:"userMsg"},
+                          {l:"Agent: here are two under ₹2,500…",c:"c-agent",i:"agentMsg"}]);
+const chatD2a=[{l:"— new conversation, nothing said yet —",c:"c-sys ghost",i:"day2load"}];
+const chatD2b=[{l:"Alex: so should I buy it?",c:"c-user",i:"userMsg"},
+               {l:"⚙ get_cart(alex) → Herrera, size 9, ₹2,799",c:"c-tool",i:"day2cart"},
+               {l:"Agent: the Herrera brogues in your cart? Happy to place it.",c:"c-agent",i:"day2cart"}];
+
+function msgs(items){return items}
+const m1=[{l:"user: tan brogues under ₹3,000",c:"c-user",i:"ctxMessages"}];
+const m2=m1.concat([{l:"tool_call + tool_output (search results — 1,400 tokens!)",c:"c-tool",i:"toolCall"}]);
+const m3=m2.concat([{l:"assistant: three options…",c:"c-agent",i:"ctxMessages"}]);
+const m4=m3.concat([{l:"user: size 9, add Herrera · tool: add_to_cart ✓",c:"c-user",i:"ctxMessages"}]);
+const m5=m4.concat([{l:"turns 5–9 incl. 4 more fat tool outputs",c:"c-tool",i:"turnsCondensed"}]);
+const m6=[{l:"SUMMARY of turns 1–9: “wants tan brogues <₹3k; size 9; chose Herrera ₹2,799, in cart; prefers earthy tones”",c:"c-sum",i:"compaction"},
+          {l:"turn 10 onward, verbatim",c:"c-user",i:"ctxMessages"}];
+const m7=[m6[0],{l:"user: sneakers size 8 for my brother",c:"c-user",i:"ctxMessages"},
+          {l:"assistant: two options…",c:"c-agent",i:"ctxMessages"}];
+
+const convRows=(n,extra)=>({name:"memlab_conversations",rows:[{l:"s1 · "+n+" rows (one per message/tool event)",c:"c-user",i:"userMsg"}].concat(extra||[])});
+const dbEmpty={conv:{name:"memlab_conversations",rows:[]},prof:[],epi:[],cart:[]};
+
+const profFacts=[{l:"shoe_size: 9 · stated · 8 Aug",c:"c-mem",i:"profileFact"},
+                 {l:"style: earthy tones · inferred · 8 Aug",c:"c-mem",i:"profileFact"},
+                 {l:"✗ brother size 8 — one_time → NOT stored",c:"c-reject",i:"rejected"}];
+const profFacts2=[profFacts[0],profFacts[1]];
+const epiRow=[{l:"ep-1 · 8 Aug · “brogues research → Herrera in cart” + embedding",c:"c-mem",i:"episode"}];
+const cartRow=[{l:"alex · BRG-104 Herrera · size 9 · ₹2,799",c:"c-state",i:"cartRow"}];
+
+// events
+ev("Day 1","Session starts",false,
+  "A brand-new session s1 opens. Alex is a first-time user: every table is empty and the context window holds nothing but the base instructions. Whatever 'memory' this agent will ever have gets built from here.",
+  [],{sys:sys0,msgs:[],tok:400},dbEmpty);
+ev("Day 1","Turn 1 — user asks",false,
+  "Alex asks for brogues. His message goes two places at once: appended to the context (middle panel) and written as row 1 in the conversations table (right panel). The DB is the record; the context is the view.",
+  chat1,{sys:sys0,msgs:m1,tok:450},{conv:convRows(1),prof:[],epi:[],cart:[]});
+ev("Day 1","Tool call + result",false,
+  "The model replied with stop_reason 'tool_use' — it wants the catalog searched. Your code runs the tool against DynamoDB, appends the fat JSON result, and calls the model again. Watch the token meter jump: tool outputs are the heaviest thing in any context.",
+  chat2,{sys:sys0,msgs:m2,tok:1900},{conv:convRows(3),prof:[],epi:[],cart:[]});
+ev("Day 1","Agent answers",false,
+  "stop_reason 'end_turn' — the model is done. The reply is shown to Alex and saved as another row. One turn can therefore produce several rows: chat, tool_call, tool_output, chat.",
+  chat3,{sys:sys0,msgs:m3,tok:2050},{conv:convRows(4),prof:[],epi:[],cart:[]});
+ev("Day 1","“Size 9 — add the Herrera”",false,
+  "Two very different things just happened. 'Size 9' entered the TRANSCRIPT — it is NOT long-term memory yet (extraction hasn't run; for the rest of this session the context itself carries it). And add_to_cart wrote a row in the CART table — that's state, owned by the commerce backend, and it will quietly become the hero of Day 2.",
+  chat4,{sys:sys0,msgs:m4,tok:2400},{conv:convRows(6),prof:[],epi:[],cart:cartRow});
+ev("Day 1","Turns 5–9 — context fills",false,
+  "Ordinary chatting: belts, watches, four more tool calls. Nothing new mechanically, but the view has crossed 80% of the (deliberately small) 6,000-token budget. The check that runs before every API call will fire next.",
+  chat5,{sys:sys0,msgs:m5,tok:4950,hot:true},{conv:convRows(13),prof:[],epi:[],cart:cartRow});
+ev("Day 1","⚡ Compaction fires",true,
+  "Two moves: old tool outputs are DROPPED from the view, and turns 1–9 are summarized by a cheap model. Compare the panels: the context (middle) shrank to a summary + recent turns — but the DB (right) still holds all 13 rows, plus ONE new row: the summary, tagged covers_up_to=9. View changed; record untouched.",
+  chat5,{sys:sys0,msgs:m6,tok:1600},{conv:convRows(14,[{l:"NEW → kind=summary · covers_up_to=9",c:"c-sum",i:"sumRow"}]),prof:[],epi:[],cart:cartRow});
+ev("Day 1","“Sneakers for my brother”",false,
+  "A one-off request for someone else. It flows through the transcript like everything else — the interesting part is what the extraction gate does with it in the next step. (Also note: the conversation continues on top of the summary seamlessly; the model can't tell compaction happened.)",
+  chat7,{sys:sys0,msgs:m7,tok:1900},{conv:convRows(16,[{l:"kind=summary · covers_up_to=9",c:"c-sum",i:"sumRow"}]),prof:[],epi:[],cart:cartRow});
+ev("Day 1","⚡ Session ends → extraction",true,
+  "Thirty silent minutes hit the inactivity timeout — the session closes and ONLY NOW does long-term memory get written. The extractor reads the transcript and proposes candidates: 'size 9' (stated) ✓ stored · 'earthy tones' (inferred) ✓ stored · 'brother size 8' → one_time → REJECTED. One episode row is also written: what was researched, what was decided. This tiny green column on the right is ALL that will speak for today, tomorrow.",
+  chat7,{sys:sys0,msgs:[{l:"— session closed; no more calls —",c:"c-sys ghost",i:"extraction"}],tok:0},
+  {conv:convRows(16,[{l:"kind=summary · covers_up_to=9",c:"c-sum",i:"sumRow"}]),prof:profFacts,epi:epiRow,cart:cartRow});
+ev("Day 2","★ User returns — WHAT LOADS?",true,
+  "The question this whole page exists to answer. A NEW session s2 starts with an EMPTY conversation. Look at the middle panel: the system prompt now carries the profile (that's long-term memory being invoked) — and the messages list has nothing in it. Yesterday's turns and yesterday's summary are still in the DB, attached to s1, NOT loaded. The cart isn't loaded either — it's state; a tool will fetch it if needed. Use the toggle to see the alternative product choice.",
+  chatD2a,{sys:sysP,msgs:[{l:"— empty: new conversation —",c:"c-sys ghost",i:"day2load"}],tok:700,toggle:true,
+    msgsResume:[{l:"s1's SUMMARY (covers turns 1–9)",c:"c-sum",i:"sumRow"},{l:"s1's turns 10–16, verbatim",c:"c-user",i:"ctxMessages"}]},
+  {conv:convRows(16,[{l:"kind=summary (s1's — not loaded)",c:"c-sum",i:"sumRow"}]),prof:profFacts2,epi:epiRow,cart:cartRow},
+  {big:true});
+ev("Day 2","“So should I buy it?”",false,
+  "There is no 'it' in this conversation — s2 is one message old. But the agent knows a cart tool exists, calls get_cart, and the Herrera is right there because the cart never depended on the conversation. In one exchange, both bridges across days: PROFILE told it his size; STATE told it what 'it' is. The transcript of Day 1 was never needed.",
+  chatD2b,{sys:sysP,msgs:[{l:"user: so should I buy it?",c:"c-user",i:"ctxMessages"},{l:"tool_call get_cart + result (live from cart table)",c:"c-tool",i:"day2cart"}],tok:1400},
+  {conv:{name:"memlab_conversations",rows:[{l:"s1 · 17 rows (archive)",c:"c-user",i:"userMsg"},{l:"s2 · 4 rows and growing",c:"c-user",i:"userMsg"}]},prof:profFacts2,epi:epiRow,cart:cartRow});
+ev("Day 90","TTL reaps s1",true,
+  "The retention window passes and DynamoDB's TTL quietly deletes s1's rows — turns AND summary together (same conversation, same expires_at). What remains is exactly what should: the profile (curated, tiny, indefinite), the episode (small), and the order/cart records (business ledger, its own rules). Short-term memory was always disposable; the extraction pipeline was the only door to permanence.",
+  [{l:"— months later —",c:"c-sys ghost",i:"ttl"}],
+  {sys:sysP,msgs:[{l:"(whatever session is live that day)",c:"c-sys ghost",i:"ctxMessages"}],tok:700},
+  {conv:{name:"memlab_conversations",rows:[{l:"s1 · 17 rows — DELETED by TTL",c:"c-dead",i:"ttl"},{l:"recent sessions only",c:"c-user",i:"userMsg"}]},prof:profFacts2,epi:epiRow,cart:[{l:"order #1042 · Herrera · delivered (ledger — kept)",c:"c-state",i:"ttl"}]});
+
+// ---------- rendering ----------
+let cur=0, resumeMode=false;
+const $=id=>document.getElementById(id);
+
+function chipHTML(it){return `<div class="chip ${it.c}" data-i="${it.i}">${it.l}</div>`}
+
+function render(){
+  const e=E[cur];
+  // timeline
+  const groups={};E.forEach((x,idx)=>{(groups[x.day]=groups[x.day]||[]).push({x,idx})});
+  $("timeline").innerHTML=Object.entries(groups).map(([day,items])=>
+    `<div class="day-group"><div class="day-label">${day}</div><div class="day-nodes">`+
+    items.map(({x,idx})=>`<div class="tnode ${x.special?'special':''} ${idx===cur?'active':''}" data-idx="${idx}">${x.title}</div>`).join("")+
+    `</div></div>`).join("");
+  const act=document.querySelector(".tnode.active");
+  if(act)act.scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"});
+  // narration
+  let n=`<h2>${e.day} · ${e.title}</h2><p>${e.narr}</p>`;
+  if(e.extra.big){n+=`<div class="biganswer"><h3>The big answer — what enters the context when the user returns</h3>
+    <div class="cols2"><div class="yes"><b style="font-size:12.5px">LOADED</b><ul>
+    <li>Base instructions (always)</li><li>Profile facts — long-term memory, via system prompt</li>
+    <li>Procedural preferences ("show tables")</li><li>Relevant episodes — only if the new query matches (top-k recall)</li></ul></div>
+    <div class="no"><b style="font-size:12.5px">NOT loaded</b><ul>
+    <li>Yesterday's raw turns (s1's record)</li><li>Yesterday's summary (s1's view artifact)</li>
+    <li>The cart — it's state; a tool fetches it mid-turn</li><li>Prices, stock — always tools, never memory</li></ul></div></div></div>`}
+  $("narration").innerHTML=n;
+  // chat
+  $("chat").innerHTML=e.chat.length?e.chat.map(chipHTML).join(""):`<div class="empty">— nothing yet —</div>`;
+  // ctx
+  const msgsToShow=(e.ctx.toggle&&resumeMode)?e.ctx.msgsResume:e.ctx.msgs;
+  let c=`<div style="font-size:12px;font-weight:600;margin-bottom:4px">system prompt</div>`;
+  c+=e.ctx.sys.map(chipHTML).join("");
+  c+=`<div style="font-size:12px;font-weight:600;margin:12px 0 4px">messages</div>`;
+  c+=msgsToShow.length?msgsToShow.map(chipHTML).join(""):`<div class="empty">— empty —</div>`;
+  if(e.ctx.toggle){c+=`<div class="toggle"><label><input type="radio" name="tg" ${!resumeMode?"checked":""} onchange="setResume(false)"> New session (default)</label>
+    <label><input type="radio" name="tg" ${resumeMode?"checked":""} onchange="setResume(true)"> Product offers “resume yesterday”</label></div>`}
+  const pct=Math.min(100,Math.round(e.ctx.tok/6000*100));
+  c+=`<div class="meter ${e.ctx.hot?'hot':''}" data-i="meter"><div style="width:${pct}%"></div></div>
+      <div class="meterlbl" data-i="meter">≈ ${e.ctx.tok.toLocaleString()} / 6,000 tokens (${pct}%) ${e.ctx.hot?'— compaction will fire before the next call':''}</div>`;
+  $("ctx").innerHTML=c;
+  // db
+  const t=(name,rows,infoKey)=>`<div class="dbtable"><div class="tname" data-i="${infoKey}">${name}</div>`+
+    (rows.length?rows.map(chipHTML).join(""):`<div class="empty">— empty —</div>`)+`</div>`;
+  $("db").innerHTML=
+    t(e.db.conv.name||"memlab_conversations",e.db.conv.rows,"userMsg")+
+    t("memlab_profile (long-term)",e.db.prof,"profileFact")+
+    t("memlab_episodes",e.db.epi,"episode")+
+    t("cart / orders (STATE — commerce backend)",e.db.cart,"cartRow");
+  $("prev").disabled=cur===0;$("next").disabled=cur===E.length-1;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function setResume(v){resumeMode=v;render()}
+
+// modal
+function openModal(key){
+  const inf=INFO[key];if(!inf)return;
+  const body=$("modalBody");
+  body.innerHTML=`<h2>${inf.t}</h2><span class="tag ${inf.c}">${inf.tag}</span>
+    <p class="simple">${inf.s}</p>
+    <details open><summary>Show me the code</summary><pre><code></code></pre>
+    <p class="codenote">${inf.n}</p></details>`;
+  body.querySelector("code").textContent=inf.code;
+  $("overlay").style.display="block";$("modal").style.display="block";
+}
+function closeModal(){$("overlay").style.display="none";$("modal").style.display="none"}
+$("overlay").onclick=closeModal;
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape")closeModal();
+  if(e.key==="ArrowRight"&&cur<E.length-1){cur++;render()}
+  if(e.key==="ArrowLeft"&&cur>0){cur--;render()}
+});
+document.addEventListener("click",e=>{
+  const n=e.target.closest("[data-i]");if(n){openModal(n.dataset.i);return}
+  const tn=e.target.closest(".tnode");if(tn){cur=+tn.dataset.idx;render()}
+});
+$("prev").onclick=()=>{if(cur>0){cur--;render()}};
+$("next").onclick=()=>{if(cur<E.length-1){cur++;render()}};
+render();
+</script>
+</body>
+</html>

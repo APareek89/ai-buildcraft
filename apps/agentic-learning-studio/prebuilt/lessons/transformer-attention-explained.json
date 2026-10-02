@@ -1,0 +1,952 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Transformer Attention Explained",
+    "title": "Transformer Attention Explained",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 42,
+    "thesis": "Transformer attention works by projecting token states into queries, keys, and values, using query-key scores to weight values, then repeating that operation across heads, layers, and decode steps."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Transformer Attention Explained",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Transformer attention — queries, keys, values, cache",
+    "caption": "The map follows one token through attention scores, value mixing, position rules, and cached decoding.",
+    "oneLineThesis": "Transformer attention lets token positions compare, weight, and mix visible context; KV cache makes repeated decoding practical but memory-heavy.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Token states",
+        "sub": "Build the simplest useful picture of Transformer Attention Explained.",
+        "what": "Token states are the layer inputs attention operates on.",
+        "relevance": "Without token states, query-key-value attention has nothing to compare.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "How embeddings become the vectors attention will compare and update.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Query-key scores",
+        "sub": "See the moving parts and how they interact.",
+        "what": "Query-key dot products produce attention scores.",
+        "relevance": "Scores explain why some words influence the next prediction more than others.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "How each position scores which earlier positions deserve focus.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Values and heads",
+        "sub": "Make the choices that change quality, cost, or risk.",
+        "what": "Values carry information that scores decide how to mix.",
+        "relevance": "This is the step that actually moves information between positions.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "How weighted values and multiple heads create richer contextual representations.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Masks and position",
+        "sub": "Connect the concept to a small practical artifact.",
+        "what": "Masks and position rules constrain which tokens can interact.",
+        "relevance": "They explain autoregressive generation and order-sensitive behavior.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Why causal models block future tokens and encode order explicitly.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "KV cache",
+        "sub": "Use active recall and a decision checklist to make it stick.",
+        "what": "KV cache stores attention keys and values from previous tokens.",
+        "relevance": "It is central to long-context latency, memory pressure, and serving tradeoffs.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "How serving reuses past keys and values to speed token-by-token decoding.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "dependency",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Token states before attention",
+      "sub": "Begin with the vectors each layer receives.",
+      "summary": "Attention starts from token states, not raw text. This module grounds query-key-value in the vectors produced by embeddings and earlier layers.",
+      "objectives": [
+        "Define token state in the attention calculation.",
+        "Explain why attention is repeated across layers.",
+        "Connect token states to contextual meaning."
+      ],
+      "termIds": [
+        "token",
+        "embedding",
+        "attention"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "ta_m1",
+          "kind": "conceptual",
+          "title": "Attention begins after embedding",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Before attention, each visible token has a vector state. In the first layer, that state comes from token and positional embeddings. In later layers, it already contains information mixed from earlier attention and feed-forward blocks."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a developer sees a diagram with Q, K, and V but cannot tell what they are projections of. They are projections of token states, not separate words floating outside the model."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: if the token order changes, should attention see the same states or different ones?"
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "token",
+            "embedding",
+            "attention"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "analogy": "A token state is like a note card that gets rewritten after each discussion round."
+        },
+        {
+          "id": "ta_m1_example",
+          "kind": "functionalExample",
+          "title": "Mini example: “bank near river”",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The token “bank” starts with a learned representation. After attention sees “river,” later states can carry the river-bank sense more strongly than the finance-bank sense."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model has not looked up a dictionary entry. It has updated a vector using context from surrounding tokens."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "token",
+            "attention"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "ta_m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check token states",
+          "prompt": "What are Q, K, and V projected from?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Raw characters before tokenization.",
+              "correct": false
+            },
+            {
+              "text": "Token states inside the transformer layer.",
+              "correct": true
+            },
+            {
+              "text": "A separate external search index.",
+              "correct": false
+            }
+          ],
+          "explanation": "Attention projections are learned transformations of the current hidden states.",
+          "termIds": [
+            "attention",
+            "token"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Queries meet keys",
+      "sub": "Once token states exist, attention scores decide relevance.",
+      "summary": "Queries ask what a position needs; keys advertise what each position contains. Their scores determine attention weights.",
+      "objectives": [
+        "Explain query-key scoring.",
+        "Relate masking and softmax to usable attention weights.",
+        "Predict why irrelevant tokens should receive low weight."
+      ],
+      "termIds": [
+        "attention",
+        "token"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "ta_m2",
+          "kind": "conceptual",
+          "title": "The score is a match between “looking for” and “offering”",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Each token state is projected into a query and a key. A query represents what the current position is looking for. A key represents what a position can match. Their dot product becomes a score."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Scores are scaled, masked, and normalized. In a causal language model, the mask prevents a position from looking at future tokens during generation."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "attention",
+            "token"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "analogy": "Query-key scoring is like a question card matching against answer labels on every visible note."
+        },
+        {
+          "id": "ta_m2_code",
+          "kind": "codeExample",
+          "title": "Compute tiny attention scores",
+          "language": "python",
+          "code": "query = {\"refund\": 2, \"weather\": 0}\nkeys = {\n    \"policy\": {\"refund\": 3, \"weather\": 0},\n    \"forecast\": {\"refund\": 0, \"weather\": 4},\n}\n\ndef dot(a, b):\n    return sum(a[k] * b[k] for k in a)\n\nscores = {name: dot(query, key) for name, key in keys.items()}\nprint(scores)\nprint(max(scores, key=scores.get))",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Run this as a tiny model of the mechanism. The point is to predict behavior before trusting the output."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the score dictionary and the winning key.",
+            "answer": "It prints a higher score for policy, then policy. The refund query matches the refund-heavy key, so that position receives more attention in this toy example."
+          },
+          "syntax": [
+            {
+              "part": "input data",
+              "explains": "The small concrete case the example operates on."
+            },
+            {
+              "part": "decision rule",
+              "explains": "The line or function that turns the inputs into behavior."
+            },
+            {
+              "part": "print(...)",
+              "explains": "A visible result so you can check your prediction."
+            }
+          ],
+          "termIds": [
+            "attention"
+          ],
+          "sources": [
+            "kb2"
+          ]
+        },
+        {
+          "id": "ta_m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check scores",
+          "prompt": "What does a high query-key score mean?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The model has proven the source is true.",
+              "correct": false
+            },
+            {
+              "text": "The current position strongly matches information advertised by that key.",
+              "correct": true
+            },
+            {
+              "text": "The value vector can be discarded.",
+              "correct": false
+            }
+          ],
+          "explanation": "Attention scores are relevance weights over visible states, not truth checks.",
+          "termIds": [
+            "attention"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Values carry the information",
+      "sub": "Scores only choose weights; values supply the content that gets mixed.",
+      "summary": "The value vectors are the information being blended into the next state. Multi-head attention lets the model run several such views in parallel.",
+      "objectives": [
+        "Separate score calculation from value mixing.",
+        "Explain multi-head attention at a practical level.",
+        "Avoid treating attention scores as a full explanation."
+      ],
+      "termIds": [
+        "attention",
+        "token"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "ta_m3",
+          "kind": "conceptual",
+          "title": "Attention weights values, not words directly",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "After scores become weights, the model takes a weighted sum of value vectors. The result is a new context-aware vector for that position."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Multi-head attention repeats this with separate learned projections. One head might track syntax, another might track references, and another might track local phrase patterns. The model learns those roles; we do not assign them by hand."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "attention",
+            "token"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "analogy": "Scores are the volume knobs; values are the audio signals being mixed."
+        },
+        {
+          "id": "ta_m3_case",
+          "kind": "functionalExample",
+          "title": "Case study: pronoun resolution",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Sentence: “Maya gave Priya the notebook because she had the exam.” The token “she” needs context. Attention can weight earlier names and surrounding clues while building the next-token state."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model may still pick the wrong referent if the sentence is ambiguous. Attention provides a route for information, not a guarantee of human-level interpretation."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "attention",
+            "token"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "ta_m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check values",
+          "prompt": "What do value vectors do?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "They decide which future tokens are allowed.",
+              "correct": false
+            },
+            {
+              "text": "They carry information that attention weights mix into the updated token state.",
+              "correct": true
+            },
+            {
+              "text": "They store a permanent memory of the whole document.",
+              "correct": false
+            }
+          ],
+          "explanation": "Scores select weights; values provide the content being combined.",
+          "termIds": [
+            "attention"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Position, masks, and causal generation",
+      "sub": "Attention also needs rules about order and allowed visibility.",
+      "summary": "Transformers need positional information because attention alone is permutation-friendly; causal models also mask future tokens.",
+      "objectives": [
+        "Explain why order must be represented.",
+        "Describe the causal mask.",
+        "Connect masking to next-token prediction."
+      ],
+      "termIds": [
+        "attention",
+        "token",
+        "context_window"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "ta_m4",
+          "kind": "conceptual",
+          "title": "Order does not come for free",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Self-attention compares positions, but it needs positional information to know which token came first, second, or later. Models use positional embeddings or related schemes such as rotary position methods."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Causal language models also use an attention mask so a position cannot attend to future tokens. During training, this lets many next-token predictions be learned in parallel without leaking the answer."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "attention",
+            "token"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "analogy": "Position information is like page numbers; without it, the model has notes but no order."
+        },
+        {
+          "id": "ta_m4_example",
+          "kind": "functionalExample",
+          "title": "Why “dog bites man” differs from “man bites dog”",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The same tokens appear in both phrases, but the order changes the meaning. Positional information lets the model distinguish subject, verb, and object relationships."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The causal mask adds another rule: while predicting the next token, the model can use earlier tokens, not future ones."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "token",
+            "attention"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "ta_m4_fail",
+          "kind": "note",
+          "title": "How attention explanations break",
+          "tone": "warn",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Attention is often over-sold as a transparent explanation. Use it carefully."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "A high attention weight is not proof of causal importance."
+                  }
+                ],
+                [
+                  {
+                    "text": "Long-context extensions may degrade when positions exceed training patterns."
+                  }
+                ],
+                [
+                  {
+                    "text": "The mask can prevent future-token leakage, but it does not prevent hallucination."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "attention",
+            "context_window"
+          ],
+          "sources": [
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "KV cache: fast decode, expensive memory",
+      "sub": "The final piece is how serving avoids recomputing the whole prefix.",
+      "summary": "KV cache stores previous keys and values during decode. It saves compute but can dominate memory at long context or high concurrency.",
+      "objectives": [
+        "Define prefill and decode.",
+        "Explain what the KV cache stores.",
+        "Name memory and batching tradeoffs."
+      ],
+      "termIds": [
+        "kv_cache",
+        "attention",
+        "context_window"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "ta_m5",
+          "kind": "conceptual",
+          "title": "Why serving engines care about cached keys and values",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Generation has a prefill phase and a decode phase. Prefill processes the prompt and builds keys and values for every prompt token. Decode adds one token at a time."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A KV cache lets each new token attend over stored past keys and values instead of recomputing the entire prefix. That reduces repeated compute but stores tensors for every active sequence, layer, and head."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "kv_cache",
+            "attention",
+            "context_window"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "analogy": "KV cache is like keeping previous calculations on the desk so you do not recalculate the whole worksheet every new word."
+        },
+        {
+          "id": "ta_m5_case",
+          "kind": "functionalExample",
+          "title": "Case study: why a long chat slows down",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A chatbot handles 100 concurrent long conversations. Each one has a long prompt and keeps generating token by token. Throughput drops, not because attention stopped working, but because KV cache memory and scheduling now dominate serving."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Debug prefill time separately from decode time."
+                  }
+                ],
+                [
+                  {
+                    "text": "Track sequence length and active request count."
+                  }
+                ],
+                [
+                  {
+                    "text": "Shorten irrelevant context before blaming the model architecture."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "kv_cache",
+            "context_window"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "ta_m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check KV cache",
+          "prompt": "What is the main tradeoff of KV cache?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It permanently stores facts across user sessions.",
+              "correct": false
+            },
+            {
+              "text": "It saves repeated compute during decode but spends memory proportional to active context.",
+              "correct": true
+            },
+            {
+              "text": "It removes the need for attention masks.",
+              "correct": false
+            }
+          ],
+          "explanation": "KV cache is an inference-time serving optimization, not durable memory.",
+          "termIds": [
+            "kv_cache",
+            "context_window"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    }
+  ],
+  "glossary": {
+    "llm": {
+      "id": "llm",
+      "label": "LLM",
+      "laymanDefinition": "A language model that predicts and generates token sequences from context.",
+      "technicalNote": "LLM behavior depends on training data, tokenization, context, decoding, alignment, system instructions, and the application wrapper.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Large language model"
+    },
+    "token": {
+      "id": "token",
+      "label": "Token",
+      "laymanDefinition": "A unit of text, code, punctuation, or whitespace that the model reads and generates.",
+      "technicalNote": "Token boundaries determine context usage, cost, latency, truncation behavior, and how the model represents text internally.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "context_window": {
+      "id": "context_window",
+      "label": "Context window",
+      "laymanDefinition": "The limited set of input and generated tokens available to the model at one time.",
+      "technicalNote": "Context windows constrain what evidence, instructions, conversation state, and tool results can influence the next output.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "prompt": {
+      "id": "prompt",
+      "label": "Prompt",
+      "laymanDefinition": "The instructions, user request, examples, and context sent to the model.",
+      "technicalNote": "Prompts are release artifacts when they shape behavior, tool use, output schema, safety handling, or evaluation results.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "schema": {
+      "id": "schema",
+      "label": "Schema",
+      "laymanDefinition": "A machine-readable contract for fields, types, required values, and allowed shapes.",
+      "technicalNote": "Schemas make model outputs and tool calls checkable, but they still need validation, refusal handling, and regression tests.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "tool_call": {
+      "id": "tool_call",
+      "label": "Tool call",
+      "laymanDefinition": "A structured request from the model to use an external capability.",
+      "technicalNote": "Tool calls should be parsed, authorized, validated, traced, and executed by trusted code rather than by free-form text.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "embedding": {
+      "id": "embedding",
+      "label": "Embedding",
+      "laymanDefinition": "A learned vector representation of a token or text item.",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "attention": {
+      "id": "attention",
+      "label": "Attention",
+      "laymanDefinition": "The transformer operation that lets token positions weight information from other positions.",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "kv_cache": {
+      "id": "kv_cache",
+      "label": "KV cache",
+      "laymanDefinition": "Stored keys and values reused during autoregressive decoding.",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "logits": {
+      "id": "logits",
+      "label": "Logits",
+      "laymanDefinition": "Raw model scores over possible next tokens before decoding.",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts",
+    "themes": [
+      {
+        "name": "Adoption check",
+        "questions": [
+          {
+            "q": "What decision does Transformer Attention Explained change in your build?",
+            "why": "A lesson is useful only when it changes what you do next.",
+            "opts": [
+              "Use now",
+              "Prototype first",
+              "Defer"
+            ],
+            "rot": "Prefer the smallest testable version."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, trace one token through attention: state vector, query-key score, mask, softmax weights, weighted values, multi-head mixing, and KV cache reuse during decode."
+          }
+        ]
+      }
+    ],
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Token states before attention",
+        "detail": "Begin with the vectors each layer receives."
+      },
+      {
+        "step": 2,
+        "label": "Queries meet keys",
+        "detail": "Once token states exist, attention scores decide relevance."
+      },
+      {
+        "step": 3,
+        "label": "Values carry the information",
+        "detail": "Scores only choose weights; values supply the content that gets mixed."
+      },
+      {
+        "step": 4,
+        "label": "Position, masks, and causal generation",
+        "detail": "Attention also needs rules about order and allowed visibility."
+      },
+      {
+        "step": 5,
+        "label": "KV cache: fast decode, expensive memory",
+        "detail": "The final piece is how serving avoids recomputing the whole prefix."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_1",
+        "label": "Can I name Q, K, and V without metaphor only?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_2",
+        "label": "Do I know what the causal mask blocks?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_3",
+        "label": "Can I explain why KV cache saves compute but spends memory?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_4",
+        "label": "Can I spot when attention is being over-interpreted as explanation?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_5",
+        "label": "What should I learn next: serving, long context, or transformer architecture?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Explain a slow long-context generation run to an engineer: identify prefill, decode, KV cache growth, and the memory/latency tradeoff. Next rung: study serving LLMs with vLLM or KV-cache optimization.",
+      "scopedTo": "Transformer Attention Explained"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "How LLMs Work",
+      "url": "https://huggingface.co/docs/transformers/en/llm_tutorial",
+      "asOfDate": "2026-06-22"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "Transformers, Attention, and KV Cache",
+      "url": "https://huggingface.co/docs/transformers/en/kv_cache",
+      "asOfDate": "2026-06-22"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Hugging Face text generation docs",
+      "url": "https://huggingface.co/docs/transformers/en/main_classes/text_generation",
+      "asOfDate": "2026-06-22"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Hugging Face tokenizers docs",
+      "url": "https://huggingface.co/docs/tokenizers/index",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

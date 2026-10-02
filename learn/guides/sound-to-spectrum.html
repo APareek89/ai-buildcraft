@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>From shaking air to a spectrum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F6; --panel:#F9FBFD; --ink:#16233F; --muted:#56637F;
+  --grid:#DCE3EE; --rule:#BFC9DA;
+  --a:#B87400; --b:#0B7F78; --c:#B93672; --test:#5540CF;
+  --pos:#23864D; --neg:#C93E33;
+  --sg0:#F9FBFD; --sg1:#8CC5BF; --sg2:#0F6F86; --sg3:#16233F;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1830; --panel:#121F3D; --ink:#E9EEF8; --muted:#9BA9C6;
+    --grid:#1C2B50; --rule:#2F4270;
+    --a:#F2B134; --b:#3CC7BC; --c:#F272A9; --test:#A99AFF;
+    --pos:#4CC984; --neg:#FF7D70;
+    --sg0:#121F3D; --sg1:#15717F; --sg2:#F2B134; --sg3:#FFF6D6;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1830; --panel:#121F3D; --ink:#E9EEF8; --muted:#9BA9C6;
+  --grid:#1C2B50; --rule:#2F4270;
+  --a:#F2B134; --b:#3CC7BC; --c:#F272A9; --test:#A99AFF;
+  --pos:#4CC984; --neg:#FF7D70;
+  --sg0:#121F3D; --sg1:#15717F; --sg2:#F2B134; --sg3:#FFF6D6;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:60px}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:17px; line-height:1.55;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:780px; margin:0 auto; padding:0 20px}
+
+nav{
+  position:sticky; top:0; z-index:5;
+  background:var(--bg); border-bottom:1px solid var(--rule);
+}
+nav .wrap{display:flex; align-items:center; gap:18px; overflow-x:auto; white-space:nowrap}
+nav a{color:var(--muted); text-decoration:none; padding:12px 0; font-size:.95rem}
+nav a:hover{color:var(--ink)}
+nav .sp{flex:1}
+
+header{padding:44px 0 8px}
+h1,h2,h3{font-family:"Bricolage Grotesque", system-ui, sans-serif; letter-spacing:-0.02em; margin:0}
+h1{font-size:clamp(2.1rem, 7vw, 3.4rem); line-height:1.02; font-weight:700; max-width:14ch}
+header p{max-width:52ch; color:var(--muted); margin:14px 0 0}
+#cv-h{height:64px; margin-top:22px}
+
+section{padding:48px 0 52px; border-top:1px solid var(--rule)}
+header + section{margin-top:28px}
+h2{font-size:1.7rem; line-height:1.15; font-weight:700; display:flex; gap:14px; align-items:baseline}
+h2 .n{color:var(--muted); font-weight:600; min-width:1ch}
+h3{font-size:1.3rem; font-weight:600; margin-top:44px}
+p{max-width:62ch; margin:12px 0 0}
+.note{color:var(--muted); font-size:.97rem}
+
+canvas{display:block; width:100%}
+.plot{
+  margin-top:20px; border:1px solid var(--rule); border-radius:6px;
+  background:var(--panel); overflow:hidden;
+}
+#cv-s1{height:230px} #cv-s2{height:250px} #cv-s3{height:400px}
+#cv-s4{height:390px} #cv-s4b{height:130px}
+#cv-s5a{height:220px} #cv-s5b{height:290px}
+
+.ctls{display:grid; gap:6px 28px; margin-top:16px; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr))}
+.ctl label{display:flex; justify-content:space-between; gap:12px; font-size:.95rem}
+.ctl output, .num{font-variant-numeric:tabular-nums; font-weight:700}
+input[type=range]{width:100%; height:34px; margin:0; accent-color:var(--ink); background:transparent}
+.wa input[type=range]{accent-color:var(--a)}
+.wb input[type=range]{accent-color:var(--b)}
+.wc input[type=range]{accent-color:var(--c)}
+.wt input[type=range]{accent-color:var(--test)}
+
+fieldset{border:0; border-left:4px solid var(--rule); margin:0; padding:2px 0 2px 14px; min-width:0}
+fieldset.wa{border-color:var(--a)} fieldset.wb{border-color:var(--b)} fieldset.wc{border-color:var(--c)}
+legend{padding:0; font-weight:700; float:left; width:100%; margin-bottom:4px}
+legend label{display:flex; justify-content:space-between; align-items:center; font-weight:700}
+legend + *{clear:both}
+.check{display:inline-flex; gap:8px; align-items:center; font-size:.95rem; font-weight:400}
+input[type=checkbox]{width:20px; height:20px; accent-color:var(--ink); margin:0}
+
+.row{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin-top:16px}
+button, select{
+  font:inherit; color:var(--ink); background:transparent;
+  border:1.5px solid var(--ink); border-radius:6px; padding:8px 14px; cursor:pointer;
+}
+select{padding-right:10px; max-width:100%}
+button[aria-pressed="true"]{background:var(--ink); color:var(--bg)}
+button:disabled{opacity:.45; cursor:default}
+nav button{padding:5px 12px; font-size:.9rem; margin:6px 0}
+:focus-visible{outline:3px solid var(--test); outline-offset:2px}
+
+.readout{margin-top:14px; font-size:1.05rem; font-variant-numeric:tabular-nums}
+.readout .a{color:var(--a)} .readout .b{color:var(--b)} .readout .c{color:var(--c)}
+.readout b{font-weight:700}
+
+.match{display:grid; grid-template-columns:auto 1fr; gap:6px 16px; align-items:center; margin-top:16px}
+.match .big{font-family:"Bricolage Grotesque", system-ui, sans-serif; font-size:2rem; font-weight:700; line-height:1; font-variant-numeric:tabular-nums}
+.meter{height:14px; border:1.5px solid var(--ink); border-radius:3px; overflow:hidden}
+.meter i{display:block; height:100%; width:0; background:var(--test)}
+#verdict{grid-column:1 / -1}
+
+footer{padding:36px 0 64px; border-top:1px solid var(--rule); color:var(--muted)}
+</style>
+</head>
+<body>
+
+<nav aria-label="Stages">
+  <div class="wrap">
+    <a href="#s1">1 Dot</a>
+    <a href="#s2">2 Wave</a>
+    <a href="#s3">3 Mix</a>
+    <a href="#s4">4 Match</a>
+    <a href="#s5">5 Spectrum</a>
+    <span class="sp"></span>
+    <button id="motionBtn" type="button">Pause motion</button>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header>
+  <h1>From shaking air to a spectrum</h1>
+  <p>Five small steps. Move the sliders. Each step builds on the one before it.</p>
+  <canvas id="cv-h" role="img" aria-label="The current mix of waves, drawn as one line"></canvas>
+</header>
+
+<section id="s1">
+  <h2><span class="n">1</span>One shaking dot</h2>
+  <p>Every sound starts with something shaking. This dot is that thing. Up, down, and back again is one round trip.</p>
+  <div class="plot"><canvas id="cv-s1" role="img" aria-label="A dot moving up and down"></canvas></div>
+  <div class="ctls wa">
+    <div class="ctl">
+      <label for="f0a">How often: round trips per second <output data-out="w.0.f"></output></label>
+      <input id="f0a" type="range" min="100" max="800" step="5" data-k="w.0.f">
+    </div>
+    <div class="ctl">
+      <label for="a0a">How far: amplitude <output data-out="w.0.a"></output></label>
+      <input id="a0a" type="range" min="0" max="1" step="0.05" data-k="w.0.a">
+    </div>
+  </div>
+  <div class="row"><button type="button" data-play="tone" data-label="Hear it">Hear it</button>
+    <span class="note">The dot is shown 200 times slower. The sound plays at real speed.</span></div>
+  <p class="note">How often sets the pitch. How far sets the loudness. They are two separate things. “Hertz” only means round trips per second.</p>
+</section>
+
+<section id="s2">
+  <h2><span class="n">2</span>The dot draws a wave</h2>
+  <p>Let paper roll past the dot. The dot leaves a line. That line is the waveform: position over time.</p>
+  <p>A computer cannot keep the whole line. It checks the dot many times a second and writes one number each time. Each small dot below is one measurement.</p>
+  <div class="plot"><canvas id="cv-s2" role="img" aria-label="The moving dot traces a wave, with measurement points on it"></canvas></div>
+  <p class="readout">Latest numbers: <b id="nums"></b></p>
+  <div class="ctls">
+    <div class="ctl wa">
+      <label for="f0b">How often <output data-out="w.0.f"></output></label>
+      <input id="f0b" type="range" min="100" max="800" step="5" data-k="w.0.f">
+    </div>
+    <div class="ctl wa">
+      <label for="a0b">How far <output data-out="w.0.a"></output></label>
+      <input id="a0b" type="range" min="0" max="1" step="0.05" data-k="w.0.a">
+    </div>
+    <div class="ctl">
+      <label for="sr">Measurements per second <output data-out="sr"></output></label>
+      <input id="sr" type="range" min="500" max="16000" step="500" data-k="sr">
+    </div>
+  </div>
+  <div class="row">
+    <label class="check"><input type="checkbox" data-k="join"> Join the measurements with straight lines</label>
+  </div>
+  <p class="note">Measurements per round trip: <b class="num" id="perTrip"></b>. <span id="perTripMsg"></span></p>
+</section>
+
+<section id="s3">
+  <h2><span class="n">3</span>Three waves make one squiggle</h2>
+  <p>Real sounds are many shakes at once. At every instant the air simply adds them. The microphone only gets the bottom line.</p>
+  <div class="plot"><canvas id="cv-s3" role="img" aria-label="Three waves and their sum"></canvas></div>
+  <p class="readout" id="sumRead"></p>
+  <div class="ctls">
+    <fieldset class="wa">
+      <legend><label>Wave 1 <span class="check"><input type="checkbox" data-k="w.0.on"> on</span></label></legend>
+      <div class="ctl"><label for="f0c">How often <output data-out="w.0.f"></output></label>
+        <input id="f0c" type="range" min="100" max="800" step="5" data-k="w.0.f"></div>
+      <div class="ctl"><label for="a0c">How far <output data-out="w.0.a"></output></label>
+        <input id="a0c" type="range" min="0" max="1" step="0.05" data-k="w.0.a"></div>
+    </fieldset>
+    <fieldset class="wb">
+      <legend><label>Wave 2 <span class="check"><input type="checkbox" data-k="w.1.on"> on</span></label></legend>
+      <div class="ctl"><label for="f1">How often <output data-out="w.1.f"></output></label>
+        <input id="f1" type="range" min="100" max="800" step="5" data-k="w.1.f"></div>
+      <div class="ctl"><label for="a1">How far <output data-out="w.1.a"></output></label>
+        <input id="a1" type="range" min="0" max="1" step="0.05" data-k="w.1.a"></div>
+    </fieldset>
+    <fieldset class="wc">
+      <legend><label>Wave 3 <span class="check"><input type="checkbox" data-k="w.2.on"> on</span></label></legend>
+      <div class="ctl"><label for="f2">How often <output data-out="w.2.f"></output></label>
+        <input id="f2" type="range" min="100" max="800" step="5" data-k="w.2.f"></div>
+      <div class="ctl"><label for="a2">How far <output data-out="w.2.a"></output></label>
+        <input id="a2" type="range" min="0" max="1" step="0.05" data-k="w.2.a"></div>
+    </fieldset>
+  </div>
+  <div class="row"><button type="button" data-play="mix" data-label="Hear the mix">Hear the mix</button>
+    <span class="note">Switch waves 2 and 3 off, then on. Watch the bottom line change.</span></div>
+</section>
+
+<section id="s4">
+  <h2><span class="n">4</span>The matching test</h2>
+  <p>Now go backwards. You only have the squiggle. Which waves are inside it?</p>
+  <p>Pick a test speed. Multiply the test wave with the recording, point by point. Then add up all the results.</p>
+  <div class="plot"><canvas id="cv-s4" role="img" aria-label="Recording with test wave, their product, and the running total"></canvas></div>
+  <div class="ctls wt">
+    <div class="ctl">
+      <label for="tf">Test speed <output data-out="test"></output></label>
+      <input id="tf" type="range" min="50" max="900" step="1" data-k="test">
+    </div>
+  </div>
+  <div class="match">
+    <span class="big" id="matchNum">0.00</span>
+    <div class="meter" aria-hidden="true"><i id="meterFill"></i></div>
+    <span id="verdict" class="note"></span>
+  </div>
+  <p class="note">If the test speed is inside the recording, the two rise and fall together. Plus times plus is plus. Minus times minus is also plus. So the total climbs. If it is not inside, pluses and minuses cancel, and the total stays near zero.</p>
+
+  <h3>What you have found so far</h3>
+  <p>Every test speed you try leaves a mark here. Drag the slider, or let the page try them all.</p>
+  <div class="plot"><canvas id="cv-s4b" role="img" aria-label="Match strength for each test speed tried so far"></canvas></div>
+  <div class="row">
+    <button type="button" id="sweepBtn">Sweep all speeds</button>
+    <button type="button" id="clearBtn">Clear marks</button>
+  </div>
+</section>
+
+<section id="s5">
+  <h2><span class="n">5</span>The spectrum, then the spectrogram</h2>
+  <p>A computer runs the matching test for every speed at once. The result is the spectrum. That is all the Fourier transform does.</p>
+  <div class="plot"><canvas id="cv-s5a" role="img" aria-label="Spectrum of the three-wave mix"></canvas></div>
+  <p class="note">Each bump is one of your waves from step 3. Its height is that wave's amplitude. The computer fades the edges of the slice first, which keeps the bumps clean.</p>
+
+  <h3>Spectrogram</h3>
+  <p>A spectrum has no sense of time. So cut the sound into short slices, take the spectrum of each slice, and stand them side by side.</p>
+  <div class="plot"><canvas id="cv-s5b" role="img" aria-label="Spectrogram of the chosen sound"></canvas></div>
+  <div class="ctls">
+    <div class="ctl">
+      <label for="preset">Sound</label>
+      <select id="preset" data-k="preset">
+        <option value="notes">Four notes, one after another</option>
+        <option value="slide">A whistle sliding up</option>
+        <option value="claps">A steady tone and two claps</option>
+        <option value="mix">Your three waves from step 3</option>
+      </select>
+    </div>
+    <div class="ctl">
+      <label for="win">Slice length <output data-out="win"></output></label>
+      <input id="win" type="range" min="8" max="120" step="1" data-k="win">
+    </div>
+  </div>
+  <div class="row"><button type="button" data-play="sg" data-label="Hear this sound">Hear this sound</button>
+    <span class="note" id="winMsg"></span></div>
+  <p class="note">Left to right is time. Bottom to top is speed of shaking. Stronger colour means stronger. Try the claps with a very short slice, then a very long one. You cannot be sharp in time and sharp in pitch together.</p>
+  <p>This grid of numbers is what a speech model reads. The mel step, next, only reshapes the up-down axis to match human hearing.</p>
+</section>
+
+<footer>Steps 1 to 3 build a sound. Steps 4 and 5 take it apart again.</footer>
+
+</div>
+
+<script>
+(() => {
+'use strict';
+const TAU = Math.PI * 2, SLOW = 200;
+const FONT = '"Atkinson Hyperlegible", system-ui, sans-serif';
+const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const S = {
+  w: [{f:440, a:0.8, on:true}, {f:170, a:0.6, on:true}, {f:650, a:0.4, on:true}],
+  sr: 8000, join: false, test: 300, win: 50, preset: 'notes', motion: !reduce
+};
+let wv = 0;                       // bumps when any wave changes
+
+/* ---------- theme ---------- */
+const C = {}; let ramp = [];
+const KEYS = ['bg','panel','ink','muted','grid','rule','a','b','c','test','pos','neg','sg0','sg1','sg2','sg3'];
+function hex(h){
+  h = h.replace('#','');
+  if (h.length === 3) h = h.split('').map(x => x + x).join('');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function rgba(h, a){ const c = hex(h); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+function readTheme(){
+  const cs = getComputedStyle(document.documentElement);
+  KEYS.forEach(k => C[k] = cs.getPropertyValue('--' + k).trim());
+  ramp = [C.sg0, C.sg1, C.sg2, C.sg3].map(hex);
+  sgKey = '';
+  needAll();
+}
+
+/* ---------- canvases ---------- */
+const IDS = ['h','s1','s2','s3','s4','s4b','s5a','s5b'];
+const cv = {}, need = {}, vis = {};
+IDS.forEach(id => { cv[id] = document.getElementById('cv-' + id); need[id] = true; vis[id] = true; });
+function needAll(){ IDS.forEach(id => need[id] = true); }
+
+function fit(c){
+  const r = c.getBoundingClientRect();
+  const d = Math.min(window.devicePixelRatio || 1, 2);
+  const W = Math.round(r.width * d), H = Math.round(r.height * d);
+  if (c.width !== W || c.height !== H){ c.width = W; c.height = H; }
+  const g = c.getContext('2d');
+  g.setTransform(d,0,0,d,0,0);
+  g.clearRect(0,0,r.width,r.height);
+  g.setLineDash([]); g.globalAlpha = 1; g.lineJoin = 'round'; g.lineCap = 'round';
+  return {g, w:r.width, h:r.height};
+}
+function paper(g,w,h){
+  g.strokeStyle = C.grid; g.lineWidth = 1; g.beginPath();
+  for (let x = 24.5; x < w; x += 24){ g.moveTo(x,0); g.lineTo(x,h); }
+  for (let y = 24.5; y < h; y += 24){ g.moveTo(0,y); g.lineTo(w,y); }
+  g.stroke();
+}
+function hline(g,x0,x1,y,col,lw){ g.beginPath(); g.moveTo(x0,y); g.lineTo(x1,y); g.strokeStyle = col; g.lineWidth = lw || 1; g.stroke(); }
+function txt(g,s,x,y,col,align,size,bold){
+  g.font = (bold ? '700 ' : '') + (size || 13) + 'px ' + FONT;
+  g.fillStyle = col || C.ink; g.textAlign = align || 'left'; g.textBaseline = 'alphabetic';
+  g.fillText(s,x,y);
+}
+function dot(g,x,y,r,col){ g.beginPath(); g.arc(x,y,r,0,TAU); g.fillStyle = col; g.fill(); }
+function n2(v){ return (v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(2); }
+
+/* ---------- the sound itself ---------- */
+function ampSum(){ let s = 0; S.w.forEach(w => { if (w.on) s += w.a; }); return s; }
+function mix(t){ let s = 0; for (const w of S.w) if (w.on) s += w.a * Math.sin(TAU * w.f * t); return s; }
+
+/* ---------- time ---------- */
+let last = performance.now(), tv = 0, wall = 0, phase = 0;
+
+/* ---------- stage: header squiggle ---------- */
+function drawH(){
+  const {g,w,h} = fit(cv.h); if (!w) return;
+  const u = (h/2 - 4) / Math.max(1, ampSum()), WIN = 0.03;
+  g.beginPath();
+  for (let x = 0; x <= w; x += 1){ const y = h/2 - mix(x / w * WIN) * u; x ? g.lineTo(x,y) : g.moveTo(x,y); }
+  g.strokeStyle = C.ink; g.lineWidth = 2; g.stroke();
+}
+
+/* ---------- stage 1 ---------- */
+function draw1(){
+  const {g,w,h} = fit(cv.s1); if (!w) return; paper(g,w,h);
+  const A = S.w[0], mid = h/2 + 14, R = h/2 - 40, x = w/2, ya = A.a * R;
+  hline(g, 0, w, mid, C.rule, 1.5);
+  txt(g, 'rest', 10, mid - 6, C.muted);
+  g.beginPath(); g.moveTo(x, mid - R - 6); g.lineTo(x, mid + R + 6); g.strokeStyle = C.rule; g.lineWidth = 2; g.stroke();
+  g.setLineDash([5,5]);
+  hline(g, x - 70, x + 70, mid - ya, C.a, 1.5); hline(g, x - 70, x + 70, mid + ya, C.a, 1.5);
+  g.setLineDash([]);
+  if (ya > 14){
+    const bx = x + 92;
+    g.beginPath(); g.moveTo(bx, mid); g.lineTo(bx, mid - ya);
+    g.moveTo(bx - 4, mid - ya + 6); g.lineTo(bx, mid - ya); g.lineTo(bx + 4, mid - ya + 6);
+    g.strokeStyle = C.a; g.lineWidth = 1.5; g.stroke();
+    txt(g, 'how far', bx + 8, mid - ya/2 + 4, C.a);
+  }
+  for (let i = 6; i >= 0; i--){
+    const ph = phase - TAU * A.f * (i * 0.016 / SLOW);
+    dot(g, x, mid - ya * Math.sin(ph), 12, rgba(C.a, i ? 0.10 : 1));
+  }
+  txt(g, A.f + ' round trips in 1 real second', 10, 22, C.ink, 'left', 14, true);
+  txt(g, 'Slowed 200 times: about ' + (A.f / SLOW).toFixed(1) + ' per second here', 10, 40, C.muted);
+}
+
+/* ---------- stage 2 ---------- */
+const numsEl = document.getElementById('nums');
+function draw2(){
+  const {g,w,h} = fit(cv.s2); if (!w) return; paper(g,w,h);
+  const A = S.w[0], mid = h/2, R = h/2 - 28, dotX = w - 26, WIN = 0.02, pps = (dotX - 6) / WIN;
+  hline(g, 0, w, mid, C.rule, 1.5);
+  g.beginPath();
+  for (let x = dotX; x >= 0; x -= 1.5){
+    const y = mid - A.a * R * Math.sin(phase - TAU * A.f * ((dotX - x) / pps));
+    x === dotX ? g.moveTo(x,y) : g.lineTo(x,y);
+  }
+  g.strokeStyle = S.join ? rgba(C.a, 0.35) : C.a; g.lineWidth = 2.5; g.stroke();
+
+  const pts = [];
+  for (let k = Math.floor(tv * S.sr); ; k--){
+    const age = tv - k / S.sr; if (age > WIN) break;
+    const v = A.a * Math.sin(phase - TAU * A.f * age);
+    pts.push([dotX - age * pps, mid - v * R, v]);
+  }
+  const r = Math.max(1.3, Math.min(3.6, pps / S.sr * 0.32));
+  g.strokeStyle = rgba(C.ink, 0.22); g.lineWidth = 1; g.beginPath();
+  pts.forEach(p => { g.moveTo(p[0], mid); g.lineTo(p[0], p[1]); }); g.stroke();
+  if (S.join && pts.length > 1){
+    g.beginPath(); pts.forEach((p,i) => i ? g.lineTo(p[0],p[1]) : g.moveTo(p[0],p[1]));
+    g.strokeStyle = C.ink; g.lineWidth = 2; g.stroke();
+  }
+  pts.forEach(p => dot(g, p[0], p[1], r, C.ink));
+  dot(g, dotX, mid - A.a * R * Math.sin(phase), 10, C.a);
+  txt(g, 'older', 10, h - 10, C.muted); txt(g, 'now', dotX, h - 10, C.muted, 'center');
+  txt(g, 'This strip is 20 milliseconds of real time', 10, 20, C.muted);
+  numsEl.textContent = pts.slice(0, 6).map(p => n2(p[2])).join('   ');
+}
+
+/* ---------- stage 3 ---------- */
+const sumEl = document.getElementById('sumRead');
+function draw3(){
+  const {g,w,h} = fit(cv.s3); if (!w) return; paper(g,w,h);
+  const u = (h - 72) / 12, WIN = 0.02, L = 6, pw = w - 12;
+  const cols = [C.a, C.b, C.c], cls = ['a','b','c'];
+  const cx = L + ((wall % 7) / 7) * pw, tc = (cx - L) / pw * WIN;
+  g.beginPath(); g.moveTo(cx, 0); g.lineTo(cx, h); g.strokeStyle = rgba(C.muted, 0.6); g.lineWidth = 1; g.stroke();
+  let top = 6, sum = 0; const parts = [];
+  S.w.forEach((W,i) => {
+    const mid = top + 16 + u, amp = W.on ? W.a : 0;
+    txt(g, 'Wave ' + (i+1) + (W.on ? ':  ' + W.f + ' hertz' : ':  off'), L + 4, top + 13, W.on ? cols[i] : C.muted, 'left', 13, true);
+    hline(g, L, L + pw, mid, C.rule, 1);
+    g.beginPath();
+    for (let x = 0; x <= pw; x += 1.5){ const y = mid - amp * u * Math.sin(TAU * W.f * (x / pw * WIN)); x ? g.lineTo(L+x,y) : g.moveTo(L+x,y); }
+    g.strokeStyle = W.on ? cols[i] : rgba(C.muted, 0.5); g.lineWidth = 2; g.stroke();
+    const v = amp * Math.sin(TAU * W.f * tc); parts.push(v); sum += v;
+    dot(g, cx, mid - v * u, 4.5, W.on ? cols[i] : C.muted);
+    top += 16 + 2 * u;
+  });
+  const mid = top + 16 + 3 * u;
+  txt(g, 'Sum: what the microphone records', L + 4, top + 13, C.ink, 'left', 13, true);
+  hline(g, L, L + pw, mid, C.rule, 1);
+  g.beginPath();
+  for (let x = 0; x <= pw; x += 1){ const y = mid - mix(x / pw * WIN) * u; x ? g.lineTo(L+x,y) : g.moveTo(L+x,y); }
+  g.strokeStyle = C.ink; g.lineWidth = 2.5; g.stroke();
+  dot(g, cx, mid - sum * u, 5.5, C.ink);
+  sumEl.innerHTML = 'At the moving line: ' +
+    parts.map((v,i) => '<b class="' + cls[i] + '">' + (v < 0 ? '(' + n2(v) + ')' : n2(v)) + '</b>').join(' + ') +
+    ' = <b>' + n2(sum) + '</b>';
+}
+
+/* ---------- stage 4 ---------- */
+const SR4 = 16000, N4 = 640;          // 40 ms
+let rec4 = null, rec4v = -1;
+function getRec4(){
+  if (rec4v !== wv){ rec4 = new Float32Array(N4); for (let n = 0; n < N4; n++) rec4[n] = mix(n / SR4); rec4v = wv; }
+  return rec4;
+}
+function match(f){
+  const r = getRec4(); let t = 0;
+  for (let n = 0; n < N4; n++) t += r[n] * Math.sin(TAU * f * n / SR4);
+  return 2 * t / N4;
+}
+const FMIN = 50, FMAX4 = 900;
+const found = new Float32Array(FMAX4 - FMIN + 1).fill(-1);
+const matchNum = document.getElementById('matchNum'), meterFill = document.getElementById('meterFill'), verdict = document.getElementById('verdict');
+
+function draw4(){
+  const {g,w,h} = fit(cv.s4); if (!w) return; paper(g,w,h);
+  const r = getRec4(), f = S.test, sA = Math.max(1, ampSum());
+  const L = 8, pw = w - 16, rowH = (h - 8) / 3;
+  const X = n => L + n / (N4 - 1) * pw;
+  const labels = ['Recording, with the test wave on top', 'Recording \u00d7 test wave, point by point', 'Running total, adding left to right'];
+  const mids = [], halves = [];
+  for (let i = 0; i < 3; i++){
+    const top = 4 + i * rowH;
+    txt(g, labels[i], L + 2, top + 14, C.muted);
+    mids[i] = top + 20 + (rowH - 26) / 2; halves[i] = (rowH - 30) / 2;
+    hline(g, L, L + pw, mids[i], C.rule, 1);
+  }
+  // row 1
+  let u = halves[0] / sA;
+  g.beginPath(); for (let n = 0; n < N4; n++){ const y = mids[0] - r[n] * u; n ? g.lineTo(X(n),y) : g.moveTo(X(n),y); }
+  g.strokeStyle = C.ink; g.lineWidth = 2; g.stroke();
+  g.beginPath(); for (let n = 0; n < N4; n++){ const y = mids[0] - Math.sin(TAU * f * n / SR4) * u; n ? g.lineTo(X(n),y) : g.moveTo(X(n),y); }
+  g.strokeStyle = C.test; g.lineWidth = 1.6; g.stroke();
+  // row 2
+  u = halves[1] / sA;
+  const bw = Math.max(1, pw / N4 + 0.3);
+  let run = 0; const cum = new Float32Array(N4);
+  for (let n = 0; n < N4; n++){
+    const p = r[n] * Math.sin(TAU * f * n / SR4);
+    g.fillStyle = p >= 0 ? C.pos : C.neg;
+    g.fillRect(X(n) - bw/2, mids[1], bw, -p * u);
+    run += p; cum[n] = 2 * run / N4;
+  }
+  // row 3
+  u = halves[2] / 1.1;
+  g.beginPath(); for (let n = 0; n < N4; n++){ const y = mids[2] - cum[n] * u; n ? g.lineTo(X(n),y) : g.moveTo(X(n),y); }
+  g.strokeStyle = C.test; g.lineWidth = 2.5; g.stroke();
+  const m = cum[N4 - 1];
+  dot(g, X(N4 - 1), mids[2] - m * u, 5.5, C.test);
+  txt(g, 'total ' + n2(m), L + pw - 10, mids[2] - m * u + (m >= 0 ? -10 : 20), C.test, 'right', 14, true);
+
+  const am = Math.abs(m);
+  found[f - FMIN] = am; need.s4b = true;
+  matchNum.textContent = am.toFixed(2);
+  meterFill.style.width = Math.min(100, am * 100) + '%';
+  const locked = S.w.some(W => W.on && W.a > 0.04 && Math.abs(W.f - f) <= 2);
+  verdict.textContent = am > 0.12
+    ? (locked ? 'Locked on. This speed is inside the recording, and the total tells you how big that wave is.'
+              : 'Close. Some match. Move the slider a little.')
+    : 'No match. Pluses and minuses cancel.';
+}
+
+function draw4b(){
+  const {g,w,h} = fit(cv.s4b); if (!w) return; paper(g,w,h);
+  const L = 8, pw = w - 16, base = h - 24, H = base - 12;
+  const X = f => L + (f - FMIN) / (FMAX4 - FMIN) * pw;
+  const bw = Math.max(1.2, pw / found.length + 0.4);
+  g.fillStyle = C.test;
+  for (let i = 0; i < found.length; i++) if (found[i] >= 0) g.fillRect(X(i + FMIN) - bw/2, base, bw, -Math.min(1.05, found[i]) / 1.05 * H);
+  hline(g, L, L + pw, base, C.rule, 1.5);
+  g.beginPath(); g.moveTo(X(S.test), 6); g.lineTo(X(S.test), base); g.strokeStyle = C.ink; g.lineWidth = 1.5; g.stroke();
+  for (let f = 100; f <= 900; f += 200) txt(g, String(f), X(f), h - 7, C.muted, 'center', 12);
+  txt(g, 'test speed (hertz)', L + pw, 16, C.muted, 'right', 12);
+}
+
+/* ---------- FFT ---------- */
+function fft(re, im){
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++){
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j){ let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; }
+  }
+  for (let len = 2; len <= n; len <<= 1){
+    const ang = -TAU / len, wr = Math.cos(ang), wi = Math.sin(ang), half = len >> 1;
+    for (let i = 0; i < n; i += len){
+      let cr = 1, ci = 0;
+      for (let k = 0; k < half; k++){
+        const a = i + k, b = a + half;
+        const vr = re[b] * cr - im[b] * ci, vi = re[b] * ci + im[b] * cr;
+        re[b] = re[a] - vr; im[b] = im[a] - vi; re[a] += vr; im[a] += vi;
+        const t = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = t;
+      }
+    }
+  }
+}
+function hann(N){ const w = new Float32Array(N); for (let i = 0; i < N; i++) w[i] = 0.5 - 0.5 * Math.cos(TAU * i / (N - 1)); return w; }
+
+/* ---------- stage 5a: spectrum ---------- */
+let spec = null, specV = -1;
+const SR5 = 8000, N5 = 1024, NF5 = 4096, FMAX5 = 1000;
+function getSpec(){
+  if (specV === wv) return spec;
+  const re = new Float64Array(NF5), im = new Float64Array(NF5), wn = hann(N5); let ws = 0;
+  for (let i = 0; i < N5; i++){ re[i] = mix(i / SR5) * wn[i]; ws += wn[i]; }
+  fft(re, im);
+  const bins = Math.floor(FMAX5 / SR5 * NF5) + 1; spec = new Float32Array(bins);
+  for (let b = 0; b < bins; b++) spec[b] = 2 * Math.hypot(re[b], im[b]) / ws;
+  specV = wv; return spec;
+}
+function draw5a(){
+  const {g,w,h} = fit(cv.s5a); if (!w) return; paper(g,w,h);
+  const sp = getSpec(), L = 8, pw = w - 16, base = h - 24, H = base - 30;
+  const X = f => L + f / FMAX5 * pw, Y = a => base - Math.min(1.05, a) / 1.05 * H;
+  g.beginPath(); g.moveTo(L, base);
+  for (let b = 0; b < sp.length; b++) g.lineTo(L + b / (sp.length - 1) * pw, Y(sp[b]));
+  g.lineTo(L + pw, base); g.closePath();
+  g.fillStyle = rgba(C.ink, 0.12); g.fill(); g.strokeStyle = C.ink; g.lineWidth = 2; g.stroke();
+  hline(g, L, L + pw, base, C.rule, 1.5);
+  const cols = [C.a, C.b, C.c];
+  S.w.forEach((W,i) => { if (W.on && W.a > 0.02){
+    dot(g, X(W.f), Y(W.a), 4.5, cols[i]);
+    txt(g, W.f + '', X(W.f), Y(W.a) - 10, cols[i], 'center', 13, true);
+  }});
+  for (let f = 0; f <= 1000; f += 200) txt(g, String(f), X(f), h - 7, C.muted, f ? (f === 1000 ? 'right' : 'center') : 'left', 12);
+  txt(g, 'slow shaking', L + 2, 16, C.muted, 'left', 12); txt(g, 'fast shaking (hertz)', L + pw, 16, C.muted, 'right', 12);
+}
+
+/* ---------- stage 5b: spectrogram ---------- */
+const SRS = 4000, DUR = 2, NS = SRS * DUR, NFFT = 1024, HOP = 32, FTOP = 1600;
+const noise = new Float32Array(NS);
+(() => { let s = 12345; for (let i = 0; i < NS; i++){ s = (s * 1664525 + 1013904223) >>> 0; noise[i] = s / 2147483648 - 1; } })();
+const NOTES = [262, 330, 392, 523];
+function sig(t, p){
+  if (p === 'mix') return mix(t) / Math.max(1, ampSum());
+  if (p === 'slide') return 0.7 * Math.sin(TAU * (200 * t + 1200 * t * t / (2 * DUR)));
+  if (p === 'claps'){
+    let s = 0.45 * Math.sin(TAU * 500 * t);
+    if ((t >= 0.7 && t < 0.706) || (t >= 1.3 && t < 1.306)) s += 0.9 * noise[Math.min(NS - 1, Math.floor(t * SRS))];
+    return s;
+  }
+  const i = Math.min(3, Math.floor(t / 0.5)), tl = t - i * 0.5, f = NOTES[i];
+  const env = Math.min(1, tl / 0.01) * Math.exp(-tl * 3);
+  return env * (0.6 * Math.sin(TAU * f * t) + 0.3 * Math.sin(TAU * 2 * f * t) + 0.15 * Math.sin(TAU * 3 * f * t));
+}
+let sgKey = '', sgImg = null;
+function getSg(){
+  const key = S.preset + '|' + S.win + '|' + (S.preset === 'mix' ? wv : 0) + '|' + C.sg0 + C.sg3;
+  if (key === sgKey && sgImg) return sgImg;
+  const N = Math.max(16, Math.round(S.win * SRS / 1000)), wn = hann(N); let ws = 0; for (let i = 0; i < N; i++) ws += wn[i];
+  const cols = Math.floor(NS / HOP), bins = Math.floor(FTOP / SRS * NFFT);
+  const x = new Float32Array(NS); for (let i = 0; i < NS; i++) x[i] = sig(i / SRS, S.preset);
+  const img = new ImageData(cols, bins), re = new Float64Array(NFFT), im = new Float64Array(NFFT);
+  for (let c = 0; c < cols; c++){
+    re.fill(0); im.fill(0);
+    const c0 = c * HOP - (N >> 1);
+    for (let i = 0; i < N; i++){ const k = c0 + i; if (k >= 0 && k < NS) re[i] = x[k] * wn[i]; }
+    fft(re, im);
+    for (let b = 0; b < bins; b++){
+      const db = 20 * Math.log10(2 * Math.hypot(re[b], im[b]) / ws + 1e-9);
+      let v = Math.max(0, Math.min(1, (db + 42) / 42)) * 3;
+      const s = Math.min(2, Math.floor(v)); v -= s;
+      const o = ((bins - 1 - b) * cols + c) * 4, A = ramp[s], B = ramp[s + 1];
+      img.data[o] = A[0] + (B[0] - A[0]) * v; img.data[o+1] = A[1] + (B[1] - A[1]) * v;
+      img.data[o+2] = A[2] + (B[2] - A[2]) * v; img.data[o+3] = 255;
+    }
+  }
+  const off = document.createElement('canvas'); off.width = cols; off.height = bins;
+  off.getContext('2d').putImageData(img, 0, 0);
+  sgImg = off; sgKey = key; return off;
+}
+function draw5b(){
+  const {g,w,h} = fit(cv.s5b); if (!w) return;
+  const img = getSg(), L = 42, T = 10, pw = w - L - 10, ph = h - T - 26;
+  g.imageSmoothingEnabled = true;
+  g.drawImage(img, 0, 0, img.width, img.height, L, T, pw, ph);
+  g.strokeStyle = C.rule; g.lineWidth = 1; g.strokeRect(L + 0.5, T + 0.5, pw - 1, ph - 1);
+  for (let f = 0; f <= FTOP; f += 400) txt(g, String(f), L - 6, T + ph - f / FTOP * ph + 4, C.muted, 'right', 12);
+  for (let s = 0; s <= 4; s++) txt(g, (s / 2) + (s === 4 ? ' seconds' : ''), L + s / 4 * pw, h - 8, C.muted, s === 0 ? 'left' : (s === 4 ? 'right' : 'center'), 12);
+  // slice width marker
+  const sw = Math.max(2, S.win / 1000 / DUR * pw);
+  g.fillStyle = C.test; g.fillRect(L + 6, T + 6, sw, 5);
+  txt(g, 'one slice', L + 6 + sw + 6, T + 13, C.test, 'left', 12, true);
+  if (playing && playing.kind === 'sg' && ac){
+    const e = (ac.currentTime - playing.t0) / DUR;
+    if (e >= 0 && e <= 1){ const px = L + e * pw; g.beginPath(); g.moveTo(px, T); g.lineTo(px, T + ph); g.strokeStyle = C.test; g.lineWidth = 2; g.stroke(); }
+  }
+}
+
+/* ---------- sound ---------- */
+let ac = null, playing = null;
+function audio(){
+  if (!ac){ const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; ac = new AC(); }
+  if (ac.state === 'suspended') ac.resume();
+  return ac;
+}
+function stopAudio(){
+  if (!playing) return;
+  try { playing.stop(); } catch (e) {}
+  playing.btn.textContent = playing.btn.dataset.label;
+  playing.btn.setAttribute('aria-pressed', 'false');
+  playing = null; need.s5b = true;
+}
+function playWaves(idx, btn){
+  const a = audio(); if (!a) return null;
+  const master = a.createGain(); master.gain.value = 0; master.connect(a.destination);
+  master.gain.linearRampToValueAtTime(1, a.currentTime + 0.04);
+  const voices = idx.map(i => { const o = a.createOscillator(), gn = a.createGain(); o.type = 'sine'; gn.gain.value = 0; o.connect(gn); gn.connect(master); o.start(); return {i, o, gn}; });
+  const p = {
+    kind: 'tone', btn,
+    update(){ voices.forEach(v => { const W = S.w[v.i], onNow = idx.length === 1 || W.on;
+      v.o.frequency.setTargetAtTime(W.f, a.currentTime, 0.01);
+      v.gn.gain.setTargetAtTime(onNow ? W.a * 0.2 : 0, a.currentTime, 0.015); }); },
+    stop(){ master.gain.cancelScheduledValues(a.currentTime); master.gain.setTargetAtTime(0, a.currentTime, 0.015);
+      voices.forEach(v => v.o.stop(a.currentTime + 0.12)); }
+  };
+  p.update(); return p;
+}
+function playSg(btn){
+  const a = audio(); if (!a) return null;
+  const n = Math.floor(a.sampleRate * DUR), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0), fade = Math.floor(a.sampleRate * 0.01);
+  for (let i = 0; i < n; i++){ const e = Math.min(1, i / fade, (n - 1 - i) / fade); d[i] = 0.5 * e * sig(i / a.sampleRate, S.preset); }
+  const src = a.createBufferSource(); src.buffer = buf; src.connect(a.destination);
+  const t0 = a.currentTime + 0.03; src.start(t0);
+  const p = { kind: 'sg', btn, t0, stop(){ src.onended = null; src.stop(); } };
+  src.onended = () => { if (playing === p) stopAudio(); };
+  return p;
+}
+document.querySelectorAll('[data-play]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (playing && playing.btn === btn){ stopAudio(); return; }
+    stopAudio();
+    const k = btn.dataset.play;
+    const p = k === 'tone' ? playWaves([0], btn) : k === 'mix' ? playWaves([0,1,2], btn) : playSg(btn);
+    if (!p){ btn.disabled = true; btn.textContent = 'Sound is not available here'; return; }
+    playing = p; btn.textContent = 'Stop sound'; btn.setAttribute('aria-pressed', 'true');
+  });
+});
+
+/* ---------- controls ---------- */
+function getK(k){ return k.split('.').reduce((o,p) => o[p], S); }
+function setK(k,v){ const p = k.split('.'); let o = S; for (let i = 0; i < p.length - 1; i++) o = o[p[i]]; o[p[p.length - 1]] = v; }
+function fmtK(k,v){
+  if (/\.f$/.test(k) || k === 'test') return v + ' hertz';
+  if (/\.a$/.test(k)) return v.toFixed(2);
+  if (k === 'sr') return v.toLocaleString('en-US');
+  if (k === 'win') return v + ' ms';
+  return String(v);
+}
+const perTrip = document.getElementById('perTrip'), perTripMsg = document.getElementById('perTripMsg'), winMsg = document.getElementById('winMsg');
+function syncUI(){
+  document.querySelectorAll('[data-k]').forEach(el => {
+    const v = getK(el.dataset.k);
+    if (el.type === 'checkbox') el.checked = !!v; else if (String(el.value) !== String(v)) el.value = v;
+  });
+  document.querySelectorAll('[data-out]').forEach(el => { el.textContent = fmtK(el.dataset.out, getK(el.dataset.out)); });
+  const r = S.sr / S.w[0].f;
+  perTrip.textContent = r.toFixed(1);
+  perTripMsg.textContent = r <= 2 ? 'Too few. The wave is lost. You need more than 2.' : (r < 5 ? 'Just enough, but the joined line looks rough.' : 'Plenty. The joined line follows the wave.');
+  winMsg.textContent = S.win < 20 ? 'Short slices: sharp in time, blurry in pitch.' : (S.win > 70 ? 'Long slices: sharp in pitch, blurry in time.' : 'A middle choice. Speech models often use about 25 ms.');
+}
+document.querySelectorAll('[data-k]').forEach(el => {
+  el.addEventListener('input', () => {
+    const k = el.dataset.k;
+    setK(k, el.type === 'checkbox' ? el.checked : (el.tagName === 'SELECT' ? el.value : +el.value));
+    if (k.charAt(0) === 'w'){ wv++; found.fill(-1); if (playing && playing.update) playing.update(); }
+    if ((k === 'preset' || (k.charAt(0) === 'w' && S.preset === 'mix')) && playing && playing.kind === 'sg') stopAudio();
+    if (k === 'test' && sweeping) stopSweep();
+    syncUI(); needAll();
+  });
+});
+
+const motionBtn = document.getElementById('motionBtn');
+function motionLabel(){ motionBtn.textContent = S.motion ? 'Pause motion' : 'Play motion'; }
+motionBtn.addEventListener('click', () => { S.motion = !S.motion; motionLabel(); needAll(); });
+
+let sweeping = false;
+const sweepBtn = document.getElementById('sweepBtn');
+function stopSweep(){ sweeping = false; sweepBtn.textContent = 'Sweep all speeds'; sweepBtn.setAttribute('aria-pressed','false'); }
+sweepBtn.addEventListener('click', () => {
+  if (sweeping){ stopSweep(); return; }
+  sweeping = true; S.test = FMIN; sweepBtn.textContent = 'Stop sweep'; sweepBtn.setAttribute('aria-pressed','true'); syncUI(); need.s4 = true;
+});
+document.getElementById('clearBtn').addEventListener('click', () => { found.fill(-1); need.s4 = true; need.s4b = true; });
+function stepSweep(){
+  const f1 = Math.min(FMAX4, S.test + 3);
+  for (let f = S.test + 1; f < f1; f++) found[f - FMIN] = Math.abs(match(f));
+  S.test = f1; syncUI(); need.s4 = true;
+  if (f1 >= FMAX4) stopSweep();
+}
+
+/* ---------- loop ---------- */
+const stages = [
+  {id:'h',   draw:drawH},
+  {id:'s1',  draw:draw1,  anim:() => S.motion},
+  {id:'s2',  draw:draw2,  anim:() => S.motion},
+  {id:'s3',  draw:draw3,  anim:() => S.motion},
+  {id:'s4',  draw:draw4},
+  {id:'s4b', draw:draw4b},
+  {id:'s5a', draw:draw5a},
+  {id:'s5b', draw:draw5b, anim:() => !!(playing && playing.kind === 'sg')}
+];
+function frame(now){
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (S.motion){ tv += dt / SLOW; wall += dt; phase = (phase + TAU * S.w[0].f * dt / SLOW) % TAU; }
+  if (sweeping) stepSweep();
+  for (const st of stages){
+    if (!vis[st.id]) continue;
+    if (need[st.id] || (st.anim && st.anim())){ need[st.id] = false; st.draw(); }
+  }
+  requestAnimationFrame(frame);
+}
+
+if ('IntersectionObserver' in window){
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    const id = e.target.id.replace('cv-', ''); vis[id] = e.isIntersecting; if (e.isIntersecting) need[id] = true;
+  }), {rootMargin: '150px'});
+  IDS.forEach(id => io.observe(cv[id]));
+}
+window.addEventListener('resize', needAll);
+if (window.matchMedia){
+  const mq = matchMedia('(prefers-color-scheme: dark)');
+  if (mq.addEventListener) mq.addEventListener('change', readTheme); else if (mq.addListener) mq.addListener(readTheme);
+}
+new MutationObserver(readTheme).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme','class','style']});
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(needAll);
+
+readTheme(); motionLabel(); syncUI();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

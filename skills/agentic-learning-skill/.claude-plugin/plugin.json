@@ -1,0 +1,21 @@
+{
+  "name": "agentic-learning-studio",
+  "version": "1.0.0",
+  "description": "Turn any topic into a single self-contained interactive HTML lesson (mental-map first, click-to-deepen, (i) tooltips, business + code examples, graded knowledge check) — or turn a brief into an installable Agent Skill. Runs entirely on your own Claude: no server, API key, or account.",
+  "author": {
+    "name": "Anand Pareek",
+    "url": "https://github.com/APareek89"
+  },
+  "homepage": "https://prathibhax.com",
+  "license": "MIT",
+  "keywords": [
+    "learning",
+    "education",
+    "interactive",
+    "lesson",
+    "tutor",
+    "html",
+    "skill-generator",
+    "agent-skills"
+  ]
+}

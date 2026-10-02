@@ -1,0 +1,86 @@
+# Comparison settings for notebooks/10_model_comparison.ipynb.
+# Paths are relative to the project root unless absolute.
+execution:
+  run: false
+  max_api_calls: 216
+  retry_failed: false
+  cache_tag: first-comparison
+
+evaluation:
+  conditions: [naive, engineered, with_docs]
+  max_questions: null
+  local_max_new_tokens: 160
+  local_max_input_tokens: 3072
+  custom_question: null
+
+# Start with local models. Add registry names here to include other models.
+selected_models: [base, cpt]
+
+models:
+  base:
+    kind: local_base
+    label: Base Qwen
+    base_path: null
+    tokenizer_path: null
+
+  cpt:
+    kind: local_adapter
+    label: CPT
+    base_path: null
+    adapter_path: adapters/cpt_session
+    tokenizer_path: null
+
+  sft:
+    kind: local_adapter
+    label: SFT
+    base_path: null
+    adapter_path: adapters/sft
+    tokenizer_path: null
+
+  dpo:
+    kind: local_adapter
+    label: DPO
+    base_path: null
+    adapter_path: adapters/dpo
+    tokenizer_path: null
+
+  # Example path: a single CPT adapter subsequently trained with SFT.
+  # This entry does not create that artifact or stack separate adapters.
+  cpt_sft:
+    kind: local_adapter
+    label: CPT then SFT
+    base_path: null
+    adapter_path: adapters/cpt_sft
+    tokenizer_path: null
+
+  # Example path: CPT merged into a full base, then a new SFT adapter.
+  cpt_merged_sft:
+    kind: local_adapter
+    label: Merged CPT base plus SFT
+    base_path: models/cpt_merged
+    adapter_path: adapters/sft_on_cpt_merged
+    tokenizer_path: models/cpt_merged
+
+  custom_merged:
+    kind: local_merged
+    label: Custom merged model
+    base_path: models/my_merged_model
+    tokenizer_path: null
+
+  openai_54:
+    kind: openai
+    label: OpenAI GPT-5.4
+    model: gpt-5.4
+    api_key_name: OPENAI_API_KEY
+    max_output_tokens: 160
+    reasoning_effort: none
+    timeout_seconds: 90
+
+  gemini:
+    kind: gemini
+    label: Gemini Flash
+    model: gemini-flash-latest
+    api_key_name: GEMINI_API_KEY
+    max_output_tokens: 1024
+    thinking_config: null
+    timeout_seconds: 90

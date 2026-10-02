@@ -1,0 +1,97 @@
+{
+  "built_at": "2026-10-01 14:14:51",
+  "seed": 42,
+  "seconds": 502.6,
+  "sft_train": 1759,
+  "sft_val": 358,
+  "dpo_prompts": 600,
+  "dpo_split": {
+    "train": 522,
+    "val": 78
+  },
+  "dropped": {
+    "duplicate": 436,
+    "near_eval": 2
+  },
+  "composition_train": {
+    "answer_with_gold_context": 0.393,
+    "refuse_near_miss": 0.235,
+    "answer_no_context": 0.134,
+    "refuse_gold_removed": 0.088,
+    "comparison_multi_claim": 0.075,
+    "two_part": 0.039,
+    "policy_answer": 0.037
+  },
+  "composition_targets": {
+    "answer_with_gold_context": 0.38,
+    "answer_no_context": 0.12,
+    "refuse_gold_removed": 0.08,
+    "refuse_near_miss": 0.25,
+    "comparison_multi_claim": 0.08,
+    "two_part": 0.04,
+    "policy_answer": 0.05
+  },
+  "near_miss_categories_train": {
+    "money": 144,
+    "policy": 90,
+    "spec": 79,
+    "feature": 51,
+    "company": 49
+  },
+  "context_policy_train": {
+    "rag": 1267,
+    "none": 338,
+    "rag_no_gold": 154
+  },
+  "styles_train": {
+    "direct": 1315,
+    "scenario": 216,
+    "typo": 201,
+    "scenario+typo": 27
+  },
+  "forms_train": {
+    "Straight fact": 1011,
+    "Confirmation (yes/no)": 316,
+    "Scenario + straight fact": 190,
+    "Multi-fact (2+ attributes)": 100,
+    "Confirm a claimed value": 52,
+    "Comparison": 48,
+    "Explanation / policy rule": 42
+  },
+  "traps_train": {
+    "price": 272,
+    "charge": 195,
+    "warranty": 175,
+    "battery": 98,
+    "service": 96,
+    "motor": 93,
+    "range": 92,
+    "speed": 91,
+    "seat": 80,
+    "weight": 80,
+    "water": 4
+  },
+  "dpo_kinds": {
+    "refuse_near_miss": 240,
+    "answer_with_gold_context": 240,
+    "refuse_gold_removed": 120
+  },
+  "short_name_share_train": 0.661,
+  "refusal_share_train": 0.322,
+  "audit": {
+    "facts_in_answers_wrong": {
+      "count": 0,
+      "examples": []
+    },
+    "arc_zero_minutes": {
+      "count": 0,
+      "examples": []
+    },
+    "holdout_hits": {
+      "count": 0,
+      "examples": []
+    },
+    "near_eval_max_jaccard": 0.778
+  },
+  "retrieval_questions": 2741
+}

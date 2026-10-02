@@ -1,0 +1,8 @@
+{
+  "name": "agentlane",
+  "version": "0.1.0",
+  "description": "Turn an agentic repository into an interactive Agentlane Diagram, with source-backed node inspection and optional multi-agent simulation.",
+  "author": {
+    "name": "Anand Pareek"
+  }
+}

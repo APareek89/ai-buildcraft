@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Databases for Agentic Apps — A Visual Crash Course</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --accent2:#7ee787;
+    --pink:#ff7b72; --yellow:#f2cc60; --purple:#d2a8ff; --orange:#ffa657;
+    --cell:#0b0f14;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%, #1b2735 0%, var(--bg) 55%);
+    color:var(--text); line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  header{
+    padding:38px 28px 22px; max-width:1180px; margin:0 auto;
+  }
+  header h1{ margin:0 0 6px; font-size:30px; letter-spacing:-.5px; }
+  header p{ margin:0; color:var(--muted); max-width:760px; }
+  .layout{ max-width:1180px; margin:0 auto; padding:0 28px 80px; }
+  /* Tabs */
+  .tabs{ display:flex; flex-wrap:wrap; gap:8px; position:sticky; top:0; z-index:20;
+    background:rgba(13,17,23,.85); backdrop-filter:blur(10px); padding:14px 0 12px; border-bottom:1px solid var(--border); }
+  .tab{ padding:9px 15px; border:1px solid var(--border); border-radius:999px; background:var(--panel);
+    color:var(--muted); cursor:pointer; font-size:13.5px; font-weight:600; white-space:nowrap; transition:.15s; user-select:none;}
+  .tab:hover{ color:var(--text); border-color:#3d4756; }
+  .tab.active{ background:linear-gradient(180deg,#1f6feb,#1a5fd0); color:#fff; border-color:#1f6feb; box-shadow:0 4px 14px -6px #1f6feb;}
+  .tab .emoji{ margin-right:6px; }
+  section.page{ display:none; animation:fade .25s ease; padding-top:26px; }
+  section.page.active{ display:block; }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+  h2.page-title{ font-size:24px; margin:0 0 4px; letter-spacing:-.4px;}
+  .subtitle{ color:var(--muted); margin:0 0 22px; font-size:15px;}
+  .card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px; margin:0 0 18px;}
+  .card h3{ margin:0 0 10px; font-size:17px; display:flex; align-items:center; gap:8px;}
+  .card h3 .dot{ width:9px;height:9px;border-radius:50%; display:inline-block;}
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+  @media(max-width:820px){ .grid2,.grid3{grid-template-columns:1fr;} }
+  .pill{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; margin:0 6px 6px 0;}
+  .pill.blue{ background:#132b4d; color:#79c0ff; border:1px solid #1f4b82;}
+  .pill.green{ background:#122b1c; color:#7ee787; border:1px solid #1e5233;}
+  .pill.red{ background:#3a1416; color:#ff7b72; border:1px solid #6b2226;}
+  .pill.yellow{background:#332a0c; color:#f2cc60; border:1px solid #66540f;}
+  .pill.purple{background:#2a1c40; color:#d2a8ff; border:1px solid #4a2f73;}
+  ul.clean{ margin:8px 0; padding-left:18px;}
+  ul.clean li{ margin:5px 0;}
+  .label{ font-size:11px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); font-weight:700; margin-bottom:6px;}
+  .when{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media(max-width:820px){ .when{grid-template-columns:1fr;} }
+  .when .good{ border-left:3px solid var(--accent2); }
+  .when .bad{ border-left:3px solid var(--pink); }
+  .when .box{ background:var(--panel2); border-radius:8px; padding:12px 14px;}
+  /* code */
+  pre{ background:#0b0f14; border:1px solid var(--border); border-radius:10px; padding:14px 16px; overflow:auto; margin:10px 0 0;
+    font-family:"SF Mono",Menlo,Consolas,monospace; font-size:12.8px; line-height:1.6;}
+  code{ font-family:"SF Mono",Menlo,Consolas,monospace;}
+  .kw{color:#ff7b72} .str{color:#a5d6ff} .num{color:#79c0ff} .com{color:#8b949e; font-style:italic} .fn{color:#d2a8ff} .prop{color:#7ee787}
+  /* storage visualizations */
+  .viz-caption{ color:var(--muted); font-size:13px; margin:6px 0 12px;}
+  table.rel{ width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; overflow:hidden; border-radius:8px;}
+  table.rel th{ background:#1f2937; text-align:left; padding:9px 12px; font-weight:700; color:#cdd9e5; border:1px solid var(--border);}
+  table.rel td{ padding:8px 12px; border:1px solid var(--border); background:var(--cell); font-family:"SF Mono",monospace; font-size:12.3px;}
+  table.rel tr:nth-child(even) td{ background:#0e141b;}
+  .kv{ display:flex; flex-direction:column; gap:6px; margin-top:8px;}
+  .kv .row{ display:flex; gap:0; align-items:stretch; font-family:"SF Mono",monospace; font-size:12.5px;}
+  .kv .k{ background:#132b4d; color:#79c0ff; padding:8px 12px; border-radius:7px 0 0 7px; min-width:210px; border:1px solid #1f4b82; word-break:break-all;}
+  .kv .v{ background:var(--cell); padding:8px 12px; border-radius:0 7px 7px 0; flex:1; border:1px solid var(--border); border-left:none; color:#cdd9e5;}
+  .doc{ background:var(--cell); border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin-top:8px; font-family:"SF Mono",monospace; font-size:12.4px; white-space:pre-wrap;}
+  .doc .brace{color:var(--muted)}
+  .node-graph{ background:var(--cell); border:1px solid var(--border); border-radius:8px; padding:16px; margin-top:8px; text-align:center; overflow:auto;}
+  .vec-row{ display:flex; align-items:center; gap:10px; font-family:"SF Mono",monospace; font-size:12px; margin:4px 0; flex-wrap:wrap;}
+  .vec-id{ color:var(--purple); min-width:80px;}
+  .vec-nums{ color:#79c0ff;}
+  .vec-meta{ color:var(--muted);}
+  .callout{ border-left:3px solid var(--yellow); background:#231d0c; padding:12px 16px; border-radius:0 8px 8px 0; margin:14px 0; font-size:14px;}
+  .callout.blue{ border-color:var(--accent); background:#0d1f36;}
+  .callout.pink{ border-color:var(--pink); background:#2a1314;}
+  .prov{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;}
+  .prov span{ background:var(--panel2); border:1px solid var(--border); border-radius:7px; padding:5px 11px; font-size:12.5px; color:#cdd9e5;}
+  .prov span b{ color:var(--accent);}
+  .heat{ display:inline-block; width:34px; text-align:center; border-radius:4px; padding:2px 0; color:#08111c; font-weight:700;}
+  .toc-cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:6px;}
+  @media(max-width:820px){ .toc-cards{grid-template-columns:1fr;} }
+  .toc-card{ background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; cursor:pointer; transition:.15s;}
+  .toc-card:hover{ border-color:var(--accent); transform:translateY(-2px);}
+  .toc-card b{ display:block; margin-bottom:4px; font-size:15px;}
+  .toc-card small{ color:var(--muted);}
+  .matrix{ width:100%; border-collapse:collapse; font-size:12.6px; margin-top:10px;}
+  .matrix th, .matrix td{ border:1px solid var(--border); padding:8px 10px; text-align:left; vertical-align:top;}
+  .matrix th{ background:#1f2937; position:sticky; }
+  .matrix td:first-child{ font-weight:700; color:#cdd9e5; background:#0e141b;}
+  .arrow{ color:var(--muted); font-size:11px;}
+  .tag-scale{ font-size:11px; color:var(--muted); margin-top:8px;}
+  .flow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:8px 0; font-size:13px;}
+  .flow .step{ background:var(--panel2); border:1px solid var(--border); padding:7px 12px; border-radius:8px;}
+  .flow .plus{ color:var(--accent); font-weight:700;}
+  footer{ text-align:center; color:var(--muted); font-size:12.5px; padding:26px 0 0; border-top:1px solid var(--border); margin-top:20px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🗄️ Databases for Agentic Apps — A Visual Crash Course</h1>
+  <p>Every AI agent app is really <em>several</em> databases wearing a trench coat. This walks through each family in plain English: what it is, how it physically stores data (with sample rows you can see), when to reach for it, which cloud providers offer it, and copy-paste query examples. Start with <b>Overview</b>, then jump around.</p>
+</header>
+
+<div class="layout">
+  <nav class="tabs" id="tabs">
+    <div class="tab active" data-t="overview"><span class="emoji">🧭</span>Overview & How to Choose</div>
+    <div class="tab" data-t="relational"><span class="emoji">🏛️</span>Relational (SQL)</div>
+    <div class="tab" data-t="keyvalue"><span class="emoji">🔑</span>Key-Value & DynamoDB</div>
+    <div class="tab" data-t="document"><span class="emoji">📄</span>Document</div>
+    <div class="tab" data-t="vector"><span class="emoji">🧠</span>Vector (RAG)</div>
+    <div class="tab" data-t="graph"><span class="emoji">🕸️</span>Graph & Neo4j</div>
+    <div class="tab" data-t="widecolumn"><span class="emoji">📊</span>Wide-Column</div>
+    <div class="tab" data-t="search"><span class="emoji">🔎</span>Search</div>
+    <div class="tab" data-t="timeseries"><span class="emoji">⏱️</span>Time-Series</div>
+    <div class="tab" data-t="cache"><span class="emoji">⚡</span>Cache / In-Memory</div>
+    <div class="tab" data-t="stack"><span class="emoji">🤖</span>The Agentic Stack</div>
+  </nav>
+
+  <!-- ============ OVERVIEW ============ -->
+  <section class="page active" id="overview">
+    <h2 class="page-title">🧭 The whole landscape in one picture</h2>
+    <p class="subtitle">There is no "best database." There is only "best fit for this access pattern." The trick is knowing what shape your data and your reads/writes are.</p>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent)"></span>The one-sentence mental model</h3>
+      <p>A database is optimized software for <b>storing</b> data and <b>getting it back fast in a particular shape</b>. Different databases make different bets about that shape — rows &amp; joins, huge key lookups, nested JSON, similarity of meaning, relationships, full-text, or points-in-time. Pick the bet that matches how you'll <em>read</em> the data, not just how you'll write it.</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent2)"></span>Jump to a family</h3>
+      <div class="toc-cards">
+        <div class="toc-card" data-goto="relational"><b>🏛️ Relational (SQL)</b><small>Users, orders, billing. Structured, related, needs consistency. Postgres, MySQL.</small></div>
+        <div class="toc-card" data-goto="keyvalue"><b>🔑 Key-Value</b><small>Sessions, feature flags, agent state. Blazing lookups by ID. DynamoDB, Redis.</small></div>
+        <div class="toc-card" data-goto="document"><b>📄 Document</b><small>Flexible JSON blobs, varying fields. MongoDB, Firestore.</small></div>
+        <div class="toc-card" data-goto="vector"><b>🧠 Vector</b><small>The AI one. "Find text that <em>means</em> the same." RAG memory. Pinecone, pgvector.</small></div>
+        <div class="toc-card" data-goto="graph"><b>🕸️ Graph</b><small>Knowledge graphs, "who is connected to whom." Neo4j, Neptune.</small></div>
+        <div class="toc-card" data-goto="widecolumn"><b>📊 Wide-Column</b><small>Petabyte scale, time-ordered writes. Cassandra, Bigtable.</small></div>
+        <div class="toc-card" data-goto="search"><b>🔎 Search</b><small>Full-text, fuzzy, faceted search. Elasticsearch, Typesense.</small></div>
+        <div class="toc-card" data-goto="timeseries"><b>⏱️ Time-Series</b><small>Metrics, logs, IoT, agent traces. InfluxDB, TimescaleDB.</small></div>
+        <div class="toc-card" data-goto="cache"><b>⚡ Cache</b><small>Sub-millisecond, ephemeral. Redis, Memcached.</small></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--yellow)"></span>Decision cheat-sheet: "I need to store…"</h3>
+      <table class="matrix">
+        <tr><th>What you're storing</th><th>Reach for</th><th>Why</th></tr>
+        <tr><td>User profile after signup (name, email, hashed pw, plan)</td><td><span class="pill blue">Relational</span></td><td>Structured, related to orders/subscriptions, needs transactions &amp; uniqueness</td></tr>
+        <tr><td>Login session / auth token / rate-limit counter</td><td><span class="pill red">Key-Value / Cache</span></td><td>Look up by one key, expire automatically, insanely fast</td></tr>
+        <tr><td>An agent's conversation history / scratchpad state</td><td><span class="pill red">Key-Value</span> or <span class="pill green">Document</span></td><td>Keyed by session/thread id; shape varies per turn</td></tr>
+        <tr><td>Company docs the agent should "know" &amp; retrieve</td><td><span class="pill purple">Vector</span></td><td>Semantic search — match by meaning, not keywords (RAG)</td></tr>
+        <tr><td>"Which employees report to whom, who touched which ticket"</td><td><span class="pill yellow">Graph</span></td><td>Relationships are the query; multi-hop traversals</td></tr>
+        <tr><td>Product catalog with messy, varying attributes</td><td><span class="pill green">Document</span></td><td>Each item has different fields; no rigid schema</td></tr>
+        <tr><td>"Search products by name with typos &amp; filters"</td><td><span class="pill blue">Search</span></td><td>Inverted index, fuzzy matching, facets, ranking</td></tr>
+        <tr><td>Every LLM call's latency &amp; token count over time</td><td><span class="pill yellow">Time-Series</span></td><td>Append-heavy, queried by time windows &amp; aggregates</td></tr>
+        <tr><td>Billions of chat events, write-heavy, global</td><td><span class="pill red">Wide-Column</span></td><td>Linear horizontal scale, tunable consistency</td></tr>
+      </table>
+      <p class="tag-scale">💡 Most real apps use 3–4 of these together. That's normal and called <b>polyglot persistence</b>. See the <b>Agentic Stack</b> tab for a concrete example.</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--pink)"></span>Two words you'll hear constantly: SQL vs NoSQL, and ACID vs BASE</h3>
+      <div class="grid2">
+        <div>
+          <div class="label">SQL vs NoSQL</div>
+          <ul class="clean">
+            <li><b>SQL / Relational</b> — rigid table schema, related via joins, one query language (SQL). Great when data is structured and correctness matters.</li>
+            <li><b>NoSQL</b> — an umbrella for "not-relational": key-value, document, wide-column, graph, vector. Traded strict schema/joins for scale, flexibility, or special access patterns.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="label">ACID vs BASE (consistency models)</div>
+          <ul class="clean">
+            <li><b>ACID</b> — a transaction fully succeeds or fully fails; data is always consistent. Banks, billing. (Postgres, MySQL, DynamoDB txns.)</li>
+            <li><b>BASE / eventual consistency</b> — writes propagate slowly; you might read slightly stale data for a moment, in exchange for huge scale &amp; uptime. (Cassandra, DynamoDB default.)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout blue">💬 <b>Why did Claude recommend DynamoDB on AWS?</b> Short version: you likely needed fast lookups by a known key (user id, session id) at any scale, with zero server management, that plugs straight into other AWS services. The <b>Key-Value & DynamoDB</b> tab explains exactly when that's the right call — and when it quietly becomes the wrong one.</div>
+    </div>
+  </section>
+
+  <!-- ============ RELATIONAL ============ -->
+  <section class="page" id="relational">
+    <h2 class="page-title">🏛️ Relational Databases (SQL)</h2>
+    <p class="subtitle">The default, boring, correct choice for structured data. If you're not sure, start here.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent)"></span>Definition</h3>
+        <p>Data lives in <b>tables</b> — rows (records) and columns (fields) with a fixed <b>schema</b>. Tables link to each other through <b>keys</b> (e.g. an <code>orders.user_id</code> points at <code>users.id</code>). You query with <b>SQL</b>, a declarative language shared across all of them.</p>
+        <div class="label" style="margin-top:12px">Key features</div>
+        <p>
+          <span class="pill blue">ACID transactions</span>
+          <span class="pill blue">Joins across tables</span>
+          <span class="pill blue">Strong schema &amp; constraints</span>
+          <span class="pill blue">Uniqueness (no dup emails)</span>
+          <span class="pill blue">Powerful ad-hoc queries</span>
+          <span class="pill blue">Mature, battle-tested</span>
+        </p>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--purple)"></span>Providers</h3>
+        <div class="label">Engines</div>
+        <div class="prov"><span><b>PostgreSQL</b> — the modern default</span><span><b>MySQL</b> / MariaDB</span><span>SQLite (embedded)</span><span>SQL Server, Oracle</span></div>
+        <div class="label" style="margin-top:12px">Managed cloud</div>
+        <div class="prov"><span>AWS <b>RDS</b> / <b>Aurora</b></span><span>Google <b>Cloud SQL</b> / AlloyDB</span><span>Azure Database</span><span><b>Supabase</b> (Postgres+auth)</span><span><b>Neon</b> (serverless PG)</span><span><b>PlanetScale</b> (MySQL)</span></div>
+        <div class="callout" style="margin-bottom:0">Postgres is so extensible it doubles as a vector DB (pgvector), JSON store, time-series (TimescaleDB), and geo DB. For many startups, "just use Postgres" is the correct answer for a surprisingly long time.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent2)"></span>How it stores it — a <code>users</code> table after signup</h3>
+      <p class="viz-caption">Fixed columns, one row per user. Notice <code>email</code> is unique, <code>plan</code> is constrained, and <code>id</code> links to other tables.</p>
+      <table class="rel">
+        <tr><th>id (PK)</th><th>email</th><th>full_name</th><th>password_hash</th><th>plan</th><th>created_at</th></tr>
+        <tr><td>1</td><td>alex@example.com</td><td>Alex Doe</td><td>$2b$12$Kx…9f</td><td>pro</td><td>2026-08-01 09:14</td></tr>
+        <tr><td>2</td><td>meera@example.com</td><td>Meera Nair</td><td>$2b$12$Lp…2a</td><td>free</td><td>2026-08-03 17:40</td></tr>
+        <tr><td>3</td><td>sam@example.net</td><td>Sam Lee</td><td>$2b$12$Qw…7c</td><td>free</td><td>2026-08-05 11:02</td></tr>
+        <tr><td>4</td><td>priya@example.org</td><td>Priya Rao</td><td>$2b$12$Zn…4b</td><td>enterprise</td><td>2026-08-09 08:25</td></tr>
+        <tr><td>5</td><td>tom@example.com</td><td>Tom Byrne</td><td>$2b$12$Rd…1e</td><td>pro</td><td>2026-08-11 22:11</td></tr>
+      </table>
+      <p class="viz-caption" style="margin-top:14px">…and a related <code>subscriptions</code> table. <code>user_id</code> is a <b>foreign key</b> back to <code>users.id</code> — that's the "relation".</p>
+      <table class="rel">
+        <tr><th>id</th><th>user_id (FK→users)</th><th>status</th><th>renews_at</th><th>amount_usd</th></tr>
+        <tr><td>91</td><td>1</td><td>active</td><td>2026-09-01</td><td>29.00</td></tr>
+        <tr><td>92</td><td>4</td><td>active</td><td>2026-09-09</td><td>499.00</td></tr>
+        <tr><td>93</td><td>5</td><td>past_due</td><td>2026-08-11</td><td>29.00</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--yellow)"></span>When to use / when not to</h3>
+      <div class="when">
+        <div class="box good">
+          <div class="label" style="color:var(--accent2)">✅ Use when</div>
+          <ul class="clean">
+            <li>Data is structured &amp; the shape is stable (users, orders, invoices)</li>
+            <li>Records relate to each other and you'll join them</li>
+            <li>Correctness matters — money, inventory, "no two users with same email"</li>
+            <li>You want flexible reporting queries later (analytics, admin panels)</li>
+          </ul>
+        </div>
+        <div class="box bad">
+          <div class="label" style="color:var(--pink)">🚫 Avoid / rethink when</div>
+          <ul class="clean">
+            <li>Every record has wildly different fields (→ document)</li>
+            <li>You need &gt;100k writes/sec globally with simple key access (→ wide-column / DynamoDB)</li>
+            <li>The core query is "similar meaning" or "graph traversal" (→ vector / graph)</li>
+            <li>You just need a fast expiring cache (→ Redis)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--purple)"></span>Sample queries (SQL)</h3>
+<pre><code><span class="com">-- Create the user right after signup</span>
+<span class="kw">INSERT INTO</span> users (email, full_name, password_hash, plan)
+<span class="kw">VALUES</span> (<span class="str">'alex@example.com'</span>, <span class="str">'Alex Doe'</span>, <span class="str">'$2b$12$Kx…9f'</span>, <span class="str">'pro'</span>)
+<span class="kw">RETURNING</span> id;
+
+<span class="com">-- Fetch a user by email at login</span>
+<span class="kw">SELECT</span> id, full_name, password_hash, plan
+<span class="kw">FROM</span> users <span class="kw">WHERE</span> email = <span class="str">'alex@example.com'</span>;
+
+<span class="com">-- The "relation": join users with their subscription</span>
+<span class="kw">SELECT</span> u.full_name, u.plan, s.status, s.renews_at
+<span class="kw">FROM</span> users u
+<span class="kw">JOIN</span> subscriptions s <span class="kw">ON</span> s.user_id = u.id
+<span class="kw">WHERE</span> s.status = <span class="str">'active'</span>;
+
+<span class="com">-- Transaction: upgrade plan + record payment, all-or-nothing (ACID)</span>
+<span class="kw">BEGIN</span>;
+  <span class="kw">UPDATE</span> users <span class="kw">SET</span> plan = <span class="str">'enterprise'</span> <span class="kw">WHERE</span> id = <span class="num">2</span>;
+  <span class="kw">INSERT INTO</span> subscriptions (user_id, status, amount_usd)
+    <span class="kw">VALUES</span> (<span class="num">2</span>, <span class="str">'active'</span>, <span class="num">499.00</span>);
+<span class="kw">COMMIT</span>;</code></pre>
+    </div>
+  </section>
+
+  <!-- ============ KEY-VALUE ============ -->
+  <section class="page" id="keyvalue">
+    <h2 class="page-title">🔑 Key-Value Stores &amp; DynamoDB</h2>
+    <p class="subtitle">The world's biggest, fastest hash map. You hand it a key, it hands back a value — at any scale. This is the family Claude likely recommended.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent)"></span>Definition</h3>
+        <p>A giant dictionary: every item is found by its <b>primary key</b>. There are no joins and (mostly) no "search by other fields" — you look things up by the key you already know. In exchange you get <b>predictable single-digit-millisecond speed no matter how much data you have</b>, and effortless horizontal scaling.</p>
+        <div class="label" style="margin-top:12px">Key features</div>
+        <p>
+          <span class="pill red">O(1) lookup by key</span>
+          <span class="pill red">Massive horizontal scale</span>
+          <span class="pill red">Serverless / auto-scaling</span>
+          <span class="pill red">TTL auto-expiry</span>
+          <span class="pill red">Flexible per-item fields</span>
+        </p>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--purple)"></span>Providers</h3>
+        <div class="prov">
+          <span>AWS <b>DynamoDB</b> (managed, serverless)</span>
+          <span><b>Redis</b> (in-memory, also cache)</span>
+          <span>Azure <b>Cosmos DB</b></span>
+          <span>Google <b>Firestore</b> / Bigtable</span>
+          <span><b>Cloudflare KV</b> / Workers</span>
+          <span><b>Riak</b>, <b>etcd</b> (config)</span>
+        </div>
+        <div class="callout blue" style="margin-bottom:0">DynamoDB is AWS's fully-managed key-value + document store. "Fully managed" = no servers, no patching, no sharding by hand. It auto-scales and you pay per request or per provisioned capacity.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent2)"></span>How it stores it — sessions &amp; agent state keyed by id</h3>
+      <p class="viz-caption">Each row is found instantly by its key. The value can be a simple string or a rich JSON item (DynamoDB-style).</p>
+      <div class="kv">
+        <div class="row"><div class="k">session:8f2a-77c1</div><div class="v">{ userId: 1, expiresAt: 1723459200, ip: "10.2.4.9" }</div></div>
+        <div class="row"><div class="k">ratelimit:user:1:2026-08-12</div><div class="v">142  <span style="color:var(--muted)">// requests today, TTL 24h</span></div></div>
+        <div class="row"><div class="k">agent:thread:abc123</div><div class="v">{ step: 4, tool: "search", scratchpad: "…", messages: [ … ] }</div></div>
+        <div class="row"><div class="k">flag:new-checkout</div><div class="v">{ enabled: true, rollout: 0.25 }</div></div>
+        <div class="row"><div class="k">cache:weather:pune</div><div class="v">{ temp: 31, ttl: 600 }</div></div>
+      </div>
+      <p class="viz-caption" style="margin-top:14px">DynamoDB adds a two-part key for scale: a <b>partition key</b> (which shard) + optional <b>sort key</b> (order within it). Below, one user's chat messages share a partition key and sort by timestamp:</p>
+      <table class="rel">
+        <tr><th>PK: pk (partition)</th><th>SK: sk (sort)</th><th>role</th><th>content</th></tr>
+        <tr><td>THREAD#abc123</td><td>MSG#2026-08-12T09:00:01</td><td>user</td><td>"Summarize my invoices"</td></tr>
+        <tr><td>THREAD#abc123</td><td>MSG#2026-08-12T09:00:04</td><td>assistant</td><td>"You have 3 unpaid…"</td></tr>
+        <tr><td>THREAD#abc123</td><td>MSG#2026-08-12T09:00:09</td><td>user</td><td>"Pay the oldest one"</td></tr>
+        <tr><td>THREAD#abc123</td><td>META#profile</td><td>—</td><td>{ model: "opus", tokens: 8421 }</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--yellow)"></span>When to use / when not to — the DynamoDB decision</h3>
+      <div class="when">
+        <div class="box good">
+          <div class="label" style="color:var(--accent2)">✅ Use when</div>
+          <ul class="clean">
+            <li>Your #1 access pattern is "get item by known id" (session, user profile, cart, agent thread)</li>
+            <li>You want <b>zero ops</b> &amp; automatic scaling (serverless on AWS)</li>
+            <li>Traffic is spiky or huge; you need consistent latency</li>
+            <li>You're already deep in AWS (Lambda, API Gateway, IAM integration is seamless)</li>
+            <li>You need per-item TTL (auto-delete expired sessions)</li>
+          </ul>
+        </div>
+        <div class="box bad">
+          <div class="label" style="color:var(--pink)">🚫 Avoid / painful when</div>
+          <ul class="clean">
+            <li>You need flexible ad-hoc queries &amp; joins ("all pro users in Pune who paid last month")</li>
+            <li>Access patterns are still changing — DynamoDB rewards designing keys up front</li>
+            <li>You want SQL &amp; a rich reporting layer (→ Postgres)</li>
+            <li>Complex analytics / aggregations (it's not built for that)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout pink">⚠️ <b>The classic DynamoDB trap:</b> it's fantastic <em>if you know your queries in advance</em> and design your keys around them. It's miserable if you later need to slice data a new way — you may need to add "secondary indexes" or duplicate data. Relational DBs let you query any which way after the fact; DynamoDB trades that flexibility for scale &amp; speed. That trade-off <em>is</em> the whole decision.</div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--purple)"></span>Sample queries</h3>
+<pre><code><span class="com">// DynamoDB via AWS SDK (JavaScript) — write & read by key</span>
+<span class="kw">import</span> { DynamoDBClient } <span class="kw">from</span> <span class="str">"@aws-sdk/client-dynamodb"</span>;
+<span class="kw">import</span> { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand }
+  <span class="kw">from</span> <span class="str">"@aws-sdk/lib-dynamodb"</span>;
+
+<span class="kw">const</span> db = DynamoDBDocumentClient.<span class="fn">from</span>(<span class="kw">new</span> <span class="fn">DynamoDBClient</span>({}));
+
+<span class="com">// Save one chat message</span>
+<span class="kw">await</span> db.<span class="fn">send</span>(<span class="kw">new</span> <span class="fn">PutCommand</span>({
+  TableName: <span class="str">"ChatMessages"</span>,
+  Item: { pk: <span class="str">"THREAD#abc123"</span>, sk: <span class="str">"MSG#2026-08-12T09:00:01"</span>,
+          role: <span class="str">"user"</span>, content: <span class="str">"Summarize my invoices"</span> }
+}));
+
+<span class="com">// Get a single item by its full key</span>
+<span class="kw">const</span> { Item } = <span class="kw">await</span> db.<span class="fn">send</span>(<span class="kw">new</span> <span class="fn">GetCommand</span>({
+  TableName: <span class="str">"Sessions"</span>, Key: { pk: <span class="str">"session:8f2a-77c1"</span> }
+}));
+
+<span class="com">// Query ALL messages in one thread, in time order (partition + sort key)</span>
+<span class="kw">const</span> { Items } = <span class="kw">await</span> db.<span class="fn">send</span>(<span class="kw">new</span> <span class="fn">QueryCommand</span>({
+  TableName: <span class="str">"ChatMessages"</span>,
+  KeyConditionExpression: <span class="str">"pk = :t AND begins_with(sk, :m)"</span>,
+  ExpressionAttributeValues: { <span class="str">":t"</span>: <span class="str">"THREAD#abc123"</span>, <span class="str">":m"</span>: <span class="str">"MSG#"</span> }
+}));</code></pre>
+<pre><code><span class="com"># Redis (key-value + cache) — Python</span>
+<span class="kw">import</span> redis
+r = redis.<span class="fn">Redis</span>()
+
+r.<span class="fn">set</span>(<span class="str">"session:8f2a-77c1"</span>, user_json, ex=<span class="num">3600</span>)   <span class="com"># auto-expire in 1h</span>
+r.<span class="fn">get</span>(<span class="str">"session:8f2a-77c1"</span>)
+r.<span class="fn">incr</span>(<span class="str">"ratelimit:user:1"</span>)                          <span class="com"># atomic counter</span>
+r.<span class="fn">expire</span>(<span class="str">"ratelimit:user:1"</span>, <span class="num">86400</span>)</code></pre>
+    </div>
+  </section>
+
+  <!-- ============ DOCUMENT ============ -->
+  <section class="page" id="document">
+    <h2 class="page-title">📄 Document Databases</h2>
+    <p class="subtitle">Store JSON directly. Each record ("document") can have its own shape. Feels natural to app developers.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent)"></span>Definition</h3>
+        <p>Instead of rigid tables, you store <b>documents</b> — nested JSON-like objects — grouped in <b>collections</b>. There's no fixed schema, so two documents in the same collection can have different fields. You can query on any field, including nested ones and arrays.</p>
+        <div class="label" style="margin-top:12px">Key features</div>
+        <p>
+          <span class="pill green">Flexible / no rigid schema</span>
+          <span class="pill green">Nested objects &amp; arrays</span>
+          <span class="pill green">Query on any field</span>
+          <span class="pill green">Maps to app objects 1:1</span>
+          <span class="pill green">Horizontal scaling (sharding)</span>
+        </p>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--purple)"></span>Providers</h3>
+        <div class="prov">
+          <span><b>MongoDB</b> (self-host or Atlas cloud)</span>
+          <span>Google <b>Firestore</b> (great for mobile/realtime)</span>
+          <span>AWS <b>DocumentDB</b></span>
+          <span>Azure <b>Cosmos DB</b></span>
+          <span><b>CouchDB</b> / PouchDB (offline sync)</span>
+        </div>
+        <div class="callout" style="margin-bottom:0">Postgres can also store &amp; index JSON (<code>jsonb</code>), giving you 80% of document flexibility while keeping SQL &amp; transactions. Often the pragmatic middle ground.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent2)"></span>How it stores it — a <code>products</code> collection</h3>
+      <p class="viz-caption">Look how each document has different fields. A T-shirt has <code>sizes</code>; a laptop has <code>specs</code>. No schema migration needed to add a new attribute.</p>
+      <div class="doc">{
+  <span class="prop">"_id"</span>: <span class="str">"prod_1001"</span>,
+  <span class="prop">"name"</span>: <span class="str">"Cotton T-Shirt"</span>,
+  <span class="prop">"price"</span>: <span class="num">19.99</span>,
+  <span class="prop">"tags"</span>: [<span class="str">"apparel"</span>, <span class="str">"summer"</span>],
+  <span class="prop">"sizes"</span>: [<span class="str">"S"</span>, <span class="str">"M"</span>, <span class="str">"L"</span>],
+  <span class="prop">"stock"</span>: { <span class="prop">"S"</span>: <span class="num">12</span>, <span class="prop">"M"</span>: <span class="num">40</span>, <span class="prop">"L"</span>: <span class="num">7</span> }
+}
+{
+  <span class="prop">"_id"</span>: <span class="str">"prod_1002"</span>,
+  <span class="prop">"name"</span>: <span class="str">"14&quot; Laptop"</span>,
+  <span class="prop">"price"</span>: <span class="num">1299</span>,
+  <span class="prop">"tags"</span>: [<span class="str">"electronics"</span>],
+  <span class="prop">"specs"</span>: { <span class="prop">"ram"</span>: <span class="str">"16GB"</span>, <span class="prop">"cpu"</span>: <span class="str">"M3"</span>, <span class="prop">"ssd"</span>: <span class="str">"512GB"</span> },
+  <span class="prop">"warranty_months"</span>: <span class="num">24</span>
+}
+{
+  <span class="prop">"_id"</span>: <span class="str">"prod_1003"</span>,
+  <span class="prop">"name"</span>: <span class="str">"E-book: SQL Basics"</span>,
+  <span class="prop">"price"</span>: <span class="num">9.99</span>,
+  <span class="prop">"tags"</span>: [<span class="str">"digital"</span>],
+  <span class="prop">"download_url"</span>: <span class="str">"https://…"</span>,
+  <span class="prop">"pages"</span>: <span class="num">240</span>
+}</div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--yellow)"></span>When to use / when not to</h3>
+      <div class="when">
+        <div class="box good">
+          <div class="label" style="color:var(--accent2)">✅ Use when</div>
+          <ul class="clean">
+            <li>Records vary in shape or evolve fast (catalogs, CMS, user-generated content)</li>
+            <li>Your data is naturally nested (an order with line-items inside it)</li>
+            <li>You want to move fast without schema migrations</li>
+            <li>You mostly read/write whole documents at once</li>
+          </ul>
+        </div>
+        <div class="box bad">
+          <div class="label" style="color:var(--pink)">🚫 Avoid when</div>
+          <ul class="clean">
+            <li>Data is highly relational with many joins (→ SQL)</li>
+            <li>You need multi-document transactions everywhere (possible but not the sweet spot)</li>
+            <li>Strong consistency &amp; complex reporting are central (→ SQL)</li>
+            <li>The "flexible schema" becomes "no one knows the schema" — discipline required</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--purple)"></span>Sample queries (MongoDB)</h3>
+<pre><code><span class="com">// Insert a document — any shape you like</span>
+<span class="kw">await</span> db.products.<span class="fn">insertOne</span>({
+  _id: <span class="str">"prod_1001"</span>, name: <span class="str">"Cotton T-Shirt"</span>,
+  price: <span class="num">19.99</span>, tags: [<span class="str">"apparel"</span>], sizes: [<span class="str">"S"</span>,<span class="str">"M"</span>,<span class="str">"L"</span>]
+});
+
+<span class="com">// Find all products under $20 tagged "apparel"</span>
+<span class="kw">await</span> db.products.<span class="fn">find</span>({
+  price: { $lt: <span class="num">20</span> },
+  tags: <span class="str">"apparel"</span>
+});
+
+<span class="com">// Query a NESTED field (stock of size M &gt; 10)</span>
+<span class="kw">await</span> db.products.<span class="fn">find</span>({ <span class="str">"stock.M"</span>: { $gt: <span class="num">10</span> } });
+
+<span class="com">// Update: add a field to one doc, no migration needed</span>
+<span class="kw">await</span> db.products.<span class="fn">updateOne</span>(
+  { _id: <span class="str">"prod_1002"</span> },
+  { $set: { on_sale: <span class="kw">true</span> } }
+);</code></pre>
+    </div>
+  </section>
+
+  <!-- ============ VECTOR ============ -->
+  <section class="page" id="vector">
+    <h2 class="page-title">🧠 Vector Databases — the AI one</h2>
+    <p class="subtitle">This is what makes agents "know your data." It searches by <b>meaning</b>, not keywords. The backbone of RAG (Retrieval-Augmented Generation) and long-term agent memory.</p>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent)"></span>Definition — in plain English</h3>
+      <p>An <b>embedding model</b> turns any text (or image/audio) into a long list of numbers — a <b>vector</b> — that captures its meaning. Similar meanings produce vectors that sit close together in space. A <b>vector database</b> stores millions of these vectors and, given a query vector, finds the <b>nearest neighbors</b> insanely fast (using an index like HNSW). That's semantic search.</p>
+      <div class="flow">
+        <span class="step">"How do I reset my password?"</span>
+        <span class="plus">→ embedding model →</span>
+        <span class="step">[0.021, -0.88, 0.13, … 1536 numbers]</span>
+        <span class="plus">→ find nearest →</span>
+        <span class="step">📄 "Account recovery guide"</span>
+      </div>
+      <div class="label" style="margin-top:12px">Key features</div>
+      <p>
+        <span class="pill purple">Semantic / similarity search</span>
+        <span class="pill purple">Approximate nearest neighbor (ANN)</span>
+        <span class="pill purple">Metadata filtering</span>
+        <span class="pill purple">Powers RAG &amp; agent memory</span>
+        <span class="pill purple">Handles text, images, audio</span>
+      </p>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent2)"></span>How it stores it — a knowledge base of doc chunks</h3>
+      <p class="viz-caption">Each row = one chunk of a document, its embedding vector (shortened here — real ones are 384–3072 numbers), and filterable metadata. A query embeds your question and returns the closest rows by cosine similarity.</p>
+      <div style="background:var(--cell); border:1px solid var(--border); border-radius:8px; padding:14px;">
+        <div class="vec-row"><span class="vec-id">chunk_01</span><span class="vec-nums">[0.02, -0.88, 0.13, 0.44, …]</span><span class="vec-meta">📄 doc:"billing-faq" · text:"To reset your password, click…"</span></div>
+        <div class="vec-row"><span class="vec-id">chunk_02</span><span class="vec-nums">[0.91, 0.10, -0.22, 0.05, …]</span><span class="vec-meta">📄 doc:"pricing" · text:"The Pro plan costs $29/mo…"</span></div>
+        <div class="vec-row"><span class="vec-id">chunk_03</span><span class="vec-nums">[0.03, -0.85, 0.19, 0.40, …]</span><span class="vec-meta">📄 doc:"account" · text:"Account recovery is handled via…"</span></div>
+        <div class="vec-row"><span class="vec-id">chunk_04</span><span class="vec-nums">[-0.44, 0.67, 0.31, -0.12, …]</span><span class="vec-meta">📄 doc:"api" · text:"Authenticate with a Bearer token…"</span></div>
+        <div class="vec-row"><span class="vec-id">chunk_05</span><span class="vec-nums">[0.05, -0.90, 0.11, 0.47, …]</span><span class="vec-meta">📄 doc:"security" · text:"We hash passwords with bcrypt…"</span></div>
+      </div>
+      <div class="callout blue">Notice <code>chunk_01</code>, <code>chunk_03</code>, <code>chunk_05</code> have very similar numbers — they're all about passwords/accounts, so they cluster together. A keyword search for "reset password" would miss <code>chunk_03</code> ("account recovery") — vector search catches it because the <em>meaning</em> matches.</div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--purple)"></span>Providers</h3>
+      <div class="grid2">
+        <div>
+          <div class="label">Dedicated vector DBs</div>
+          <div class="prov"><span><b>Pinecone</b> (managed, popular)</span><span><b>Qdrant</b> (open-source + cloud)</span><span><b>Weaviate</b></span><span><b>Milvus</b> (scale)</span><span><b>Chroma</b> (local/dev)</span></div>
+        </div>
+        <div>
+          <div class="label">Add-ons to existing DBs</div>
+          <div class="prov"><span><b>pgvector</b> (Postgres)</span><span><b>Redis</b> vector search</span><span>MongoDB Atlas Vector</span><span>Elasticsearch kNN</span><span>Azure AI Search</span></div>
+        </div>
+      </div>
+      <div class="callout" style="margin-bottom:0">💡 Starting out? Use <b>pgvector</b> if you already have Postgres — one less system to run. Reach for <b>Pinecone/Qdrant/Milvus</b> when you have tens of millions of vectors or need specialized scale &amp; latency.</div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--yellow)"></span>When to use / when not to</h3>
+      <div class="when">
+        <div class="box good">
+          <div class="label" style="color:var(--accent2)">✅ Use when</div>
+          <ul class="clean">
+            <li>Building RAG — let an LLM answer using <em>your</em> docs</li>
+            <li>Long-term agent memory ("remember what the user told me weeks ago")</li>
+            <li>Semantic search, recommendations, dedup, "find similar"</li>
+            <li>Matching by meaning where keywords fail (synonyms, paraphrases)</li>
+          </ul>
+        </div>
+        <div class="box bad">
+          <div class="label" style="color:var(--pink)">🚫 Avoid / not needed when</div>
+          <ul class="clean">
+            <li>Exact lookups or structured filters are enough (→ SQL/key-value)</li>
+            <li>You need precise keyword/boolean matching (→ search DB, or hybrid)</li>
+            <li>Tiny dataset — a plain array + cosine similarity in code may do</li>
+            <li>It's not a system of record — keep source text/metadata elsewhere too</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--purple)"></span>Sample queries</h3>
+<pre><code><span class="com"># Pinecone (Python) — the core RAG loop</span>
+<span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+<span class="kw">from</span> pinecone <span class="kw">import</span> Pinecone
+
+oa = <span class="fn">OpenAI</span>();  pc = <span class="fn">Pinecone</span>();  index = pc.<span class="fn">Index</span>(<span class="str">"kb"</span>)
+
+<span class="com"># 1) Embed & store a document chunk</span>
+vec = oa.embeddings.<span class="fn">create</span>(model=<span class="str">"text-embedding-3-small"</span>,
+        input=<span class="str">"To reset your password, click Forgot Password…"</span>).data[<span class="num">0</span>].embedding
+index.<span class="fn">upsert</span>([(<span class="str">"chunk_01"</span>, vec, {<span class="str">"doc"</span>: <span class="str">"billing-faq"</span>})])
+
+<span class="com"># 2) At query time: embed the question, find nearest chunks</span>
+q = oa.embeddings.<span class="fn">create</span>(model=<span class="str">"text-embedding-3-small"</span>,
+        input=<span class="str">"how do I recover my account?"</span>).data[<span class="num">0</span>].embedding
+hits = index.<span class="fn">query</span>(vector=q, top_k=<span class="num">3</span>,
+        filter={<span class="str">"doc"</span>: {<span class="str">"$ne"</span>: <span class="str">"archived"</span>}},  <span class="com"># metadata filter</span>
+        include_metadata=<span class="kw">True</span>)
+
+<span class="com"># 3) Feed the retrieved text to the LLM as context (RAG)</span>
+context = <span class="str">"\n"</span>.<span class="fn">join</span>(h.metadata[<span class="str">"text"</span>] <span class="kw">for</span> h <span class="kw">in</span> hits.matches)</code></pre>
+<pre><code><span class="com">-- pgvector (Postgres) — same idea, in SQL</span>
+<span class="kw">CREATE EXTENSION</span> vector;
+<span class="kw">CREATE TABLE</span> chunks (id text, embedding vector(<span class="num">1536</span>), doc text, body text);
+
+<span class="com">-- &lt;=&gt; is cosine distance; ORDER BY it to get nearest neighbors</span>
+<span class="kw">SELECT</span> id, body
+<span class="kw">FROM</span> chunks
+<span class="kw">ORDER BY</span> embedding <span class="kw">&lt;=&gt;</span> <span class="str">'[0.02,-0.88, …]'</span>
+<span class="kw">LIMIT</span> <span class="num">3</span>;</code></pre>
+    </div>
+  </section>
+
+  <!-- ============ GRAPH ============ -->
+  <section class="page" id="graph">
+    <h2 class="page-title">🕸️ Graph Databases &amp; Neo4j</h2>
+    <p class="subtitle">When the <b>relationships</b> are the point — "who knows whom," "what depends on what," knowledge graphs for agents. Is Neo4j good? Yes — and here's when to actually use it.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent)"></span>Definition</h3>
+        <p>Data is stored as <b>nodes</b> (things: people, docs, tickets) connected by <b>edges/relationships</b> (verbs: KNOWS, REPORTS_TO, MENTIONS). Both nodes and edges can carry properties. The database is optimized to <b>traverse</b> these connections — "friends of friends," "3 hops away" — which would be brutal multi-join queries in SQL.</p>
+        <div class="label" style="margin-top:12px">Key features</div>
+        <p>
+          <span class="pill yellow">Fast multi-hop traversals</span>
+          <span class="pill yellow">Relationships are first-class</span>
+          <span class="pill yellow">Pattern matching queries</span>
+          <span class="pill yellow">Great for knowledge graphs</span>
+          <span class="pill yellow">Path finding (shortest route)</span>
+        </p>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--purple)"></span>Providers &amp; options</h3>
+        <div class="label">Property graph (nodes + edges)</div>
+        <div class="prov"><span><b>Neo4j</b> (the leader, Cypher query lang)</span><span>Amazon <b>Neptune</b></span><span><b>ArangoDB</b> (multi-model)</span><span><b>Memgraph</b> (in-memory, fast)</span><span><b>TigerGraph</b> (scale)</span></div>
+        <div class="label" style="margin-top:12px">RDF / triple stores (semantic web)</div>
+        <div class="prov"><span>GraphDB</span><span>Blazegraph</span><span>Amazon Neptune (also RDF)</span></div>
+        <div class="callout" style="margin-bottom:0">Also worth knowing: Postgres can model simple graphs with recursive queries, and <b>Apache AGE</b> adds Cypher to Postgres. Fine for shallow graphs; a real graph DB wins as hops &amp; scale grow.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent2)"></span>How it stores it — a knowledge graph</h3>
+      <p class="viz-caption">Nodes (circles) and relationships (arrows). This is exactly the structure agents use for "knowledge graph memory" — entities and how they relate.</p>
+      <div class="node-graph">
+        <svg viewBox="0 0 640 300" width="100%" style="max-width:640px; font-family:monospace; font-size:12px;">
+          <defs>
+            <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L9,3 L0,6 Z" fill="#8b949e"/>
+            </marker>
+          </defs>
+          <!-- edges -->
+          <g stroke="#8b949e" stroke-width="1.5" marker-end="url(#arr)" fill="none">
+            <line x1="150" y1="80" x2="300" y2="60"/>
+            <line x1="150" y1="80" x2="150" y2="200"/>
+            <line x1="300" y1="60" x2="470" y2="90"/>
+            <line x1="150" y1="200" x2="300" y2="220"/>
+            <line x1="300" y1="220" x2="470" y2="90"/>
+            <line x1="470" y1="90" x2="470" y2="220"/>
+          </g>
+          <!-- edge labels -->
+          <g fill="#f2cc60" font-size="10.5">
+            <text x="205" y="60">REPORTS_TO</text>
+            <text x="60" y="150">WORKS_ON</text>
+            <text x="355" y="60">MEMBER_OF</text>
+            <text x="185" y="230">ASSIGNED</text>
+            <text x="360" y="180">BLOCKS</text>
+            <text x="480" y="160">TAGGED</text>
+          </g>
+          <!-- nodes -->
+          <g>
+            <circle cx="150" cy="80" r="34" fill="#132b4d" stroke="#1f6feb" stroke-width="2"/>
+            <text x="150" y="76" fill="#79c0ff" text-anchor="middle">Alex</text>
+            <text x="150" y="90" fill="#8b949e" text-anchor="middle" font-size="9">:Person</text>
+
+            <circle cx="300" cy="60" r="34" fill="#132b4d" stroke="#1f6feb" stroke-width="2"/>
+            <text x="300" y="56" fill="#79c0ff" text-anchor="middle">Meera</text>
+            <text x="300" y="70" fill="#8b949e" text-anchor="middle" font-size="9">:Person</text>
+
+            <circle cx="470" cy="90" r="34" fill="#2a1c40" stroke="#8957e5" stroke-width="2"/>
+            <text x="470" y="86" fill="#d2a8ff" text-anchor="middle">Platform</text>
+            <text x="470" y="100" fill="#8b949e" text-anchor="middle" font-size="9">:Team</text>
+
+            <circle cx="150" cy="200" r="34" fill="#122b1c" stroke="#238636" stroke-width="2"/>
+            <text x="150" y="196" fill="#7ee787" text-anchor="middle">PIXB-42</text>
+            <text x="150" y="210" fill="#8b949e" text-anchor="middle" font-size="9">:Ticket</text>
+
+            <circle cx="300" cy="220" r="34" fill="#122b1c" stroke="#238636" stroke-width="2"/>
+            <text x="300" y="216" fill="#7ee787" text-anchor="middle">PIXB-77</text>
+            <text x="300" y="230" fill="#8b949e" text-anchor="middle" font-size="9">:Ticket</text>
+
+            <circle cx="470" cy="220" r="34" fill="#332a0c" stroke="#9e6a03" stroke-width="2"/>
+            <text x="470" y="216" fill="#f2cc60" text-anchor="middle">backend</text>
+            <text x="470" y="230" fill="#8b949e" text-anchor="middle" font-size="9">:Label</text>
+          </g>
+        </svg>
+      </div>
+      <p class="viz-caption">Ask "which tickets block a ticket assigned to someone who reports to Meera?" — that's a 3-hop traversal, trivial in a graph DB, ugly in SQL.</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--yellow)"></span>When to use / when not to</h3>
+      <div class="when">
+        <div class="box good">
+          <div class="label" style="color:var(--accent2)">✅ Use when</div>
+          <ul class="clean">
+            <li>Relationships &amp; traversals are the main question (social, org charts, dependencies)</li>
+            <li>Knowledge graphs for agents / GraphRAG (entities + how they connect)</li>
+            <li>Fraud rings, recommendations, "shortest path," impact analysis</li>
+            <li>The connections go many hops deep and vary in length</li>
+          </ul>
+        </div>
+        <div class="box bad">
+          <div class="label" style="color:var(--pink)">🚫 Avoid when</div>
+          <ul class="clean">
+            <li>Your data is mostly flat records with few relationships (→ SQL)</li>
+            <li>You need heavy aggregations / analytics over columns (→ SQL/warehouse)</li>
+            <li>Team has no graph experience &amp; the graph is shallow (Postgres joins fine)</li>
+            <li>Simple parent→child hierarchy only (a foreign key does it)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout blue">🤖 <b>For agents specifically:</b> "GraphRAG" combines a graph DB (structured relationships) with a vector DB (semantic recall). The graph answers "how are these entities connected," the vectors answer "what's relevant to this question." Increasingly common in serious agent memory systems.</div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--purple)"></span>Sample queries (Neo4j — Cypher)</h3>
+<pre><code><span class="com">// Create nodes and a relationship</span>
+<span class="kw">CREATE</span> (a:Person {name:<span class="str">'Alex'</span>})-[:REPORTS_TO]-&gt;(m:Person {name:<span class="str">'Meera'</span>});
+
+<span class="com">// Alex works on a ticket, tag it</span>
+<span class="kw">MATCH</span> (a:Person {name:<span class="str">'Alex'</span>})
+<span class="kw">CREATE</span> (a)-[:WORKS_ON]-&gt;(t:Ticket {id:<span class="str">'PIXB-42'</span>})-[:TAGGED]-&gt;(:Label {name:<span class="str">'backend'</span>});
+
+<span class="com">// The magic: multi-hop pattern match</span>
+<span class="com">// "Tickets that block a ticket assigned to someone reporting to Meera"</span>
+<span class="kw">MATCH</span> (m:Person {name:<span class="str">'Meera'</span>})&lt;-[:REPORTS_TO]-(p:Person)
+      &lt;-[:ASSIGNED]-(t:Ticket)&lt;-[:BLOCKS]-(blocker:Ticket)
+<span class="kw">RETURN</span> blocker.id, t.id, p.name;
+
+<span class="com">// Shortest path between two people</span>
+<span class="kw">MATCH</span> p = <span class="fn">shortestPath</span>(
+  (a:Person {name:<span class="str">'Alex'</span>})-[:KNOWS*]-(z:Person {name:<span class="str">'Priya'</span>}))
+<span class="kw">RETURN</span> p;</code></pre>
+    </div>
+  </section>
+
+  <!-- ============ WIDE-COLUMN ============ -->
+  <section class="page" id="widecolumn">
+    <h2 class="page-title">📊 Wide-Column Stores</h2>
+    <p class="subtitle">Built for firehose write volume at global scale. Think "spreadsheet with billions of rows and flexible columns per row."</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent)"></span>Definition</h3>
+        <p>Rows are grouped by a <b>partition key</b> and, within a partition, sorted by <b>clustering columns</b>. Unlike SQL, each row can have different columns, and data is spread ("sharded") across many machines automatically. Optimized for <b>huge write throughput</b> and predictable reads by key — with tunable consistency.</p>
+        <div class="label" style="margin-top:12px">Key features</div>
+        <p>
+          <span class="pill red">Linear horizontal scale</span>
+          <span class="pill red">Write-optimized</span>
+          <span class="pill red">Tunable consistency</span>
+          <span class="pill red">No single point of failure</span>
+          <span class="pill red">Time-ordered data friendly</span>
+        </p>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--purple)"></span>Providers</h3>
+        <div class="prov">
+          <span><b>Apache Cassandra</b> (open-source)</span>
+          <span><b>ScyllaDB</b> (faster C++ Cassandra)</span>
+          <span>Google <b>Bigtable</b></span>
+          <span><b>HBase</b> (Hadoop)</span>
+          <span>DataStax Astra (managed Cassandra)</span>
+        </div>
+        <div class="callout" style="margin-bottom:0">DynamoDB is philosophically close (partition + sort key, massive scale). Rule of thumb: pick these when you're past what a single big Postgres box can handle and your access is key-based.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent2)"></span>How it stores it — chat events, partitioned by room</h3>
+      <p class="viz-caption">All messages for one room live together (same partition key), sorted by time (clustering column) so "latest 50 in this room" is one fast sequential read.</p>
+      <table class="rel">
+        <tr><th>room_id (partition)</th><th>ts (clustering ↓)</th><th>user</th><th>msg</th><th>+ ad-hoc cols</th></tr>
+        <tr><td>room#pune-eng</td><td>09:00:01.221</td><td>alex</td><td>"deploy done"</td><td>—</td></tr>
+        <tr><td>room#pune-eng</td><td>09:00:04.870</td><td>meera</td><td>"👍"</td><td>reaction=true</td></tr>
+        <tr><td>room#pune-eng</td><td>09:01:12.004</td><td>sam</td><td>"link?"</td><td>edited=false</td></tr>
+        <tr><td>room#design</td><td>09:00:02.100</td><td>priya</td><td>"new mocks up"</td><td>attachment=fig.png</td></tr>
+        <tr><td>room#design</td><td>09:03:44.512</td><td>tom</td><td>"loving it"</td><td>—</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--yellow)"></span>When to use / when not to</h3>
+      <div class="when">
+        <div class="box good">
+          <div class="label" style="color:var(--accent2)">✅ Use when</div>
+          <ul class="clean">
+            <li>Enormous write volume — telemetry, chat, feeds, IoT, event logs</li>
+            <li>Global, always-on, must survive node/datacenter failure</li>
+            <li>Access is by partition key + time range</li>
+            <li>You'll outgrow a single relational server</li>
+          </ul>
+        </div>
+        <div class="box bad">
+          <div class="label" style="color:var(--pink)">🚫 Avoid when</div>
+          <ul class="clean">
+            <li>You need joins, ad-hoc queries, or transactions (→ SQL)</li>
+            <li>Data volume is modest — this is operational overkill</li>
+            <li>Access patterns aren't known up front (like DynamoDB, design keys first)</li>
+            <li>Strong immediate consistency everywhere is required</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--purple)"></span>Sample queries (Cassandra — CQL, looks like SQL)</h3>
+<pre><code><span class="com">-- Table designed around the query: "messages in a room, newest first"</span>
+<span class="kw">CREATE TABLE</span> messages (
+  room_id text,
+  ts      timestamp,
+  user    text,
+  msg     text,
+  <span class="kw">PRIMARY KEY</span> ((room_id), ts)          <span class="com">-- partition key, clustering key</span>
+) <span class="kw">WITH CLUSTERING ORDER BY</span> (ts <span class="kw">DESC</span>);
+
+<span class="kw">INSERT INTO</span> messages (room_id, ts, user, msg)
+<span class="kw">VALUES</span> (<span class="str">'room#pune-eng'</span>, toTimestamp(now()), <span class="str">'alex'</span>, <span class="str">'deploy done'</span>);
+
+<span class="com">-- Fast: hits ONE partition, reads sequentially</span>
+<span class="kw">SELECT</span> user, msg, ts <span class="kw">FROM</span> messages
+<span class="kw">WHERE</span> room_id = <span class="str">'room#pune-eng'</span>
+<span class="kw">LIMIT</span> <span class="num">50</span>;
+
+<span class="com">-- ✗ This would be REJECTED — no filtering on non-key columns at scale</span>
+<span class="com">-- SELECT * FROM messages WHERE user = 'alex';  (design a new table instead)</span></code></pre>
+    </div>
+  </section>
+
+  <!-- ============ SEARCH ============ -->
+  <section class="page" id="search">
+    <h2 class="page-title">🔎 Search Engines</h2>
+    <p class="subtitle">Full-text search with typo tolerance, ranking, and filters. What powers "search-as-you-type" and site search.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent)"></span>Definition</h3>
+        <p>A search engine builds an <b>inverted index</b> — a map from every word to the documents containing it — so it can find matches in milliseconds across huge corpora. It adds <b>relevance ranking</b> (BM25), <b>typo tolerance</b>, <b>synonyms</b>, <b>facets</b> (filter counts), and highlighting. Different from vector search: this is keyword-based (though modern engines do both — "hybrid search").</p>
+        <div class="label" style="margin-top:12px">Key features</div>
+        <p>
+          <span class="pill blue">Inverted index</span>
+          <span class="pill blue">Relevance ranking (BM25)</span>
+          <span class="pill blue">Typo / fuzzy tolerance</span>
+          <span class="pill blue">Facets &amp; filters</span>
+          <span class="pill blue">Highlighting &amp; autocomplete</span>
+        </p>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--purple)"></span>Providers</h3>
+        <div class="prov">
+          <span><b>Elasticsearch</b> / OpenSearch (the standard)</span>
+          <span><b>Typesense</b> (fast, simple, OSS)</span>
+          <span><b>Meilisearch</b> (dev-friendly)</span>
+          <span><b>Algolia</b> (managed, instant search)</span>
+          <span>Postgres full-text (<code>tsvector</code>) for light needs</span>
+        </div>
+        <div class="callout" style="margin-bottom:0">Elasticsearch/OpenSearch also do log analytics (the "ELK stack") and kNN vector search — often it's the one engine doing search + observability + hybrid retrieval.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent2)"></span>How it stores it — inverted index for a product catalog</h3>
+      <p class="viz-caption">Left: the documents. Right: the inverted index it builds — each word points to the docs (and positions) where it appears, which is why lookups are instant.</p>
+      <div class="grid2">
+        <div>
+          <div class="label">Documents indexed</div>
+          <table class="rel">
+            <tr><th>id</th><th>title</th></tr>
+            <tr><td>p1</td><td>Red cotton t-shirt</td></tr>
+            <tr><td>p2</td><td>Blue cotton hoodie</td></tr>
+            <tr><td>p3</td><td>Red running shoes</td></tr>
+          </table>
+        </div>
+        <div>
+          <div class="label">Inverted index (term → docs)</div>
+          <div class="kv">
+            <div class="row"><div class="k" style="min-width:110px">"red"</div><div class="v">→ p1, p3</div></div>
+            <div class="row"><div class="k" style="min-width:110px">"cotton"</div><div class="v">→ p1, p2</div></div>
+            <div class="row"><div class="k" style="min-width:110px">"shirt"</div><div class="v">→ p1</div></div>
+            <div class="row"><div class="k" style="min-width:110px">"hoodie"</div><div class="v">→ p2</div></div>
+            <div class="row"><div class="k" style="min-width:110px">"shoes"</div><div class="v">→ p3</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--yellow)"></span>When to use / when not to</h3>
+      <div class="when">
+        <div class="box good">
+          <div class="label" style="color:var(--accent2)">✅ Use when</div>
+          <ul class="clean">
+            <li>User-facing search boxes: catalogs, docs, help centers</li>
+            <li>Typo tolerance, autocomplete, "did you mean," faceted filtering</li>
+            <li>Log/event analytics at scale (ELK/OpenSearch)</li>
+            <li>Hybrid search (keywords + vectors together) for RAG quality</li>
+          </ul>
+        </div>
+        <div class="box bad">
+          <div class="label" style="color:var(--pink)">🚫 Avoid when</div>
+          <ul class="clean">
+            <li>It's your only store — it's a secondary index, not a source of truth</li>
+            <li>You need transactions / strong consistency (index lags writes slightly)</li>
+            <li>Simple exact lookups (a DB index is enough)</li>
+            <li>Pure semantic matching with no keywords (→ vector DB)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--purple)"></span>Sample queries (Elasticsearch)</h3>
+<pre><code><span class="com"># Index a document</span>
+PUT /products/_doc/p1
+{ <span class="prop">"title"</span>: <span class="str">"Red cotton t-shirt"</span>, <span class="prop">"price"</span>: <span class="num">19.99</span>, <span class="prop">"color"</span>: <span class="str">"red"</span> }
+
+<span class="com"># Fuzzy full-text search + filter + facet, ranked by relevance</span>
+POST /products/_search
+{
+  <span class="prop">"query"</span>: {
+    <span class="prop">"bool"</span>: {
+      <span class="prop">"must"</span>:   { <span class="prop">"match"</span>: { <span class="prop">"title"</span>: { <span class="prop">"query"</span>: <span class="str">"cottn shrt"</span>, <span class="prop">"fuzziness"</span>: <span class="str">"AUTO"</span> } } },
+      <span class="prop">"filter"</span>: { <span class="prop">"range"</span>: { <span class="prop">"price"</span>: { <span class="prop">"lte"</span>: <span class="num">25</span> } } }
+    }
+  },
+  <span class="prop">"aggs"</span>: { <span class="prop">"by_color"</span>: { <span class="prop">"terms"</span>: { <span class="prop">"field"</span>: <span class="str">"color"</span> } } }   <span class="com"># facet counts</span>
+}
+<span class="com"># "cottn shrt" (typos) still matches "Red cotton t-shirt" thanks to fuzziness</span></code></pre>
+    </div>
+  </section>
+
+  <!-- ============ TIME-SERIES ============ -->
+  <section class="page" id="timeseries">
+    <h2 class="page-title">⏱️ Time-Series Databases</h2>
+    <p class="subtitle">Purpose-built for "measurements over time" — metrics, IoT, and (for us) tracking every LLM call your agent makes.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent)"></span>Definition</h3>
+        <p>Optimized for data that's <b>timestamped, append-only, and queried by time windows</b>. They compress heavily (values change little second to second), handle millions of writes/sec, and make time aggregations ("average latency per minute over the last day") trivial and fast — where a relational DB would choke.</p>
+        <div class="label" style="margin-top:12px">Key features</div>
+        <p>
+          <span class="pill yellow">Time-window queries &amp; rollups</span>
+          <span class="pill yellow">Extreme compression</span>
+          <span class="pill yellow">Downsampling &amp; retention policies</span>
+          <span class="pill yellow">High-ingest / append-only</span>
+        </p>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--purple)"></span>Providers</h3>
+        <div class="prov">
+          <span><b>InfluxDB</b></span>
+          <span><b>TimescaleDB</b> (Postgres extension)</span>
+          <span><b>Prometheus</b> (metrics/monitoring)</span>
+          <span>Amazon <b>Timestream</b></span>
+          <span>VictoriaMetrics, QuestDB</span>
+        </div>
+        <div class="callout" style="margin-bottom:0">Already on Postgres? <b>TimescaleDB</b> gives you time-series superpowers without a new database or query language. Nice default.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent2)"></span>How it stores it — LLM call telemetry</h3>
+      <p class="viz-caption">Each point = a timestamp + tags (labels you filter/group by) + fields (the numbers). Perfect for an agent's observability: latency, tokens, cost per call.</p>
+      <table class="rel">
+        <tr><th>time</th><th>tags: model, endpoint</th><th>field: latency_ms</th><th>field: tokens</th><th>field: cost_usd</th></tr>
+        <tr><td>09:00:01.2</td><td>opus, /chat</td><td>1840</td><td>2310</td><td>0.041</td></tr>
+        <tr><td>09:00:02.7</td><td>haiku, /chat</td><td>420</td><td>980</td><td>0.002</td></tr>
+        <tr><td>09:00:04.1</td><td>opus, /rag</td><td>2210</td><td>5120</td><td>0.088</td></tr>
+        <tr><td>09:00:05.9</td><td>opus, /chat</td><td>1710</td><td>2020</td><td>0.036</td></tr>
+        <tr><td>09:00:07.3</td><td>haiku, /chat</td><td>390</td><td>870</td><td>0.002</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--yellow)"></span>When to use / when not to</h3>
+      <div class="when">
+        <div class="box good">
+          <div class="label" style="color:var(--accent2)">✅ Use when</div>
+          <ul class="clean">
+            <li>Metrics, monitoring, IoT sensors, financial ticks</li>
+            <li>Agent observability: latency/token/cost dashboards over time</li>
+            <li>High write rate, queried as time ranges &amp; aggregates</li>
+            <li>You need auto-retention ("drop raw data older than 30 days")</li>
+          </ul>
+        </div>
+        <div class="box bad">
+          <div class="label" style="color:var(--pink)">🚫 Avoid when</div>
+          <ul class="clean">
+            <li>Data isn't fundamentally about time</li>
+            <li>You need to update/delete individual old records often</li>
+            <li>Rich relational joins are the point (→ SQL)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--purple)"></span>Sample queries</h3>
+<pre><code><span class="com">-- TimescaleDB / SQL: avg latency & total cost per model, per minute (last hour)</span>
+<span class="kw">SELECT</span> time_bucket(<span class="str">'1 minute'</span>, time) <span class="kw">AS</span> minute,
+       model,
+       <span class="fn">avg</span>(latency_ms)  <span class="kw">AS</span> avg_latency,
+       <span class="fn">sum</span>(cost_usd)    <span class="kw">AS</span> spend
+<span class="kw">FROM</span> llm_calls
+<span class="kw">WHERE</span> time &gt; now() - <span class="kw">interval</span> <span class="str">'1 hour'</span>
+<span class="kw">GROUP BY</span> minute, model
+<span class="kw">ORDER BY</span> minute <span class="kw">DESC</span>;</code></pre>
+<pre><code><span class="com"># InfluxDB (Flux) — p95 latency for opus over 24h, 5-min windows</span>
+<span class="kw">from</span>(bucket: <span class="str">"agent"</span>)
+  |&gt; <span class="fn">range</span>(start: -24h)
+  |&gt; <span class="fn">filter</span>(fn: (r) =&gt; r._measurement == <span class="str">"llm_calls"</span> and r.model == <span class="str">"opus"</span>)
+  |&gt; <span class="fn">aggregateWindow</span>(every: 5m, fn: (tables=&lt;-, column) =&gt;
+        tables |&gt; <span class="fn">quantile</span>(q: 0.95))</code></pre>
+    </div>
+  </section>
+
+  <!-- ============ CACHE ============ -->
+  <section class="page" id="cache">
+    <h2 class="page-title">⚡ Cache / In-Memory Stores</h2>
+    <p class="subtitle">Not always a "database" — a speed layer. Keeps hot data in RAM for sub-millisecond access. Redis is the swiss-army knife here.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent)"></span>Definition</h3>
+        <p>Data lives in <b>memory (RAM)</b> instead of disk, so reads/writes are <b>microsecond–millisecond fast</b>. Usually a key-value model, often used <em>in front of</em> a slower database to absorb repeated reads. Data may be volatile (lost on restart) or optionally persisted. Redis also offers rich types: lists, sets, sorted sets, streams, pub/sub, and TTLs.</p>
+        <div class="label" style="margin-top:12px">Key features</div>
+        <p>
+          <span class="pill red">Sub-millisecond latency</span>
+          <span class="pill red">TTL / auto-expiry</span>
+          <span class="pill red">Rich data types &amp; atomic ops</span>
+          <span class="pill red">Pub/sub &amp; queues</span>
+          <span class="pill red">Rate limiting, locks, leaderboards</span>
+        </p>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--purple)"></span>Providers</h3>
+        <div class="prov">
+          <span><b>Redis</b> / Valkey (the standard)</span>
+          <span><b>Memcached</b> (simple caching)</span>
+          <span>AWS <b>ElastiCache</b> / MemoryDB</span>
+          <span><b>Upstash</b> (serverless Redis)</span>
+          <span>Redis Cloud, Dragonfly</span>
+        </div>
+        <div class="callout" style="margin-bottom:0">Redis is so versatile it moonlights as cache, session store, queue, rate-limiter, pub/sub bus, and even a vector index. In agent apps it's often the "working memory" layer.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent2)"></span>How it stores it — hot data in RAM</h3>
+      <p class="viz-caption">Different Redis data types for different jobs. Everything here answers in under a millisecond.</p>
+      <div class="kv">
+        <div class="row"><div class="k">STRING user:1:profile</div><div class="v">{cached JSON}  · TTL 300s</div></div>
+        <div class="row"><div class="k">COUNTER ratelimit:ip:10.2.4.9</div><div class="v">17  · TTL 60s  <span style="color:var(--muted)">(atomic INCR)</span></div></div>
+        <div class="row"><div class="k">LIST queue:emails</div><div class="v">[job#88, job#89, job#90]  <span style="color:var(--muted)">(FIFO queue)</span></div></div>
+        <div class="row"><div class="k">SORTED SET leaderboard</div><div class="v">meera:980, alex:820, sam:640</div></div>
+        <div class="row"><div class="k">STREAM agent:events</div><div class="v">…append-only event log for a worker…</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--yellow)"></span>When to use / when not to</h3>
+      <div class="when">
+        <div class="box good">
+          <div class="label" style="color:var(--accent2)">✅ Use when</div>
+          <ul class="clean">
+            <li>Caching expensive DB/LLM results (huge cost &amp; latency wins)</li>
+            <li>Sessions, rate limiting, distributed locks, feature flags</li>
+            <li>Real-time leaderboards, counters, queues, pub/sub</li>
+            <li>Agent "working memory" / short-lived state between steps</li>
+          </ul>
+        </div>
+        <div class="box bad">
+          <div class="label" style="color:var(--pink)">🚫 Avoid when</div>
+          <ul class="clean">
+            <li>It's your only copy of important data (RAM is expensive &amp; volatile)</li>
+            <li>You need complex queries, joins, or big historical datasets</li>
+            <li>Data far exceeds RAM budget (memory is pricey)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--purple)"></span>Sample: cache-aside pattern</h3>
+<pre><code><span class="com"># Classic "cache-aside": check cache first, fall back to DB, then cache it</span>
+<span class="kw">def</span> <span class="fn">get_user</span>(uid):
+    cached = r.<span class="fn">get</span>(f<span class="str">"user:{uid}"</span>)
+    <span class="kw">if</span> cached:
+        <span class="kw">return</span> json.<span class="fn">loads</span>(cached)          <span class="com"># fast path (&lt;1ms)</span>
+    user = db.<span class="fn">query</span>(<span class="str">"SELECT … FROM users WHERE id=%s"</span>, uid)  <span class="com"># slow path</span>
+    r.<span class="fn">set</span>(f<span class="str">"user:{uid}"</span>, json.<span class="fn">dumps</span>(user), ex=<span class="num">300</span>)   <span class="com"># cache 5 min</span>
+    <span class="kw">return</span> user
+
+<span class="com"># Rate limit: allow 100 requests/min per user, atomically</span>
+key = f<span class="str">"rl:{uid}:{minute}"</span>
+count = r.<span class="fn">incr</span>(key)
+<span class="kw">if</span> count == <span class="num">1</span>: r.<span class="fn">expire</span>(key, <span class="num">60</span>)
+<span class="kw">if</span> count &gt; <span class="num">100</span>: <span class="kw">raise</span> <span class="fn">RateLimited</span>()</code></pre>
+    </div>
+  </section>
+
+  <!-- ============ STACK ============ -->
+  <section class="page" id="stack">
+    <h2 class="page-title">🤖 Putting it together: a real agentic app's data layer</h2>
+    <p class="subtitle">No single database does it all. Here's how the families combine in a typical AI agent product — and why each one is there.</p>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent)"></span>The polyglot stack for an "AI support agent" SaaS</h3>
+      <table class="matrix">
+        <tr><th>Job in the app</th><th>Database family</th><th>Concrete pick</th><th>Why this one</th></tr>
+        <tr><td>Users, orgs, billing, subscriptions (post-signup)</td><td><span class="pill blue">Relational</span></td><td>Postgres (Supabase/RDS)</td><td>Structured, related, needs transactions &amp; uniqueness</td></tr>
+        <tr><td>Login sessions, rate limits, feature flags</td><td><span class="pill red">Cache / KV</span></td><td>Redis (Upstash)</td><td>Sub-ms, auto-expiring, atomic counters</td></tr>
+        <tr><td>Agent conversation threads &amp; state</td><td><span class="pill red">Key-Value</span></td><td>DynamoDB</td><td>Keyed by thread id, serverless, scales with traffic</td></tr>
+        <tr><td>Company knowledge base for RAG</td><td><span class="pill purple">Vector</span></td><td>Pinecone / pgvector</td><td>Semantic retrieval — answer from your docs</td></tr>
+        <tr><td>Entity/relationship memory (who, what, depends-on)</td><td><span class="pill yellow">Graph</span></td><td>Neo4j</td><td>Multi-hop reasoning over connected facts (GraphRAG)</td></tr>
+        <tr><td>Fast product/help-article search box</td><td><span class="pill blue">Search</span></td><td>Elasticsearch / Typesense</td><td>Typo-tolerant, ranked, faceted full-text</td></tr>
+        <tr><td>LLM latency / token / cost telemetry</td><td><span class="pill yellow">Time-Series</span></td><td>TimescaleDB</td><td>Time-window aggregates for dashboards</td></tr>
+        <tr><td>Uploaded files, images, PDFs</td><td><span class="pill green">Object storage</span></td><td>S3 / GCS</td><td>Cheap blob storage; DB holds the URL, not the bytes</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--accent2)"></span>How a single user question flows through them</h3>
+      <div class="flow" style="line-height:2.2">
+        <span class="step">1. Request hits API</span><span class="plus">→</span>
+        <span class="step">2. <b>Redis</b>: check session + rate limit</span><span class="plus">→</span>
+        <span class="step">3. <b>Postgres</b>: who is this user, what plan</span><span class="plus">→</span>
+        <span class="step">4. <b>DynamoDB</b>: load conversation history</span><span class="plus">→</span>
+        <span class="step">5. <b>Vector DB</b>: retrieve relevant docs (RAG)</span><span class="plus">→</span>
+        <span class="step">6. <b>Neo4j</b>: pull related entities</span><span class="plus">→</span>
+        <span class="step">7. LLM answers</span><span class="plus">→</span>
+        <span class="step">8. <b>DynamoDB</b>: save the new turn</span><span class="plus">→</span>
+        <span class="step">9. <b>TimescaleDB</b>: log latency/tokens/cost</span>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--yellow)"></span>Rules of thumb to remember</h3>
+        <ul class="clean">
+          <li><b>Start with Postgres.</b> It stretches further than you think (JSON, vectors via pgvector, time-series via Timescale, geo). Add specialized DBs only when a real access pattern demands it.</li>
+          <li><b>Match the DB to the read pattern</b>, not the write. Ask "how will I get this back out?"</li>
+          <li><b>Key-value / DynamoDB</b> = you know the key &amp; want scale + zero ops. Design keys around queries up front.</li>
+          <li><b>Vector</b> = "find things that <em>mean</em> the same." The heart of RAG &amp; agent memory.</li>
+          <li><b>Graph</b> = the relationships <em>are</em> the query, many hops deep.</li>
+          <li><b>Every extra database is operational cost.</b> Fewer, well-chosen stores beat a zoo of trendy ones.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--purple)"></span>Managed vs self-hosted, quickly</h3>
+        <ul class="clean">
+          <li><b>Managed / serverless</b> (DynamoDB, Aurora, Pinecone, Atlas, Upstash): they run it, patch it, scale it. You pay more per unit but save enormous ops time. Best default for small teams.</li>
+          <li><b>Self-hosted</b> (Postgres on a VM, Cassandra cluster, Neo4j on-prem): cheaper at scale, full control, more responsibility (backups, upgrades, failover). Choose when cost/control/compliance justifies the ops burden.</li>
+        </ul>
+        <div class="callout blue" style="margin-bottom:0">On AWS, the "recommend DynamoDB" instinct is really "you're on AWS, you need a scalable keyed store, and you don't want to babysit servers." Perfectly valid — just make sure your queries fit the key-value model before committing.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Built as a personal crash course · Save this file, open in any browser · No data leaves your machine.
+  </footer>
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const pages = document.querySelectorAll('section.page');
+  function show(id){
+    tabs.forEach(t=>t.classList.toggle('active', t.dataset.t===id));
+    pages.forEach(p=>p.classList.toggle('active', p.id===id));
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  tabs.forEach(t=>t.addEventListener('click', ()=>show(t.dataset.t)));
+  document.querySelectorAll('[data-goto]').forEach(el=>{
+    el.addEventListener('click', ()=>show(el.dataset.goto));
+  });
+</script>
+</body>
+</html>

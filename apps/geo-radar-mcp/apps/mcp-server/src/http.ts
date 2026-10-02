@@ -1,0 +1,88 @@
+import express, { type Request, type Response } from "express";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { SERVER_NAME, SERVER_VERSION } from "@geo-radar/shared";
+import { captureError, logger } from "@geo-radar/core";
+import { createServer } from "./server";
+import { registerDashboard } from "./dashboard";
+import { requireAuth, protectedResourceMetadata } from "./auth";
+import { createOAuthProxyRouter } from "./oauth-proxy";
+import { createSelfHostedOAuthRouter, selfHostedLoginGate } from "./self-oauth";
+import type { ServerRuntime } from "./runtime";
+
+/**
+ * Remote transport: streamable-HTTP (stateless). Each request gets a fresh
+ * server+transport, so the tier is stateless and scales by instance count.
+ * Auth is enforced by ./auth (bearer API key or OAuth JWT w/ JWKS verification).
+ */
+export async function startHttpServer(runtime: ServerRuntime, port: number): Promise<void> {
+  const app = express();
+  // Behind Render/any TLS-terminating proxy, trust X-Forwarded-* so req.protocol is
+  // "https" — the OAuth metadata + resource URLs must be https or clients reject them.
+  // Use a finite hop count (1 = Render's single reverse proxy), NOT `true`: a permissive
+  // `true` makes express-rate-limit throw ERR_ERL_PERMISSIVE_TRUST_PROXY and silently
+  // disables the rate limiting the SDK puts on the public /authorize|/token|/register.
+  app.set("trust proxy", 1);
+  app.use(express.json({ limit: "1mb" }));
+
+  // Health check (no auth) — Render/LB probe target.
+  app.get("/healthz", (_req: Request, res: Response) => {
+    res.json({ status: "ok", server: SERVER_NAME, version: SERVER_VERSION });
+  });
+
+  // OAuth topology (all same-origin AS variants serve /authorize|/token|/register +
+  // both well-known metadata docs):
+  //   selfhosted — we ARE the AS, no third party (free); Basic-auth login gate.
+  //   proxy      — same-origin AS forwarding to WorkOS.
+  //   (default)  — resource-server-only: advertise the external AS directly.
+  const selfOauth = createSelfHostedOAuthRouter();
+  const oauthProxy = selfOauth ? null : await createOAuthProxyRouter();
+  if (selfOauth) {
+    app.use("/authorize", selfHostedLoginGate); // gate login before the AS handler
+    app.use(selfOauth);
+    logger.info("oauth: self-hosted mode (this server is the authorization server)");
+  } else if (oauthProxy) {
+    app.use(oauthProxy);
+    logger.info("oauth: proxy mode (same-origin AS → WorkOS)");
+  } else {
+    // RFC 9728 protected-resource metadata (points clients off to the external AS).
+    app.get("/.well-known/oauth-protected-resource", (req: Request, res: Response) => {
+      res.json(protectedResourceMetadata(`${req.protocol}://${req.get("host")}`));
+    });
+  }
+
+  // Companion dashboard (P9) + its read/demo JSON API.
+  registerDashboard(app, runtime);
+
+  // MCP endpoint (authenticated, stateless).
+  app.post("/mcp", requireAuth, async (req: Request, res: Response) => {
+    const server = createServer(runtime);
+    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+    res.on("close", () => {
+      void transport.close();
+      void server.close();
+    });
+    try {
+      await server.connect(transport);
+      await transport.handleRequest(req, res, req.body);
+    } catch (err) {
+      captureError(err, { route: "/mcp" });
+      if (!res.headersSent) {
+        res.status(500).json({ jsonrpc: "2.0", error: { code: -32603, message: "Internal error" }, id: null });
+      }
+    }
+  });
+
+  const methodNotAllowed = (_req: Request, res: Response) =>
+    res.status(405).json({ jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed" }, id: null });
+  app.get("/mcp", methodNotAllowed);
+  app.delete("/mcp", methodNotAllowed);
+
+  app.listen(port, () => {
+    logger.info("http server listening", {
+      server: SERVER_NAME,
+      version: SERVER_VERSION,
+      port,
+      routes: ["/", "POST /mcp", "/healthz"],
+    });
+  });
+}

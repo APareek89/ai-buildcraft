@@ -1,0 +1,222 @@
+[
+  {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "role": "user",
+    "parts": [
+      {
+        "text": "Show the prepared team-tools visibility example and its budgeted plan.",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "id": "00000000-0000-4000-8000-000000000002",
+    "role": "assistant",
+    "parts": [
+      {
+        "text": "Prepared example: these buyer answers and citation gaps are illustrative. The real scoring and allocation code produced the saved report and plan, with no provider calls.",
+        "type": "text"
+      },
+      {
+        "type": "tool-run_benchmark",
+        "input": {},
+        "state": "output-available",
+        "output": {
+          "brand": "Linear",
+          "panel": [
+            "openai"
+          ],
+          "cost_usd": 0,
+          "prepared": true,
+          "report_id": "00000000-0000-4000-8000-000000000003",
+          "sentiment": {
+            "score": 1,
+            "distribution": {
+              "neutral": 0,
+              "negative": 0,
+              "positive": 4
+            }
+          },
+          "answer_count": 4,
+          "share_of_voice": [
+            {
+              "sov": 0.5,
+              "brand": "Linear",
+              "mentions": 4
+            },
+            {
+              "sov": 0.375,
+              "brand": "Asana",
+              "mentions": 3
+            },
+            {
+              "sov": 0.125,
+              "brand": "Jira",
+              "mentions": 1
+            }
+          ],
+          "total_citations": 8,
+          "citation_gap_count": 4,
+          "your_citation_share": 0
+        },
+        "toolCallId": "00000000-0000-4000-8000-000000000004"
+      },
+      {
+        "type": "tool-build_plan",
+        "input": {},
+        "state": "output-available",
+        "output": {
+          "plan_id": "00000000-0000-4000-8000-000000000005",
+          "tactics": [
+            {
+              "id": "comparison_pages",
+              "name": "Publish \"X vs Y\" comparison pages (per 3)",
+              "costUsd": 0,
+              "closesGap": "owned",
+              "leadWeeks": [
+                1,
+                3
+              ],
+              "totalLift": 7,
+              "description": "Owned comparison pages that answer buyer-intent queries directly.",
+              "effortHours": 18,
+              "foundationalMultiplier": 1
+            },
+            {
+              "id": "schema_llmstxt",
+              "name": "FAQ + Product schema + llms.txt on your pages",
+              "costUsd": 0,
+              "closesGap": "owned",
+              "leadWeeks": [
+                1,
+                1
+              ],
+              "totalLift": 2,
+              "description": "Foundational: makes your pages easier for AI to parse and cite \u2014 multiplies everything else.",
+              "effortHours": 6,
+              "foundationalMultiplier": 1.15
+            },
+            {
+              "id": "review_profiles",
+              "name": "G2 / Capterra / ProductHunt profile + seed reviews",
+              "costUsd": 0,
+              "closesGap": null,
+              "leadWeeks": [
+                2,
+                6
+              ],
+              "totalLift": 7,
+              "description": "Claim review-platform profiles and seed genuine reviews (high impact for B2B).",
+              "effortHours": 15,
+              "foundationalMultiplier": 1
+            },
+            {
+              "id": "reddit_answers",
+              "name": "10\u201315 genuine Reddit / community answers",
+              "costUsd": 0,
+              "closesGap": null,
+              "leadWeeks": [
+                1,
+                4
+              ],
+              "totalLift": 4,
+              "description": "Helpful, non-spammy answers in communities AI assistants cite.",
+              "effortHours": 11.5,
+              "foundationalMultiplier": 1
+            },
+            {
+              "id": "roundup",
+              "name": "Get into a \"best X\" roundup (outreach \u00b1 paid)",
+              "costUsd": 250,
+              "closesGap": "roundup",
+              "leadWeeks": [
+                3,
+                8
+              ],
+              "totalLift": 8,
+              "description": "Land in listicles/roundups \u2014 the format AI assistants quote most for recommendations.",
+              "effortHours": 9,
+              "foundationalMultiplier": 1
+            },
+            {
+              "id": "digital_pr",
+              "name": "Digital PR / HARO responses",
+              "costUsd": 150,
+              "closesGap": null,
+              "leadWeeks": [
+                3,
+                8
+              ],
+              "totalLift": 3,
+              "description": "Earned news/editorial mentions via journalist requests.",
+              "effortHours": 9,
+              "foundationalMultiplier": 1
+            }
+          ],
+          "prepared": true,
+          "report_id": "00000000-0000-4000-8000-000000000003",
+          "team_size": 2,
+          "budget_usd": 400,
+          "projection": {
+            "confidence": "low",
+            "disclaimer": "This is a MODELED projection based on the assumptions above, not a guarantee. Actual results vary with execution quality, competition, and how AI assistants weight sources.",
+            "assumptions": [
+              "Prepared example: citation gaps and buyer answers are illustrative, not observed market evidence.",
+              "Citation share \u2192 traffic uses a category volume of 10,000 monthly searches (assumed \u2014 connect GSC to ground this).",
+              "20% of category queries assumed to happen via AI assistants.",
+              "30% assumed click-through when cited in an AI answer.",
+              "2.0% assumed visit\u2192conversion rate.",
+              "Each tactic contributes a fixed citation-lift; effect is capped at +25pp and 60% share.",
+              "Gaps not yet grounded in crawled evidence \u2014 run Diagnose to raise confidence."
+            ],
+            "timelineWeeks": 8,
+            "projectedShareGain": 0.17825,
+            "targetCitationShare": 0.17825,
+            "currentCitationShare": 0,
+            "projectedConversions": 2,
+            "projectedTrafficUplift": 107
+          },
+          "timeline_weeks": 8,
+          "roadmap_overview": [
+            {
+              "week": 1,
+              "theme": "Publish \"X vs Y\" comparison pages (per 3)",
+              "action_count": 1
+            },
+            {
+              "week": 2,
+              "theme": "FAQ + Product schema + llms.txt on your pages",
+              "action_count": 1
+            },
+            {
+              "week": 3,
+              "theme": "G2 / Capterra / ProductHunt profile + seed reviews",
+              "action_count": 1
+            },
+            {
+              "week": 4,
+              "theme": "10\u201315 genuine Reddit / community answers",
+              "action_count": 1
+            },
+            {
+              "week": 5,
+              "theme": "Get into a \"best X\" roundup (outreach \u00b1 paid)",
+              "action_count": 1
+            },
+            {
+              "week": 6,
+              "theme": "Digital PR / HARO responses",
+              "action_count": 1
+            }
+          ],
+          "execution_guidelines": [
+            "This is a prepared plan, not a measured improvement promise.",
+            "Approve the plan explicitly before it enters the tracker.",
+            "Tracker updates are your annotations; this example does not publish content."
+          ]
+        },
+        "toolCallId": "00000000-0000-4000-8000-000000000006"
+      }
+    ]
+  }
+]

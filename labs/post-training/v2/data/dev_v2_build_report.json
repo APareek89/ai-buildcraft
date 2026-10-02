@@ -1,0 +1,32 @@
+{
+  "problems": [],
+  "answerability_flagged": [],
+  "gemini": {
+    "calls": 8,
+    "cache_hits": 0,
+    "failures": 0,
+    "last_call": 1790842933.023013,
+    "model_versions": [
+      "gemini-3.8-flash"
+    ],
+    "input_tokens": 11353,
+    "output_tokens": 21400
+  },
+  "counts": {
+    "total": 140,
+    "answerable": 60,
+    "by_category": {
+      "known_fact": 60,
+      "price_near_miss": 20,
+      "policy_near_miss": 20,
+      "spec_near_miss": 20,
+      "out_of_scope": 20
+    },
+    "by_style": {
+      "scenario": 28,
+      "casual": 35,
+      "typo": 28,
+      "direct": 49
+    }
+  }
+}

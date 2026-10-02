@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="en" class="lovable-ui" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Learn Artificial Intelligence (AI) — Free, Personalized Interactive Lessons | Agentic Learning Studio</title>
+    <meta
+      name="description"
+      content="Learn AI your way — from machine learning, LLMs and RAG to AI agents — with free, personalized, interactive lessons. Turn any topic into a mental-map-first course with examples and quizzes. Start free."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://prathibhax.com/" />
+    <!-- Open Graph / Twitter (social + LLM-citation context) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Agentic Learning Studio" />
+    <meta property="og:title" content="Learn Artificial Intelligence (AI) — Free Interactive AI Lessons | Agentic Learning Studio" />
+    <meta property="og:description" content="Learn AI your way — from machine learning and LLMs to RAG and AI agents — with free, personalized, interactive lessons. Start free." />
+    <meta property="og:url" content="https://prathibhax.com/" />
+    <meta property="og:image" content="https://prathibhax.com/wizbit-logo.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Learn Artificial Intelligence (AI) — Free Interactive AI Lessons | Agentic Learning Studio" />
+    <meta name="twitter:description" content="Learn AI your way — from machine learning and LLMs to RAG and AI agents — with free, personalized, interactive lessons. Start free." />
+    <meta name="twitter:image" content="https://prathibhax.com/wizbit-logo.png" />
+    <link rel="icon" type="image/png" href="/wizbit-logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Structured data: Organization + WebSite + SoftwareApplication + FAQPage (mirrors the visible FAQ) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://prathibhax.com/#organization",
+          "name": "Agentic Learning Studio",
+          "url": "https://prathibhax.com/",
+          "logo": "https://prathibhax.com/wizbit-logo.png",
+          "description": "Agentic Learning Studio is an AI learning platform that builds personalized, interactive courses across the whole AI landscape — machine learning, LLMs, RAG, AI agents, evaluation and more."
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://prathibhax.com/#website",
+          "url": "https://prathibhax.com/",
+          "name": "Agentic Learning Studio",
+          "publisher": { "@id": "https://prathibhax.com/#organization" }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://prathibhax.com/#app",
+          "name": "Agentic Learning Studio",
+          "url": "https://prathibhax.com/",
+          "applicationCategory": "EducationalApplication",
+          "operatingSystem": "Web",
+          "keywords": "learn AI, learn artificial intelligence, AI course, learn AI from scratch, AI learning platform, machine learning, LLMs, RAG, learn agentic AI",
+          "description": "Agentic Learning Studio is a personalized AI learning platform — learn artificial intelligence your way, from machine learning, LLMs and RAG to AI agents. Turn any topic into an interactive course: mental-map first, grounded in your own content or repo, with business and code examples and knowledge checks.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "description": "Free mental-map overview; pay per generated lesson. Every account starts with two free lesson credits."
+          },
+          "publisher": { "@id": "https://prathibhax.com/#organization" }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://prathibhax.com/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is agentic AI?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Agentic AI refers to AI systems that don't just generate a response — they pursue a goal by planning, using tools, calling APIs, and acting over multiple steps, then observing the result and adapting. Picture an agent that can search, run code, query a database, and decide what to do next, rather than a model that only answers a single prompt. Agentic Learning Studio teaches these patterns — the agent loop, tool use, planning, RAG, and evaluation — as interactive, personalized lessons." }
+            },
+            {
+              "@type": "Question",
+              "name": "How is agentic AI different from generative AI?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Generative AI produces content — text, images, or code — in a single pass from a prompt. Agentic AI wraps that generative ability in a loop of planning, tool use, and feedback so the system can take actions and complete multi-step tasks on its own. In short: generative AI answers, agentic AI acts. Agentic Learning Studio's lessons show exactly how to go from one to the other." }
+            },
+            {
+              "@type": "Question",
+              "name": "What is an interactive agentic-AI lesson?",
+              "acceptedAnswer": { "@type": "Answer", "text": "A self-contained, personalized lesson on a topic in agentic AI — the agent loop, RAG, LangGraph, MCP, evaluation, and more. It opens as a clickable mental map, mixes business and code examples, draws real diagrams, and reinforces the material with knowledge checks. It replaces passive video with active, skimmable reading." }
+            },
+            {
+              "@type": "Question",
+              "name": "Is it free?",
+              "acceptedAnswer": { "@type": "Answer", "text": "The mental-map overview of any lesson is always free, so you can see exactly what it will cover. You only spend a credit when you build the full lesson." }
+            },
+            {
+              "@type": "Question",
+              "name": "Can it use my own codebase?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Yes. Paste a public GitHub URL or upload documents and the lesson plan is built around your code, your file names, and your build goal — with cited sources." }
+            },
+            {
+              "@type": "Question",
+              "name": "Do I need to know how to code?",
+              "acceptedAnswer": { "@type": "Answer", "text": "No. Every concept has a plain-language business example. Code examples are optional — toggle them on when you want them, in your framework of choice." }
+            },
+            {
+              "@type": "Question",
+              "name": "How is this different from asking ChatGPT?",
+              "acceptedAnswer": { "@type": "Answer", "text": "It's personalized to your level and goal, grounded in cited sources and your repo, structured mental-map-first instead of a wall of text, interactive with knowledge checks, and saved as a lesson you can return to and download." }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/home.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;480;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="/vendor/lovable-tokens.css" />
+    <link rel="stylesheet" href="/vendor/lovable-components.css" />
+    <link rel="stylesheet" href="/portfolio-theme.css" />
+    <script src="/vendor/lucide.min.js" defer></script><script src="/portfolio-ui.js" defer></script>
+  </head>
+  <body>
+    <!-- Small-screen notice: the builder + interactive lessons are designed for desktop. Shown once
+         per session on narrow viewports (full mobile layout polish is tracked separately). -->
+    <div class="mobile-notice" id="mobile-notice" hidden role="dialog" aria-modal="true" aria-labelledby="mn-title">
+      <div class="mobile-notice-card">
+        <div class="mn-emoji" aria-hidden="true">🖥️</div>
+        <h2 id="mn-title">Best on a bigger screen</h2>
+        <p>Agentic Learning Studio's lesson builder and interactive lessons — the side-by-side builder, mental maps and knowledge checks — are designed for desktop. For the full experience, open this on a laptop or desktop.</p>
+        <button class="mn-dismiss" id="mn-dismiss" type="button">Continue on mobile anyway</button>
+      </div>
+    </div>
+
+    <!-- Beta feedback: a small persistent button + a free-text popup. Sends to the application API. -->
+    <button class="feedback-fab" id="feedback-fab" type="button" title="Send feedback"><i data-lucide="message-square"></i> Feedback</button>
+    <div class="feedback-modal" id="feedback-modal" hidden role="dialog" aria-modal="true" aria-labelledby="fb-title">
+      <div class="feedback-card">
+        <button class="fb-x" id="fb-x" type="button" aria-label="Close">×</button>
+        <h3 id="fb-title">Help us improve before full launch</h3>
+        <p class="fb-sub">We're in beta — tell us what's working, what's confusing, or what you'd love to see. Thank you!</p>
+        <textarea id="fb-text" rows="5" placeholder="Your feedback…" maxlength="4000"></textarea>
+        <div class="fb-actions">
+          <button class="ghost" id="fb-cancel" type="button">Cancel</button>
+          <button class="generate sm" id="fb-send" type="button">Send feedback</button>
+        </div>
+        <div class="fb-thanks" id="fb-thanks" hidden>Thanks for the feedback! 🙏</div>
+      </div>
+    </div>
+
+    <!-- Auth is now a full PAGE (#tab-auth, a 50/50 split), not a modal — see below. -->
+
+    <!-- ===== Edit-overview modal (human-in-the-loop: refine the free overview) ===== -->
+    <div class="auth-overlay" id="edit-overlay" hidden>
+      <div class="auth-card">
+        <button class="auth-close" id="edit-close" type="button" aria-label="Close">×</button>
+        <div class="brand"><span class="dot"></span> Refine the overview</div>
+        <p class="auth-sub">Tell me what to change — more depth on something, add or drop a section, a different angle. I'll redesign the overview (still free).</p>
+        <textarea id="edit-feedback" rows="4" placeholder="e.g. focus more on production failure modes; add a section on cost; assume I already know the basics"></textarea>
+        <div class="auth-msg" id="edit-msg" hidden></div>
+        <button class="generate" id="edit-regen" type="button">Generate Overview — Free</button>
+      </div>
+    </div>
+
+    <!-- ===== Community share modal: confirm display name → share with the community ===== -->
+    <div class="auth-overlay" id="share-overlay" hidden>
+      <div class="auth-card share-card">
+        <button class="auth-close" id="share-close" type="button" aria-label="Close">×</button>
+        <div class="brand"><span class="dot"></span> Share with Community</div>
+        <p class="auth-sub">Publish this lesson to <strong>Community courses</strong> so other learners can use it. Just pick the name to show on the card:</p>
+        <input id="share-name" class="share-name" type="text" placeholder="Your name (shown on the card)" autocomplete="name" />
+        <div class="auth-msg" id="share-msg" hidden></div>
+        <button class="generate" id="share-go" type="button">Share with Community →</button>
+      </div>
+    </div>
+
+    <!-- ===== Share-success popup (shown after a successful share) ===== -->
+    <div class="auth-overlay" id="code-overlay" hidden>
+      <div class="auth-card">
+        <button class="auth-close" id="code-close" type="button" aria-label="Close">×</button>
+        <div class="brand"><span class="dot"></span> ✓ Shared — thank you!</div>
+        <p class="auth-sub" id="code-sub">Your lesson is now live in <strong>Community courses</strong>. Thanks for contributing!</p>
+        <button class="generate" id="code-view" type="button">View it in Community →</button>
+      </div>
+    </div>
+
+    <!-- ===== Onboarding (after first sign-up; optional, one question at a time) ===== -->
+    <div class="auth-overlay" id="onboard-overlay" hidden>
+      <div class="auth-card onboard">
+        <div class="brand"><span class="dot"></span> A few quick questions</div>
+        <p class="auth-sub">These personalize every lesson. All optional — skip anytime.</p>
+        <div class="ob-step" data-step="0"><label class="ctx-label">Which industry are you focusing on?</label><input id="ob-industry" type="text" placeholder="e.g. e-commerce, healthcare" /></div>
+        <div class="ob-step" data-step="1" hidden><label class="ctx-label">What's your current role?</label><input id="ob-role" type="text" placeholder="e.g. backend engineer, PM" /></div>
+        <div class="ob-step" data-step="2" hidden><label class="ctx-label">What role are you aspiring to?</label><input id="ob-aspiring" type="text" placeholder="e.g. AI engineer" /></div>
+        <div class="ob-step" data-step="3" hidden><label class="ctx-label">What's your main learning goal?</label><input id="ob-goal" type="text" placeholder="e.g. ship a production agent" /></div>
+        <div class="ob-actions">
+          <button class="linkbtn" id="ob-skip" type="button">Skip all</button>
+          <button class="generate sm" id="ob-next" type="button">Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Top bar ===== -->
+    <header class="topbar">
+      <div class="brand"><img class="logo-img" src="/wizbit-logo.png" width="34" height="34" loading="lazy" alt="Agentic Learning Studio" /> Agentic Learning Studio</div>
+      <nav class="tabs" role="tablist" aria-label="Application sections">
+        <button class="tab active" role="tab" aria-selected="true" data-tab="home">Home</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="configurator">Lesson Builder</button>
+        <!-- Trainer + its open-lessons dropdown (the old visible tab bar moved in here). -->
+        <span class="tab-dd" id="trainer-dd">
+          <button class="tab" role="tab" aria-selected="false" data-tab="trainer" id="tab-btn-trainer">Trainer</button>
+          <button class="tab-caret" id="trainer-caret" type="button" aria-label="Open lessons" aria-expanded="false" aria-haspopup="true" hidden>▾</button>
+          <div class="tab-dd-menu" id="trainer-tabs-menu" hidden role="menu" aria-label="Open lessons"></div>
+        </span>
+        <button class="tab" role="tab" aria-selected="false" data-tab="dashboard" id="tab-btn-dashboard" hidden>My Lessons</button>
+        <!-- LLM Skills + its Build/My-Skills dropdown (moved AFTER My Lessons). -->
+        <span class="tab-dd" id="skills-dd">
+          <button class="tab" role="tab" aria-selected="false" data-tab="llm-skills" id="tab-btn-llm-skills">LLM Skills</button>
+          <button class="tab-caret" id="skills-caret" type="button" aria-label="Skill options" aria-expanded="false" aria-haspopup="true">▾</button>
+          <div class="tab-dd-menu" id="skills-menu" hidden role="menu" aria-label="LLM Skills">
+            <button class="lesson-tab" id="skills-menu-build" type="button" role="menuitem">✦ Build a Skill</button>
+            <button class="lesson-tab" id="skills-menu-mine" type="button" role="menuitem">📚 My Skills</button>
+          </div>
+        </span>
+        <button class="tab" role="tab" aria-selected="false" data-tab="library" id="tab-btn-library">Library <span class="tab-free">Free</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="pricing" id="tab-btn-pricing">Pricing</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="community" id="tab-btn-community">Community <span class="tab-free">Free</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="build-community" id="tab-btn-build-community">Build for Community</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="build" disabled>
+          Build a project <span class="soon">soon</span>
+        </button>
+      </nav>
+      <div class="topbar-spacer"></div><button id="portfolio-theme" class="ui-button ghost icon" type="button" aria-label="Toggle color theme"><i data-lucide="moon"></i></button>
+      <a class="credit-pill" id="credit-pill" data-tab="pricing" role="button" tabindex="0" hidden title="Your credits — click to buy more">
+        <svg viewBox="0 0 24 24" class="credit-ico" aria-hidden="true"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+        <span id="credit-count">0</span>&nbsp;Credits
+      </a>
+      <div class="auth-actions" id="auth-actions" hidden>
+        <button class="ghost" id="btn-signin" type="button">Sign in</button>
+        <button class="generate sm" id="btn-signup" type="button">Sign up</button>
+      </div>
+      <div class="profile-wrap" id="profile-wrap" hidden>
+        <button class="profile-btn" id="profile-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Account">
+          <span class="profile-avatar" id="profile-avatar">U</span>
+          <span class="profile-label">profile</span>
+        </button>
+        <div class="profile-menu" id="profile-menu" role="menu" hidden>
+          <button class="profile-item" id="pm-account" type="button" role="menuitem">Account Details</button>
+          <button class="profile-item" id="pm-signout" type="button" role="menuitem">Sign out</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== TAB: Home (NEW — Halo landing; the only tab with a new layout) ===== -->
+    <section class="tabpanel home" id="tab-home" role="tabpanel"><div class="portfolio-example-bar"><span>Explore a complete lesson before generating your own.</span><button class="ui-button primary pill" data-try-example type="button"><i data-lucide="play"></i> Try with an example</button></div>
+      <div class="beta-strip" role="status">🚀 <strong>Beta launch</strong> — Free for one week · 2 free lessons.</div>
+      <header class="wrap">
+        <div class="hh">
+          <div class="hh-copy">
+            <div class="kw-chips"><span class="kw">The whole AI landscape</span><span class="kw">AI learning platform</span><span class="kw">Personalized</span><span class="kw">Mental-map first</span></div>
+            <h1>Fast-track your AI learning journey with instant, personalized, interactive <span class="grad-t">lessons</span>.</h1>
+            <p class="sub">Describe what you want to learn — from LLMs, RAG, and foundation models to agents, fine-tuning, and beyond — and Agentic Learning Studio turns it into an interactive course built for <i>you</i>: mental-map first, with business and code examples, grounded in your own content or repo, and reinforced with knowledge checks. No videos.</p>
+            <div class="hh-cta"><button class="btn btn-primary" data-goto="configurator">Generate a lesson — free →</button><button class="btn btn-ghost" data-goto="library">Browse the library</button></div>
+            <div class="hh-trust"><span><b class="ck">✓</b> Free mental-map overview</span><span><b class="ck">✓</b> Grounded on your repo</span><span><b class="ck">✓</b> Cited, verifiable sources</span></div>
+          </div>
+          <div class="hh-art">
+            <img src="/home-img/hero.jpg" width="1200" height="900" fetchpriority="high" alt="A learner exploring a personalized, interactive AI lesson on a laptop while a colleague points at the screen" />
+            <div class="hh-badge hb1"><span class="d" style="background:#0A7C58"></span> 100+ lessons</div>
+            <div class="hh-badge hb2"><span class="d" style="background:#F2704B"></span> Built in ~2 minutes</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- stat strip -->
+      <div class="stat-strip"><div class="wrap in">
+        <span class="lab">Trusted foundation for learning AI</span>
+        <div class="st"><b>10</b><span>topics</span></div><div class="sep"></div>
+        <div class="st"><b>100+</b><span>interactive lessons</span></div><div class="sep"></div>
+        <div class="st"><b>7-question</b><span>coverage per lesson</span></div><div class="sep"></div>
+        <div class="st"><b>$0</b><span>to start</span></div>
+      </div></div>
+
+      <!-- Browse AI topics — image-led category tiles (also see the full keyword list below) -->
+      <section class="section"><div class="wrap">
+        <div class="sec-head"><span class="eyebrow">Explore</span><h2>Browse AI topics</h2><p class="sec-sub">Ten tracks across the whole landscape — pick one, or type your own question into the Lesson Builder.</p></div>
+        <div class="pgrid cats">
+          <a class="pcard" href="/library"><div class="pcard-img"><img src="/home-img/cat-agents.jpg" width="640" height="400" loading="lazy" alt="Developer working with an AI agent"/></div><div class="pcard-b"><h3>AI Agents</h3><div class="meta">Agent loop · tool use · planning</div></div></a>
+          <a class="pcard" href="/library"><div class="pcard-img"><img src="/home-img/cat-rag.jpg" width="640" height="400" loading="lazy" alt="Researcher retrieving information from documents"/></div><div class="pcard-b"><h3>RAG</h3><div class="meta">Retrieval, embeddings, search</div></div></a>
+          <a class="pcard" href="/library"><div class="pcard-img"><img src="/home-img/cat-llms.jpg" width="640" height="400" loading="lazy" alt="Person using a large language model"/></div><div class="pcard-b"><h3>LLMs</h3><div class="meta">Prompting · fine-tuning · tokens</div></div></a>
+          <a class="pcard" href="/library"><div class="pcard-img"><img src="/home-img/cat-frameworks.jpg" width="640" height="400" loading="lazy" alt="Developers building with an agent framework"/></div><div class="pcard-b"><h3>Frameworks</h3><div class="meta">LangGraph · CrewAI · Agent SDK</div></div></a>
+          <a class="pcard" href="/library"><div class="pcard-img"><img src="/home-img/cat-safety.jpg" width="640" height="400" loading="lazy" alt="Engineer reviewing AI safety and guardrails"/></div><div class="pcard-b"><h3>Safety</h3><div class="meta">Guardrails · alignment · red-teaming</div></div></a>
+          <a class="pcard" href="/library"><div class="pcard-img"><img src="/home-img/cat-evaluation.jpg" width="640" height="400" loading="lazy" alt="Analyst evaluating AI output on dashboards"/></div><div class="pcard-b"><h3>Evaluation</h3><div class="meta">Evals · benchmarks · observability</div></div></a>
+          <a class="pcard" href="/library"><div class="pcard-img"><img src="/home-img/cat-foundations.jpg" width="640" height="400" loading="lazy" alt="Student learning AI foundations"/></div><div class="pcard-b"><h3>Foundations</h3><div class="meta">ML · neural nets · transformers</div></div></a>
+          <a class="pcard" href="/library"><div class="pcard-img"><img src="/home-img/cat-generative.jpg" width="640" height="400" loading="lazy" alt="Creator using generative AI tools"/></div><div class="pcard-b"><h3>Generative</h3><div class="meta">Image · video · multimodal</div></div></a>
+          <a class="pcard" href="/library"><div class="pcard-img"><img src="/home-img/cat-infrastructure.jpg" width="640" height="400" loading="lazy" alt="Engineer in an AI infrastructure data center"/></div><div class="pcard-b"><h3>Infrastructure</h3><div class="meta">MLOps · deployment · gateways</div></div></a>
+          <a class="pcard" href="/library"><div class="pcard-img"><img src="/home-img/cat-build.jpg" width="640" height="400" loading="lazy" alt="Team building an AI product"/></div><div class="pcard-b"><h3>Build Projects</h3><div class="meta">End-to-end, hands-on builds</div></div></a>
+        </div>
+      </div></section>
+
+      <!-- Most popular lessons — image-led cards mapped to the real library -->
+      <section class="section" style="padding-top:0"><div class="wrap">
+        <div class="sec-head"><span class="eyebrow">Most popular</span><h2>Start with a top lesson</h2><p class="sec-sub">Real, generated lessons — each an interactive mental map with runnable code and knowledge checks.</p></div>
+        <div class="pgrid lessons">
+          <a class="pcard lesson" href="/library/the-agent-loop"><div class="pcard-img"><img src="/home-img/lesson-agent-loop.jpg" width="720" height="405" loading="lazy" alt="The agent loop lesson"/><span class="pcard-pill">Agents</span></div><div class="pcard-b"><div class="prov"><span class="lg">✦</span> Agentic Learning Studio</div><h3>The Agent Loop: Observe, Decide, Act, Update</h3><div class="foot"><span class="stars">★★★★★</span> 4.9<span class="tag">🗺️ Mental map</span><span class="tag free">Free</span></div></div></a>
+          <a class="pcard lesson" href="/library/what-is-rag"><div class="pcard-img"><img src="/home-img/lesson-rag.jpg" width="720" height="405" loading="lazy" alt="How RAG works lesson"/><span class="pcard-pill">RAG</span></div><div class="pcard-b"><div class="prov"><span class="lg">✦</span> Agentic Learning Studio</div><h3>How RAG Works, End to End</h3><div class="foot"><span class="stars">★★★★★</span> 4.8<span class="tag">🗺️ Mental map</span><span class="tag free">Free</span></div></div></a>
+          <a class="pcard lesson" href="/library/llm-as-judge"><div class="pcard-img"><img src="/home-img/lesson-llm-judge.jpg" width="720" height="405" loading="lazy" alt="LLM as judge lesson"/><span class="pcard-pill">Evaluation</span></div><div class="pcard-b"><div class="prov"><span class="lg">✦</span> Agentic Learning Studio</div><h3>LLM-as-Judge: Grade Model Output</h3><div class="foot"><span class="stars">★★★★★</span> 4.9<span class="tag">🗺️ Mental map</span><span class="tag free">Free</span></div></div></a>
+          <a class="pcard lesson" href="/library/crewai-role-based-agents"><div class="pcard-img"><img src="/home-img/lesson-crewai.jpg" width="720" height="405" loading="lazy" alt="CrewAI role-based agents lesson"/><span class="pcard-pill">Frameworks</span></div><div class="pcard-b"><div class="prov"><span class="lg">✦</span> Agentic Learning Studio</div><h3>CrewAI &amp; Role-Based Agents</h3><div class="foot"><span class="stars">★★★★★</span> 4.7<span class="tag">🗺️ Mental map</span><span class="tag free">Free</span></div></div></a>
+          <a class="pcard lesson" href="/library/prompt-injection-defense"><div class="pcard-img"><img src="/home-img/lesson-prompt-injection.jpg" width="720" height="405" loading="lazy" alt="Prompt injection defense lesson"/><span class="pcard-pill">Safety</span></div><div class="pcard-b"><div class="prov"><span class="lg">✦</span> Agentic Learning Studio</div><h3>Prompt Injection: Attack &amp; Defense</h3><div class="foot"><span class="stars">★★★★★</span> 4.9<span class="tag">🗺️ Mental map</span><span class="tag free">Free</span></div></div></a>
+          <a class="pcard lesson" href="/library/vector-databases-compared"><div class="pcard-img"><img src="/home-img/lesson-vector-db.jpg" width="720" height="405" loading="lazy" alt="Vector databases compared lesson"/><span class="pcard-pill">RAG</span></div><div class="pcard-b"><div class="prov"><span class="lg">✦</span> Agentic Learning Studio</div><h3>Vector Databases, Compared</h3><div class="foot"><span class="stars">★★★★★</span> 4.8<span class="tag">🗺️ Mental map</span><span class="tag free">Free</span></div></div></a>
+          <a class="pcard lesson" href="/library/embeddings-vector-search"><div class="pcard-img"><img src="/home-img/lesson-embeddings.jpg" width="720" height="405" loading="lazy" alt="Embeddings lesson"/><span class="pcard-pill">Foundations</span></div><div class="pcard-b"><div class="prov"><span class="lg">✦</span> Agentic Learning Studio</div><h3>Embeddings: Meaning as Numbers</h3><div class="foot"><span class="stars">★★★★★</span> 4.8<span class="tag">🗺️ Mental map</span><span class="tag free">Free</span></div></div></a>
+          <a class="pcard lesson" href="/library/guardrails-validators"><div class="pcard-img"><img src="/home-img/lesson-guardrails.jpg" width="720" height="405" loading="lazy" alt="Guardrails and validators lesson"/><span class="pcard-pill">Safety</span></div><div class="pcard-b"><div class="prov"><span class="lg">✦</span> Agentic Learning Studio</div><h3>Guardrails &amp; Validators for LLM Apps</h3><div class="foot"><span class="stars">★★★★★</span> 4.7<span class="tag">🗺️ Mental map</span><span class="tag free">Free</span></div></div></a>
+        </div>
+        <div style="margin-top:26px"><button class="btn btn-ghost" data-goto="library">Show all 100+ lessons →</button></div>
+      </div></section>
+
+      <!-- preview: the REAL world-map lesson design (static screenshots, no live iframe) -->
+      <div class="wrap" style="padding-bottom:14px">
+        <div class="sec-head" style="margin-bottom:18px"><span class="eyebrow">See it before you generate</span><h2 style="font-size:28px">Every lesson is an interactive world map</h2><p class="sec-sub">Real screenshots from a generated lesson — each module becomes a spatial map of cards you scan at a glance, then click to go deep.</p></div>
+        <div class="preview">
+          <div class="preview-tabs" id="ptabs">
+            <button class="ptab on" data-p="map">🗺️ Mental map</button>
+            <button class="ptab" data-p="open">🔍 A block, opened</button>
+            <button class="ptab" data-p="light">☀️ Light mode</button>
+          </div>
+          <div class="frame">
+            <div class="frame-bar"><span class="d fd1"></span><span class="d fd2"></span><span class="d fd3"></span><span class="url">prathibhax.com/lesson/build-and-run-llm-app-evals</span></div>
+            <div class="stage">
+              <!-- MAP -->
+              <div class="pv on" data-p="map">
+                <div class="pv-h">The interactive world</div><div class="pv-t">A module as a mental map of cards</div><div class="pv-s">Concepts, examples, and runnable code laid out in reading order — with the code and worked examples one click away on each card. Drag to pan, scroll to zoom.</div>
+                <img class="pv-shot" src="/showcase/world-map-dark.png" width="1320" height="766" alt="A generated lesson module rendered as an interactive mental map of cards, with concept cards carrying prominent Code and Example buttons" loading="lazy" />
+              </div>
+              <!-- OPENED BLOCK -->
+              <div class="pv" data-p="open">
+                <div class="pv-h">Any card, opened</div><div class="pv-t">Full depth, on demand</div><div class="pv-s">Click a card and the whole block opens in place — the concept, a plain-words analogy, glossary terms, and the runnable code — tuned to your level.</div>
+                <img class="pv-shot" src="/showcase/world-popup-dark.png" width="1320" height="820" alt="A concept card opened to reveal its full explanation, a plain-words analogy, and glossary terms" loading="lazy" />
+              </div>
+              <!-- LIGHT MODE -->
+              <div class="pv" data-p="light">
+                <div class="pv-h">Your theme</div><div class="pv-t">Light or dark, your call</div><div class="pv-s">The same interactive world in light mode — readable, printable, and easy on the eyes whichever you prefer.</div>
+                <img class="pv-shot" src="/showcase/world-map-light.png" width="1320" height="766" alt="The same interactive lesson map rendered in light mode" loading="lazy" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- how it works -->
+      <section class="section">
+        <div class="wrap sec-head"><span class="eyebrow">How it works</span><h2>From a question to a lesson in <span class="grad-t">three steps</span></h2></div>
+        <div class="wrap how">
+          <div class="hc"><div class="hc-img"><img src="/home-img/how-1.jpg" width="800" height="450" loading="lazy" alt="Typing a learning question into the Lesson Builder"/></div><div class="hc-b"><div class="hn">1</div><h3>Describe it</h3><p>Say what you want to learn in your own words. Optionally add your level, your industry, what you're building, and a repo or docs to ground it.</p></div></div>
+          <div class="hc"><div class="hc-img"><img src="/home-img/how-2.jpg" width="800" height="450" loading="lazy" alt="Reviewing a free mental-map overview of a lesson"/></div><div class="hc-b"><div class="hn">2</div><h3>Get a free mental map</h3><p>In seconds you get a free overview — the building blocks and how they connect — so you see exactly what the lesson will cover before spending anything.</p></div></div>
+          <div class="hc"><div class="hc-img"><img src="/home-img/how-3.jpg" width="800" height="450" loading="lazy" alt="Learning from a complete interactive AI lesson"/></div><div class="hc-b"><div class="hn">3</div><h3>Build the full lesson</h3><p>Generate the complete, interactive lesson — personalized depth, business + code examples, diagrams, and knowledge checks. Read it, download it, keep it.</p></div></div>
+        </div>
+      </section>
+
+      <!-- ===== SEO FEATURE SECTIONS ===== -->
+      <div class="wrap">
+        <div class="frow">
+          <div class="ftext"><span class="eyebrow">Personalized</span><h2>Lessons shaped to what you already know</h2>
+            <p>No two learners get the same lesson. Tell us your level, your role, the industry you work in, and what you're building — and the lesson adapts: the depth, the analogies, the examples, even which edge cases it dwells on.</p>
+            <p>A beginner gets scaffolding and plain-words analogies. An advanced engineer gets failure modes and trade-offs — not a re-explanation of the basics. It's a personalized agentic-AI tutor, not a one-size-fits-all course.</p>
+            <ul class="feat-list"><li><span class="ck">✓</span> 27 level / depth / examples combinations</li><li><span class="ck">✓</span> Tuned to your role, industry &amp; build goal</li><li><span class="ck">✓</span> Difficulty that fades as you progress</li></ul>
+          </div>
+          <div class="fvis"><div class="toggle-demo"><span class="on">Beginner</span><span>Intermediate</span><span>Advanced</span></div>
+            <div class="block"><div class="lab">Concept · beginner</div><h3>What is an embedding?</h3><p>A list of numbers that captures the <i>meaning</i> of text, so a computer can tell “refund” and “money back” are close.</p><div class="analogy"><b>In plain words </b> like GPS coordinates for ideas — similar meanings sit nearby.</div></div>
+          </div>
+        </div>
+
+        <div class="frow rev">
+          <div class="ftext"><span class="eyebrow">On-demand</span><h2>Learn it the moment you need it</h2>
+            <p>No fixed curriculum, no waiting for a cohort. Type any agentic-AI question — the agent loop, RAG, LangGraph, MCP, evaluation, multi-agent systems — and get a complete, structured lesson in under a minute.</p>
+            <p>The mental-map overview is always free, so you can see what a lesson will cover before you commit. It's on-demand learning that fits the way you actually work: in the flow, when the question comes up.</p>
+            <ul class="feat-list"><li><span class="ck">✓</span> Any topic in agentic AI, generated on the spot</li><li><span class="ck">✓</span> Free overview first — zero risk</li><li><span class="ck">✓</span> Minutes, not a multi-week course</li></ul>
+          </div>
+          <div class="fvis"><div class="map-row"><div class="step"><div class="n">1</div><h4>Plan</h4><p>decide next step</p></div><span class="arrow">→</span><div class="step"><div class="n">2</div><h4>Act</h4><p>call a tool</p></div><span class="arrow">→</span><div class="step"><div class="n">3</div><h4>Observe</h4><p>read result</p></div></div>
+            <div class="dgm-cap" style="margin-top:14px">Ask “how does the agent loop work?” → a full lesson in seconds.</div>
+          </div>
+        </div>
+
+        <div class="frow">
+          <div class="ftext"><span class="eyebrow">Business &amp; code examples</span><h2>Concepts you can use, and code that runs</h2>
+            <p>Every idea is shown two ways: a plain real-world business scenario so you grasp <i>why</i> it matters, and a correct, framework-specific code example so you can ship it.</p>
+            <p>Toggle Concept, Functional, and Code to see as much or as little as you want — and pick your stack: LangGraph, the Agent SDK, or framework-agnostic pseudocode. Non-coders stay in business examples; engineers go straight to the code.</p>
+            <ul class="feat-list"><li><span class="ck">✓</span> Real business scenarios in your industry</li><li><span class="ck">✓</span> Correct, runnable code in your framework</li><li><span class="ck">✓</span> A “verify the AI output” checklist on every snippet</li></ul>
+          </div>
+          <div class="fvis">
+            <pre class="code"><span class="cm"># LangGraph — a tool-calling node</span>
+graph.<span class="f">add_node</span>(<span class="s">"retrieve"</span>, retrieve)
+graph.<span class="f">add_conditional_edges</span>(<span class="s">"plan"</span>,
+   route, {<span class="s">"search"</span>:<span class="s">"retrieve"</span>, <span class="s">"answer"</span>: END})</pre>
+            <div class="toggle-demo" style="margin-top:12px"><span>Concept</span><span class="on">Functional</span><span class="on">Code</span></div>
+          </div>
+        </div>
+
+        <div class="frow rev">
+          <div class="ftext"><span class="eyebrow">Mental-map first</span><h2>See the whole shape before the details</h2>
+            <p>Every lesson opens as a mental map — the moving parts and how they connect — so you build the right model in your head before drowning in prose. Click any block to go exactly as deep as you want.</p>
+            <p>It's the opposite of a 40-minute video you can't skim: you always know where you are, what builds on what, and what's left. The map is the table of contents, the diagram, and the progress tracker, all in one.</p>
+            <ul class="feat-list"><li><span class="ck">✓</span> Advance-organizer overview on every lesson</li><li><span class="ck">✓</span> Click-to-deepen, never a wall of text</li><li><span class="ck">✓</span> Always know what builds on what</li></ul>
+          </div>
+          <div class="fvis"><div class="map-row"><div class="step"><div class="n">1</div><h4>Why RAG exists</h4><p>the problem</p></div><span class="arrow">→</span><div class="step"><div class="n">2</div><h4>Chunk &amp; embed</h4><p>vectors</p></div><span class="arrow">→</span><div class="step"><div class="n">3</div><h4>Retrieve</h4><p>context</p></div></div></div>
+        </div>
+
+        <div class="frow">
+          <div class="ftext"><span class="eyebrow">Your content or repo</span><h2>A lesson plan built around your code</h2>
+            <p>Paste a public GitHub URL or drop your own documents, and the lesson is structured around them — your modules, your file names, your build goal — with every claim tied to a cited source.</p>
+            <p>It's the one thing a generic chatbot can't do well: teach you in the context of what you're <i>actually</i> building. The lesson plan becomes your build plan.</p>
+            <ul class="feat-list"><li><span class="ck">✓</span> GitHub repo or document grounding</li><li><span class="ck">✓</span> Modules mapped to your build goal</li><li><span class="ck">✓</span> Every fact tied to a verifiable source</li></ul>
+          </div>
+          <div class="fvis">
+            <div class="attach" style="display:inline-flex;margin-bottom:10px">📎 your-org/support-agent &nbsp;·&nbsp; main</div>
+            <div class="block"><div class="lab">Grounded</div><h3>Module 4 · Wire retrieval into <code>agent.py</code></h3><p>Add a <code>retrieve()</code> node before your existing <code>respond()</code> step, using the <code>vectorstore</code> you already configured in <code>db.py</code>.</p></div>
+          </div>
+        </div>
+
+        <div class="frow rev">
+          <div class="ftext"><span class="eyebrow">Interactive &amp; knowledge checks</span><h2>Learn by doing, not watching</h2>
+            <p>Predict-then-reveal prompts, spaced recall of earlier ideas, and graded knowledge checks turn passive reading into real retention. You don't just nod along — you answer, you're corrected, and it sticks.</p>
+            <p>Worked examples ramp into completion problems and then a solo capstone tied to your goal, so you finish able to build the thing — not just recognize it.</p>
+            <ul class="feat-list"><li><span class="ck">✓</span> Predict-then-reveal &amp; spaced recall</li><li><span class="ck">✓</span> Graded knowledge checks with explanations</li><li><span class="ck">✓</span> A capstone aimed at what you're building</li></ul>
+          </div>
+          <div class="fvis"><div class="kc"><h3>🧠 Quick check</h3><div class="kq">What does a higher <code>top-k</code> trade off?</div><button class="opt">Nothing — bigger is always better</button><button class="opt correct">More recall, but more noise &amp; cost&nbsp; ✓</button></div></div>
+        </div>
+      </div>
+
+      <!-- ===== ABOUT / MISSION ===== -->
+      <section class="section" style="background:linear-gradient(180deg,var(--surface-2),transparent)">
+        <div class="wrap">
+          <div class="mission">
+            <div class="mission-head"><span class="eyebrow">Why we built this</span>
+              <h2>Learn AI in <span class="grad-t">your</span> context — without the expensive course.</h2>
+              <p>Good AI courses are expensive, generic, and out of date the month they ship. Most learners don't need a 40-hour video bootcamp — they need a clear, accurate answer to <i>their</i> question, at <i>their</i> level, with examples from <i>their</i> world. The knowledge is already out there for free; what's missing is something that curates and shapes it into a lesson made for you. So we built a studio that does exactly that.</p>
+            </div>
+            <div class="principles">
+              <div class="pr"><div class="pr-ic">🎯</div><h3>Personalized, not generic</h3><p>Every lesson is shaped to your level, context, and goal — not a one-size-fits-all curriculum.</p></div>
+              <div class="pr"><div class="pr-ic">🔓</div><h3>Built on free knowledge</h3><p>We curate and structure freely available information so learning doesn't have to be paywalled.</p></div>
+              <div class="pr"><div class="pr-ic">🤝</div><h3>Honest about AI</h3><p>Lessons are AI-generated and may contain errors; we build in verification and self-checks — and say so plainly.</p></div>
+              <div class="pr"><div class="pr-ic">⚡</div><h3>Interactive over passive</h3><p>Structured reading, concept maps, and recall beat hours of video you forget.</p></div>
+            </div>
+            <div class="community-band">
+              <div><span class="eyebrow">Built with our community</span><h3>Learn from real, lived expertise</h3><p>Practitioners publish their own lessons to the <b>Community</b> — credited to them — so you can learn from people who've actually built it, alongside the AI-generated catalog. Contributor tools live in <b>Build for Community</b>.</p></div>
+              <button class="btn btn-ghost" data-goto="community">Meet the contributors →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI landscape coverage — almost-exhaustive topic areas (broad, not just agents) -->
+      <section class="section" id="ai-areas">
+        <div class="wrap sec-head"><span class="eyebrow">Not just agents</span><h2>One platform for the entire AI landscape</h2><p class="sec-sub">Generate a lesson on any of these — and anything in between. Don't see what you want? Just type it into the Lesson Builder.</p></div>
+        <div class="wrap"><div class="kw-areas">
+          <div class="kw-group"><h4>Foundations</h4><div class="kw-tags"><span>Machine learning</span><span>Deep learning</span><span>Neural networks</span><span>Foundation models</span><span>Transformers</span><span>Attention</span></div></div>
+          <div class="kw-group"><h4>LLMs &amp; generative AI</h4><div class="kw-tags"><span>LLMs</span><span>Generative AI</span><span>Prompt engineering</span><span>Fine-tuning</span><span>RLHF</span><span>LoRA / PEFT</span><span>Distillation</span><span>Quantization</span></div></div>
+          <div class="kw-group"><h4>Agents</h4><div class="kw-tags"><span>Agentic AI</span><span>AI agents</span><span>Multi-agent systems</span><span>Tool use &amp; function calling</span><span>Planning &amp; reasoning</span><span>ReAct</span><span>MCP</span></div></div>
+          <div class="kw-group"><h4>Retrieval &amp; data</h4><div class="kw-tags"><span>RAG</span><span>Vector databases</span><span>Embeddings</span><span>Semantic search</span><span>Knowledge graphs</span></div></div>
+          <div class="kw-group"><h4>Modalities</h4><div class="kw-tags"><span>NLP</span><span>Computer vision</span><span>Speech &amp; audio</span><span>Multimodal</span><span>Image generation</span><span>Video generation</span></div></div>
+          <div class="kw-group"><h4>ML systems</h4><div class="kw-tags"><span>MLOps</span><span>LLMOps</span><span>Model deployment</span><span>Inference optimization</span><span>Evaluation &amp; benchmarks</span><span>Observability</span></div></div>
+          <div class="kw-group"><h4>Classic ML</h4><div class="kw-tags"><span>Supervised learning</span><span>Unsupervised learning</span><span>Reinforcement learning</span><span>Recommender systems</span><span>Time series</span><span>Clustering</span></div></div>
+          <div class="kw-group"><h4>Safety &amp; governance</h4><div class="kw-tags"><span>AI safety</span><span>Alignment</span><span>Guardrails</span><span>Responsible AI</span><span>AI ethics</span><span>Red-teaming</span></div></div>
+        </div></div>
+      </section>
+
+      <!-- FAQ -->
+      <section class="section">
+        <div class="wrap sec-head"><span class="eyebrow">FAQ</span><h2>Questions, answered</h2></div>
+        <div class="wrap faq">
+          <div class="q"><h3>What is agentic AI?</h3><p>Agentic AI refers to AI systems that don't just generate a response — they pursue a goal by planning, using tools, calling APIs, and acting over multiple steps, then observing the result and adapting. Picture an agent that can search, run code, query a database, and decide what to do next, rather than a model that only answers a single prompt. Agentic Learning Studio teaches these patterns — the agent loop, tool use, planning, RAG, and evaluation — as interactive, personalized lessons.</p></div>
+          <div class="q"><h3>How is agentic AI different from generative AI?</h3><p>Generative AI produces content — text, images, or code — in a single pass from a prompt. Agentic AI wraps that generative ability in a loop of planning, tool use, and feedback so the system can take actions and complete multi-step tasks on its own. In short: generative AI answers, agentic AI acts. Agentic Learning Studio's lessons show exactly how to go from one to the other.</p></div>
+          <div class="q"><h3>What is an interactive agentic-AI lesson?</h3><p>A self-contained, personalized lesson on a topic in agentic AI — the agent loop, RAG, LangGraph, MCP, evaluation, and more. It opens as a clickable mental map, mixes business and code examples, draws real diagrams, and reinforces the material with knowledge checks. It replaces passive video with active, skimmable reading.</p></div>
+          <div class="q"><h3>Is it free?</h3><p>The mental-map overview of any lesson is always free, so you can see exactly what it will cover. You only spend a credit when you build the full lesson.</p></div>
+          <div class="q"><h3>Can it use my own codebase?</h3><p>Yes. Paste a public GitHub URL or upload documents and the lesson plan is built around your code, your file names, and your build goal — with cited sources.</p></div>
+          <div class="q"><h3>Do I need to know how to code?</h3><p>No. Every concept has a plain-language business example. Code examples are optional — toggle them on when you want them, in your framework of choice.</p></div>
+          <div class="q"><h3>How is this different from asking ChatGPT?</h3><p>It's personalized to your level and goal, grounded in cited sources and your repo, structured mental-map-first instead of a wall of text, interactive with knowledge checks, and saved as a lesson you can return to and download.</p></div>
+        </div>
+      </section>
+
+      <div class="wrap"><div class="cta-band"><h2>Generate your first lesson — free</h2><p>See the mental-map overview of any agentic-AI topic in seconds. Build the full, personalized lesson when you're ready.</p><button class="btn" data-goto="configurator">Start free →</button></div></div>
+
+      <footer>
+        <div class="wrap foot-in"><div class="brand"><img class="logo-img" src="/wizbit-logo.png" width="34" height="34" loading="lazy" alt="Agentic Learning Studio" /> Agentic Learning Studio</div><div>Personalized, on-demand agentic-AI lessons</div></div>
+        <div class="wrap foot-legal">
+          <nav class="foot-links"><a href="/library">Library</a><a href="/guides">Guides</a><a href="/security">Security</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/report-issue">Report issue / complaint</a></nav>
+          <div class="foot-operator">Operated by Anand Pareek, an individual resident in India · <a href="mailto:findkailash@gmail.com">findkailash@gmail.com</a></div>
+          <div class="foot-disclaimer">Lessons are inspired by information available on the web, but curated using AI for you.</div>
+          <div class="foot-badges" style="margin-top:14px"><!-- Launchpadly — Agentic Learning Studio (listed-on) --><a href="https://launchpadly.co/startup/agentic-learning-studio?ref=badge" target="_blank" rel="noopener noreferrer" data-launchpadly-badge="agentic-learning-studio" data-launchpadly-badge-variant="listed-on"><img src="https://launchpadly.co/embed/badges/startup/agentic-learning-studio.svg?variant=listed-on" alt="Launchpadly Startup Directory" width="260" height="48" style="display:block;border:0;" /></a></div>
+        </div>
+      </footer>
+    </section>
+
+    <!-- ===== TAB: Configurator (the options form) ===== -->
+    <main class="tabpanel" id="tab-configurator" role="tabpanel" hidden>
+      <!-- LANDING -->
+      <section class="landing" id="landing">
+        <!-- Hero band with the animated neural-network backdrop -->
+        <div class="hero-band">
+          <canvas class="neural" id="neural" aria-hidden="true"></canvas>
+          <div class="hero-content">
+            <h2 id="hero-title" class="hero-title">What do you want to learn?</h2>
+            <p class="sub">
+              Build a visual, interactive lesson on anything in agentic AI — a mental map first, then
+              click any building block to go deeper. No videos.
+            </p>
+          </div>
+        </div>
+
+        <div class="landing-inner">
+          <!-- The prompt + options card -->
+          <div class="prompt-card">
+            <textarea
+              id="prompt"
+              rows="3"
+              placeholder="Describe what you want to learn — a topic, a question, or something you're building."
+            ></textarea>
+
+            <!-- Option dropdowns: two per row -->
+            <p class="opts-note">Optional — pick a level and coverage, or leave them and I'll infer. Everything else is tuned automatically: examples are always included, and text depth follows your level.</p>
+            <div class="dd-grid" id="dd-grid">
+              <div class="dd" data-field="level">
+                <button class="dd-btn" type="button"><span class="dd-label">Level</span><span class="dd-value">Any</span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div class="dd-menu" hidden>
+                  <button class="dd-opt" data-value="beginner" type="button">Beginner</button>
+                  <button class="dd-opt" data-value="intermediate" type="button">Intermediate</button>
+                  <button class="dd-opt" data-value="advanced" type="button">Advanced</button>
+                </div>
+              </div>
+              <div class="dd" data-field="depth" data-multi="true">
+                <button class="dd-btn" type="button"><span class="dd-label">Coverage</span><span class="dd-value">Auto</span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div class="dd-menu" hidden>
+                  <button class="dd-opt" data-value="conceptual" type="button">Conceptual</button>
+                  <button class="dd-opt" data-value="technical" type="button">Technical</button>
+                </div>
+              </div>
+              <label class="quick-toggle" id="quick-toggle" title="4 short modules, minimal text — builds in about 2 minutes">
+                <input type="checkbox" id="quick-read" /> ⚡ Quick read
+              </label>
+            </div>
+
+            <!-- Ground the lesson in the learner's own documents -->
+            <div class="uploads">
+              <div class="uploads-head">
+                <input type="file" id="file-input" multiple hidden
+                  accept=".pdf,.docx,.md,.txt,.html,.htm,.json,.js,.ts,.jsx,.tsx,.mjs,.cjs,.py,.java,.go,.rb,.rs,.c,.cpp,.h,.hpp,.cs,.php,.sh,.css,.scss,.yaml,.yml,.toml,.ini,.sql,.xml,.rst,.log" />
+                <button class="ghost" id="add-docs" type="button">📎 Add documents</button>
+                <label class="refer-only" id="refer-only-wrap" hidden>
+                  <input type="checkbox" id="refer-only" /> Refer <strong>only</strong>&nbsp;these
+                </label>
+              </div>
+              <div class="repo-row">
+                <input id="repo-url" type="url" placeholder="…or paste a public GitHub repo URL (I'll clone &amp; read it)" autocomplete="off" />
+                <button class="ghost" id="add-repo" type="button">＋ Add repo</button>
+              </div>
+              <div class="upload-chips" id="upload-chips"></div>
+              <div class="upload-hint" id="upload-hint" hidden></div>
+            </div>
+
+            <div class="prompt-actions">
+              <span class="hint" id="cards-hint"></span>
+              <button class="generate" id="generate">Generate Overview — Free</button>
+            </div>
+
+            <!-- Suggested next topics (appear after your first lesson, from your context) -->
+            <div class="suggested" id="suggested" hidden>
+              <span class="sugg-lab">Suggested for you</span>
+              <div class="sugg-chips" id="sugg-chips"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ===== TAB: LLM Skills (turn a brief into an installable Agent Skill) ===== -->
+    <main class="tabpanel" id="tab-llm-skills" role="tabpanel" hidden>
+      <!-- STATE 1 — the brief form -->
+      <section class="landing" id="skill-form-state">
+        <div class="hero-band">
+          <div class="hero-content">
+            <h2 class="hero-title">Build a Skill for your task</h2>
+            <p class="sub">
+              Describe what you want your LLM to do — we'll generate an installable Skill
+              (<code>SKILL.md</code> + scripts) you can drop into Claude Code, Codex, Cursor and more.
+            </p>
+          </div>
+        </div>
+
+        <div class="landing-inner">
+          <div class="prompt-card">
+            <!-- Core free-text fields (NO dropdowns) -->
+            <label class="ctx ctx-row">
+              <span class="ctx-label">LLM interface</span>
+              <input id="skill-interface" type="text" placeholder="e.g. Claude Code, Codex, Cursor, Gemini CLI" />
+            </label>
+            <label class="ctx ctx-row">
+              <span class="ctx-label">Task the skill is for</span>
+              <textarea id="skill-task" rows="2" placeholder="The core thing the skill should do — e.g. 'triage incoming support tickets and draft replies'"></textarea>
+            </label>
+            <div class="ctx-grid">
+              <label class="ctx">
+                <span class="ctx-label">Data sources</span>
+                <input id="skill-data" type="text" placeholder="e.g. our Postgres DB, a folder of PDFs, the GitHub API" />
+              </label>
+              <label class="ctx">
+                <span class="ctx-label">Method to access data</span>
+                <input id="skill-access" type="text" placeholder="e.g. REST API, local files, SQL, an MCP server, a CLI" />
+              </label>
+            </div>
+
+            <p class="opts-note">Everything below is optional — the more you add, the sharper the skill.</p>
+            <label class="ctx ctx-row">
+              <span class="ctx-label">Example request you'd give the skill</span>
+              <input id="skill-example" type="text" placeholder="e.g. 'summarize last week's tickets by theme'" />
+            </label>
+            <div class="ctx-grid">
+              <label class="ctx">
+                <span class="ctx-label">Tools / commands it should use</span>
+                <input id="skill-tools" type="text" placeholder="optional — e.g. curl, psql, gh" />
+              </label>
+              <label class="ctx">
+                <span class="ctx-label">Skill name</span>
+                <input id="skill-name" type="text" placeholder="optional — auto-generated if blank" />
+              </label>
+            </div>
+            <label class="ctx ctx-row">
+              <span class="ctx-label">Constraints / what it must NOT do</span>
+              <textarea id="skill-constraints" rows="2" placeholder="optional — e.g. 'never send emails, never delete records'"></textarea>
+            </label>
+
+            <!-- Reference upload (same pattern as the Lesson Builder) -->
+            <div class="uploads">
+              <div class="uploads-head">
+                <input type="file" id="skill-file-input" multiple hidden
+                  accept=".pdf,.docx,.md,.txt,.html,.htm,.json,.js,.ts,.jsx,.tsx,.mjs,.cjs,.py,.java,.go,.rb,.rs,.c,.cpp,.h,.hpp,.cs,.php,.sh,.css,.scss,.yaml,.yml,.toml,.ini,.sql,.xml,.rst,.log" />
+                <button class="ghost" id="skill-add-docs" type="button">📎 Add reference files</button>
+              </div>
+              <div class="repo-row">
+                <input id="skill-repo-url" type="url" placeholder="…or paste a public GitHub repo URL (I'll clone &amp; read it)" autocomplete="off" />
+                <button class="ghost" id="skill-add-repo" type="button">＋ Add repo</button>
+              </div>
+              <div class="upload-chips" id="skill-upload-chips"></div>
+              <div class="upload-hint" id="skill-upload-hint" hidden></div>
+            </div>
+
+            <div class="prompt-actions">
+              <span class="hint" id="skill-gen-note">Free · generates a SKILL.md + scripts you can download</span>
+              <button class="generate" id="skill-generate">Generate Skill</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATE 2 — generating -->
+      <section class="skill-progress" id="skill-progress-state" hidden>
+        <div class="skill-progress-card">
+          <span class="gen-spin"></span>
+          <span class="skill-prog-label" id="skill-prog-label">Designing your skill…</span>
+          <div class="skill-prog-bar"><div class="skill-prog-fill" id="skill-prog-fill"></div></div>
+          <span class="gen-sub">Grounding in the Agent Skills knowledge base, then writing SKILL.md + scripts.</span>
+          <div class="skill-prog-err" id="skill-prog-err" hidden></div>
+        </div>
+      </section>
+
+      <!-- STATE 3 — result (left module rail + content pane) -->
+      <section class="skill-result" id="skill-result-state" hidden>
+        <div class="skill-result-head">
+          <button class="vbtn" id="skill-new" type="button">← New skill</button>
+          <span class="skill-result-title" id="skill-result-title">Your skill</span>
+          <span class="skill-grounded-badge" id="skill-grounded" hidden>✓ Grounded in the Agent Skills KB</span>
+        </div>
+        <div class="skill-layout">
+          <nav class="skill-rail" id="skill-rail" aria-label="Skill sections">
+            <button class="skill-rail-item active" data-mod="overview" type="button"><span class="sr-num">1</span> Skill Overview</button>
+            <button class="skill-rail-item" data-mod="howto" type="button"><span class="sr-num">2</span> How to Use</button>
+            <button class="skill-rail-item" data-mod="files" type="button"><span class="sr-num">3</span> Get your Skill</button>
+            <button class="skill-rail-item" data-mod="sources" type="button"><span class="sr-num">4</span> Sources</button>
+          </nav>
+          <div class="skill-pane" id="skill-pane"></div>
+        </div>
+      </section>
+
+      <!-- STATE 4 — My Skills (saved skills, like My Lessons) -->
+      <section class="skill-myskills" id="skill-myskills-state" hidden>
+        <div class="skill-myskills-head">
+          <h2>My Skills</h2>
+          <button class="generate sm" id="skill-build-new" type="button">✦ Build a Skill</button>
+        </div>
+        <div class="skill-myskills-note" id="skill-myskills-note"></div>
+        <div class="skill-myskills-list" id="skill-myskills-list"></div>
+      </section>
+    </main>
+
+    <!-- ===== TAB: Trainer (the lesson workspace; persists the open lesson) ===== -->
+    <section class="tabpanel" id="tab-trainer" role="tabpanel" hidden>
+      <!-- WORKSPACE: full-screen lesson; an "Ask more" chat slides in on the right -->
+      <section class="workspace" id="workspace">
+        <div class="viewer" id="viewer">
+          <div class="viewer-bar">
+            <span class="viewer-title" id="viewer-title">Lesson</span>
+            <span class="gen-status" id="gen-status" hidden>⏳ A lesson is generating — open it in My Lessons →</span>
+            <div class="viewer-actions">
+              <button class="vbtn" id="new-thread">＋ New</button>
+              <div class="rating" id="rating" hidden title="Rate this lesson">
+                <span class="rate-label">Rate:</span>
+                <span class="stars" id="stars">
+                  <button class="star" data-v="1" type="button">★</button>
+                  <button class="star" data-v="2" type="button">★</button>
+                  <button class="star" data-v="3" type="button">★</button>
+                  <button class="star" data-v="4" type="button">★</button>
+                  <button class="star" data-v="5" type="button">★</button>
+                </span>
+                <span class="rate-thanks" id="rate-thanks" hidden>Thanks!</span>
+              </div>
+              <a class="vbtn" id="download" href="#" download hidden>⬇ Download</a>
+              <button class="vbtn" id="open-window" hidden>⛶ Full Screen</button>
+              <button class="vbtn primary" id="ask-more" hidden>💬 Ask more</button>
+              <!-- Overview-gate CTAs (shown only while reviewing a free overview draft) -->
+              <button class="vbtn" id="edit-overview" hidden>✎ Edit overview</button>
+              <button class="vbtn primary" id="gen-lesson" hidden>✦ Generate Lesson</button>
+              <button class="vbtn" id="viewer-theme" title="Toggle dark mode">🌙 Dark</button>
+            </div>
+          </div>
+          <div class="viewer-body">
+            <div class="viewer-empty" id="viewer-empty">Your lesson opens here. Generate one in the <strong>Lesson Builder</strong>, then open it from <strong>My Lessons</strong>.</div>
+            <div class="gen-overlay" id="gen-overlay" hidden>
+              <span class="gen-spin"></span>
+              <span class="gen-label" id="gen-label">Getting started…</span>
+              <span class="gen-sub">This takes a couple of minutes — your first section appears first, the rest build as you read.</span>
+              <!-- Item 4: while the overview generates, suggest relevant free Library lessons to read meanwhile. -->
+              <div class="gen-suggest" id="gen-suggest" hidden>
+                <div class="gen-suggest-h">While you wait — free lessons you might like</div>
+                <div class="gen-suggest-grid" id="gen-suggest-grid"></div>
+              </div>
+            </div>
+            <iframe id="viewer-frame" title="Generated lesson" sandbox="allow-scripts allow-popups allow-downloads" hidden></iframe>
+          </div>
+        </div>
+        <aside class="chat" id="chat" hidden>
+          <div class="chat-head">
+            <span class="chat-title">Ask about this lesson</span>
+            <button class="chat-close" id="chat-close" type="button" aria-label="Close">×</button>
+          </div>
+          <div class="chat-log" id="chat-log"></div>
+          <form class="chat-compose" id="chat-compose">
+            <textarea id="chat-input" rows="1" placeholder="Ask anything about this topic…"></textarea>
+            <button class="generate sm" id="chat-send" type="submit">Ask</button>
+          </form>
+        </aside>
+      </section>
+    </section>
+
+    <!-- ===== TAB: My Lessons (your previous lessons; visible only when signed in) ===== -->
+    <section class="tabpanel dash-panel" id="tab-dashboard" role="tabpanel" hidden>
+      <div class="dash-wrap">
+        <div class="dash-head">
+          <h2>My Lessons</h2>
+          <span class="dash-note" id="dash-note"></span>
+        </div>
+        <div class="dash-active" id="dash-active"></div>
+        <div class="dash-grid" id="dash-grid"></div>
+        <div class="dash-empty" id="dash-empty" hidden>No lessons yet — generate your first one from the <strong>Lesson Builder</strong> tab.</div>
+      </div>
+    </section>
+
+    <!-- ===== TAB: Library (public pre-built lessons; no sign-in, no generation) ===== -->
+    <section class="tabpanel lib-panel" id="tab-library" role="tabpanel" hidden>
+      <div class="lib-wrap">
+        <div class="lib-head">
+          <div>
+            <h2>Lesson library</h2>
+            <p class="lib-sub">Ready-made interactive lessons — open any one instantly, no sign-in needed.</p>
+          </div>
+          <div class="lib-search">
+            <svg viewBox="0 0 24 24" class="lib-search-ico"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input id="lib-search" type="search" placeholder="Search lessons…" autocomplete="off" />
+          </div>
+        </div>
+        <div class="lib-cats" id="lib-cats"></div>
+        <div class="lib-grid" id="lib-grid"></div>
+        <div class="lib-empty" id="lib-empty" hidden>No lessons match your search.</div>
+      </div>
+    </section>
+
+    <!-- ===== TAB: Community (learner-shared lessons; public, no sign-in to browse) ===== -->
+    <section class="tabpanel lib-panel" id="tab-community" role="tabpanel" hidden>
+      <div class="lib-wrap">
+        <div class="comm-subtabs" role="tablist">
+          <button class="comm-subtab active" type="button" data-comm="courses">Community Courses</button>
+          <button class="comm-subtab" type="button" data-comm="drivers">Community Drivers</button>
+        </div>
+
+        <!-- Sub-view: Community Courses -->
+        <div id="comm-sub-courses">
+          <div class="lib-head">
+            <div>
+              <h2>Community courses</h2>
+              <p class="lib-sub">Lessons shared by other learners — open any one instantly, no sign-in needed.</p>
+            </div>
+            <div class="lib-search">
+              <svg viewBox="0 0 24 24" class="lib-search-ico"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <input id="comm-search" type="search" placeholder="Search community…" autocomplete="off" />
+            </div>
+          </div>
+          <div class="comm-featured" id="comm-featured" hidden>
+            <h3 class="comm-feat-h">★ Featured · most liked</h3>
+            <div class="lib-grid" id="comm-feat-grid"></div>
+          </div>
+          <h3 class="comm-all-h" id="comm-all-h" hidden>All community courses</h3>
+          <div class="lib-grid" id="comm-grid"></div>
+          <div class="lib-empty" id="comm-empty" hidden>No community courses yet — share one of yours from <strong>My Lessons</strong>!</div>
+        </div>
+
+        <!-- Sub-view: Community Drivers (contributor directory + profile) -->
+        <div id="comm-sub-drivers" hidden>
+          <div class="lib-head">
+            <div>
+              <h2>Community drivers</h2>
+              <p class="lib-sub">Learners who build &amp; share courses here. Open a profile to see who they are and what they've published.</p>
+            </div>
+          </div>
+          <div class="lib-grid" id="drivers-grid"></div>
+          <div class="lib-empty" id="drivers-empty" hidden>No contributors yet — be the first via <strong>Build for Community</strong>!</div>
+          <div id="driver-profile" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TAB: Build for Community (register once → build a course for the Community) ===== -->
+    <section class="tabpanel lib-panel" id="tab-build-community" role="tabpanel" hidden>
+      <div class="bc-wrap">
+        <!-- State A: not registered → registration form -->
+        <div id="bc-register" hidden>
+          <div class="lib-head"><div>
+            <h2>Become a contributor</h2>
+            <p class="lib-sub">Build courses for the Community. A one-time profile — it's shown on your <strong>Community Drivers</strong> page and credits every course you publish.</p>
+          </div></div>
+          <div class="bc-form">
+            <label class="bc-label">Full name <span class="bc-req">*</span></label>
+            <input id="bc-name" type="text" placeholder="Jane Doe" autocomplete="name" />
+
+            <label class="bc-label">What's your relevant background or expertise? <span class="bc-req">*</span></label>
+            <textarea id="bc-bio" rows="3" placeholder="What have you built, taught, or worked on that qualifies you to teach this? (shown on your profile)"></textarea>
+
+            <label class="bc-label">Areas you can teach <span class="bc-req">*</span></label>
+            <input id="bc-expertise" type="text" placeholder="e.g. RAG, LangGraph, evaluation, agent memory" />
+
+            <label class="bc-label">Why do you want to contribute? <span class="bc-req">*</span></label>
+            <div class="bc-motiv" id="bc-motiv">
+              <label><input type="radio" name="bc-motivation" value="knowledge" /> Share knowledge</label>
+              <label><input type="radio" name="bc-motivation" value="money" /> Earn money</label>
+              <label><input type="radio" name="bc-motivation" value="recognition" /> Recognition</label>
+              <label><input type="radio" name="bc-motivation" value="other" /> Other</label>
+            </div>
+            <input id="bc-motiv-other" type="text" placeholder="Tell us why…" hidden />
+
+            <label class="bc-label">Profile link <span class="bc-opt">(optional)</span></label>
+            <input id="bc-link" type="url" placeholder="LinkedIn / GitHub / your site" autocomplete="url" />
+
+            <label class="bc-agree"><input id="bc-agree" type="checkbox" /> I confirm my courses will be original / properly sourced, and I understand they're published as AI-generated and may be reviewed.</label>
+
+            <div class="bc-msg" id="bc-msg" hidden></div>
+            <button class="generate" id="bc-register-go" type="button">Register as a contributor →</button>
+          </div>
+        </div>
+
+        <!-- State B: registered → build a course -->
+        <div id="bc-build" hidden>
+          <div class="lib-head"><div>
+            <h2>Build a course for the Community</h2>
+            <p class="lib-sub">Your uploaded content is the <strong>only</strong> source. Generate a free overview first, then build the full course — it lands in your <strong>My Lessons</strong> and publishes to <strong>Community Courses</strong>.</p>
+          </div></div>
+          <div class="bc-form">
+            <div class="bc-row">
+              <div><label class="bc-label">Course title <span class="bc-req">*</span></label><input id="bc-title" type="text" placeholder="e.g. Production RAG over Support Docs" /></div>
+              <div><label class="bc-label">Level</label>
+                <select id="bc-level"><option value="beginner">Beginner</option><option value="intermediate" selected>Intermediate</option><option value="advanced">Advanced</option></select>
+              </div>
+            </div>
+            <label class="bc-label">Course description <span class="bc-req">*</span></label>
+            <textarea id="bc-desc" rows="2" placeholder="One or two sentences on what this course teaches."></textarea>
+
+            <label class="bc-label">Course content <span class="bc-req">*</span></label>
+            <div class="bc-uploads">
+              <input type="file" id="bc-file-input" multiple hidden accept=".pdf,.docx,.md,.txt,.html,.htm,.json,.js,.ts,.jsx,.tsx,.mjs,.cjs,.py,.java,.go,.rb,.rs,.c,.cpp,.h,.hpp,.cs,.php,.sh,.css,.scss,.yaml,.yml,.toml,.ini,.sql,.xml,.rst,.log" />
+              <button class="ghost" id="bc-add-docs" type="button">📎 Upload PDF, DOCX, MD…</button>
+              <div class="upload-chips" id="bc-chips"></div>
+            </div>
+
+            <label class="bc-label">Instructions for the builder <span class="bc-opt">(optional)</span></label>
+            <textarea id="bc-prompt" rows="2" placeholder="Any guidance for how to structure or emphasize the course (optional)."></textarea>
+
+            <div class="bc-msg" id="bc-build-msg" hidden></div>
+            <button class="generate" id="bc-generate" type="button">Generate Overview — Free</button>
+          </div>
+        </div>
+
+        <!-- State: signed out -->
+        <div id="bc-signedout" hidden>
+          <div class="lib-head"><div>
+            <h2>Build for Community</h2>
+            <p class="lib-sub">Sign in to register as a contributor and build courses for the Community.</p>
+          </div></div>
+          <button class="generate" id="bc-signin" type="button">Sign in to continue</button>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ===== TAB: Pricing (lesson credits) ===== -->
+    <section class="tabpanel lib-panel" id="tab-pricing" role="tabpanel" hidden>
+      <div class="pricing-wrap">
+        <div class="pricing-head">
+          <h2>Lesson credits</h2>
+          <p class="pricing-sub">Designing the overview is always free. You spend <strong>1 credit</strong> per lesson and <strong>0.5</strong> per skill — only when it finishes building. <span class="pricing-bal" id="pricing-balance" hidden></span></p>
+        </div>
+
+        <div class="pricing-cards">
+          <!-- Pay as you go -->
+          <div class="price-card">
+            <div class="price-tag">Pay as you go</div>
+            <div class="price-amount" id="payg-cost">—</div>
+            <div class="price-per">for <span id="payg-n">1</span> lesson<span id="payg-s"></span> · <span id="payg-each">—</span> each</div>
+            <label class="price-slider-label" for="payg-slider">How many lessons?</label>
+            <input type="range" id="payg-slider" min="1" max="50" value="1" class="price-slider" aria-label="Number of lessons" />
+            <div class="price-slider-row"><span class="price-slider-min">1</span><strong id="payg-n2">1</strong><span class="price-slider-max">50</span></div>
+            <button class="generate" id="buy-payg" type="button">Buy <span id="buy-payg-n">1</span> lesson credit</button>
+            <ul class="price-feats">
+              <li>1 credit = 1 fully generated lesson</li>
+              <li>Free overview preview before you build</li>
+              <li>Credits valid for 12 months</li>
+            </ul>
+          </div>
+          <!-- Trial -->
+          <div class="price-card featured">
+            <div class="price-badge">Best value to start</div>
+            <div class="price-tag">Trial Launch Plan</div>
+            <div class="price-amount" id="trial-cost">—</div>
+            <div class="price-per">10 lessons · just <span id="trial-each">—</span> each</div>
+            <button class="generate" id="buy-trial" type="button">Get 10 lessons for <span id="trial-btn-cost">—</span></button>
+            <ul class="price-feats">
+              <li>10 fully generated lessons</li>
+              <li>~50% off the per-lesson price</li>
+              <li>Credits valid for 12 months</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="pricing-signin" id="pricing-signin" hidden>Please <a href="#" id="pricing-signin-link">sign in</a> to buy lesson credits.</div>
+        <div class="pricing-soon" id="pricing-soon" hidden>Payments aren’t switched on yet — check back shortly.</div>
+
+        <div class="pricing-terms">
+          <h3>What you get</h3>
+          <ul>
+            <li><strong>1 credit = 1 generated lesson</strong> — a complete, interactive, self-contained lesson built to your topic and settings.</li>
+            <li><strong>The overview is free.</strong> Generate and refine the overview / mental-map preview without spending a credit. A credit is charged only when you click <em>Generate Lesson</em> and the full build completes.</li>
+            <li><strong>Failed builds are never charged.</strong> If a build errors out, no credit is deducted.</li>
+            <li><strong>Every account starts with 2 free lesson credits.</strong></li>
+          </ul>
+          <h3>Terms</h3>
+          <ul>
+            <li>Credits are valid for <strong>12 months</strong> from the date of purchase.</li>
+            <li>Credits are <strong>non-refundable</strong> and carry no cash value.</li>
+            <li>Prices are in USD; taxes may apply at checkout.</li>
+            <li>Payments are processed securely by Lemon Squeezy.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Account — a full page at /account (was a modal) ===== -->
+    <section class="tabpanel acct-panel" id="tab-account" role="tabpanel" hidden>
+      <div class="acct-wrap">
+        <header class="acct-header">
+          <h2 class="acct-h1">Your account</h2>
+          <p class="acct-lede">Your profile, plan, and learning usage.</p>
+        </header>
+        <div class="acct-grid">
+          <!-- Profile + plan -->
+          <div class="acct-card2">
+            <h3 class="acct-card-h">Profile</h3>
+            <div class="acct-row"><span class="acct-k">Name</span><span class="acct-v" id="acct-name">—</span></div>
+            <div class="acct-row"><span class="acct-k">Email</span><span class="acct-v" id="acct-email">—</span></div>
+            <div class="acct-row"><span class="acct-k">Account ID</span><span class="acct-v acct-uuid" id="acct-uuid">—</span></div>
+            <div class="acct-row"><span class="acct-k">Plan</span><span class="acct-v" id="acct-plan">—</span></div>
+            <div class="acct-row"><span class="acct-k">Credits remaining</span><span class="acct-v acct-credits" id="acct-credits">—</span></div>
+            <button class="generate" id="acct-topup" type="button">Top up credits</button>
+          </div>
+          <!-- Usage -->
+          <div class="acct-card2">
+            <h3 class="acct-card-h">Usage</h3>
+            <div class="acct-stats">
+              <div class="acct-stat"><span class="acct-stat-n" id="acct-lessons">—</span><span class="acct-stat-l">Lessons generated</span></div>
+              <div class="acct-stat"><span class="acct-stat-n" id="acct-spent">—</span><span class="acct-stat-l">Credits spent</span></div>
+              <div class="acct-stat"><span class="acct-stat-n" id="acct-bought">—</span><span class="acct-stat-l">Credits purchased</span></div>
+            </div>
+            <div class="acct-row"><span class="acct-k">Member since</span><span class="acct-v" id="acct-since">—</span></div>
+          </div>
+          <!-- Admin — only revealed when /api/account says isAdmin (server re-checks every call) -->
+          <div class="acct-card2 admin-card" id="acct-admin-card" hidden>
+            <h3 class="acct-card-h">Admin · add credits</h3>
+            <p class="admin-note">Top up any signed-up user by email. Grants are logged in the credit ledger under your email.</p>
+            <div class="admin-form">
+              <input class="admin-input" id="admin-email" type="email" placeholder="user@example.com" autocomplete="off" />
+              <div class="admin-form-row">
+                <input class="admin-input admin-num" id="admin-credits" type="number" min="0.5" max="500" step="0.5" value="5" />
+                <button class="linkbtn" id="admin-check" type="button">Check balance</button>
+                <button class="generate admin-add" id="admin-add" type="button">Add credits</button>
+              </div>
+              <div class="admin-msg" id="admin-msg" hidden></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Sign in / Sign up — a dedicated full page (50/50 split) ===== -->
+    <section class="tabpanel auth-page" id="tab-auth" role="tabpanel" hidden>
+      <div class="auth-split">
+        <!-- LEFT: product story -->
+        <aside class="auth-aside">
+          <div class="auth-aside-in">
+            <div class="brand auth-brand"><img class="logo-img" src="/wizbit-logo.png" alt="Agentic Learning Studio" /> Agentic Learning Studio</div>
+            <h2 class="auth-aside-h">Learn agentic AI the way it finally clicks.</h2>
+            <p class="auth-aside-sub">Personalized, interactive lessons built for you — a mental map first, then click any building block to go deeper. Grounded in your own content or repo, with business and code examples and knowledge checks. No videos.</p>
+            <ul class="auth-aside-feats">
+              <li><span class="ck">✓</span> Free mental-map overview of any topic</li>
+              <li><span class="ck">✓</span> Grounded on your repo, with cited sources</li>
+              <li><span class="ck">✓</span> Every account starts with 2 free lesson credits</li>
+            </ul>
+          </div>
+        </aside>
+        <!-- RIGHT: the form -->
+        <div class="auth-panel">
+          <div class="auth-panel-in">
+            <div class="auth-loading" id="auth-loading" hidden>Loading…</div>
+            <form class="auth-form" id="auth-form">
+              <h2 id="auth-title">Sign in</h2>
+              <p class="auth-sub" id="auth-sub">Sign in to generate lessons.</p>
+              <div class="oauth-row" hidden>
+                <button type="button" class="oauth-btn" id="oauth-google" hidden>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1S8.7 6 12 6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.4 14.6 2.4 12 2.4 6.9 2.4 2.8 6.5 2.8 11.6S6.9 20.8 12 20.8c5.3 0 8.8-3.7 8.8-9 0-.6-.06-1-.16-1.6H12z"/></svg>
+                  Continue with Google
+                </button>
+                <button type="button" class="oauth-btn" id="oauth-apple" hidden>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.7c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.7-1.3-.13-2.5.76-3.2.76-.66 0-1.66-.74-2.74-.72-1.4.02-2.7.82-3.42 2.07-1.46 2.53-.37 6.27 1.05 8.32.7 1 1.52 2.12 2.6 2.08 1.04-.04 1.44-.67 2.7-.67 1.25 0 1.6.67 2.7.65 1.12-.02 1.82-1.02 2.5-2.02.8-1.16 1.12-2.28 1.14-2.34-.02-.01-2.18-.84-2.2-3.3zM14.3 6.3c.57-.7.96-1.66.85-2.62-.83.03-1.83.55-2.42 1.24-.53.61-1 1.6-.87 2.54.92.07 1.87-.47 2.44-1.16z"/></svg>
+                  Continue with Apple
+                </button>
+              </div>
+              <div class="auth-or" hidden><span>or</span></div>
+              <label class="auth-field-label" for="auth-email">Email</label>
+              <input id="auth-email" type="email" placeholder="you@example.com" autocomplete="email" required />
+              <label class="auth-field-label" for="auth-password">Password</label>
+              <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password" minlength="1" required />
+              <label class="auth-consent" id="auth-consent-row" hidden>
+                <input id="auth-consent" type="checkbox" />
+                <span>I agree to the <a href="/terms" target="_blank" rel="noopener">Terms</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener">Privacy Notice</a>.</span>
+              </label>
+              <div class="auth-msg" id="auth-msg" hidden></div>
+              <button class="generate" id="auth-submit" type="submit">Sign in</button>
+              <div class="auth-switch">
+                <span id="auth-switch-text">New here?</span>
+                <button class="linkbtn" id="auth-toggle" type="button">Create an account</button>
+              </div>
+            </form>
+            <details class="password-setup"><summary>Existing account without a password?</summary>
+              <p>Use the private one-time setup token supplied by the app owner. Your email alone cannot reset a password.</p>
+              <form id="claim-form"><label>Private setup token<input id="claim-token" type="password" autocomplete="off" required /></label>
+              <label>New password<input id="claim-password" type="password" minlength="12" autocomplete="new-password" required /></label>
+              <button class="generate" type="submit">Set password</button><p id="claim-message" role="status"></p></form>
+            </details><p class="auth-help">Password reset by email is not available yet. Google sign-in is not configured.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Item 3: out-of-credits "buy a plan" popup (shown when a lesson/skill build is blocked at 0 balance). -->
+    <div class="buy-modal" id="buy-modal" hidden>
+      <div class="buy-card" role="dialog" aria-modal="true" aria-labelledby="buy-modal-title">
+        <button class="buy-x" id="buy-modal-x" type="button" aria-label="Close">×</button>
+        <div class="buy-emoji" aria-hidden="true">✨</div>
+        <h3 id="buy-modal-title">You're out of credits</h3>
+        <p class="buy-msg" id="buy-modal-msg">Buy a plan to keep generating. Your overview is saved.</p>
+        <button class="primary buy-go" id="buy-modal-go" type="button">See plans &amp; buy credits</button>
+        <button class="ghost buy-later" id="buy-modal-later" type="button">Maybe later</button>
+      </div>
+    </div>
+
+    <script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>
+    <script src="/app.js"></script>
+    <script src="/skills.js"></script>
+  </body>
+</html>

@@ -1,0 +1,928 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Overfitting and Bias-Variance",
+    "title": "Overfitting and Bias-Variance",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Overfitting and Bias-Variance is practical when learners can apply it to this concrete case: A churn model looks excellent on training data but fails after a marketing campaign changes user behavior. By the end, they should be able to build or review bias-variance diagnosis worksheet with train/validation gaps, measure generalization gap on recent holdout data, and catch the failure where the model memorizes quirks instead of learning durable signal."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Overfitting and Bias-Variance",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Overfitting and Bias-Variance: mental map",
+    "caption": "Diagnose model generalization using training error, validation error, bias, variance, regularization, and final test discipline.",
+    "oneLineThesis": "Overfitting and bias-variance are ways to explain why a model can fit data yet fail new cases.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Generalization is the real target",
+        "sub": "A model is useful when it performs on examples it did not fit.",
+        "what": "Learners start with the deployment question rather than training score.",
+        "relevance": "This prevents choosing models that merely memorize historical data.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Compare memorizing old churn cases with predicting future customers.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Bias and variance describe two failure shapes",
+        "sub": "One model is too rigid; another is too sensitive.",
+        "what": "Learners get a diagnostic vocabulary tied to observable errors.",
+        "relevance": "This prevents vague advice like just add more data or use a bigger model.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Read train and validation errors as bias or variance symptoms.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Validation curves expose memorization",
+        "sub": "Curves show what happens as model capacity changes.",
+        "what": "Learners use a practical artifact to diagnose overfitting.",
+        "relevance": "This catches capacity choices made by training score alone.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Read a capacity curve for polynomial churn features.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Regularization and data controls trade flexibility",
+        "sub": "The fix should match the failure mode, not the mood.",
+        "what": "Learners see interventions as targeted controls.",
+        "relevance": "This avoids blindly adding model complexity or training epochs.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Code a capacity comparison and pick the validation winner.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Test once, monitor drift later",
+        "sub": "The final estimate is not a tuning playground.",
+        "what": "Learners close the diagnosis with evaluation discipline.",
+        "relevance": "This prevents test-set overfitting through repeated peeking.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Reserve the test set and plan monitoring for future-data shifts.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "contrasts"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "reveals"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "controls"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "reserves"
+      }
+    ],
+    "structureType": "conceptual"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Generalization is the real target",
+      "sub": "A model is useful when it performs on examples it did not fit.",
+      "summary": "Overfitting is a failure of generalization, not a failure to memorize.",
+      "objectives": [
+        "Define generalization in practical terms.",
+        "Explain why low training error can be misleading.",
+        "Anchor the lesson in a churn prediction case."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The exam is future data",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a subscription team trains a churn model. A very flexible model gets 99 percent accuracy on historical customers, but fails on the next month. It learned quirks of the old data instead of patterns that generalize."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Generalization means performance on examples not used for fitting. Overfitting happens when the model adapts too closely to training noise, leakage, or accidental patterns. Underfitting happens when the model is too simple to capture important structure."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "kb_neural_backprop",
+            "canon_sklearn_model_selection"
+          ],
+          "analogy": "Training data is homework; validation and test data are exams with new questions."
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Case study: churn model memorizes promo codes",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model learns that customers with a one-time promo code from a past campaign churned less. In the future campaign, the code changes. Training performance looked excellent because the old code was a shortcut. Validation on a later month reveals the shortcut does not transfer."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Generalization",
+          "prompt": "Why can very low training error be bad news?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It proves the model is unbiased and fair.",
+              "correct": false
+            },
+            {
+              "text": "It may mean the model memorized noise or leakage that will not appear in new data.",
+              "correct": true
+            },
+            {
+              "text": "It means validation is unnecessary.",
+              "correct": false
+            }
+          ],
+          "explanation": "Training error alone cannot answer the future-data question.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "kb_neural_backprop"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_neural_backprop",
+        "canon_sklearn_model_selection"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Bias and variance describe two failure shapes",
+      "sub": "One model is too rigid; another is too sensitive.",
+      "summary": "Bias-variance language links error patterns to model capacity.",
+      "objectives": [
+        "Distinguish high bias from high variance.",
+        "Map train/validation errors to each failure.",
+        "Choose the first fix for each pattern."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "High bias misses the pattern; high variance chases noise",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "High bias means the model is too constrained for the true pattern: both training and validation errors are high. High variance means the model fits training data very well but changes too much with the sample: training error is low and validation error is high."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection",
+            "kb_neural_backprop"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Bias-variance diagnosis table",
+          "criteria": [
+            "Pattern",
+            "Likely diagnosis",
+            "First fixes"
+          ],
+          "options": [
+            {
+              "name": "High train and validation error",
+              "cells": [
+                {
+                  "criterion": "Pattern",
+                  "text": "High train and validation error",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Likely diagnosis",
+                  "text": "high bias or missing features",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First fixes",
+                  "text": "richer features, more flexible model, better objective",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "The model misses even training examples.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Low train, high validation error",
+              "cells": [
+                {
+                  "criterion": "Pattern",
+                  "text": "Low train, high validation error",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Likely diagnosis",
+                  "text": "high variance or leakage",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First fixes",
+                  "text": "regularization, more data, simpler model, leakage audit",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Training looks great but validation fails.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Both low and stable",
+              "cells": [
+                {
+                  "criterion": "Pattern",
+                  "text": "Both low and stable",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Likely diagnosis",
+                  "text": "reasonable fit for current slices",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First fixes",
+                  "text": "evaluate final test and monitor drift",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Before release decision.",
+              "cost": "Low",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_model_selection",
+        "kb_neural_backprop"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Validation curves expose memorization",
+      "sub": "Curves show what happens as model capacity changes.",
+      "summary": "Comparing train and validation curves makes overfitting visible.",
+      "objectives": [
+        "Explain validation curves in plain language.",
+        "Spot the capacity where validation stops improving.",
+        "Avoid tuning on the test set."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Capacity is a dial, not a trophy",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "As model capacity increases, training error often falls. Validation error may fall at first, then rise when the model begins to fit noise. The best capacity is usually near the validation minimum, not the lowest training error."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ]
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Worked curve: support churn model",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Depth 2 tree: train error 0.22, validation error 0.24. Depth 6: train 0.10, validation 0.15. Depth 20: train 0.01, validation 0.23. Depth 6 is the candidate; depth 20 memorizes historical quirks."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Curve choice",
+          "prompt": "Which tree depth should you choose from the worked curve?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Depth 20, because training error is lowest.",
+              "correct": false
+            },
+            {
+              "text": "Depth 6, because validation error is lowest even though training error is not.",
+              "correct": true
+            },
+            {
+              "text": "Depth 2, because it is always safest.",
+              "correct": false
+            }
+          ],
+          "explanation": "Validation performance guides model selection.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_model_selection"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Regularization and data controls trade flexibility",
+      "sub": "The fix should match the failure mode, not the mood.",
+      "summary": "Regularization, simpler models, more data, and leakage audits address variance differently.",
+      "objectives": [
+        "Choose regularization or data changes for overfitting.",
+        "Run a tiny overfitting simulation.",
+        "Verify AI-generated diagnosis code."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Tiny capacity comparison for overfitting diagnosis",
+          "language": "python",
+          "code": "results = [\n    {\"model\": \"linear\", \"train_error\": 0.28, \"val_error\": 0.30},\n    {\"model\": \"tree_depth_6\", \"train_error\": 0.10, \"val_error\": 0.15},\n    {\"model\": \"tree_depth_20\", \"train_error\": 0.01, \"val_error\": 0.23},\n]\n\nbest = min(results, key=lambda r: r[\"val_error\"])\nfor r in results:\n    gap = r[\"val_error\"] - r[\"train_error\"]\n    diagnosis = \"high variance\" if gap > 0.12 else \"reasonable gap\"\n    print(r[\"model\"], \"gap=\", round(gap, 2), diagnosis)\n\nprint(\"choose\", best[\"model\"])",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This tiny report encodes the habit: compare train and validation, inspect the gap, and choose by validation rather than training error."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict which model is chosen and which model is flagged high variance.",
+            "answer": "tree_depth_6 is chosen because it has the lowest validation error. tree_depth_20 is flagged high variance because its validation-training gap is large."
+          },
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify AI-generated overfitting advice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: advice compares training and validation, checks leakage, names the likely failure mode, proposes a matching fix, and does not recommend using the test set for model selection."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection",
+            "kb_neural_backprop"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_model_selection",
+        "kb_neural_backprop"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Test once, monitor drift later",
+      "sub": "The final estimate is not a tuning playground.",
+      "summary": "The test set gives a final pre-release estimate; production monitoring catches later change.",
+      "objectives": [
+        "Explain why the test set stays untouched until the end.",
+        "Connect overfitting to drift and slice monitoring.",
+        "Define a release checklist for generalization."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "You can overfit the test set too",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If the team repeatedly checks test performance while choosing features, thresholds, and model capacity, the test set becomes another validation set. The final estimate is no longer honest. After release, production data can drift, so monitoring and periodic re-evaluation are still needed."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Use validation to choose; use test to estimate; use monitoring to stay honest after release.",
+          "useWhen": "Use this discipline when model choices, features, or thresholds are being compared.",
+          "avoidWhen": "Avoid repeated test peeking, leakage-prone features, and aggregate-only metrics that hide failing slices.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Test discipline",
+          "prompt": "Why not tune model capacity on the test set?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Because the test set should be used for gradient updates.",
+              "correct": false
+            },
+            {
+              "text": "Because repeated test peeking makes the test estimate optimistic and less honest.",
+              "correct": true
+            },
+            {
+              "text": "Because validation data is never useful.",
+              "correct": false
+            }
+          ],
+          "explanation": "The test set is reserved for the final generalization estimate.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_model_selection"
+      ]
+    }
+  ],
+  "glossary": {
+    "ai": {
+      "id": "ai",
+      "label": "AI",
+      "laymanDefinition": "Software systems that perform tasks associated with human intelligence.",
+      "technicalNote": "In these foundations lessons, AI is the broad field; the concrete mechanisms are models, data, objectives, and evaluation loops.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_neural_backprop"
+      ],
+      "acronymExpansion": "Artificial intelligence"
+    },
+    "ml": {
+      "id": "ml",
+      "label": "ML",
+      "laymanDefinition": "A branch of AI where systems learn patterns from data instead of only following hand-written rules.",
+      "technicalNote": "ML work is defined by training data, features, models, objectives, validation, and deployment constraints.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_neural_backprop"
+      ],
+      "acronymExpansion": "Machine learning"
+    },
+    "model": {
+      "id": "model",
+      "label": "Model",
+      "laymanDefinition": "A learned or configured function that maps inputs to predictions, scores, clusters, or generated outputs.",
+      "technicalNote": "Model choice encodes assumptions such as linearity, distance, tree splits, capacity, or sequential reward.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_neural_backprop"
+      ]
+    },
+    "loss": {
+      "id": "loss",
+      "label": "Loss",
+      "laymanDefinition": "A numerical training signal that measures how wrong a prediction is for a task.",
+      "technicalNote": "Loss drives optimization; it is not the same as product quality, fairness, or final generalization.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_neural_backprop"
+      ]
+    },
+    "generalization": {
+      "id": "generalization",
+      "label": "Generalization",
+      "laymanDefinition": "The ability of a model to perform well on examples it did not train on.",
+      "technicalNote": "Generalization is checked with validation/test data, leakage audits, and slice monitoring.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_neural_backprop"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "A repeatable sequence of data transforms, feature steps, model fitting, and evaluation or inference.",
+      "technicalNote": "Pipelines prevent train/test leakage and keep preprocessing identical between training and production.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_neural_backprop"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Overfitting and Bias-Variance",
+    "themes": [
+      {
+        "name": "Generalization diagnosis",
+        "questions": [
+          {
+            "q": "Is the model too simple, too flexible, or evaluated on contaminated data?",
+            "why": "Bias-variance language is useful only when connected to train/validation behavior and leakage checks.",
+            "opts": [
+              "Compare train and validation patterns",
+              "Pick biggest model",
+              "Trust training loss"
+            ],
+            "rot": "Start with train/validation curves, then choose data, regularization, or model-capacity fixes."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct overfitting by naming generalization, high bias, high variance, training-vs-validation curves, regularization, leakage, and the reason the test set stays untouched."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Generalization diagnosis from error pattern to fix",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Generalization is the real target",
+          "sub": "A model is useful when it performs on examples it did not fit.",
+          "what": "Learners start with the deployment question rather than training score.",
+          "relevance": "This prevents choosing models that merely memorize historical data.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Compare memorizing old churn cases with predicting future customers.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Bias and variance describe two failure shapes",
+          "sub": "One model is too rigid; another is too sensitive.",
+          "what": "Learners get a diagnostic vocabulary tied to observable errors.",
+          "relevance": "This prevents vague advice like just add more data or use a bigger model.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Read train and validation errors as bias or variance symptoms.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Validation curves expose memorization",
+          "sub": "Curves show what happens as model capacity changes.",
+          "what": "Learners use a practical artifact to diagnose overfitting.",
+          "relevance": "This catches capacity choices made by training score alone.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Read a capacity curve for polynomial churn features.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Regularization and data controls trade flexibility",
+          "sub": "The fix should match the failure mode, not the mood.",
+          "what": "Learners see interventions as targeted controls.",
+          "relevance": "This avoids blindly adding model complexity or training epochs.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Code a capacity comparison and pick the validation winner.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Test once, monitor drift later",
+          "sub": "The final estimate is not a tuning playground.",
+          "what": "Learners close the diagnosis with evaluation discipline.",
+          "relevance": "This prevents test-set overfitting through repeated peeking.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Reserve the test set and plan monitoring for future-data shifts.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "targets"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "diagnoses"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "regularizes"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "tests"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Generalization is the real target",
+        "detail": "Overfitting is a failure of generalization, not a failure to memorize."
+      },
+      {
+        "step": 2,
+        "label": "Bias and variance describe two failure shapes",
+        "detail": "Bias-variance language links error patterns to model capacity."
+      },
+      {
+        "step": 3,
+        "label": "Validation curves expose memorization",
+        "detail": "Comparing train and validation curves makes overfitting visible."
+      },
+      {
+        "step": 4,
+        "label": "Regularization and data controls trade flexibility",
+        "detail": "Regularization, simpler models, more data, and leakage audits address variance differently."
+      },
+      {
+        "step": 5,
+        "label": "Test once, monitor drift later",
+        "detail": "The test set gives a final pre-release estimate; production monitoring catches later change."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Generalization is the real target\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Regularization and data controls trade flexibility\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Test once, monitor drift later\" define the learning or evaluation gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Take a small churn dataset and compare three model capacities. Plot or tabulate training and validation error, diagnose high bias or high variance, choose a regularization/data fix, and reserve the test set for one final estimate. Next rung: add cross-validation and slice metrics.",
+      "scopedTo": "Foundations",
+      "checks": [
+        "Diagnosis uses both train and validation error.",
+        "Leakage is checked before celebrating high scores.",
+        "Regularization or data fixes match the failure mode.",
+        "Test data is not used for model selection."
+      ]
+    }
+  },
+  "citations": {
+    "kb_neural_backprop": {
+      "id": "kb_neural_backprop",
+      "kind": "kb",
+      "title": "KB: Neural Networks and Backpropagation",
+      "url": "https://d2l.ai/chapter_multilayer-perceptrons/backprop.html",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_sklearn_model_selection": {
+      "id": "canon_sklearn_model_selection",
+      "kind": "canonical",
+      "title": "scikit-learn model selection and evaluation",
+      "url": "https://scikit-learn.org/stable/model_selection.html",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

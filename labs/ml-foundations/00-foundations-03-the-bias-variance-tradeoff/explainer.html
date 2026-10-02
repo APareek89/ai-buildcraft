@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The bias–variance trade-off — ML Hands-on Lab</title><style>
+:root{--ink:#24302f;--muted:#64706e;--paper:#fbfaf7;--card:#ffffff;--accent:#176b66;--line:#dce4e0;--code:#17201f}
+*{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.72 Georgia,'Times New Roman',serif}
+main{max-width:72ch;margin:0 auto;padding:4rem 1.4rem 7rem} h1,h2,h3{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.18;color:#172321}
+h1{font-size:clamp(2.25rem,7vw,4.5rem);letter-spacing:-.04em;margin:.2rem 0 1rem} h2{font-size:1.55rem;margin-top:3.6rem;padding-top:1rem;border-top:1px solid var(--line)}
+h3{font-size:1.05rem;margin-top:2rem} p,li{max-width:68ch} a{color:var(--accent);text-decoration-thickness:.08em;text-underline-offset:.18em}
+.eyebrow{font:700 .78rem/1.2 ui-sans-serif,-apple-system,sans-serif;text-transform:uppercase;letter-spacing:.13em;color:var(--accent)}
+.lede{font-size:1.28rem;line-height:1.55;color:#344441}.micro,.callout{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);padding:1rem 1.2rem;border-radius:.4rem}
+.equation{overflow-x:auto;background:#eef4f1;padding:.8rem 1rem;border-radius:.4rem}.terms{color:#3f514e}.figure{margin:2rem 0}.figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:.55rem;background:white}.caption{font-size:.92rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-family:ui-sans-serif,-apple-system,sans-serif;font-size:.92rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:.75rem .5rem}th{color:var(--accent)}
+pre{background:var(--code);color:#edf4f1;padding:1rem;overflow:auto;border-radius:.45rem;font-size:.85rem;line-height:1.55}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.steps li{margin:.7rem 0}.links{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:2rem}.button{font-family:ui-sans-serif,-apple-system,sans-serif;background:var(--accent);color:white;padding:.62rem .9rem;border-radius:.35rem;text-decoration:none}.button.secondary{background:white;color:var(--accent);border:1px solid var(--accent)}
+@media(max-width:620px){main{padding-top:2rem}body{font-size:16px}table{display:block;overflow-x:auto}}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script>window.MathJax={tex:{inlineMath:[["\(","\)"]],displayMath:[["\[","\]"]]}};</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" onload="hljs.highlightAll()"></script>
+</head><body><main><p class="eyebrow">ML Hands-on Lab · Foundations</p><h1>The bias–variance trade-off</h1><section><h2>1. The one-sentence version</h2><p class="lede">A rigid model misses stable structure, while an overly flexible model chases accidental details; good prediction lives between those errors.</p></section>
+    <section><h2>2. The intuition</h2><p>Picture tracing a coastline. A straight ruler misses every bay: high bias. A thread wrapped around every grain of sand changes wildly whenever the tide moves: high variance. You want enough flexibility to capture bays, not grains.</p><div class="micro"><h3>A five-fit example</h3><p>At one input, suppose truth is 1.0 and five flexible models predict <code>[0.8, 1.0, 1.2, 1.1, 0.9]</code>. Their mean is <strong>1.0</strong>, so bias is 0. Their squared deviations from the mean sum to 0.10, so variance is <strong>0.10/5=0.02</strong>. A rigid model might predict 0.6 every time: variance 0, but bias is <strong>0.6−1.0=−0.4</strong> and bias² is <strong>0.16</strong>. Stability alone is not accuracy.</p></div></section>
+    <section><h2>3. The maths in plain English</h2><p class="equation">\[\mathbb E[(Y-\hat f(x))^2]=\text{Bias}(\hat f(x))^2+\text{Var}(\hat f(x))+\sigma^2\]</p><p><strong>\(\hat f(x)\)</strong> is the prediction from a model fitted to one random training set. <strong>Bias</strong> compares the average fitted prediction with truth; more systematic miss makes it larger. <strong>Variance</strong> measures changes across possible training sets; more sample sensitivity makes it larger. <strong>\(\sigma^2\)</strong> is noise in the outcome and cannot be removed by choosing a model.</p><p class="equation">\[\text{Ridge fit}=\arg\min_\beta\sum_i(y_i-X_i\beta)^2+\alpha\sum_j\beta_j^2\]</p><p>The first term rewards close fit. The second charges for large coefficients. Increasing \(\alpha\) usually raises bias and lowers variance; decreasing it lets the curve react more freely.</p></section>
+    <section><h2>4. What the model is actually doing during training</h2><ol class="steps"><li>Expand each input into powers such as \(x,x^2,x^3\).</li><li>Choose coefficients that minimize squared error plus any regularization penalty.</li><li>A low degree searches a small family of smooth shapes.</li><li>A high degree searches a much larger family and can fit local noise.</li><li>Validation estimates which capacity transfers best; repeated resampling reveals how sensitive that choice is.</li></ol></section>
+    <section><h2>5. The knobs</h2><table><tr><th>Knob</th><th>Too low</th><th>Too high</th></tr><tr><td>Polynomial degree</td><td>Underfits bends; high bias.</td><td>Oscillates with the sample; high variance.</td></tr><tr><td>Ridge alpha</td><td>Coefficients can become unstable.</td><td>Useful curvature is flattened.</td></tr><tr><td>Training rows</td><td>Flexible models are weakly constrained.</td><td>Usually helps; cost and drift become the limits.</td></tr><tr><td>Feature count</td><td>Stable signal may be absent.</td><td>Spurious patterns multiply without enough rows.</td></tr></table></section>
+    <section><h2>6. Assumptions and failure modes</h2><p>The neat decomposition assumes squared error, a stable data-generating process, and repeated samples from it. Real systems drift. High training error can also come from broken features, not merely bias. A small train–validation gap can mean both are underfitting. A large gap suggests variance, leakage, or a distribution mismatch; it is a clue, not a diagnosis by itself.</p><figure class="figure"><img src="key_figure.png" alt="Empirical bias variance and total error by polynomial degree"><figcaption class="caption">The notebook fits 600 real models. Bias falls, variance rises, and their total forms the U-shaped curve.</figcaption></figure></section>
+    <section><h2>7. Code</h2><h3>Minimal version</h3><pre><code class="language-python">from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import Ridge
+
+model = make_pipeline(
+    PolynomialFeatures(degree=5),
+    Ridge(alpha=0.01)
+)
+model.fit(X_train, y_train)</code></pre><h3>Realistic version</h3><pre><code class="language-python">from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.linear_model import Ridge
+
+pipe = Pipeline([
+    ("poly", PolynomialFeatures(include_bias=False)),
+    ("scale", StandardScaler()),
+    ("ridge", Ridge()),
+])
+search = GridSearchCV(pipe, {
+    "poly__degree": [1, 3, 5, 7, 10],
+    "ridge__alpha": [0.001, 0.01, 0.1, 1.0],
+}, cv=5, scoring="neg_root_mean_squared_error")
+search.fit(X_train, y_train)</code></pre></section>
+    <section><h2>8. Where it's actually used</h2><ul><li>Demand forecasting, where promotional noise can tempt a curve to chase one-off spikes.</li><li>Medical risk models, where small cohorts limit safe model complexity.</li><li>Insurance pricing, where regularization stabilizes correlated rating factors.</li><li>Sensor calibration, where smooth physical response should not follow measurement jitter.</li><li>Computer vision transfer learning, where freezing a backbone reduces variance on small image sets.</li></ul></section>
+    <section><h2>9. How it relates to its neighbours</h2><p>Regularization, early stopping, pruning, and data augmentation are different ways to control effective capacity. The bias–variance trade-off is about prediction error under repeated samples; it is not the same as the fairness meaning of bias. Learning curves extend the diagnosis by showing how train and validation error change as you add data.</p></section>
+    <section><h2>10. Links</h2><div class="links"><a class="button" href="notebook.ipynb">Run the notebook</a><a class="button secondary" href="../index.html">Back to the lab index</a></div></section></main></body></html>

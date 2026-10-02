@@ -1,0 +1,1210 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Durable Agents with Workflow Engines",
+    "title": "Durable Agents with Workflow Engines",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 38,
+    "thesis": "Durable Agents with Workflow Engines is practical when learners can apply it to this concrete case: An insurance-claims agent must survive retries, approval waits, and worker restarts. By the end, they should be able to build or review durable workflow state chart for a claims-processing agent, measure recovered workflow rate after restart, and catch the failure where the process loses its place after a tool timeout."
+  },
+  "learnerProfile": {
+    "level": "advanced",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Durable Agents with Workflow Engines",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": false,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Durable Agents with Workflow Engines: mental map",
+    "caption": "Use durable workflow engines when agent work must survive crashes, retries, timers, approvals, and long-running side effects.",
+    "oneLineThesis": "Durable execution gives agent workflows replayable progress; it is a reliability layer underneath model calls, not a smarter model.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Agents need more than a queue when work is long-lived",
+        "sub": "Durability matters when progress must survive failure.",
+        "what": "Learners distinguish simple background jobs from durable workflows.",
+        "relevance": "This prevents using fragile in-memory loops for multi-day or side-effectful work.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Anchor durable execution in partial side effects and waiting humans.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Workflow code owns control; activities own side effects",
+        "sub": "Replay works only when boundaries are clean.",
+        "what": "Learners place nondeterministic work outside deterministic orchestration.",
+        "relevance": "Bad boundaries create replay failures or duplicate side effects.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Put model calls, APIs, and database writes behind activity boundaries.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Timers, signals, approvals, and retries shape the run",
+        "sub": "Durable agents wait and recover explicitly.",
+        "what": "Learners design waits, signals, retries, and timeouts.",
+        "relevance": "Implicit waiting inside prompts cannot survive process restarts.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Model human approval and external events as workflow inputs.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Implement idempotent step replay",
+        "sub": "A toy log shows why completed work should not repeat.",
+        "what": "Learners simulate durable progress without a platform dependency.",
+        "relevance": "The code makes replay and idempotency concrete before framework details.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use a recorded step log to avoid duplicate side effects.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Operate histories, versions, and cost",
+        "sub": "Durable workflows become production data.",
+        "what": "Learners plan operational safeguards for long-running agent workflows.",
+        "relevance": "Durability can accidentally preserve sensitive prompts, stale code assumptions, or runaway retries.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Keep event histories useful without storing secrets or giant prompts.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "dependency"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Agents need more than a queue when work is long-lived",
+      "sub": "Durability matters when progress must survive failure.",
+      "summary": "A durable workflow remembers what already happened.",
+      "objectives": [
+        "Explain why queues are not always enough.",
+        "Name agent tasks that need durable progress.",
+        "Separate reliability layer from LLM reasoning layer."
+      ],
+      "termIds": [
+        "agent",
+        "state",
+        "tool",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Durable execution is reliability for multi-step work",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: an agent drafts a compliance report, asks a human for approval, waits overnight, then files it in a vendor portal. If the worker restarts after approval, it must not repeat the earlier email or forget the approval."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A normal queue can retry a failed job, but durable workflow engines record progress so completed steps can be skipped and waiting states can resume. The LLM remains one activity inside a larger reliable process."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If a crash after step 4 would be expensive or confusing, design durable state before shipping."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ],
+          "analogy": "A durable workflow is a trail of breadcrumbs the runtime can replay after the worker wakes up."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Case study: report approval over two days",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The workflow schedules a planning activity, runs retrieval, drafts a report, waits for a manager signal, and only then publishes. The event history records that planning and drafting already completed."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When a worker deploy happens during the wait, the workflow resumes at the approval point rather than starting over."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Identify external side effects and waits."
+                  }
+                ],
+                [
+                  {
+                    "text": "Split model/tool calls into named activities or steps."
+                  }
+                ],
+                [
+                  {
+                    "text": "Persist workflow state and approval signals."
+                  }
+                ],
+                [
+                  {
+                    "text": "Resume from the next unfinished step after failure."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Durability fit",
+          "prompt": "Which task most clearly needs durable execution?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A single stateless text rewrite.",
+              "correct": false
+            },
+            {
+              "text": "A multi-step agent that waits for human approval before sending a customer-facing report.",
+              "correct": true
+            },
+            {
+              "text": "A calculator call inside one request.",
+              "correct": false
+            }
+          ],
+          "explanation": "Long waits and external side effects need recoverable progress.",
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ]
+        }
+      ],
+      "citations": [
+        "kb8",
+        "kb9",
+        "kb7"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Workflow code owns control; activities own side effects",
+      "sub": "Replay works only when boundaries are clean.",
+      "summary": "Workflow/activity separation is the core durable design move.",
+      "objectives": [
+        "Define workflow, activity, worker, and event history.",
+        "Explain deterministic replay.",
+        "Make side-effecting activities idempotent."
+      ],
+      "termIds": [
+        "agent",
+        "state",
+        "tool",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Replay demands deterministic orchestration",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Temporal-style systems replay workflow code from event history to rebuild state. That code must make the same decisions when given the same history. Randomness, current time, direct network calls, and model calls belong in activities or recorded side-effect boundaries."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Activities call models, APIs, databases, and tools. Because activities can retry after partial success, they need idempotency keys and clear timeout/retry policies."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If a line of code can send money, email, or mutate a database, it should not run as unguarded workflow logic."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ],
+          "analogy": "The workflow is the conductor; activities are the musicians who make sound in the world."
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Durable boundary decisions",
+          "criteria": [
+            "Component",
+            "Owns",
+            "Watch"
+          ],
+          "options": [
+            {
+              "name": "Workflow",
+              "cells": [
+                {
+                  "criterion": "Component",
+                  "text": "Control flow, timers, waits, decisions from recorded state.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Owns",
+                  "text": "Replayable progress and routing.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Watch",
+                  "text": "Non-determinism causes replay failures.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use for orchestration and state transitions.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Activity/step",
+              "cells": [
+                {
+                  "criterion": "Component",
+                  "text": "Model call, API call, DB write, email, browser action.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Owns",
+                  "text": "Side effects and retries.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Watch",
+                  "text": "Needs idempotency after partial success.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for external work.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "In-memory loop",
+              "cells": [
+                {
+                  "criterion": "Component",
+                  "text": "Temporary model/tool iteration.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Owns",
+                  "text": "Short request-local work.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Watch",
+                  "text": "Lost on crash or deploy.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use only for short noncritical tasks.",
+              "cost": "Low",
+              "complexity": "Low"
+            }
+          ],
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Boundary check",
+          "prompt": "Where should an LLM API call usually live in a durable workflow?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Directly inside replayed workflow code.",
+              "correct": false
+            },
+            {
+              "text": "Inside an activity or durable step with retry and timeout policy.",
+              "correct": true
+            },
+            {
+              "text": "Only in the final UI renderer.",
+              "correct": false
+            }
+          ],
+          "explanation": "Model calls are nondeterministic external effects.",
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ]
+        }
+      ],
+      "citations": [
+        "kb8",
+        "kb9",
+        "kb7"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Timers, signals, approvals, and retries shape the run",
+      "sub": "Durable agents wait and recover explicitly.",
+      "summary": "Durable workflows turn waiting into first-class state.",
+      "objectives": [
+        "Use timers for long waits.",
+        "Use signals or events for approvals.",
+        "Set retry and timeout policy by activity risk."
+      ],
+      "termIds": [
+        "agent",
+        "state",
+        "tool",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Waiting is a durable state, not a sleeping thread",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A human approval may arrive hours later. A vendor API may rate limit until tomorrow. A model provider may fail transiently. Durable engines represent these as timers, signals, events, retries, and updates rather than a process sleeping in memory."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Retry policy should reflect side effects. A read-only retrieval step can retry more freely than a payment or email step. Timeouts protect cost and operator attention."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every wait should have a timeout, escalation, or cancellation path."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ],
+          "analogy": "Durable timers are calendar entries in the runtime, not a nap on one machine."
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Worked approval signal",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A lesson publishing workflow drafts content, sends an approval packet, and waits for an `approve` or `request_changes` signal. The signal becomes part of event history."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If approval is denied, the workflow records cancellation. If changes are requested, it schedules a revision activity with the reviewer notes."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Create an approval packet with exact artifact and risk."
+                  }
+                ],
+                [
+                  {
+                    "text": "Wait for an approval signal with timeout."
+                  }
+                ],
+                [
+                  {
+                    "text": "Branch to publish, revise, or cancel."
+                  }
+                ],
+                [
+                  {
+                    "text": "Record the reviewer and rationale."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Waiting model",
+          "prompt": "Why is a durable signal better than polling a prompt for approval?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It makes human review unnecessary.",
+              "correct": false
+            },
+            {
+              "text": "It records the external approval event and lets the workflow resume after crashes or deploys.",
+              "correct": true
+            },
+            {
+              "text": "It forces all tasks to run forever.",
+              "correct": false
+            }
+          ],
+          "explanation": "Approvals are external events that durable workflows can persist.",
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ]
+        }
+      ],
+      "citations": [
+        "kb8",
+        "kb9",
+        "kb7"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Implement idempotent step replay",
+      "sub": "A toy log shows why completed work should not repeat.",
+      "summary": "Durability means “continue,” not “start over.”",
+      "objectives": [
+        "Track completed steps.",
+        "Predict which steps rerun after failure.",
+        "Use idempotency keys for side effects."
+      ],
+      "termIds": [
+        "agent",
+        "state",
+        "tool",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "The history decides what to skip",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A durable runtime records successful commands and activity results. On recovery, it replays enough workflow logic to know which work is already done and what should happen next."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from safety, retries of non-idempotent actions can duplicate side effects. Durable workflows reduce that risk only when activities are designed with idempotency."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "A publish activity should include an idempotency key such as workflow ID plus step name."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Tiny durable-step simulator",
+          "language": "python",
+          "code": "history = {\"plan\": \"plan-v1\"}  # imagine this survived a crash\n\ndef run_step(name, fn):\n    if name in history:\n        print(\"skip\", name)\n        return history[name]\n    result = fn()\n    history[name] = result\n    print(\"record\", name)\n    return result\n\ndef call_model():\n    return \"draft-v1\"\n\ndef publish():\n    return {\"published\": True, \"idempotency_key\": \"wf42:publish\"}\n\nplan = run_step(\"plan\", lambda: \"plan-v2\")\ndraft = run_step(\"draft\", call_model)\nresult = run_step(\"publish\", publish)\nprint(plan, draft, result)",
+          "explanation": "The simulator skips the completed plan step and records later steps, mirroring the durable idea without a real workflow engine.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict whether `plan-v2` replaces the recorded plan.",
+            "answer": "It does not. The history already contains `plan`, so recovery uses `plan-v1` and continues with draft and publish."
+          },
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Replay intuition",
+          "prompt": "Why does durable replay skip an already completed activity?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Because activities never fail.",
+              "correct": false
+            },
+            {
+              "text": "The recorded history says the step succeeded, so rerunning it could duplicate side effects.",
+              "correct": true
+            },
+            {
+              "text": "Because model calls are deterministic.",
+              "correct": false
+            }
+          ],
+          "explanation": "Event history is the source of recovery truth.",
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ]
+        }
+      ],
+      "citations": [
+        "kb8",
+        "kb9",
+        "kb7"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Operate histories, versions, and cost",
+      "sub": "Durable workflows become production data.",
+      "summary": "Reliable agent workflows need versioning, retention, and observability.",
+      "objectives": [
+        "Avoid storing secrets and bloated prompts in history.",
+        "Version long-lived workflow code.",
+        "Monitor retries, cost, and stuck approvals."
+      ],
+      "termIds": [
+        "agent",
+        "state",
+        "tool",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Durable state needs product hygiene",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Event histories, step outputs, approval packets, and model responses are application data. They may contain PII, secrets, or large prompts if the workflow is careless. Store digests or references where possible and apply retention rules."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Long-lived workflows also need versioning discipline. Code changes should not break runs that started under an older control path. Operators need to distinguish workflow replay errors, activity errors, worker outages, and policy blocks."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every durable agent run should expose status, last completed step, waiting reason, retry count, and cost budget."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output from a durable agent workflow",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review the workflow trace and final answer together."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Completed side-effecting steps are idempotent and not repeated after retry."
+                  }
+                ],
+                [
+                  {
+                    "text": "Human approvals are stored as explicit signals with artifact and reviewer."
+                  }
+                ],
+                [
+                  {
+                    "text": "Model calls have timeouts, retry budgets, and cost limits."
+                  }
+                ],
+                [
+                  {
+                    "text": "Event history avoids secrets, huge prompts, and unnecessary PII."
+                  }
+                ],
+                [
+                  {
+                    "text": "Operators can inspect stuck, failed, waiting, and cancelled states."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Operational risk",
+          "prompt": "What is a common durable-workflow mistake for LLM apps?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Using explicit timeouts.",
+              "correct": false
+            },
+            {
+              "text": "Storing large prompts, secrets, or sensitive model outputs directly in long-lived histories.",
+              "correct": true
+            },
+            {
+              "text": "Separating activities from workflow code.",
+              "correct": false
+            }
+          ],
+          "explanation": "Durable state needs the same privacy and retention discipline as other product data.",
+          "termIds": [
+            "agent",
+            "state",
+            "tool",
+            "sandbox"
+          ],
+          "sources": [
+            "kb8",
+            "kb9",
+            "kb7"
+          ]
+        }
+      ],
+      "citations": [
+        "kb8",
+        "kb9",
+        "kb7"
+      ]
+    }
+  ],
+  "glossary": {
+    "agent": {
+      "id": "agent",
+      "label": "Agent",
+      "laymanDefinition": "A software loop that plans, observes results, and may use tools to pursue a goal.",
+      "technicalNote": "Agent designs need explicit loop boundaries, stop conditions, permissions, state contracts, and evaluation surfaces before autonomy is useful.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "tool": {
+      "id": "tool",
+      "label": "Tool",
+      "laymanDefinition": "An external capability the model can request, such as search, code execution, retrieval, or a business API.",
+      "technicalNote": "Tools require schemas, authorization, error handling, audit logs, and tests because natural-language intent is not execution permission.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "state": {
+      "id": "state",
+      "label": "State",
+      "laymanDefinition": "The working information carried between steps of an agent workflow.",
+      "technicalNote": "State should separate durable facts, transient scratch work, approvals, tool results, and failure metadata so retries and handoffs remain understandable.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "memory": {
+      "id": "memory",
+      "label": "Memory",
+      "laymanDefinition": "Information saved across turns or sessions for future use.",
+      "technicalNote": "Agent memory needs scope, freshness, deletion, privacy controls, and evaluation so saved context helps rather than silently steering behavior.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "mcp": {
+      "id": "mcp",
+      "label": "MCP",
+      "laymanDefinition": "A protocol for exposing tools and context to models and agent clients.",
+      "technicalNote": "MCP-style integrations still need capability design, trust boundaries, lifecycle handling, and authorization around each exposed server.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Model Context Protocol"
+    },
+    "sandbox": {
+      "id": "sandbox",
+      "label": "Sandbox",
+      "laymanDefinition": "An isolated environment that limits what agent actions can reach or change.",
+      "technicalNote": "Sandboxing should constrain files, network, processes, credentials, browser sessions, time, and side effects according to the task risk.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Durable Agents with Workflow Engines",
+    "themes": [
+      {
+        "name": "Durability fit check",
+        "questions": [
+          {
+            "q": "Does this agent workflow need replayable state, long waits, retries, or recovery after partial side effects?",
+            "why": "A normal queue can retry a job, but it may not know which external steps already completed.",
+            "opts": [
+              "Durable workflow with activity boundaries",
+              "Simple idempotent queue job",
+              "In-memory agent loop only"
+            ],
+            "rot": "Use durable engines when progress must survive failures or human waits; keep simple idempotent work on queues."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct durable agents by naming workflow, activity, event history, replay, timers, signals, idempotency, and versioning."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Durable agent path from workflow state to idempotent activities",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Agents need more than a queue when work is long-lived",
+          "sub": "Durability matters when progress must survive failure.",
+          "what": "Learners distinguish simple background jobs from durable workflows.",
+          "relevance": "This prevents using fragile in-memory loops for multi-day or side-effectful work.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Anchor durable execution in partial side effects and waiting humans.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Workflow code owns control; activities own side effects",
+          "sub": "Replay works only when boundaries are clean.",
+          "what": "Learners place nondeterministic work outside deterministic orchestration.",
+          "relevance": "Bad boundaries create replay failures or duplicate side effects.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Put model calls, APIs, and database writes behind activity boundaries.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Timers, signals, approvals, and retries shape the run",
+          "sub": "Durable agents wait and recover explicitly.",
+          "what": "Learners design waits, signals, retries, and timeouts.",
+          "relevance": "Implicit waiting inside prompts cannot survive process restarts.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Model human approval and external events as workflow inputs.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Implement idempotent step replay",
+          "sub": "A toy log shows why completed work should not repeat.",
+          "what": "Learners simulate durable progress without a platform dependency.",
+          "relevance": "The code makes replay and idempotency concrete before framework details.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use a recorded step log to avoid duplicate side effects.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Operate histories, versions, and cost",
+          "sub": "Durable workflows become production data.",
+          "what": "Learners plan operational safeguards for long-running agent workflows.",
+          "relevance": "Durability can accidentally preserve sensitive prompts, stale code assumptions, or runaway retries.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Keep event histories useful without storing secrets or giant prompts.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Agents need more than a queue when work is long-lived",
+        "detail": "A durable workflow remembers what already happened."
+      },
+      {
+        "step": 2,
+        "label": "Workflow code owns control; activities own side effects",
+        "detail": "Workflow/activity separation is the core durable design move."
+      },
+      {
+        "step": 3,
+        "label": "Timers, signals, approvals, and retries shape the run",
+        "detail": "Durable workflows turn waiting into first-class state."
+      },
+      {
+        "step": 4,
+        "label": "Implement idempotent step replay",
+        "detail": "Durability means “continue,” not “start over.”"
+      },
+      {
+        "step": 5,
+        "label": "Operate histories, versions, and cost",
+        "detail": "Reliable agent workflows need versioning, retention, and observability."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete problem in \"Agents need more than a queue when work is long-lived\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_boundary",
+        "label": "Did \"Timers, signals, approvals, and retries shape the run\" define the right boundary or decision?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Operate histories, versions, and cost\" provide a reviewable release gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Design a durable lesson-generation workflow with plan, retrieve, draft, human approval, render, and save steps. Mark which steps are activities, which wait for signals, what is idempotent, and what must not be stored in history. Next rung: build the workflow in LangGraph or Temporal.",
+      "scopedTo": "Durable Agents with Workflow Engines"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Model Context Protocol docs",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-20"
+    },
+    "kb8": {
+      "id": "kb8",
+      "kind": "kb",
+      "title": "KB: Temporal durable execution",
+      "url": "https://docs.temporal.io/temporal",
+      "asOfDate": "2026-06-22"
+    },
+    "kb9": {
+      "id": "kb9",
+      "kind": "kb",
+      "title": "KB: Restate and Inngest durable functions",
+      "url": "https://docs.restate.dev/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb7": {
+      "id": "kb7",
+      "kind": "kb",
+      "title": "KB: LangGraph",
+      "url": "https://docs.langchain.com/oss/python/langgraph/overview",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

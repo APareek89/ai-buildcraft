@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vector search — ML Hands-on Lab</title><style>
+:root{--ink:#24302f;--muted:#64706e;--paper:#fbfaf7;--card:#fff;--accent:#176b66;--line:#dce4e0;--code:#17201f}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.72 Georgia,'Times New Roman',serif}
+main{max-width:72ch;margin:0 auto;padding:4rem 1.4rem 7rem}h1,h2,h3{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.18;color:#172321}
+h1{font-size:clamp(2.25rem,7vw,4.5rem);letter-spacing:-.04em;margin:.2rem 0 1rem}h2{font-size:1.55rem;margin-top:3.6rem;padding-top:1rem;border-top:1px solid var(--line)}h3{font-size:1.05rem;margin-top:2rem}
+p,li{max-width:68ch}a{color:var(--accent);text-decoration-thickness:.08em;text-underline-offset:.18em}.eyebrow{font:700 .78rem/1.2 ui-sans-serif,-apple-system,sans-serif;text-transform:uppercase;letter-spacing:.13em;color:var(--accent)}
+.lede{font-size:1.28rem;line-height:1.55;color:#344441}.micro,.callout{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);padding:1rem 1.2rem;border-radius:.4rem}
+.equation{overflow-x:auto;background:#eef4f1;padding:.8rem 1rem;border-radius:.4rem}.terms{color:#3f514e}.figure{margin:2rem 0}.figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:.55rem;background:white}.caption{font-size:.92rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-family:ui-sans-serif,-apple-system,sans-serif;font-size:.92rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:.75rem .5rem}th{color:var(--accent)}
+pre{background:var(--code);color:#edf4f1;padding:1rem;overflow:auto;border-radius:.45rem;font-size:.85rem;line-height:1.55}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.steps li{margin:.7rem 0}
+.links{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:2rem}.button{font-family:ui-sans-serif,-apple-system,sans-serif;background:var(--accent);color:#fff;padding:.62rem .9rem;border-radius:.35rem;text-decoration:none}.button.secondary{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+@media(max-width:620px){main{padding-top:2rem}body{font-size:16px}table{display:block;overflow-x:auto}}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script>window.MathJax={tex:{inlineMath:[["\(","\)"]],displayMath:[["\[","\]"]]}};</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" onload="hljs.highlightAll()"></script></head>
+<body><main><p class="eyebrow">ML Hands-on Lab · 03 — Instance-based</p><h1>Vector search</h1>
+<section><h2>1. The one-sentence version</h2><p class="lede">Vector search turns meaning into coordinates, then retrieves nearby coordinates exactly or with a faster approximate index.</p></section>
+<section><h2>2. The intuition</h2><p>Give every sentence a location on a semantic map. Exact search checks every address; approximate search first chooses a neighbourhood, accepting that the border may hide a good match.</p><div class="micro"><h3>A five-item example</h3><p>For five one-dimensional similarities [0.12, 0.91, 0.44, 0.88, -0.1], exact top-2 returns indices 1 and 3. An approximate bucket that contains [0,1,4] checks only three items but misses index 3, giving recall@2 of 1/2.</p></div></section>
+<section><h2>3. The maths in plain English</h2><p class="equation">\[\cos(q,x_i)=\frac{q^Tx_i}{\lVert q\rVert\lVert x_i\rVert},\quad \operatorname{recall@k}=\frac{|A_k\cap E_k|}{k}\]</p><p class="terms">q is the query vector, xi a document vector, cosine is their angle similarity, Ek the exact top k, and Ak the approximate result. Recall measures neighbours lost to indexing.</p></section>
+<section><h2>4. What the model is actually doing during training</h2><ol class="steps"><li>Normalize document vectors.</li><li>Project each vector onto seeded random hyperplanes.</li><li>Turn projection signs into a compact binary bucket key.</li><li>At query time search matching or nearby buckets, then rerank candidates exactly.</li></ol></section>
+<section><h2>5. The knobs</h2><table><tr><th>Knob</th><th>Too low</th><th>Too high</th></tr><tr><td>embedding model</td><td>Cheap but misses semantics.</td><td>Slow, large, or domain-mismatched.</td></tr><tr><td>hash bits</td><td>Huge candidate buckets.</td><td>Tiny buckets miss neighbours.</td></tr><tr><td>probe radius</td><td>Fast with lower recall.</td><td>Approaches an exact scan.</td></tr></table></section>
+<section><h2>6. Assumptions and failure modes</h2><p>Embedding distance must reflect user relevance, vectors should be normalized for cosine, and index recall must be measured on representative queries. Approximation helps at scale, not automatically on tiny corpora.</p><figure class="figure"><img src="key_figure.png" alt="Key result from the notebook"><figcaption class="caption">This figure is generated by the matching notebook from the seeded experiment.</figcaption></figure></section>
+<section><h2>7. Code</h2><h3>Minimal version</h3><pre><code class="language-python">vectors = normalize(encoder.encode(documents))
+query = normalize(encoder.encode([text]))[0]
+top_ids = np.argsort(-(vectors @ query))[:5]</code></pre><h3>Realistic version</h3><pre><code class="language-python"># Encode offline, normalize, and build an ANN index.
+index.add(document_ids, normalized_vectors)
+candidates = index.search(normalized_query, k=100)
+results = reranker.rank(query, candidates)[:10]
+# Monitor exact-neighbour recall on a held-out query set.</code></pre></section>
+<section><h2>8. Where it's actually used</h2><ul><li>Searching support articles from a natural-language question.</li><li>Finding duplicate marketplace listings.</li><li>Retrieving passages before a question-answering system.</li><li>Recommending visually or semantically similar products.</li></ul></section>
+<section><h2>9. How it relates to its neighbours</h2><p>k-NN supplies the basic geometry. TF-IDF is a sparse lexical embedding and a strong baseline. Cross-encoder rerankers score query-document pairs more accurately but are too costly to scan a large corpus.</p></section>
+<section><h2>10. Links</h2><div class="links"><a class="button" href="notebook.ipynb">Run the notebook</a><a class="button secondary" href="../index.html">Back to the lab index</a></div></section>
+</main></body></html>

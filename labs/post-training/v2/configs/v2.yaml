@@ -1,0 +1,132 @@
+# Post-Training Lab · v2 · Qwen2.5-0.5B
+# Every v2 notebook and script reads its settings from here.
+# v2 reads the main lab (one folder up: src/, data/raw/, evals/) and writes only inside v2/.
+
+experiment: post-training-lab-v2
+seed: 42
+
+model:
+  # The copy downloaded by notebooks/00a_download_models.ipynb, relative to this v2 folder.
+  # Override with the environment variable PTL_BASE_MODEL_PATH; if neither exists the Hugging Face id is used.
+  local_path: ../models/Qwen2.5-0.5B-Instruct
+  hf_id: Qwen/Qwen2.5-0.5B-Instruct
+
+device:
+  torch: auto          # auto = cuda, else mps, else cpu
+  dtype: float32       # float32 keeps results comparable with v1 (all v1 runs were float32 on MPS)
+
+memory_safety:
+  # PyTorch raises a clean out-of-memory error instead of pushing macOS into heavy swap.
+  mps_high_watermark_ratio: 0.5
+  mps_low_watermark_ratio: 0.4
+  # scripts/watchdog.py stops a job when the Mac gets close to trouble.
+  min_free_percent: 12        # macOS "System-wide memory free percentage"
+  max_swap_growth_gb: 5.0     # swap growth since the job started
+  max_job_footprint_gb: 12.5  # physical footprint of the job process (MPS itself is capped at ~8.9 GB)
+
+prompts:
+  # Notebook 02's ENGINEERED instruction, byte-for-byte (the same text configs/master_eval.yaml uses).
+  # The sha256 guards against accidental edits: training and evaluation must use the identical prompt.
+  engineered: "You are the customer assistant for Meridian Motors, an electric two-wheeler company. Answer only from Meridian's official documents. If the documents do not contain the answer, say plainly that you do not have that information and offer to connect the customer to a dealer. Never guess a number. Never round a range figure upward."
+  engineered_sha256: 6a2a4809d36c9b1cb4fa9145a6e986aee4a2917202a8525f8abea4742876c22b
+  separator: "\n\n=== MERIDIAN OFFICIAL DOCUMENTS ===\n"
+
+retrieval:
+  rag_config: configs/rag_v2.yaml          # copy of ../configs/rag.yaml with caches redirected into v2/ (build scripts only)
+  snapshot: data/retrieval_snapshot.json   # notebooks read this file: no Postgres needed to train or evaluate
+  top_k: 3
+  top_n_candidates: 10
+  shuffle_context_share: 0.3               # SFT only: share of examples whose chunk order is shuffled
+
+data:
+  dev_v1: ../evals/dev_v1.json             # the main lab's dev_v1 (read-only)
+  dev_v2: data/dev_v2.json
+  sft_train: data/sft_v2_train.jsonl
+  sft_val: data/sft_v2_val.jsonl
+  dpo_prompts: data/dpo_v2_prompts.jsonl
+  dpo_train: data/dpo_v2_train.jsonl
+  dpo_val: data/dpo_v2_val.jsonl
+  topic_holdout: data/topic_holdout.json
+  judge_calibration: data/judge_calibration.json
+  composition_targets:      # share of SFT v2 training examples
+    answer_with_gold_context: 0.38
+    answer_no_context: 0.12
+    refuse_gold_removed: 0.08
+    refuse_near_miss: 0.25
+    comparison_multi_claim: 0.08
+    two_part: 0.04
+    policy_answer: 0.05
+  near_miss_mix:            # share within refuse_near_miss
+    money: 0.35
+    policy: 0.25
+    spec: 0.15
+    feature: 0.10
+    company: 0.15
+  short_name_share: 0.65
+  typo_share: 0.12
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+sft:
+  epochs: 2
+  lr: 0.0002
+  batch_size: 2
+  grad_accum: 4
+  warmup_ratio: 0.03
+  gradient_checkpointing: true
+  max_seq_len: auto        # computed from the data so no answer token is ever cut
+  output_adapter: adapters/sft_v2
+
+dpo:
+  beta: 0.1
+  loss_type: sigmoid
+  epochs: 3                # raised from 2: the real-failure set is small (see notebook 02)
+  lr: 0.000005
+  batch_size: 1
+  grad_accum: 8
+  gradient_checkpointing: true
+  merged_sft_model: models/sft_v2_merged
+  output_adapter: adapters/dpo_v2
+  samples_per_prompt: 3
+  sample_temperature: 0.8
+  round2_samples: 4        # second, wider sampling round to surface nearby mistakes
+  round2_temperature: 1.0
+  min_real_pairs: 250
+  max_synthetic_share: 0.30
+
+generation:
+  max_new_tokens: 160
+  max_input_tokens: 3072
+  do_sample: false
+  num_beams: 1
+
+judge:
+  model: gemini-flash-latest
+  rubric_version: v2.1
+  batch_size: 12
+  requests_per_minute: 12
+  calibration_min_agreement: 0.90
+  max_api_calls:
+    build: 80
+    dpo_pairs: 120
+    final_eval: 400
+  cache_dir: runs/judge_cache
+
+final_eval:
+  output_dir: runs/final_eval
+  cache_dir: runs/final_eval/cache
+  eval_sets: [dev_v1, dev_v2]
+  bar_path: ../runs/00_bar.json            # written by notebook 01 of the main lab; the default below is used if absent
+  bar_default: {accuracy_answerable: 0.8, hallucination_rate_answerable: 0.1, appropriate_refusal_rate: 0.8, max_over_refusal: 0.15}
+  parent_v1_results: ../runs/master_eval/dev_v1  # main-lab notebook 13 answers, reused only when byte-identical (optional)
+  models:
+    base:        {label: "Base Qwen",        kind: base,    conditions: [rag_rerank, oracle, rag_no_gold]}
+    sft_v1:      {label: "SFT v1",           kind: adapter, adapter: ../adapters/sft, conditions: [engineered, rag_rerank, oracle, rag_no_gold]}
+    sft_dpo_v1:  {label: "SFT+DPO v1",       kind: adapter, adapter: ../adapters/dpo, conditions: [engineered, rag_rerank, oracle, rag_no_gold]}
+    sft_v2:      {label: "SFT v2",           kind: adapter, adapter: adapters/sft_v2, conditions: [engineered, rag_rerank, oracle, rag_no_gold]}
+    sft_dpo_v2:  {label: "SFT v2 + DPO v2",  kind: merged_adapter, base: models/sft_v2_merged, adapter: adapters/dpo_v2, conditions: [engineered, rag_rerank, oracle, rag_no_gold]}
+  confidence: 0.95

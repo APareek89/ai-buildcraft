@@ -1,0 +1,890 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Pretraining and Scaling Laws",
+    "title": "Pretraining and Scaling Laws",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Pretraining and scaling laws explain why larger language models improved: next-token training over massive corpora produces predictable loss trends, but compute-optimal scaling requires balancing parameters, tokens, and data quality."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Pretraining and Scaling Laws",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Pretraining and scaling laws — why scale changed capability",
+    "caption": "The map links the pretraining objective to loss curves, compute allocation, and planning limits.",
+    "oneLineThesis": "Pretraining teaches next-token prediction at scale; scaling laws summarize how loss tends to improve with data, parameters, and compute.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Pretraining objective",
+        "sub": "Build the simplest useful picture of Pretraining and Scaling Laws.",
+        "what": "Pretraining optimizes a model on broad token prediction before specialization.",
+        "relevance": "It explains what later prompting, RAG, and fine-tuning build on.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "How next-token prediction becomes the base training task for language models.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Loss curves",
+        "sub": "See the moving parts and how they interact.",
+        "what": "Scaling laws relate loss to model size, data, and compute.",
+        "relevance": "They turn model growth into a planning question instead of folklore.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "How empirical curves connect scale factors to predictable performance trends.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Compute balance",
+        "sub": "Make the choices that change quality, cost, or risk.",
+        "what": "Compute-optimal training allocates budget across model and data.",
+        "relevance": "It explains why bigger is not always the best use of compute.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Why parameters and training tokens must grow together under a budget.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Data quality",
+        "sub": "Connect the concept to a small practical artifact.",
+        "what": "Training data quality and mixture shape what scale buys.",
+        "relevance": "It prevents treating token count as the only ingredient.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Why more tokens help only when the data distribution is useful.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Limits of extrapolation",
+        "sub": "Use active recall and a decision checklist to make it stick.",
+        "what": "Scaling laws are planning tools, not deployment guarantees.",
+        "relevance": "It connects pretraining curves to evals and downstream risk.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Why benchmark gains do not guarantee product-specific capability.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "dependency",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Pretraining teaches broad token prediction",
+      "sub": "Start with the objective that creates base model capability.",
+      "summary": "Pretraining is large-scale next-token learning before instruction tuning, preference tuning, or product adaptation.",
+      "objectives": [
+        "Define pretraining in terms of token prediction.",
+        "Connect pretraining to later adaptation steps.",
+        "Avoid confusing pretraining with RAG or fine-tuning."
+      ],
+      "termIds": [
+        "pretraining",
+        "token",
+        "llm"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "ps_m1",
+          "kind": "conceptual",
+          "title": "The base task is predicting held-out tokens",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "During pretraining, a model sees token sequences and learns to assign high probability to the actual next token. That simple objective, repeated over massive corpora, teaches grammar, facts, code patterns, and many reasoning-like regularities."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: leadership asks why model capability improved so quickly with scale. The answer starts with a broad objective trained over enormous token mixtures, not with a hand-written reasoning engine."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "pretraining",
+            "token",
+            "llm"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ],
+          "analogy": "Pretraining is like practicing every next move in a huge library of examples before learning a specific job."
+        },
+        {
+          "id": "ps_m1_example",
+          "kind": "functionalExample",
+          "title": "Worked example: one training slice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Sequence: “The refund policy requires an invoice”. The training task asks the model to predict each next token from the previous tokens. The loss is high when the true next token receives low probability, and lower when the model predicts it well."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "pretraining",
+            "token"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "ps_m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check pretraining",
+          "prompt": "What is the core pretraining signal for a causal LLM?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Retrieve the answer from a vector database.",
+              "correct": false
+            },
+            {
+              "text": "Predict the next token from previous tokens.",
+              "correct": true
+            },
+            {
+              "text": "Follow human preference rankings directly.",
+              "correct": false
+            }
+          ],
+          "explanation": "Preference tuning and RAG come later; pretraining is broad token prediction.",
+          "termIds": [
+            "pretraining",
+            "token"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Scaling laws summarize loss trends",
+      "sub": "Once the objective is clear, connect scale to measured loss.",
+      "summary": "Scaling laws are empirical relationships showing how loss tends to change with more parameters, data, or compute.",
+      "objectives": [
+        "Define scaling law at a high level.",
+        "Explain why loss curves matter.",
+        "Avoid treating laws as magic guarantees."
+      ],
+      "termIds": [
+        "scaling_law",
+        "llm"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "ps_m2",
+          "kind": "conceptual",
+          "title": "Scale made progress more predictable",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Scaling laws summarize empirical trends: as model size, data, and compute grow, loss often improves in regular ways over a range. This helped teams plan training runs instead of relying only on trial and error."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The key word is empirical. A scaling law describes observed behavior under assumptions about data, architecture, and training setup. It is not a proof that every downstream task will improve equally."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "scaling_law",
+            "llm"
+          ],
+          "sources": [
+            "canon1"
+          ],
+          "analogy": "A scaling law is like a fuel-efficiency curve: useful for planning, but not a guarantee for every road."
+        },
+        {
+          "id": "ps_m2_code",
+          "kind": "codeExample",
+          "title": "Toy power-law intuition",
+          "language": "python",
+          "code": "import math\n\ndef toy_loss(compute):\n    return 2.0 * compute ** -0.08\n\nfor c in [1, 10, 100]:\n    print(c, round(toy_loss(c), 3))",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Run this as a tiny model of the mechanism. The point is to predict behavior before trusting the output."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict whether loss drops linearly or with diminishing returns.",
+            "answer": "It prints decreasing losses with diminishing returns. The exact formula is toy math, but it captures the planning idea: each order of magnitude helps less than the last."
+          },
+          "syntax": [
+            {
+              "part": "input data",
+              "explains": "The small concrete case the example operates on."
+            },
+            {
+              "part": "decision rule",
+              "explains": "The line or function that turns the inputs into behavior."
+            },
+            {
+              "part": "print(...)",
+              "explains": "A visible result so you can check your prediction."
+            }
+          ],
+          "termIds": [
+            "scaling_law"
+          ],
+          "sources": [
+            "canon1"
+          ]
+        },
+        {
+          "id": "ps_m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check scaling laws",
+          "prompt": "What does a scaling law usually summarize?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A guarantee that every product metric improves.",
+              "correct": false
+            },
+            {
+              "text": "An empirical trend between loss and factors like compute, data, or parameters.",
+              "correct": true
+            },
+            {
+              "text": "A rule that data quality does not matter.",
+              "correct": false
+            }
+          ],
+          "explanation": "Scaling laws guide planning; evals still decide product fit.",
+          "termIds": [
+            "scaling_law"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Compute budget must be balanced",
+      "sub": "Loss trends lead to the question of where to spend training compute.",
+      "summary": "Compute-optimal scaling asks how much budget should go to parameters versus training tokens.",
+      "objectives": [
+        "Explain why bigger models are not always compute-optimal.",
+        "Describe the parameters-versus-data tradeoff.",
+        "Connect Chinchilla-style lessons to planning."
+      ],
+      "termIds": [
+        "scaling_law",
+        "token",
+        "llm"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "ps_m3",
+          "kind": "conceptual",
+          "title": "Parameters and tokens compete for compute",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For a fixed training budget, spending everything on more parameters can undertrain the model. Compute-optimal training balances model size and number of training tokens."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The Chinchilla result is commonly summarized as a reminder that data quantity matters alongside parameter count. A smaller model trained on more tokens can beat a larger undertrained model under the same compute budget."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "scaling_law",
+            "token"
+          ],
+          "sources": [
+            "canon2"
+          ],
+          "analogy": "Compute allocation is like budgeting a school: more classrooms help only if you also hire teachers and enroll students."
+        },
+        {
+          "id": "ps_m3_case",
+          "kind": "functionalExample",
+          "title": "Case study: the undertrained giant",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Team A trains a very large model for too few tokens. Team B trains a smaller model longer on more data. If Team B reaches lower validation loss for the same compute, the smaller model is the better planning choice."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This does not say small always wins. It says compute should be allocated deliberately."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "scaling_law",
+            "token"
+          ],
+          "sources": [
+            "canon2"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "ps_m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check compute balance",
+          "prompt": "What is an undertrained model?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A model that uses RAG at inference time.",
+              "correct": false
+            },
+            {
+              "text": "A model with many parameters but too few training tokens for the compute budget.",
+              "correct": true
+            },
+            {
+              "text": "A model with no tokenizer.",
+              "correct": false
+            }
+          ],
+          "explanation": "Compute-optimal planning balances data and parameters.",
+          "termIds": [
+            "scaling_law",
+            "token"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Data quality shapes what scale buys",
+      "sub": "After compute allocation, examine the corpus being scaled.",
+      "summary": "More data helps when it is useful, diverse, deduplicated, and aligned with the target distribution; bad data scales bad behavior.",
+      "objectives": [
+        "Explain why token count is not enough.",
+        "Name data quality concerns.",
+        "Connect pretraining data to downstream capability."
+      ],
+      "termIds": [
+        "pretraining",
+        "token",
+        "llm"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "ps_m4",
+          "kind": "conceptual",
+          "title": "Not all tokens are equally useful",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Scaling laws often discuss token counts, but the data mixture matters. Duplicates, low-quality text, unsafe content, narrow domains, or missing languages shape what the model learns."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A model trained on more tokens can still perform poorly on a product task if those tokens do not contain the relevant pattern, format, language, or domain."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "pretraining",
+            "token"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ],
+          "analogy": "More pages help only if the library contains the subjects you need."
+        },
+        {
+          "id": "ps_m4_example",
+          "kind": "functionalExample",
+          "title": "Case study: code model versus support chat",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A model with strong code pretraining may excel at programming but miss support-tone norms. A model with broad chat and policy examples may answer support questions better even if its headline benchmark is lower."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "pretraining",
+            "llm"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "ps_m4_fail",
+          "kind": "note",
+          "title": "How scaling-law reasoning breaks",
+          "tone": "warn",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use scaling laws carefully; the common mistakes are practical."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Assuming every benchmark improves at the same rate."
+                  }
+                ],
+                [
+                  {
+                    "text": "Ignoring data mixture, contamination, and licensing constraints."
+                  }
+                ],
+                [
+                  {
+                    "text": "Forgetting that downstream prompting, tools, and RAG still matter."
+                  }
+                ],
+                [
+                  {
+                    "text": "Using loss curves as a substitute for product evals."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "scaling_law",
+            "pretraining"
+          ],
+          "sources": [
+            "canon1",
+            "canon2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Scaling laws are planning tools",
+      "sub": "End by separating pretraining expectations from product guarantees.",
+      "summary": "Scaling laws help estimate training tradeoffs, but downstream selection still needs task-specific evals, cost analysis, and risk checks.",
+      "objectives": [
+        "Use scaling laws without overclaiming.",
+        "Connect model scale to product evaluation.",
+        "Choose the next learning rung."
+      ],
+      "termIds": [
+        "scaling_law",
+        "llm"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "ps_m5",
+          "kind": "conceptual",
+          "title": "Loss is not the same as product success",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Lower pretraining loss often correlates with broader capability, but a product still needs its own evals. The model may be stronger overall and still fail a regulated workflow, a long-context extraction task, or a tool-use policy."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Scaling laws help plan training and model expectations. They do not remove the need for benchmark literacy, red-team checks, latency budgets, and grounded evaluation."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "scaling_law",
+            "llm"
+          ],
+          "sources": [
+            "canon1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "ps_m5_decision",
+          "kind": "decisionCallout",
+          "useWhen": "Use scaling-law reasoning to estimate training or model-selection tradeoffs before expensive experiments.",
+          "avoidWhen": "Do not use headline scale or lower loss as the only reason to ship a model into a product workflow.",
+          "ruleOfThumb": "Let scaling laws guide candidates; let task evals decide releases.",
+          "termIds": [
+            "scaling_law",
+            "llm"
+          ],
+          "sources": [
+            "canon1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "ps_m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check the lesson",
+          "prompt": "What is the safest use of scaling laws?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Skip evals because bigger models always win.",
+              "correct": false
+            },
+            {
+              "text": "Plan candidates and budgets, then verify with task-specific evals.",
+              "correct": true
+            },
+            {
+              "text": "Assume token count matters but data quality never does.",
+              "correct": false
+            }
+          ],
+          "explanation": "Scaling laws inform strategy; product evals decide deployment.",
+          "termIds": [
+            "scaling_law"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    }
+  ],
+  "glossary": {
+    "llm": {
+      "id": "llm",
+      "label": "LLM",
+      "laymanDefinition": "A language model that predicts and generates token sequences from context.",
+      "technicalNote": "LLM behavior depends on training data, tokenization, context, decoding, alignment, system instructions, and the application wrapper.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Large language model"
+    },
+    "token": {
+      "id": "token",
+      "label": "Token",
+      "laymanDefinition": "A unit of text, code, punctuation, or whitespace that the model reads and generates.",
+      "technicalNote": "Token boundaries determine context usage, cost, latency, truncation behavior, and how the model represents text internally.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "context_window": {
+      "id": "context_window",
+      "label": "Context window",
+      "laymanDefinition": "The limited set of input and generated tokens available to the model at one time.",
+      "technicalNote": "Context windows constrain what evidence, instructions, conversation state, and tool results can influence the next output.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "prompt": {
+      "id": "prompt",
+      "label": "Prompt",
+      "laymanDefinition": "The instructions, user request, examples, and context sent to the model.",
+      "technicalNote": "Prompts are release artifacts when they shape behavior, tool use, output schema, safety handling, or evaluation results.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "schema": {
+      "id": "schema",
+      "label": "Schema",
+      "laymanDefinition": "A machine-readable contract for fields, types, required values, and allowed shapes.",
+      "technicalNote": "Schemas make model outputs and tool calls checkable, but they still need validation, refusal handling, and regression tests.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "tool_call": {
+      "id": "tool_call",
+      "label": "Tool call",
+      "laymanDefinition": "A structured request from the model to use an external capability.",
+      "technicalNote": "Tool calls should be parsed, authorized, validated, traced, and executed by trusted code rather than by free-form text.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "pretraining": {
+      "id": "pretraining",
+      "label": "Pretraining",
+      "laymanDefinition": "Large-scale training that teaches a model general token prediction before specialization.",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "scaling_law": {
+      "id": "scaling_law",
+      "label": "Scaling law",
+      "laymanDefinition": "An empirical relationship between model loss and scale factors like data, parameters, and compute.",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts",
+    "themes": [
+      {
+        "name": "Adoption check",
+        "questions": [
+          {
+            "q": "What decision does Pretraining and Scaling Laws change in your build?",
+            "why": "A lesson is useful only when it changes what you do next.",
+            "opts": [
+              "Use now",
+              "Prototype first",
+              "Defer"
+            ],
+            "rot": "Prefer the smallest testable version."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct the chain: pretraining objective, loss, scale factors, compute-optimal balance, data quality, and limits. Then explain why a larger pretrained model can still fail a product task."
+          }
+        ]
+      }
+    ],
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Pretraining teaches broad token prediction",
+        "detail": "Start with the objective that creates base model capability."
+      },
+      {
+        "step": 2,
+        "label": "Scaling laws summarize loss trends",
+        "detail": "Once the objective is clear, connect scale to measured loss."
+      },
+      {
+        "step": 3,
+        "label": "Compute budget must be balanced",
+        "detail": "Loss trends lead to the question of where to spend training compute."
+      },
+      {
+        "step": 4,
+        "label": "Data quality shapes what scale buys",
+        "detail": "After compute allocation, examine the corpus being scaled."
+      },
+      {
+        "step": 5,
+        "label": "Scaling laws are planning tools",
+        "detail": "End by separating pretraining expectations from product guarantees."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_1",
+        "label": "Can I state the pretraining objective?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_2",
+        "label": "Do I know what loss is being modeled?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_3",
+        "label": "Can I explain why data and parameters must be balanced?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_4",
+        "label": "Can I name what scaling laws do not guarantee?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_5",
+        "label": "What should I learn next: fine-tuning, evals, or model selection?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Write a model-selection memo for a team choosing between a smaller well-evaluated model and a larger expensive model. Use scaling-law reasoning, but require task-specific evals before launch. Next rung: benchmark literacy and model evaluation.",
+      "scopedTo": "Pretraining and Scaling Laws"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "How LLMs Work",
+      "url": "https://huggingface.co/docs/transformers/en/llm_tutorial",
+      "asOfDate": "2026-06-22"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "Transformers, Attention, and KV Cache",
+      "url": "https://huggingface.co/docs/transformers/en/kv_cache",
+      "asOfDate": "2026-06-22"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Scaling Laws for Neural Language Models",
+      "url": "https://arxiv.org/abs/2001.08361",
+      "asOfDate": "2026-06-23"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Training Compute-Optimal Large Language Models",
+      "url": "https://arxiv.org/abs/2203.15556",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

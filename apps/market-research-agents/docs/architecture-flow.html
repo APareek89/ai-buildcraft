@@ -1,0 +1,49 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Architecture Flow</title>
+<style>
+ body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:1100px;margin:0 auto;padding:24px 20px 80px;color:#1f2937;background:#fafafa}
+ h1{border-bottom:2px solid #e5e7eb;padding-bottom:8px}
+ h2{margin-top:36px;border-top:1px solid #e5e7eb;padding-top:18px;color:#111827}
+ pre.mermaid{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:14px 0 28px;overflow:auto;text-align:center}
+ .hint{position:sticky;top:0;background:#fff8e1;border:1px solid #f0d264;border-radius:6px;padding:8px 12px;font-size:13px;color:#5a4a00;margin-bottom:16px}
+ .mermaid svg{max-width:100%;height:auto}
+</style></head><body>
+<div class="hint">Tip: use Ctrl/Cmd + scroll or browser zoom to enlarge a diagram.</div>
+<h1>Architecture Flow</h1>
+<h2>granularity: master</h2>
+<pre class="mermaid">%% granularity: master
+%% files: app/main.py, app/auth.py, app/db.py, app/runs.py, app/execution.py, app/examples.py, app/graph.py, app/lenses.py, app/tools.py, app/upload_storage.py, app/usage.py
+flowchart TD
+    UI[&quot;Account UI · Inter / Roboto Mono / Lucide&lt;br/&gt;Owner-scoped preferences · BYOK in page memory&quot;] --&gt; AUTH[&quot;Boundary: revocable cookie + signed CSRF&lt;br/&gt;Owner from server session; legacy session_id ignored&quot;]
+    AUTH --&gt; PG[(&quot;PostgreSQL&lt;br/&gt;users / sessions / conversations / messages / runs / usage&quot;)]
+    AUTH --&gt; MODE{&quot;Server-owned execution context&quot;}
+    MODE --&gt;|&quot;Prepared example&quot;| FIX[&quot;Immutable authored replies&lt;br/&gt;Explicit cached trace · no model or network tool&quot;]
+    MODE --&gt;|&quot;New research&quot;| PAID[&quot;Provider budget reservation&lt;br/&gt;Configured OpenAI / explicit BYOK&lt;br/&gt;No automatic provider retries&quot;]
+    AUTH --&gt; EX[&quot;Upload extraction · bounded bytes and formats&quot;]
+    EX --&gt; S3[(&quot;Private versioned S3 originals&lt;br/&gt;Owner + exact version + SHA-256&quot;)]
+    FIX --&gt; RUN[&quot;Detached council task · one worker&lt;br/&gt;Registry + durable event replay&quot;]
+    PAID --&gt; RUN
+    EX --&gt; RUN
+    PG --&gt;|&quot;Owned history: last12messages&quot;| RUN
+    RUN -. &quot;SSE viewer can detach/rejoin;15s heartbeat&quot; .-&gt; UI
+    RUN --&gt; A0[&quot;AGENT Scout · intake brief&quot;]
+    A0 --&gt; A1[&quot;AGENT Astra · analysis&lt;br/&gt;Live-only public web search/fetch&quot;]
+    A0 --&gt; LP[&quot;AGENT lens prep · parallel with draft&lt;br/&gt;Core expert reviewers only&lt;br/&gt;Router + composer; failure degrades to ordinary review&quot;]
+    KB[(&quot;Bundled strategy frameworks&lt;br/&gt;Imported into app database&quot;) ] --&gt; LP
+    A1 --&gt; ST{&quot;Dynamic ordered review stages&lt;br/&gt;Vera / Cleo / up to3 custom agents&quot;}
+    LP --&gt; ST
+    ST --&gt; RV[&quot;Reviewer: feedback then Astra revision&lt;br/&gt;Transformer: replaces current analysis&lt;br/&gt;Expert prompt enforced server-side&quot;]
+    RV --&gt;|&quot;Next stage&quot;| ST
+    ST --&gt;|&quot;Complete&quot;| FIN[&quot;Final report + complete trace&lt;br/&gt;Explicit Stop persists partial output&quot;]
+    FIN --&gt; PG
+    FIN --&gt; UI
+    UI --&gt; XP[&quot;Authenticated report export&lt;br/&gt;Typst PDF with fpdf fallback / PPTX&lt;br/&gt;Mermaid rasterization uses XMLSerializer&quot;]
+</pre>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+mermaid.initialize({ startOnLoad:false, securityLevel:"strict", theme:"base",
+  themeVariables:{ fontFamily:"-apple-system, Segoe UI, Roboto, sans-serif", fontSize:"14px" } });
+await mermaid.run({ querySelector:"pre.mermaid" });
+</script>
+</body></html>

@@ -1,0 +1,1210 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Model Context Protocol",
+    "title": "Model Context Protocol",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Model Context Protocol is practical when learners can apply it to this concrete case: An IDE assistant needs a standard way to read docs, tickets, and repo state through approved connectors. By the end, they should be able to build or review MCP server contract for docs search and ticket lookup, measure tool-call success rate across clients, and catch the failure where each client invents a different connector shape and breaks permissions."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Model Context Protocol",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Model Context Protocol: mental map",
+    "caption": "Teach MCP as host-neutral capability plumbing: hosts run clients, servers expose tools/resources/prompts, and policy stays with the host.",
+    "oneLineThesis": "MCP standardizes how AI hosts discover and use external context; it is not an agent brain or a permission model.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "MCP is host-to-capability plumbing",
+        "sub": "It standardizes connection, not agent reasoning.",
+        "what": "Learners identify the roles of host, client, and server.",
+        "relevance": "This prevents confusing a protocol with an orchestration framework.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Place MCP between AI hosts and external tools or context.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Handshake negotiates version and capabilities",
+        "sub": "Clients and servers initialize before useful work begins.",
+        "what": "Learners understand initialization and operation phases.",
+        "relevance": "Protocol versions and capabilities affect whether tools and resources behave as expected.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Treat lifecycle messages as part of compatibility and safety.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Tools, resources, and prompts are different",
+        "sub": "Each primitive carries different UX and safety expectations.",
+        "what": "Learners choose the right primitive for a capability.",
+        "relevance": "Treating passive context as active tools blurs approval and provenance boundaries.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Do not collapse every MCP primitive into a function call.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Host policy wraps tool calls",
+        "sub": "MCP schemas validate shape, not permission or intent.",
+        "what": "Learners integrate MCP with agent safety controls.",
+        "relevance": "An MCP server can expose powerful tools that hosts must still constrain.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Keep authorization, approval, and auditing outside the server description.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Build servers with lifecycle hygiene",
+        "sub": "Protocol details become production reliability issues.",
+        "what": "Learners plan robust MCP server behavior.",
+        "relevance": "A flaky server makes the host’s tool registry and user experience unreliable.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Version, paginate, cancel, log, and test servers like APIs.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "dependency"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "MCP is host-to-capability plumbing",
+      "sub": "It standardizes connection, not agent reasoning.",
+      "summary": "MCP gives capabilities a common protocol surface.",
+      "objectives": [
+        "Define MCP host, client, and server.",
+        "Explain what MCP does not decide.",
+        "Choose MCP when reuse across hosts matters."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "mcp",
+        "state"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "MCP is not the agent",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a team wants the same KB search capability in a code editor, lesson studio, and internal chat. Without MCP, each host needs a custom adapter. With MCP, one server can expose search as a tool and notes as resources to compatible hosts."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The host still chooses the model, policy, UX, and approval. The MCP server exposes capabilities; it does not decide the plan or grant permission by itself."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If the same capability should work in more than one AI host, MCP deserves consideration."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ],
+          "analogy": "MCP is a universal plug shape; the appliance still needs a power switch and circuit breaker."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Case study: shared course KB server",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The server exposes `search_lessons` as a tool, `kb://notes/{slug}` as a resource, and `draft_lesson_prompt` as a prompt template. A desktop host and web host can both connect through clients."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Each host applies its own auth, approval, and citation UI. The server does not become the product policy layer."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Identify the AI hosts that need the capability."
+                  }
+                ],
+                [
+                  {
+                    "text": "Define tools for actions, resources for context, prompts for templates."
+                  }
+                ],
+                [
+                  {
+                    "text": "Choose local stdio or remote HTTP transport."
+                  }
+                ],
+                [
+                  {
+                    "text": "Keep host-side policy around all calls."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "MCP role",
+          "prompt": "What does MCP standardize?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The model’s hidden reasoning process.",
+              "correct": false
+            },
+            {
+              "text": "The client-server protocol for discovering and using tools, resources, and prompts.",
+              "correct": true
+            },
+            {
+              "text": "All business authorization decisions.",
+              "correct": false
+            }
+          ],
+          "explanation": "MCP is integration plumbing, not autonomous governance.",
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb10",
+        "kb11",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Handshake negotiates version and capabilities",
+      "sub": "Clients and servers initialize before useful work begins.",
+      "summary": "MCP starts with explicit lifecycle negotiation.",
+      "objectives": [
+        "Describe initialize and initialized messages.",
+        "Name capabilities advertised by servers.",
+        "Explain transports at a practical level."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "mcp",
+        "state"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The lifecycle makes capability discovery explicit",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "An MCP client opens a transport and sends `initialize` with protocol version and client capabilities. The server replies with its supported version, metadata, and capabilities. Only after `notifications/initialized` should normal listing and calls begin."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Transports matter operationally: stdio fits local desktop-style servers; streamable HTTP fits remote services with web hardening. Both carry JSON-RPC-style messages."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Pin and test the protocol version your host supports."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ],
+          "analogy": "The handshake is a preflight checklist before the host uses the server."
+        },
+        {
+          "id": "m2_worked",
+          "kind": "functionalExample",
+          "title": "Worked lifecycle for a local KB server",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The host launches a local stdio server. The client initializes, receives tools and resources capability metadata, then lists `search_kb` and `kb://lesson/{slug}` resource templates."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If the server writes logs to stdout instead of stderr, it can corrupt stdio protocol messages, so lifecycle tests should include startup noise."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Open transport."
+                  }
+                ],
+                [
+                  {
+                    "text": "Send initialize with version and capabilities."
+                  }
+                ],
+                [
+                  {
+                    "text": "Receive server capabilities."
+                  }
+                ],
+                [
+                  {
+                    "text": "Send initialized notification, then list tools/resources/prompts."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Lifecycle order",
+          "prompt": "Why should a host wait for initialization before calling tools?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Because tools are always unavailable after initialization.",
+              "correct": false
+            },
+            {
+              "text": "It needs compatible version and capability information from the server.",
+              "correct": true
+            },
+            {
+              "text": "Because resources are model weights.",
+              "correct": false
+            }
+          ],
+          "explanation": "Initialization establishes the protocol contract.",
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb10",
+        "kb11",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Tools, resources, and prompts are different",
+      "sub": "Each primitive carries different UX and safety expectations.",
+      "summary": "MCP primitives encode intent: action, context, or template.",
+      "objectives": [
+        "Use tools for operations.",
+        "Use resources for readable context.",
+        "Use prompts for reusable task starters."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "mcp",
+        "state"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Primitive choice shapes host behavior",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Tools are callable operations and may have side effects. Resources are URI-addressed context that should preserve provenance. Prompts are reusable message templates selected by the user or host."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A KB article is usually a resource. A search operation is a tool. A “draft release note” workflow starter can be a prompt. Mixing them makes UX and policy harder."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Ask whether the model is acting, reading, or starting a workflow template."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ],
+          "analogy": "Tools are buttons, resources are documents, prompts are forms."
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "MCP primitive decisions",
+          "criteria": [
+            "Primitive",
+            "Use for",
+            "Safety note"
+          ],
+          "options": [
+            {
+              "name": "Tool",
+              "cells": [
+                {
+                  "criterion": "Primitive",
+                  "text": "Callable operation with input schema.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use for",
+                  "text": "Search, create ticket, run query, mutate system.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Safety note",
+                  "text": "Host approval and authorization still required.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use when the model may request an operation.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Resource",
+              "cells": [
+                {
+                  "criterion": "Primitive",
+                  "text": "URI-addressed readable context.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use for",
+                  "text": "Files, KB notes, records, schemas.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Safety note",
+                  "text": "Can carry prompt injection; keep provenance.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for inspectable context.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Prompt",
+              "cells": [
+                {
+                  "criterion": "Primitive",
+                  "text": "Reusable message template.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use for",
+                  "text": "Common workflows and task starters.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Safety note",
+                  "text": "Not higher priority than host policy.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for repeated interaction patterns.",
+              "cost": "Low",
+              "complexity": "Low"
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Primitive fit",
+          "prompt": "A KB note selected by URI should usually be exposed as what?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "An irreversible tool call.",
+              "correct": false
+            },
+            {
+              "text": "A resource.",
+              "correct": true
+            },
+            {
+              "text": "A workflow engine timer.",
+              "correct": false
+            }
+          ],
+          "explanation": "Resources are for readable context with provenance.",
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb10",
+        "kb11",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Host policy wraps tool calls",
+      "sub": "MCP schemas validate shape, not permission or intent.",
+      "summary": "MCP is not a permission model.",
+      "objectives": [
+        "Validate tool arguments.",
+        "Apply host-side policy before calling.",
+        "Treat results and resources as untrusted content."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "mcp",
+        "state"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "The host remains the safety boundary",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A server may describe `delete_file` with a perfect JSON schema. That only means arguments can be shaped correctly. The host still decides whether the current user, task, path, and approval state allow deletion."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "MCP tool results and resources can contain hostile text. The host should label provenance, separate data from instructions, and avoid letting returned content override system policy."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If a server disappears or changes its tool list, the host should handle list-changed or call errors gracefully."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "MCP-style host policy wrapper",
+          "language": "python",
+          "code": "server_tools = {\"search_kb\": {\"risk\": \"read\"}, \"create_ticket\": {\"risk\": \"external_write\"}}\n\ndef call_mcp_tool(user, name, args):\n    if name not in server_tools:\n        raise ValueError(\"unknown tool\")\n    validate_args(name, args)\n    risk = server_tools[name][\"risk\"]\n    if risk == \"external_write\" and not user.get(\"approved\"):\n        return {\"status\": \"needs_approval\", \"tool\": name, \"args\": args}\n    result = {\"content\": f\"result from {name}\", \"provenance\": \"mcp_server\"}\n    return result\n\nprint(call_mcp_tool({\"id\": \"u1\", \"approved\": False}, \"create_ticket\", {\"title\": \"Bug\"}))",
+          "explanation": "The host checks tool existence, validates arguments, requires approval for external write risk, and preserves provenance on results.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict whether `create_ticket` executes for an unapproved user.",
+            "answer": "It does not execute. The wrapper returns a `needs_approval` status with the exact tool and arguments."
+          },
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Policy layer",
+          "prompt": "Why can’t an MCP input schema be treated as authorization?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Schemas never describe tools.",
+              "correct": false
+            },
+            {
+              "text": "It checks argument shape but not user permission, business policy, or approval state.",
+              "correct": true
+            },
+            {
+              "text": "MCP servers cannot return data.",
+              "correct": false
+            }
+          ],
+          "explanation": "Authorization is a host/product responsibility.",
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb10",
+        "kb11",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Build servers with lifecycle hygiene",
+      "sub": "Protocol details become production reliability issues.",
+      "summary": "An MCP server is production software, not just a wrapper script.",
+      "objectives": [
+        "Handle pagination, cancellation, progress, and errors.",
+        "Avoid stdout corruption for stdio servers.",
+        "Harden remote servers like web services."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "mcp",
+        "state"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "MCP servers need API discipline",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Server lists can change, operations can be long-running, and clients may cancel. Pagination, progress, cancellation, errors, ping, and list-changed notifications exist because hosts need predictable behavior."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Remote HTTP servers need TLS, auth, rate limits, tenant isolation, and token handling. Local stdio servers must keep protocol messages clean and send logs to stderr."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Test startup, list, call, cancellation, error, and shutdown paths before handing a server to agent workflows."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output that used MCP",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review both protocol and answer behavior."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The host connected to the expected server version and capabilities."
+                  }
+                ],
+                [
+                  {
+                    "text": "The primitive used was appropriate: tool, resource, or prompt."
+                  }
+                ],
+                [
+                  {
+                    "text": "Host policy approved or blocked tool calls before execution."
+                  }
+                ],
+                [
+                  {
+                    "text": "Returned content kept provenance and was treated as untrusted data."
+                  }
+                ],
+                [
+                  {
+                    "text": "Errors, cancellation, and tool-list changes produced safe user-visible behavior."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Server hygiene",
+          "prompt": "Why should a stdio MCP server write logs to stderr?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Stderr is always hidden from developers.",
+              "correct": false
+            },
+            {
+              "text": "Stdout is used for protocol messages, so logs can corrupt communication.",
+              "correct": true
+            },
+            {
+              "text": "MCP forbids all logging.",
+              "correct": false
+            }
+          ],
+          "explanation": "Transport details affect protocol reliability.",
+          "termIds": [
+            "agent",
+            "tool",
+            "mcp",
+            "state"
+          ],
+          "sources": [
+            "kb10",
+            "kb11",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb10",
+        "kb11",
+        "kb4"
+      ]
+    }
+  ],
+  "glossary": {
+    "agent": {
+      "id": "agent",
+      "label": "Agent",
+      "laymanDefinition": "A software loop that plans, observes results, and may use tools to pursue a goal.",
+      "technicalNote": "Agent designs need explicit loop boundaries, stop conditions, permissions, state contracts, and evaluation surfaces before autonomy is useful.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "tool": {
+      "id": "tool",
+      "label": "Tool",
+      "laymanDefinition": "An external capability the model can request, such as search, code execution, retrieval, or a business API.",
+      "technicalNote": "Tools require schemas, authorization, error handling, audit logs, and tests because natural-language intent is not execution permission.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "state": {
+      "id": "state",
+      "label": "State",
+      "laymanDefinition": "The working information carried between steps of an agent workflow.",
+      "technicalNote": "State should separate durable facts, transient scratch work, approvals, tool results, and failure metadata so retries and handoffs remain understandable.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "memory": {
+      "id": "memory",
+      "label": "Memory",
+      "laymanDefinition": "Information saved across turns or sessions for future use.",
+      "technicalNote": "Agent memory needs scope, freshness, deletion, privacy controls, and evaluation so saved context helps rather than silently steering behavior.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "mcp": {
+      "id": "mcp",
+      "label": "MCP",
+      "laymanDefinition": "A protocol for exposing tools and context to models and agent clients.",
+      "technicalNote": "MCP-style integrations still need capability design, trust boundaries, lifecycle handling, and authorization around each exposed server.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Model Context Protocol"
+    },
+    "sandbox": {
+      "id": "sandbox",
+      "label": "Sandbox",
+      "laymanDefinition": "An isolated environment that limits what agent actions can reach or change.",
+      "technicalNote": "Sandboxing should constrain files, network, processes, credentials, browser sessions, time, and side effects according to the task risk.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Model Context Protocol",
+    "themes": [
+      {
+        "name": "MCP integration choice",
+        "questions": [
+          {
+            "q": "Should this capability be a reusable MCP server, a provider-native tool, or a direct backend call?",
+            "why": "MCP adds protocol boundaries and host reuse; direct calls are simpler for one app.",
+            "opts": [
+              "Reusable MCP server",
+              "Provider-native function call",
+              "Internal SDK call"
+            ],
+            "rot": "Use MCP when a capability should travel across hosts or expose tools/resources/prompts through a standard client-server contract."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct MCP by naming host, client, server, initialize, capabilities, tools, resources, prompts, transports, and host-side policy."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "MCP path from host to client to server capability",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "MCP is host-to-capability plumbing",
+          "sub": "It standardizes connection, not agent reasoning.",
+          "what": "Learners identify the roles of host, client, and server.",
+          "relevance": "This prevents confusing a protocol with an orchestration framework.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Place MCP between AI hosts and external tools or context.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Handshake negotiates version and capabilities",
+          "sub": "Clients and servers initialize before useful work begins.",
+          "what": "Learners understand initialization and operation phases.",
+          "relevance": "Protocol versions and capabilities affect whether tools and resources behave as expected.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Treat lifecycle messages as part of compatibility and safety.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Tools, resources, and prompts are different",
+          "sub": "Each primitive carries different UX and safety expectations.",
+          "what": "Learners choose the right primitive for a capability.",
+          "relevance": "Treating passive context as active tools blurs approval and provenance boundaries.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Do not collapse every MCP primitive into a function call.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Host policy wraps tool calls",
+          "sub": "MCP schemas validate shape, not permission or intent.",
+          "what": "Learners integrate MCP with agent safety controls.",
+          "relevance": "An MCP server can expose powerful tools that hosts must still constrain.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Keep authorization, approval, and auditing outside the server description.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Build servers with lifecycle hygiene",
+          "sub": "Protocol details become production reliability issues.",
+          "what": "Learners plan robust MCP server behavior.",
+          "relevance": "A flaky server makes the host’s tool registry and user experience unreliable.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Version, paginate, cancel, log, and test servers like APIs.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "MCP is host-to-capability plumbing",
+        "detail": "MCP gives capabilities a common protocol surface."
+      },
+      {
+        "step": 2,
+        "label": "Handshake negotiates version and capabilities",
+        "detail": "MCP starts with explicit lifecycle negotiation."
+      },
+      {
+        "step": 3,
+        "label": "Tools, resources, and prompts are different",
+        "detail": "MCP primitives encode intent: action, context, or template."
+      },
+      {
+        "step": 4,
+        "label": "Host policy wraps tool calls",
+        "detail": "MCP is not a permission model."
+      },
+      {
+        "step": 5,
+        "label": "Build servers with lifecycle hygiene",
+        "detail": "An MCP server is production software, not just a wrapper script."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete problem in \"MCP is host-to-capability plumbing\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_boundary",
+        "label": "Did \"Tools, resources, and prompts are different\" define the right boundary or decision?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Build servers with lifecycle hygiene\" provide a reviewable release gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Design an MCP server for an internal course KB. List one tool, one resource template, one prompt, initialization capabilities, transport, auth assumption, and host approval rules. Next rung: secure tool-using agents.",
+      "scopedTo": "Model Context Protocol"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Model Context Protocol docs",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-20"
+    },
+    "kb10": {
+      "id": "kb10",
+      "kind": "kb",
+      "title": "KB: Model Context Protocol",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-22"
+    },
+    "kb11": {
+      "id": "kb11",
+      "kind": "kb",
+      "title": "KB: MCP server lifecycle, tools, resources, prompts",
+      "url": "https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle",
+      "asOfDate": "2026-06-22"
+    },
+    "kb4": {
+      "id": "kb4",
+      "kind": "kb",
+      "title": "KB: Agent Tool Security and Sandboxing",
+      "url": "https://genai.owasp.org/llm-top-10/",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

@@ -1,0 +1,1224 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Benchmark Literacy with HELM",
+    "title": "Benchmark Literacy with HELM",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Benchmark Literacy with HELM is practical when learners can apply it to this concrete case: A platform team must read benchmark results before choosing a model for a support workflow. By the end, they should be able to build or review benchmark interpretation sheet comparing capability, risk, and fit, measure model choice justified by task-relevant benchmark slices, and catch the failure where the team optimizes for a headline score unrelated to their user task."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Benchmark Literacy with HELM",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Benchmark Literacy with HELM: mental map",
+    "caption": "Read HELM as a transparent public benchmark with scenarios and metrics, not as a substitute for product evals.",
+    "oneLineThesis": "HELM can inform model choice, but only local evals can prove fit for a product workflow.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Benchmarks answer a different question than products",
+        "sub": "Start by translating public results into local risk.",
+        "what": "Learners avoid treating a leaderboard as product truth.",
+        "relevance": "This prevents model choice by irrelevant aggregate score.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Compare benchmark scenario and metric to the product decision.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Scenarios and metrics carry the meaning",
+        "sub": "The score is only interpretable with its measurement context.",
+        "what": "Learners inspect benchmark structure.",
+        "relevance": "This catches cases where the metric does not match deployment risk.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Read what was measured before comparing models.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Benchmark findings should create local test slices",
+        "sub": "Use public weaknesses to design product evals.",
+        "what": "Learners bridge benchmarks to action.",
+        "relevance": "This keeps benchmark reading from becoming decorative.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Translate scenario gaps into local cases and risk slices.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "A decision sheet makes tradeoffs explicit",
+        "sub": "Weighted local criteria stop cherry-picking.",
+        "what": "Learners create a reviewable model-choice artifact.",
+        "relevance": "This prevents informal benchmark cherry-picking.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Code a tiny comparison that gives local evals real weight.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Report benchmark claims with caveats",
+        "sub": "A benchmark recommendation needs scope and date.",
+        "what": "Learners communicate benchmark evidence responsibly.",
+        "relevance": "This prevents overclaiming from stale or broad public data.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Write claims that survive stakeholder review.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "comparative"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Benchmarks answer a different question than products",
+      "sub": "Start by translating public results into local risk.",
+      "summary": "HELM is evidence for hypotheses, not acceptance testing.",
+      "objectives": [
+        "Explain why public benchmarks and product evals differ.",
+        "Name benchmark metadata needed for a claim.",
+        "Design a local follow-up eval."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "HELM is broad evidence, not your app telemetry",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a platform team chooses a support-triage model because it ranks well on a broad benchmark. Their app actually needs grounded policy answers, careful refusals, low latency, and tool safety."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "HELM was created to make language-model evaluation more holistic and transparent across scenarios and metrics. That breadth is useful, but it does not replace local cases that match your users, tools, data, and risks."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "For every benchmark number, write what product decision it can and cannot support."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ],
+          "analogy": "A public benchmark is a weather map; your product eval is the road test."
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Worked interpretation sheet: support triage",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The sheet records source, access date, scenario, metric, model version, and the reason the metric may matter. It then lists missing product concerns: citation support, refund-policy caveats, approval behavior, p95 latency, and cost."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The final recommendation says “use as a hypothesis,” not “ship because rank is high.”"
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Record scenario, metric, model/version, and access date."
+                  }
+                ],
+                [
+                  {
+                    "text": "Map benchmark signal to one product capability."
+                  }
+                ],
+                [
+                  {
+                    "text": "List risks the benchmark does not cover."
+                  }
+                ],
+                [
+                  {
+                    "text": "Write local eval cases for those risks."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Benchmark scope",
+          "prompt": "How should a product team use a strong HELM result?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "As proof the model is best for every workflow.",
+              "correct": false
+            },
+            {
+              "text": "As a hypothesis to validate with task-specific local evals.",
+              "correct": true
+            },
+            {
+              "text": "As a reason to skip release gates.",
+              "correct": false
+            }
+          ],
+          "explanation": "Public benchmarks are useful but scoped.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ]
+        }
+      ],
+      "citations": [
+        "canon3",
+        "canon4",
+        "kb3"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Scenarios and metrics carry the meaning",
+      "sub": "The score is only interpretable with its measurement context.",
+      "summary": "Scenario literacy keeps benchmark comparisons honest.",
+      "objectives": [
+        "Identify scenario and metric coverage.",
+        "Explain why aggregate scores hide tradeoffs.",
+        "Recognize stale benchmark claims."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "A metric is a lens with blind spots",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A model can be strong on one scenario and weak on robustness, toxicity, calibration, or efficiency. HELM’s value is partly that it exposes multiple dimensions instead of one magical quality score."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Model versions and dates matter. A claim from a benchmark page should say when it was accessed and which model family/version it describes."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If a metric would not change your product decision, it should not dominate the recommendation."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ],
+          "analogy": "An aggregate score is a city average; users live in neighborhoods."
+        },
+        {
+          "id": "m2_artifact",
+          "kind": "decisionMatrix",
+          "title": "Benchmark reading checks",
+          "criteria": [
+            "Check",
+            "Why it matters",
+            "Failure if skipped"
+          ],
+          "options": [
+            {
+              "name": "Scenario match",
+              "cells": [
+                {
+                  "criterion": "Check",
+                  "text": "Does the scenario resemble the product task?",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Why it matters",
+                  "text": "Capability is contextual.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Failure if skipped",
+                  "text": "The team optimizes for the wrong job.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Always",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "Metric relevance",
+              "cells": [
+                {
+                  "criterion": "Check",
+                  "text": "Does the metric measure the risk users care about?",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Why it matters",
+                  "text": "Accuracy is not the only product goal.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Failure if skipped",
+                  "text": "Safety or latency gaps are hidden.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Before ranking models",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Date and version",
+              "cells": [
+                {
+                  "criterion": "Check",
+                  "text": "Is the result current and versioned?",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Why it matters",
+                  "text": "Models change quickly.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure if skipped",
+                  "text": "Stakeholders trust stale behavior.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Every benchmark citation",
+              "cost": "Low",
+              "complexity": "Low"
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Metric fit",
+          "prompt": "Why can an aggregate benchmark score mislead?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Benchmarks never contain useful evidence.",
+              "correct": false
+            },
+            {
+              "text": "It may combine scenarios and metrics unrelated to the product risk.",
+              "correct": true
+            },
+            {
+              "text": "Every metric is the same as user satisfaction.",
+              "correct": false
+            }
+          ],
+          "explanation": "Aggregation hides tradeoffs.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ]
+        }
+      ],
+      "citations": [
+        "canon3",
+        "canon4",
+        "kb3"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Benchmark findings should create local test slices",
+      "sub": "Use public weaknesses to design product evals.",
+      "summary": "A benchmark takeaway should change the eval plan.",
+      "objectives": [
+        "Turn benchmark signals into product cases.",
+        "Add risk slices for uncovered dimensions.",
+        "Compare candidate and baseline locally."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "The useful output is a local eval plan",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If a public benchmark highlights robustness concerns, write local support questions with typos, abbreviations, and conflicting retrieved snippets. If efficiency varies, add cost and p95 latency gates."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Benchmark literacy is complete only when it changes the local suite, model shortlist, or release caveat."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every benchmark takeaway should become a local test, a caveat, or a monitoring question."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ],
+          "analogy": "A benchmark is a compass; local evals are the actual route."
+        },
+        {
+          "id": "m3_artifact",
+          "kind": "functionalExample",
+          "title": "Case study: robustness slice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A team sees strong general scores but weaker robustness signals. They add typo-heavy policy questions and source-conflict cases to the local eval."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model still answers common cases well but fails typo-heavy exact-policy questions, so the team adds query rewriting before release."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Pick one benchmark risk."
+                  }
+                ],
+                [
+                  {
+                    "text": "Write product cases that expose it."
+                  }
+                ],
+                [
+                  {
+                    "text": "Run baseline and candidate models."
+                  }
+                ],
+                [
+                  {
+                    "text": "Decide by slice, not only average."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Local translation",
+          "prompt": "What should a benchmark weakness become?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A reason to remove all local testing.",
+              "correct": false
+            },
+            {
+              "text": "A local eval slice or monitoring question tied to the product workflow.",
+              "correct": true
+            },
+            {
+              "text": "A hidden note with no owner.",
+              "correct": false
+            }
+          ],
+          "explanation": "Benchmark reading should change product evaluation.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ]
+        }
+      ],
+      "citations": [
+        "canon3",
+        "canon4",
+        "kb3"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "A decision sheet makes tradeoffs explicit",
+      "sub": "Weighted local criteria stop cherry-picking.",
+      "summary": "Decision artifacts make model choice inspectable.",
+      "objectives": [
+        "Combine public and local signals carefully.",
+        "Predict how weights change recommendations.",
+        "Review benchmark claims with caveats."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Weights reveal the product values",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A support workflow may weight local groundedness and latency above broad public benchmark relevance. Encoding that decision makes disagreement visible and reviewable."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The numbers are not truth by themselves. They are a disciplined way to document why a team preferred one candidate under current assumptions."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If a weight would be embarrassing to defend, revisit the decision rule."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ],
+          "analogy": "A decision sheet is a receipt for tradeoffs."
+        },
+        {
+          "id": "m4_artifact",
+          "kind": "codeExample",
+          "title": "Weighted benchmark-plus-local score",
+          "language": "python",
+          "code": "models = {\n    \"model_a\": {\"benchmark_fit\": 0.82, \"local_groundedness\": 0.91, \"latency_ok\": 1.0},\n    \"model_b\": {\"benchmark_fit\": 0.90, \"local_groundedness\": 0.76, \"latency_ok\": 1.0},\n}\nweights = {\"benchmark_fit\": 0.2, \"local_groundedness\": 0.6, \"latency_ok\": 0.2}\n\ndef score(row):\n    return sum(row[k] * w for k, w in weights.items())\n\nfor name, row in models.items():\n    print(name, round(score(row), 3))",
+          "explanation": "The local groundedness score dominates because unsupported answers are the product’s main risk.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict which model wins.",
+            "answer": "model_a wins because local groundedness has the highest weight, despite model_b having the stronger benchmark-fit score."
+          },
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Decision artifact",
+          "prompt": "Why include local evals beside benchmark signals?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "To make benchmark dates irrelevant.",
+              "correct": false
+            },
+            {
+              "text": "To make the benchmark one input among product-specific quality, latency, cost, and risk evidence.",
+              "correct": true
+            },
+            {
+              "text": "To eliminate all human judgment.",
+              "correct": false
+            }
+          ],
+          "explanation": "Model choice is a product decision.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ]
+        }
+      ],
+      "citations": [
+        "canon3",
+        "canon4",
+        "kb3"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Report benchmark claims with caveats",
+      "sub": "A benchmark recommendation needs scope and date.",
+      "summary": "Benchmark literacy includes careful communication.",
+      "objectives": [
+        "Write scoped benchmark claims.",
+        "Name what the benchmark does not prove.",
+        "Tie final decision to local evals."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Best for what, as of when?",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Avoid “HELM proves this is the best model.” Say which scenario, metric, model/version, and access date support the claim, then state which local eval is the release gate."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A responsible benchmark note includes a “does not prove” line: it does not prove policy grounding, tool safety, cost under retries, or learner fit unless those were tested locally."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If a stakeholder could copy the claim out of context and mislead a buyer, tighten it."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ],
+          "analogy": "Caveats are guardrails for evidence."
+        },
+        {
+          "id": "m5_artifact",
+          "kind": "functionalExample",
+          "title": "Verify benchmark-based AI recommendations",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review any output that cites HELM or public benchmarks."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "It names scenario, metric, source, model/version, and access date."
+                  }
+                ],
+                [
+                  {
+                    "text": "It separates public benchmark evidence from local product eval evidence."
+                  }
+                ],
+                [
+                  {
+                    "text": "It says what the benchmark does not prove."
+                  }
+                ],
+                [
+                  {
+                    "text": "It does not let aggregate scores override failing local safety or grounding slices."
+                  }
+                ],
+                [
+                  {
+                    "text": "It includes cost, latency, and operational constraints in the final recommendation."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Overclaim check",
+          "prompt": "What is wrong with “HELM proves this model is best”?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It includes too many caveats.",
+              "correct": false
+            },
+            {
+              "text": "It omits scenario, metric, date, version, and product-specific validation.",
+              "correct": true
+            },
+            {
+              "text": "It treats benchmarks as one evidence source.",
+              "correct": false
+            }
+          ],
+          "explanation": "Benchmark claims need scope.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "kb3"
+          ]
+        }
+      ],
+      "citations": [
+        "canon3",
+        "canon4",
+        "kb3"
+      ]
+    }
+  ],
+  "glossary": {
+    "eval": {
+      "id": "eval",
+      "label": "Eval",
+      "laymanDefinition": "A repeatable test of model or system behavior against expected criteria.",
+      "technicalNote": "In these lessons, evals are release evidence: they combine cases, assertions, scores, and review rules.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon3"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A structured record of one run, including spans, inputs, outputs, metadata, and scores.",
+      "technicalNote": "Traces make failures diagnosable by showing which retrieval, model, tool, or scoring step produced the result.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon3"
+      ]
+    },
+    "dataset": {
+      "id": "dataset",
+      "label": "Dataset",
+      "laymanDefinition": "A curated set of examples used for evaluation, debugging, or regression checks.",
+      "technicalNote": "A useful eval dataset stores inputs, expected behavior, metadata slices, and source or rubric references.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon3"
+      ]
+    },
+    "judge": {
+      "id": "judge",
+      "label": "LLM-as-judge",
+      "laymanDefinition": "An LLM used to grade or compare outputs with a rubric.",
+      "technicalNote": "LLM judges are semantic scorers, not final authority; their prompts, model, thresholds, and spot checks must be versioned.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon3"
+      ],
+      "acronymExpansion": "Large language model as judge"
+    },
+    "regression": {
+      "id": "regression",
+      "label": "Regression",
+      "laymanDefinition": "A previously working behavior that breaks after a prompt, model, data, or code change.",
+      "technicalNote": "Regression testing protects known capabilities and safety boundaries while allowing harmless wording variation.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon3"
+      ]
+    },
+    "rubric": {
+      "id": "rubric",
+      "label": "Rubric",
+      "laymanDefinition": "A scoring guide that states what a good answer or run must demonstrate.",
+      "technicalNote": "Rubrics make qualitative judgment reviewable by naming criteria, severity, examples, and thresholds.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon3"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Benchmark Literacy with HELM",
+    "themes": [
+      {
+        "name": "Benchmark interpretation",
+        "questions": [
+          {
+            "q": "Which benchmark slice is relevant to the workflow, and what local eval still has to prove it?",
+            "why": "Headline scores can hide scenario, metric, model-version, and deployment-risk mismatch.",
+            "opts": [
+              "Benchmark as hypothesis plus local eval",
+              "Top aggregate score decides",
+              "Ignore public benchmarks"
+            ],
+            "rot": "Use public benchmarks to form hypotheses; use product evals to make release decisions."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: explain HELM literacy by naming scenario, metric, model/version, date, local missing risk, and the eval case that proves product fit."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Benchmark literacy path from scenario to product gate",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Benchmarks answer a different question than products",
+          "sub": "Start by translating public results into local risk.",
+          "what": "Learners avoid treating a leaderboard as product truth.",
+          "relevance": "This prevents model choice by irrelevant aggregate score.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Compare benchmark scenario and metric to the product decision.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Scenarios and metrics carry the meaning",
+          "sub": "The score is only interpretable with its measurement context.",
+          "what": "Learners inspect benchmark structure.",
+          "relevance": "This catches cases where the metric does not match deployment risk.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Read what was measured before comparing models.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Benchmark findings should create local test slices",
+          "sub": "Use public weaknesses to design product evals.",
+          "what": "Learners bridge benchmarks to action.",
+          "relevance": "This keeps benchmark reading from becoming decorative.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Translate scenario gaps into local cases and risk slices.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "A decision sheet makes tradeoffs explicit",
+          "sub": "Weighted local criteria stop cherry-picking.",
+          "what": "Learners create a reviewable model-choice artifact.",
+          "relevance": "This prevents informal benchmark cherry-picking.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Code a tiny comparison that gives local evals real weight.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Report benchmark claims with caveats",
+          "sub": "A benchmark recommendation needs scope and date.",
+          "what": "Learners communicate benchmark evidence responsibly.",
+          "relevance": "This prevents overclaiming from stale or broad public data.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Write claims that survive stakeholder review.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "frames"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Benchmarks answer a different question than products",
+        "detail": "HELM is evidence for hypotheses, not acceptance testing."
+      },
+      {
+        "step": 2,
+        "label": "Scenarios and metrics carry the meaning",
+        "detail": "Scenario literacy keeps benchmark comparisons honest."
+      },
+      {
+        "step": 3,
+        "label": "Benchmark findings should create local test slices",
+        "detail": "A benchmark takeaway should change the eval plan."
+      },
+      {
+        "step": 4,
+        "label": "A decision sheet makes tradeoffs explicit",
+        "detail": "Decision artifacts make model choice inspectable."
+      },
+      {
+        "step": 5,
+        "label": "Report benchmark claims with caveats",
+        "detail": "Benchmark literacy includes careful communication."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_case",
+        "label": "Can you explain the concrete case in \"Benchmarks answer a different question than products\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_artifact",
+        "label": "Does \"A decision sheet makes tradeoffs explicit\" produce a reviewable artifact?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Report benchmark claims with caveats\" define a release gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Choose two models for a support triage workflow. Use HELM or a similar public benchmark to form a hypothesis, then design five local eval cases, two risk slices, and one cost/latency gate. Next rung: build golden datasets.",
+      "scopedTo": "Benchmark Literacy with HELM"
+    }
+  },
+  "citations": {
+    "canon3": {
+      "id": "canon3",
+      "kind": "canonical",
+      "title": "Stanford CRFM HELM",
+      "url": "https://crfm.stanford.edu/helm/",
+      "asOfDate": "2026-06-23"
+    },
+    "canon4": {
+      "id": "canon4",
+      "kind": "canonical",
+      "title": "Holistic Evaluation of Language Models paper",
+      "url": "https://arxiv.org/abs/2211.09110",
+      "asOfDate": "2026-06-23"
+    },
+    "kb3": {
+      "id": "kb3",
+      "kind": "kb",
+      "title": "KB: LLM Evaluation",
+      "url": "https://platform.openai.com/docs/guides/evals",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

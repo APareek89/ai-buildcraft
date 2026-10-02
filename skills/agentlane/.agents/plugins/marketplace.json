@@ -1,0 +1,20 @@
+{
+  "name": "agentlane-local",
+  "interface": {
+    "displayName": "Agentlane Local"
+  },
+  "plugins": [
+    {
+      "name": "agentlane",
+      "source": {
+        "source": "local",
+        "path": "./plugins/agentlane"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

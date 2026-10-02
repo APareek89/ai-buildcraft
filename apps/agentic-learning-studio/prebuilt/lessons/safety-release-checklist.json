@@ -1,0 +1,1031 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Safety Release Checklist",
+    "title": "Safety Release Checklist",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Safety Release Checklist is practical when learners can apply it to this concrete case: A product owner needs a release gate before exposing an LLM feature to real users. By the end, they should be able to build or review safety release checklist with evals, red-team results, monitoring, and rollback, measure all launch risks have owners and pass/fail evidence, and catch the failure where the team ships after demo success without abuse or rollback testing."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Safety Release Checklist",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Safety Release Checklist: mental map",
+    "caption": "Turn risk mapping, evals, data review, red-team work, monitoring, and rollback into launch gates.",
+    "oneLineThesis": "A safety release checklist is a production gate: it names risks, evidence, owners, controls, monitoring, and rollback before users rely on the system.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Start with a release risk brief",
+        "sub": "Write the use case, users, capabilities, data, risks, and launch authority.",
+        "what": "A safety checklist starts with a concrete release, not a generic best-practices list.",
+        "relevance": "Name the feature, users, data, tools, and harms.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Write the concrete risk brief before running safety gates.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Run evals and red-team cases before approval",
+        "sub": "Test the known failure modes with representative and adversarial examples.",
+        "what": "Safety release evidence includes happy-path quality, hard cases, adversarial cases, and slice behavior.",
+        "relevance": "Define release evals for the feature.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Test representative, hard, and adversarial cases before approval.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Check privacy, security, and data governance",
+        "sub": "Review data inventory, vendor routing, trace capture, tool scopes, and output handling.",
+        "what": "Safety release includes non-model controls because many AI incidents happen in logs, tools, and data flows.",
+        "relevance": "Tie privacy and security reviews to launch gates.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Review privacy, security, vendor, and tool controls before launch.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Automate the go/no-go gate",
+        "sub": "Make release evidence executable and easy to audit.",
+        "what": "A release gate should fail closed when critical evals, privacy review, or rollback checks are missing.",
+        "relevance": "Write a release gate check.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Fail closed when required evidence or rollback is missing.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Launch with monitors and incident learning",
+        "sub": "Close with post-launch sampling, rollback triggers, and a solo release checklist.",
+        "what": "Safety release continues after launch through monitoring, incidents, and controlled change review.",
+        "relevance": "Recall the safety release loop.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Continue safety review through monitoring, incidents, and change gates.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Start with a release risk brief",
+      "sub": "Write the use case, users, capabilities, data, risks, and launch authority.",
+      "summary": "A safety checklist starts with a concrete release, not a generic best-practices list.",
+      "objectives": [
+        "Name the feature, users, data, tools, and harms.",
+        "Connect checklist items to risk-register rows.",
+        "Define who can block release."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "A checklist without a risk brief is theater",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a team wants to launch an AI lesson author that writes modules from KB notes, cites sources, stores traces, and can open browser pages. The safety checklist must be about that feature: source fidelity, learner privacy, prompt injection, biased examples, unsafe content, copyright, cost runaway, and rollback."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The release brief names the user group, feature scope, data sources, tools, model route, known risks, owners, and block authority. Every checklist item should point back to a risk, not to vague anxiety."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Worked artifact: release risk brief",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Feature: public beta lesson author. Users: adult AI learners and internal editors. Capabilities: draft lessons, cite KB, render HTML, no external sends. Data: public KB plus user prompts; traces store metadata by default. Critical risks: unsupported citations, prompt injection from sources, privacy leakage in traces, unsafe instructions, biased examples, and broken rollback. Blocker: any critical eval failure or unresolved data-flow issue."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Safety release brief"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Checklist anchor",
+          "prompt": "What should every checklist item connect to?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A generic slogan about responsible AI.",
+              "correct": false
+            },
+            {
+              "text": "A named release risk, owner, evidence artifact, or launch decision.",
+              "correct": true
+            },
+            {
+              "text": "Only the model provider documentation.",
+              "correct": false
+            }
+          ],
+          "explanation": "Release gates work when they are grounded in the actual feature.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Run evals and red-team cases before approval",
+      "sub": "Test the known failure modes with representative and adversarial examples.",
+      "summary": "Safety release evidence includes happy-path quality, hard cases, adversarial cases, and slice behavior.",
+      "objectives": [
+        "Define release evals for the feature.",
+        "Include red-team cases and hard slices.",
+        "Avoid passing release on demo examples."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Evals answer whether controls worked",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For a GenAI feature, evals should cover the actual outputs and harms: factuality, citation support, refusal behavior, privacy handling, prompt injection resistance, tool authorization, fairness slices, and render validity. Red-team cases deliberately attack the controls."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A useful gate reports severity, examples, pass/fail rules, and owner. It should include enough failures to teach the team where the system breaks before users do."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Release evidence set",
+          "criteria": [
+            "Evidence",
+            "Purpose",
+            "Blocker example"
+          ],
+          "options": [
+            {
+              "name": "Golden evals",
+              "cells": [
+                {
+                  "criterion": "Evidence",
+                  "text": "Representative tasks and expected criteria",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Purpose",
+                  "text": "Measure normal quality and regression",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Blocker example",
+                  "text": "citation support below threshold in safety lessons",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use every release.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Red-team cases",
+              "cells": [
+                {
+                  "criterion": "Evidence",
+                  "text": "Poisoned prompts, unsafe asks, privacy attempts",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Purpose",
+                  "text": "Stress controls and refusal behavior",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Blocker example",
+                  "text": "retrieved instruction triggers forbidden tool call",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for security and safety.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Slice review",
+              "cells": [
+                {
+                  "criterion": "Evidence",
+                  "text": "Language, group, context, or content slices",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Purpose",
+                  "text": "Find uneven quality or harm",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Blocker example",
+                  "text": "one slice gets substantially less actionable feedback",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for fairness-sensitive features.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Case study: demo passed, red team failed",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The lesson author passes ten normal prompts. A red-team KB note tells it to remove citations and add an affiliate link. The model complies. The release should block because the exact deployment uses retrieved notes, and injection resistance is not optional."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "kb2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Check privacy, security, and data governance",
+      "sub": "Review data inventory, vendor routing, trace capture, tool scopes, and output handling.",
+      "summary": "Safety release includes non-model controls because many AI incidents happen in logs, tools, and data flows.",
+      "objectives": [
+        "Tie privacy and security reviews to launch gates.",
+        "Verify tool and output controls.",
+        "Document vendor and retention decisions."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "The model is only one release surface",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A release can fail because traces store raw learner data, a browser tool can publish externally, a vector store keeps deleted content, or generated HTML is rendered unsafely. The checklist should include data inventory, retention, vendor review, access control, tool scopes, sandboxing, output encoding, and audit logs."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is where OWASP, privacy governance, and NIST RMF meet the release process: controls must be wired into product behavior and test evidence."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_controls",
+          "kind": "functionalExample",
+          "title": "Worked gate: data and tool review",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Data gate: prompts classified; secrets blocked; raw traces disabled by default; retention set; vector deletion path tested. Tool gate: browser read-only; no email or publish tools; shell unavailable; external network egress logged; all tool calls include user, model, arguments, policy version, and result digest."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "personalizedFor": "Safety control review"
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Block release when a high-risk data or tool path has no tested owner.",
+          "useWhen": "Use formal privacy and security gates whenever the feature stores user content, retrieves external data, calls tools, or renders generated output.",
+          "avoidWhen": "Avoid launching because model evals passed while logs, tools, or vendors remain unreviewed.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Safety Release Checklist: baseline, production design, or advanced optimization."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Automate the go/no-go gate",
+      "sub": "Make release evidence executable and easy to audit.",
+      "summary": "A release gate should fail closed when critical evals, privacy review, or rollback checks are missing.",
+      "objectives": [
+        "Write a release gate check.",
+        "Predict why missing rollback is a safety issue.",
+        "Verify AI-generated checklists for evidence and owner fields."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Safety release gate sketch",
+          "language": "python",
+          "code": "release = {\n    \"risk_register\": True,\n    \"evals_pass\": True,\n    \"red_team_critical_failures\": 0,\n    \"privacy_review\": \"approved\",\n    \"security_review\": \"approved\",\n    \"monitoring_dashboard\": True,\n    \"rollback_tested\": True,\n    \"owner_approval\": \"release-manager\",\n}\nrequired = [\"risk_register\", \"evals_pass\", \"monitoring_dashboard\", \"rollback_tested\", \"owner_approval\"]\nmissing = [k for k in required if not release.get(k)]\nassert not missing, f\"missing release evidence: {missing}\"\nassert release[\"red_team_critical_failures\"] == 0\nassert release[\"privacy_review\"] == \"approved\" and release[\"security_review\"] == \"approved\"",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The gate is intentionally strict: missing evidence fails closed. Real systems would attach report URLs, version IDs, and signed approvals."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Why is rollback part of safety rather than only reliability?",
+            "answer": "If a harmful release reaches users, rollback or disablement is the containment control that limits further harm."
+          },
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify an AI-generated release checklist",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A strong generated checklist names the feature, risks, required evidence, thresholds, owners, report links, blocking conditions, monitoring, incident plan, and rollback. A weak checklist says \"consider safety, privacy, and bias\" without pass/fail criteria."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Gate behavior",
+          "prompt": "What should the release gate do when critical evidence is missing?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Assume the model is safe because the demo worked.",
+              "correct": false
+            },
+            {
+              "text": "Fail closed and block or escalate until the owner resolves it.",
+              "correct": true
+            },
+            {
+              "text": "Remove the checklist item.",
+              "correct": false
+            }
+          ],
+          "explanation": "A safety gate must be able to block release with evidence.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Launch with monitors and incident learning",
+      "sub": "Close with post-launch sampling, rollback triggers, and a solo release checklist.",
+      "summary": "Safety release continues after launch through monitoring, incidents, and controlled change review.",
+      "objectives": [
+        "Recall the safety release loop.",
+        "Write a retrieval prompt for future launch gates.",
+        "Create a capstone checklist for one feature."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "conceptual",
+          "title": "Retrieval prompt for the whole lesson",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer this from memory: \"How do I ship an AI feature with a safety release checklist?\" Include release brief, risk register, evals, red-team cases, privacy, security, data review, monitoring, incident response, rollback, owners, and approval evidence."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Treat launch as the start of monitored responsibility, not the end of review.",
+          "useWhen": "Use post-launch sampling and incident review for public, user-facing, tool-using, or safety-sensitive AI features.",
+          "avoidWhen": "Avoid changing prompts, models, data sources, or tools after launch without re-running the relevant gates.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m5_capstone",
+          "kind": "functionalExample",
+          "title": "Capstone: build one launch gate",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Pick one AI feature. Write a checklist with ten pass/fail items, each with owner, evidence link, threshold, blocker severity, and re-test trigger. Add a rollback command or kill switch for the top two risks."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Solo safety release gate"
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Safety Release Checklist: baseline, production design, or advanced optimization."
+    }
+  ],
+  "glossary": {
+    "hallucination": {
+      "id": "hallucination",
+      "label": "Hallucination",
+      "laymanDefinition": "An unsupported output that can fail a safety or quality gate.",
+      "technicalNote": "The checklist should define hallucination metrics and examples rather than relying on subjective review only.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "prompt_injection": {
+      "id": "prompt_injection",
+      "label": "Prompt injection",
+      "laymanDefinition": "A release risk for systems using untrusted context or tools.",
+      "technicalNote": "Injection tests should be part of red-team and regression gates before launch.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "guardrail": {
+      "id": "guardrail",
+      "label": "Guardrail",
+      "laymanDefinition": "A launch control that reduces a named safety risk.",
+      "technicalNote": "Release guardrails include policy checks, evals, red-team cases, approvals, monitoring, rate limits, and rollback.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "privacy": {
+      "id": "privacy",
+      "label": "Privacy",
+      "laymanDefinition": "Data minimization, access, vendor, retention, and deletion controls for the release.",
+      "technicalNote": "A release checklist should block launch when data flows, trace capture, or vendor routing are not approved.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "owasp": {
+      "id": "owasp",
+      "label": "OWASP",
+      "laymanDefinition": "A source of security threats that can feed release gates.",
+      "technicalNote": "OWASP checks belong in the security portion of a safety release when tools, retrieval, plugins, or sensitive data are involved.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Open Worldwide Application Security Project"
+    },
+    "risk_register": {
+      "id": "risk_register",
+      "label": "Risk register",
+      "laymanDefinition": "The release source of truth for risks, owners, controls, residual risk, and approval.",
+      "technicalNote": "The checklist should point to risk-register rows rather than invent risk decisions at the end.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Safety Release Checklist",
+    "themes": [
+      {
+        "name": "Release-readiness check",
+        "questions": [
+          {
+            "q": "What decision does Safety Release Checklist change for this case?",
+            "why": "A good lesson changes how the learner builds, reviews, or ships safety release checklist with evals, red-team results, monitoring, and rollback.",
+            "opts": [
+              "Thin slice",
+              "Production path",
+              "Advanced optimization"
+            ],
+            "rot": "Choose the smallest option that catches: the team ships after demo success without abuse or rollback testing."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct the safety release gate: map use case and risks, define policies and evals, run red-team/security/privacy reviews, verify monitoring and rollback, assign owners, and record the launch decision."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Safety Release Checklist operating path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Start with a release risk brief",
+          "sub": "Write the use case, users, capabilities, data, risks, and launch authority.",
+          "what": "A safety checklist starts with a concrete release, not a generic best-practices list.",
+          "relevance": "Name the feature, users, data, tools, and harms.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Write the concrete risk brief before running safety gates.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Run evals and red-team cases before approval",
+          "sub": "Test the known failure modes with representative and adversarial examples.",
+          "what": "Safety release evidence includes happy-path quality, hard cases, adversarial cases, and slice behavior.",
+          "relevance": "Define release evals for the feature.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Test representative, hard, and adversarial cases before approval.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Check privacy, security, and data governance",
+          "sub": "Review data inventory, vendor routing, trace capture, tool scopes, and output handling.",
+          "what": "Safety release includes non-model controls because many AI incidents happen in logs, tools, and data flows.",
+          "relevance": "Tie privacy and security reviews to launch gates.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Review privacy, security, vendor, and tool controls before launch.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Automate the go/no-go gate",
+          "sub": "Make release evidence executable and easy to audit.",
+          "what": "A release gate should fail closed when critical evals, privacy review, or rollback checks are missing.",
+          "relevance": "Write a release gate check.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Fail closed when required evidence or rollback is missing.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Launch with monitors and incident learning",
+          "sub": "Close with post-launch sampling, rollback triggers, and a solo release checklist.",
+          "what": "Safety release continues after launch through monitoring, incidents, and controlled change review.",
+          "relevance": "Recall the safety release loop.",
+          "moduleId": "m5",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Continue safety review through monitoring, incidents, and change gates.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Start with a release risk brief",
+        "detail": "Write the use case, users, capabilities, data, risks, and launch authority."
+      },
+      {
+        "step": 2,
+        "label": "Run evals and red-team cases before approval",
+        "detail": "Test the known failure modes with representative and adversarial examples."
+      },
+      {
+        "step": 3,
+        "label": "Check privacy, security, and data governance",
+        "detail": "Review data inventory, vendor routing, trace capture, tool scopes, and output handling."
+      },
+      {
+        "step": 4,
+        "label": "Automate the go/no-go gate",
+        "detail": "Make release evidence executable and easy to audit."
+      },
+      {
+        "step": 5,
+        "label": "Launch with monitors and incident learning",
+        "detail": "Close with post-launch sampling, rollback triggers, and a solo release checklist."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_context",
+        "label": "Is there a risk register with owners, severity, controls, and residual risk?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_evidence",
+        "label": "Do evals and red-team tests cover the actual use case, data, tools, and hard slices?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_controls",
+        "label": "Have privacy, security, vendor, and accessibility/fairness reviews completed?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_verify",
+        "label": "Are monitoring, incident response, rollback, and kill switch tested?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_next",
+        "label": "Did an accountable reviewer approve or block with evidence?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a one-page release-ready plan for safety release checklist with evals, red-team results, monitoring, and rollback. Include: the user problem, realistic input, mechanism, design choice, runnable or reviewable check, metric (all launch risks have owners and pass/fail evidence), failure case (the team ships after demo success without abuse or rollback testing), owner, and the next rung after this lesson.",
+      "scopedTo": "Safety Release Checklist"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI Safety and Governance",
+      "url": "https://doi.org/10.6028/NIST.AI.600-1",
+      "asOfDate": "2026-06-22"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB: Moderation, PII, and Data Governance",
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "asOfDate": "2026-06-22"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "NIST AI 600-1 Generative AI Profile",
+      "url": "https://doi.org/10.6028/NIST.AI.600-1",
+      "asOfDate": "2026-06-23"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "OpenTelemetry GenAI semantic conventions",
+      "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

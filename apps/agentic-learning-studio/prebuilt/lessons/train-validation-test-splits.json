@@ -1,0 +1,907 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Train, Validation, and Test Splits",
+    "title": "Train, Validation, and Test Splits",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 42,
+    "thesis": "Train, Validation, and Test Splits is practical when learners can apply it to this concrete case: A subscription churn model needs splits that predict future users rather than memorize the past. By the end, they should be able to build or review time-aware split plan with train, validation, and final test partitions, measure test result remains stable after launch, and catch the failure where random splitting leaks near-duplicate users across partitions."
+  },
+  "learnerProfile": {
+    "level": "beginner",
+    "depth": "conceptual",
+    "examples": "functional",
+    "topic": "Train, Validation, and Test Splits",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Train, Validation, and Test Splits: mental map",
+    "caption": "Create honest evaluation by splitting before training, using train for fitting, validation for choices, test for final estimate, and leakage-aware split strategies.",
+    "oneLineThesis": "Clean train, validation, and test splits are the foundation of trustworthy model evaluation.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Split before learning to get an honest exam",
+        "sub": "Evaluation starts before the first model fit.",
+        "what": "Learners understand splits as evaluation design, not bookkeeping.",
+        "relevance": "This prevents inflated metrics from accidental exposure.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Separate ticket examples before any feature or model fitting happens.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Train fits parameters, validation chooses decisions",
+        "sub": "Keep fitting and choosing separate.",
+        "what": "Learners separate model fitting from model selection.",
+        "relevance": "This prevents using the final exam as a tuning guide.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use validation to choose the ticket threshold without touching test.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Test estimates final generalization once",
+        "sub": "The test set answers one question after choices are locked.",
+        "what": "Learners protect the final estimate.",
+        "relevance": "This avoids optimistic results caused by repeated test peeking.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Lock the ticket model before opening the final test set.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Leakage breaks the promise",
+        "sub": "Information can leak through features, preprocessing, duplicates, or time.",
+        "what": "Learners see split hygiene as an active check.",
+        "relevance": "This catches the most common source of inflated beginner metrics.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Code a small guard that catches customer overlap across splits.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Stratified, grouped, and time splits match the data story",
+        "sub": "The right split depends on labels, related records, and time.",
+        "what": "Learners choose split strategies deliberately.",
+        "relevance": "This prevents random splits from hiding dependence or future leakage.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Match the split strategy to ticket labels, customers, and deployment time.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "guards"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "adapts"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Split before learning to get an honest exam",
+      "sub": "Evaluation starts before the first model fit.",
+      "summary": "A split creates examples the model cannot learn from directly.",
+      "objectives": [
+        "Explain why data is split before training.",
+        "Map train, validation, and test to roles.",
+        "Anchor the lesson in ticket-priority classification."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The model should not see the exam while studying",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a team builds a ticket-priority classifier. If the same customer issue, duplicate ticket, or future pattern appears in both training and evaluation, the score can look excellent while the deployed model fails. Splitting is how we create an honest exam."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Train data fits model parameters. Validation data helps choose features, thresholds, and hyperparameters. Test data estimates final performance after choices are made."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_split",
+            "canon_sklearn_model_selection"
+          ],
+          "analogy": "Train is practice, validation is rehearsal feedback, and test is opening night."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Worked split story: 1000 support tickets",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Start with 1000 labeled tickets. Before fitting text vectorizers or models, assign 700 to train, 150 to validation, and 150 to test. If multiple tickets come from the same customer incident, keep the incident in one split so the model cannot memorize the duplicate wording."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_split"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Split timing",
+          "prompt": "When should you split the dataset?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "After choosing the best model from all rows.",
+              "correct": false
+            },
+            {
+              "text": "Before fitting features, models, thresholds, or preprocessing learned from the data.",
+              "correct": true
+            },
+            {
+              "text": "Only after deployment.",
+              "correct": false
+            }
+          ],
+          "explanation": "Splitting early protects the evaluation promise.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_split"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_split",
+        "canon_sklearn_model_selection"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Train fits parameters, validation chooses decisions",
+      "sub": "Keep fitting and choosing separate.",
+      "summary": "Training learns weights; validation guides model selection.",
+      "objectives": [
+        "Describe what training data is allowed to do.",
+        "Use validation for hyperparameters and thresholds.",
+        "Avoid test-set tuning."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Validation is where choices happen",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Training data is used for fitting parameters: weights, tree splits, centroids, or learned preprocessing. Validation data is used to choose decisions: model family, regularization strength, threshold, features, or prompt/reranker setting. The test set waits until those choices are locked."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection",
+            "canon_sklearn_split"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Threshold choice on validation",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The ticket classifier outputs risk scores. On validation, threshold 0.70 catches most urgent tickets but creates many false alarms; threshold 0.85 misses too many urgent cases. The team chooses 0.76 from validation because it matches support capacity. They do not keep adjusting after looking at test."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_model_selection",
+        "canon_sklearn_split"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Test estimates final generalization once",
+      "sub": "The test set answers one question after choices are locked.",
+      "summary": "A clean test set gives a less biased final performance estimate.",
+      "objectives": [
+        "Explain the final-test role.",
+        "Recognize test-set overfitting.",
+        "Document the model-selection freeze before test."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "The test set loses power each time you peek",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A test set is useful because the model-selection process has not adapted to it. If you test, tweak, test, tweak, the test set becomes part of the design loop. The reported score becomes too optimistic."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Split roles",
+          "criteria": [
+            "Split",
+            "Allowed uses",
+            "Forbidden uses"
+          ],
+          "options": [
+            {
+              "name": "Train",
+              "cells": [
+                {
+                  "criterion": "Split",
+                  "text": "Train",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Allowed uses",
+                  "text": "fit model and train-only preprocessing",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Forbidden uses",
+                  "text": "final performance claim",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Always used for parameter fitting.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Validation",
+              "cells": [
+                {
+                  "criterion": "Split",
+                  "text": "Validation",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Allowed uses",
+                  "text": "choose hyperparameters, thresholds, features",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Forbidden uses",
+                  "text": "fit final parameters directly",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "During model selection.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Test",
+              "cells": [
+                {
+                  "criterion": "Split",
+                  "text": "Test",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Allowed uses",
+                  "text": "one final locked-model estimate",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Forbidden uses",
+                  "text": "repeated tuning or feature shopping",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "After choices are frozen.",
+              "cost": "Low",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_model_selection"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Leakage breaks the promise",
+      "sub": "Information can leak through features, preprocessing, duplicates, or time.",
+      "summary": "Leakage makes evaluation look better than deployment reality.",
+      "objectives": [
+        "Identify common leakage paths.",
+        "Run a simple split leak checker.",
+        "Verify AI-generated pipelines fit preprocessing on train only."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Leak check for grouped ticket splits",
+          "language": "python",
+          "code": "train = [\n    {\"ticket_id\": 1, \"customer_id\": \"A\", \"text\": \"login fails\"},\n    {\"ticket_id\": 2, \"customer_id\": \"B\", \"text\": \"billing issue\"},\n]\nvalidation = [\n    {\"ticket_id\": 3, \"customer_id\": \"C\", \"text\": \"upgrade question\"},\n]\ntest = [\n    {\"ticket_id\": 4, \"customer_id\": \"A\", \"text\": \"login still fails\"},\n]\n\ndef ids(rows):\n    return {row[\"customer_id\"] for row in rows}\n\noverlap = {\n    \"train_test\": ids(train) & ids(test),\n    \"train_validation\": ids(train) & ids(validation),\n    \"validation_test\": ids(validation) & ids(test),\n}\n\nprint({name: sorted(values) for name, values in overlap.items() if values})",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This tiny check catches a grouped leakage problem: customer A appears in train and test, so the evaluation may reward memorized customer-specific language."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the printed overlap. Which split pair leaks?",
+            "answer": "It prints train_test with customer A. The model could learn customer-specific patterns from train and look artificially good on test."
+          },
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_split",
+            "canon_sklearn_pipeline"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify AI-generated split code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: split before fitting vectorizers/scalers/encoders; fit preprocessing on train only; transform validation and test with train-fitted preprocessing; group duplicates together; use time-based split for future prediction; and never tune on test."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_pipeline",
+            "canon_sklearn_split"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_split",
+        "canon_sklearn_pipeline"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Stratified, grouped, and time splits match the data story",
+      "sub": "The right split depends on labels, related records, and time.",
+      "summary": "Split strategy should reflect what deployment will ask the model to do.",
+      "objectives": [
+        "Choose random, stratified, grouped, or time-based splits.",
+        "Explain why rare labels need stratification.",
+        "Plan the next evaluation rung."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 7,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "There is no universal honest split",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Random splits can work when rows are independent and label balance is healthy. Stratified splits preserve rare label proportions. Grouped splits keep related records, such as one customer or patient, together. Time-based splits evaluate whether the model trained on the past works on the future."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_split",
+            "canon_sklearn_model_selection"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Choose the split that mimics the deployment question.",
+          "useWhen": "Use stratified splits for rare labels, grouped splits for related entities, and time splits for forecasting or changing processes.",
+          "avoidWhen": "Avoid random splits when duplicates, users, sessions, documents, or future information can cross the boundary.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_split"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Split choice",
+          "prompt": "A fraud model predicts future transactions and patterns drift monthly. Which split is most appropriate?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A random split that mixes future and past freely.",
+              "correct": false
+            },
+            {
+              "text": "A time-based split that trains on earlier transactions and evaluates later ones.",
+              "correct": true
+            },
+            {
+              "text": "A split after scaling on all rows.",
+              "correct": false
+            }
+          ],
+          "explanation": "The split should match the deployment timeline.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_model_selection"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_split",
+        "canon_sklearn_model_selection"
+      ]
+    }
+  ],
+  "glossary": {
+    "ai": {
+      "id": "ai",
+      "label": "AI",
+      "laymanDefinition": "Software systems that perform tasks associated with human intelligence.",
+      "technicalNote": "In these foundations lessons, AI is the broad field; the concrete mechanisms are models, data, objectives, and evaluation loops.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_split"
+      ],
+      "acronymExpansion": "Artificial intelligence"
+    },
+    "ml": {
+      "id": "ml",
+      "label": "ML",
+      "laymanDefinition": "A branch of AI where systems learn patterns from data instead of only following hand-written rules.",
+      "technicalNote": "ML work is defined by training data, features, models, objectives, validation, and deployment constraints.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_split"
+      ],
+      "acronymExpansion": "Machine learning"
+    },
+    "model": {
+      "id": "model",
+      "label": "Model",
+      "laymanDefinition": "A learned or configured function that maps inputs to predictions, scores, clusters, or generated outputs.",
+      "technicalNote": "Model choice encodes assumptions such as linearity, distance, tree splits, capacity, or sequential reward.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_split"
+      ]
+    },
+    "loss": {
+      "id": "loss",
+      "label": "Loss",
+      "laymanDefinition": "A numerical training signal that measures how wrong a prediction is for a task.",
+      "technicalNote": "Loss drives optimization; it is not the same as product quality, fairness, or final generalization.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_split"
+      ]
+    },
+    "generalization": {
+      "id": "generalization",
+      "label": "Generalization",
+      "laymanDefinition": "The ability of a model to perform well on examples it did not train on.",
+      "technicalNote": "Generalization is checked with validation/test data, leakage audits, and slice monitoring.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_split"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "A repeatable sequence of data transforms, feature steps, model fitting, and evaluation or inference.",
+      "technicalNote": "Pipelines prevent train/test leakage and keep preprocessing identical between training and production.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_split"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Train, Validation, and Test Splits",
+    "themes": [
+      {
+        "name": "Split strategy",
+        "questions": [
+          {
+            "q": "What must be kept apart so the evaluation remains honest?",
+            "why": "Splits fail when duplicate users, future data, or preprocessing information leaks from evaluation into training.",
+            "opts": [
+              "Leakage-aware split by data story",
+              "Random split always",
+              "Tune on test"
+            ],
+            "rot": "Pick the split that matches the source of dependence: random, stratified, grouped, or time-based."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct clean evaluation by naming train, validation, test, model selection, leakage, stratified/group/time splits, preprocessing fit rules, and the one-time final test estimate."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Evaluation split path from raw data to honest final estimate",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Split before learning to get an honest exam",
+          "sub": "Evaluation starts before the first model fit.",
+          "what": "Learners understand splits as evaluation design, not bookkeeping.",
+          "relevance": "This prevents inflated metrics from accidental exposure.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Separate ticket examples before any feature or model fitting happens.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Train fits parameters, validation chooses decisions",
+          "sub": "Keep fitting and choosing separate.",
+          "what": "Learners separate model fitting from model selection.",
+          "relevance": "This prevents using the final exam as a tuning guide.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use validation to choose the ticket threshold without touching test.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Test estimates final generalization once",
+          "sub": "The test set answers one question after choices are locked.",
+          "what": "Learners protect the final estimate.",
+          "relevance": "This avoids optimistic results caused by repeated test peeking.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Lock the ticket model before opening the final test set.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Leakage breaks the promise",
+          "sub": "Information can leak through features, preprocessing, duplicates, or time.",
+          "what": "Learners see split hygiene as an active check.",
+          "relevance": "This catches the most common source of inflated beginner metrics.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Code a small guard that catches customer overlap across splits.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Stratified, grouped, and time splits match the data story",
+          "sub": "The right split depends on labels, related records, and time.",
+          "what": "Learners choose split strategies deliberately.",
+          "relevance": "This prevents random splits from hiding dependence or future leakage.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Match the split strategy to ticket labels, customers, and deployment time.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "fits"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "chooses"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "estimates"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "protects"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Split before learning to get an honest exam",
+        "detail": "A split creates examples the model cannot learn from directly."
+      },
+      {
+        "step": 2,
+        "label": "Train fits parameters, validation chooses decisions",
+        "detail": "Training learns weights; validation guides model selection."
+      },
+      {
+        "step": 3,
+        "label": "Test estimates final generalization once",
+        "detail": "A clean test set gives a less biased final performance estimate."
+      },
+      {
+        "step": 4,
+        "label": "Leakage breaks the promise",
+        "detail": "Leakage makes evaluation look better than deployment reality."
+      },
+      {
+        "step": 5,
+        "label": "Stratified, grouped, and time splits match the data story",
+        "detail": "Split strategy should reflect what deployment will ask the model to do."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Split before learning to get an honest exam\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Leakage breaks the promise\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Stratified, grouped, and time splits match the data story\" define the learning or evaluation gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Design splits for a ticket-priority classifier. Decide whether to split randomly, by customer, or by time; write which preprocessing fits only on train; define validation decisions; and reserve test for one final estimate. Next rung: add cross-validation or grouped CV.",
+      "scopedTo": "Foundations",
+      "checks": [
+        "Split happens before feature fitting.",
+        "Validation choices are not made on test data.",
+        "Duplicates or related records stay in the same split.",
+        "Preprocessing fit uses train only."
+      ]
+    }
+  },
+  "citations": {
+    "canon_sklearn_split": {
+      "id": "canon_sklearn_split",
+      "kind": "canonical",
+      "title": "scikit-learn train_test_split",
+      "url": "https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_sklearn_model_selection": {
+      "id": "canon_sklearn_model_selection",
+      "kind": "canonical",
+      "title": "scikit-learn model selection and evaluation",
+      "url": "https://scikit-learn.org/stable/model_selection.html",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_sklearn_pipeline": {
+      "id": "canon_sklearn_pipeline",
+      "kind": "canonical",
+      "title": "scikit-learn Pipeline",
+      "url": "https://scikit-learn.org/stable/modules/compose.html#pipeline",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

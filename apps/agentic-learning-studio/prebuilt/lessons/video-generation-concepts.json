@@ -1,0 +1,937 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Video Generation Concepts",
+    "title": "Video Generation Concepts",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Video Generation Concepts is practical when learners can apply it to this concrete case: A product marketer creates short demo clips and must control story, motion, consistency, and review. By the end, they should be able to build or review video-generation shot plan with prompt, reference, and QA notes, measure shots accepted without continuity errors, and catch the failure where each clip looks good alone but the product changes shape between shots."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Video Generation Concepts",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Video Generation Concepts: mental map",
+    "caption": "Understand video generation as image generation plus time: temporal consistency, conditioning, motion limits, review, and product caveats.",
+    "oneLineThesis": "Video generation is hard because each frame must remain visually and semantically consistent over time.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Video adds time to the generation problem",
+        "sub": "A clip must work as a sequence, not a frame.",
+        "what": "Learners focus on the time dimension.",
+        "relevance": "This prevents approving a clip from one attractive frame.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Compare a nice thumbnail with a coherent four-second sequence.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Conditioning can start from text, image, or video",
+        "sub": "The input mode controls composition, identity, and rights risk.",
+        "what": "Learners understand input choices.",
+        "relevance": "This helps choose a controllable path.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Decide whether to begin with text or a reviewed keyframe.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Short constrained motion beats long exact scenes",
+        "sub": "Duration multiplies chances for drift.",
+        "what": "Learners set feasible briefs.",
+        "relevance": "This prevents impossible product asks.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Limit a lesson clip to simple motion that can be reviewed.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code a temporal consistency check",
+        "sub": "Review adjacent frames, not only thumbnails.",
+        "what": "Learners operationalize review.",
+        "relevance": "This catches sequence artifacts before publishing.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Flag sudden brightness and position jumps across frames.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Product caveats decide where video belongs",
+        "sub": "Motion can teach, distract, or mislead.",
+        "what": "Learners choose media format by learning value.",
+        "relevance": "This prevents overusing persuasive synthetic video.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Decide whether generated video, still media, or authored animation fits.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "adds"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "conditions"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "limits"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "reviews"
+      }
+    ],
+    "structureType": "conceptual"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Video adds time to the generation problem",
+      "sub": "A clip must work as a sequence, not a frame.",
+      "summary": "Temporal coherence is the central video challenge.",
+      "objectives": [
+        "Explain why video is harder than images.",
+        "Name continuity failures.",
+        "Anchor in a lesson intro clip."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "A beautiful frame can make a bad video",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a learning app wants a 4-second clip of a robot arranging concept cards. One frame looks great, but across frames the hand changes shape, cards flicker, labels mutate, and the camera jumps. Video generation must align appearance and motion over time."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_video_generation",
+            "kb_multimodal_generative"
+          ],
+          "analogy": "Video generation is a flipbook where every page must remember the same world."
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Lesson intro failure",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The clip is rejected because concept-card labels mutate every half-second. The colors and style are good; the teaching signal is wrong."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_video_generation"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Video challenge",
+          "prompt": "What makes video harder than still images?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only file size.",
+              "correct": false
+            },
+            {
+              "text": "Objects, motion, and scene meaning must stay consistent across frames.",
+              "correct": true
+            },
+            {
+              "text": "A video is one image with audio.",
+              "correct": false
+            }
+          ],
+          "explanation": "Time adds continuity constraints.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_video_generation"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_video_generation",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Conditioning can start from text, image, or video",
+      "sub": "The input mode controls composition, identity, and rights risk.",
+      "summary": "Text-to-video, image-to-video, and control workflows offer different tradeoffs.",
+      "objectives": [
+        "Compare conditioning modes.",
+        "Choose a workflow for control.",
+        "Recognize source-media obligations."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "More conditioning usually means more control and more responsibility",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Text-to-video starts open-ended. Image-to-video starts from an approved frame and can preserve composition. Video-to-video or control-conditioned generation can preserve structure but inherits rights, privacy, and provenance questions from the source media."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_video_generation",
+            "canon_hf_svd"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Video conditioning choices",
+          "criteria": [
+            "Workflow",
+            "Control gained",
+            "Risk to manage"
+          ],
+          "options": [
+            {
+              "name": "Text-to-video",
+              "cells": [
+                {
+                  "criterion": "Workflow",
+                  "text": "Text-to-video",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Control gained",
+                  "text": "fast ideation from description",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk to manage",
+                  "text": "prompt mismatch and identity drift",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Early exploration.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Image-to-video",
+              "cells": [
+                {
+                  "criterion": "Workflow",
+                  "text": "Image-to-video",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Control gained",
+                  "text": "approved composition and identity start",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk to manage",
+                  "text": "motion may distort source",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Need layout continuity.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Video/control",
+              "cells": [
+                {
+                  "criterion": "Workflow",
+                  "text": "Video/control",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Control gained",
+                  "text": "guided motion or structure",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk to manage",
+                  "text": "source rights and privacy",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Need precise motion.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_video_generation"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_video_generation",
+        "canon_hf_svd"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Short constrained motion beats long exact scenes",
+      "sub": "Duration multiplies chances for drift.",
+      "summary": "Generated video quality depends on motion priors, frame count, and reviewability.",
+      "objectives": [
+        "Explain motion priors.",
+        "Set realistic duration.",
+        "Avoid exact text-heavy clips."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "The model must learn how things move",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Video models need motion patterns, not only appearance. Short clips with fixed camera and simple motion are easier to review than long scenes with multiple characters, exact text, and detailed procedures."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_video_generation",
+            "canon_hf_svd",
+            "kb_multimodal_generative"
+          ]
+        },
+        {
+          "id": "m3_brief",
+          "kind": "functionalExample",
+          "title": "Practical lesson-video brief",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Good brief: 4 seconds, fixed camera, robot hand slides three blank concept cards into a row, no readable text. Risky brief: one-minute cinematic tutorial with exact labels and many characters."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_video_generation"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_video_generation",
+        "canon_hf_svd",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code a temporal consistency check",
+      "sub": "Review adjacent frames, not only thumbnails.",
+      "summary": "A small report can flag flicker and jumps for human review.",
+      "objectives": [
+        "Run a frame-change check.",
+        "Predict suspicious frames.",
+        "Verify video workflows."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Tiny frame-change report",
+          "language": "python",
+          "code": "frames = [\n    {\"frame\": 0, \"brightness\": 0.50, \"card_x\": 10},\n    {\"frame\": 1, \"brightness\": 0.52, \"card_x\": 13},\n    {\"frame\": 2, \"brightness\": 0.91, \"card_x\": 80},\n    {\"frame\": 3, \"brightness\": 0.54, \"card_x\": 18},\n]\nalerts = []\nfor prev, cur in zip(frames, frames[1:]):\n    if abs(cur[\"brightness\"] - prev[\"brightness\"]) > 0.25 or abs(cur[\"card_x\"] - prev[\"card_x\"]) > 25:\n        alerts.append(cur[\"frame\"])\nprint(alerts)",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Real systems can use optical flow, embeddings, or human review. The habit is to inspect continuity across frames."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Which frame is flagged?",
+            "answer": "Frame 2, because brightness and position jump sharply from frame 1."
+          },
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_video_generation",
+            "kb_multimodal_generative"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify generated-video workflows",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: prompt/conditioning recorded; duration, fps, and resolution explicit; model/settings saved; review checks identity, motion, text artifacts, physics, and rights."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "canon_hf_video_generation"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_hf_video_generation",
+        "kb_multimodal_generative"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Product caveats decide where video belongs",
+      "sub": "Motion can teach, distract, or mislead.",
+      "summary": "Generated video belongs where review and labeling can handle errors.",
+      "objectives": [
+        "Name responsible constraints.",
+        "Choose still image versus video.",
+        "Plan review and fallback."
+      ],
+      "termIds": [
+        "diffusion",
+        "latent_space",
+        "pipeline",
+        "vlm",
+        "asr"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Motion increases persuasion and risk",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Video feels real, so synthetic clips need labels, rights review, and content checks. Sometimes a still diagram, screen recording, or authored animation is safer than generated motion."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative",
+            "canon_hf_video_generation"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Use generated video when motion adds learning value and every frame can be reviewed.",
+          "useWhen": "Use it for low-risk illustrative motion, mood clips, or drafts with synthetic labeling.",
+          "avoidWhen": "Avoid factual procedures, identity-sensitive content, exact text, or rights-constrained media without review.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative",
+            "canon_hf_video_generation"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Format choice",
+          "prompt": "When is a still diagram better than generated video?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Never; video is always better.",
+              "correct": false
+            },
+            {
+              "text": "When exact labels, measurements, or factual steps matter more than motion.",
+              "correct": true
+            },
+            {
+              "text": "Only when file size is small.",
+              "correct": false
+            }
+          ],
+          "explanation": "Choose format by learning value and verification needs.",
+          "termIds": [
+            "diffusion",
+            "latent_space",
+            "pipeline",
+            "vlm",
+            "asr"
+          ],
+          "sources": [
+            "kb_multimodal_generative"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_multimodal_generative",
+        "canon_hf_video_generation"
+      ]
+    }
+  ],
+  "glossary": {
+    "diffusion": {
+      "id": "diffusion",
+      "label": "Diffusion",
+      "laymanDefinition": "A generative process that learns to turn noise into structured media.",
+      "technicalNote": "Diffusion systems combine denoising steps, conditioning, schedulers, and safety controls; quality and provenance depend on the full pipeline.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "latent_space": {
+      "id": "latent_space",
+      "label": "Latent space",
+      "laymanDefinition": "A compressed representation where models manipulate meaning more efficiently than raw pixels or audio.",
+      "technicalNote": "Latent-space choices affect speed, detail, editability, artifacts, and what safety or provenance checks can inspect.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "The ordered set of model, preprocessing, generation, postprocessing, and safety steps.",
+      "technicalNote": "Media pipelines should pin model versions, prompts, parameters, assets, moderation, watermarking, and review metadata for reproducibility.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "vlm": {
+      "id": "vlm",
+      "label": "VLM",
+      "laymanDefinition": "A model that connects visual inputs with language understanding or generation.",
+      "technicalNote": "VLM workflows need image preprocessing, prompt grounding, output validation, and privacy review for uploaded visual content.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Vision-language model"
+    },
+    "asr": {
+      "id": "asr",
+      "label": "ASR",
+      "laymanDefinition": "Technology that converts spoken audio into text.",
+      "technicalNote": "ASR systems should track language, accent, noise, timestamps, confidence, privacy, and downstream correction paths.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Automatic speech recognition"
+    },
+    "provenance": {
+      "id": "provenance",
+      "label": "Provenance",
+      "laymanDefinition": "Evidence about where media came from and how it was created or edited.",
+      "technicalNote": "Provenance for generated media includes source assets, model versions, prompts, parameters, edits, disclosures, and review decisions.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Video Generation Concepts",
+    "themes": [
+      {
+        "name": "Temporal review",
+        "questions": [
+          {
+            "q": "What must remain consistent across frames for this clip to be usable?",
+            "why": "Video fails through flicker, identity drift, physics artifacts, and text mutation even when single frames look good.",
+            "opts": [
+              "Temporal consistency review",
+              "Thumbnail-only approval",
+              "Prompt trust"
+            ],
+            "rot": "Review motion, identity, scene continuity, duration, and rights."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct video generation by naming frame sequence, temporal consistency, text/image/video conditioning, motion priors, duration limits, artifact review, and fallback choices."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Video generation path from condition to temporal review",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Video adds time to the generation problem",
+          "sub": "A clip must work as a sequence, not a frame.",
+          "what": "Learners focus on the time dimension.",
+          "relevance": "This prevents approving a clip from one attractive frame.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Compare a nice thumbnail with a coherent four-second sequence.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Conditioning can start from text, image, or video",
+          "sub": "The input mode controls composition, identity, and rights risk.",
+          "what": "Learners understand input choices.",
+          "relevance": "This helps choose a controllable path.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Decide whether to begin with text or a reviewed keyframe.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Short constrained motion beats long exact scenes",
+          "sub": "Duration multiplies chances for drift.",
+          "what": "Learners set feasible briefs.",
+          "relevance": "This prevents impossible product asks.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Limit a lesson clip to simple motion that can be reviewed.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code a temporal consistency check",
+          "sub": "Review adjacent frames, not only thumbnails.",
+          "what": "Learners operationalize review.",
+          "relevance": "This catches sequence artifacts before publishing.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Flag sudden brightness and position jumps across frames.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Product caveats decide where video belongs",
+          "sub": "Motion can teach, distract, or mislead.",
+          "what": "Learners choose media format by learning value.",
+          "relevance": "This prevents overusing persuasive synthetic video.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Decide whether generated video, still media, or authored animation fits.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "adds"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "conditions"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "limits"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "reviews"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Video adds time to the generation problem",
+        "detail": "Temporal coherence is the central video challenge."
+      },
+      {
+        "step": 2,
+        "label": "Conditioning can start from text, image, or video",
+        "detail": "Text-to-video, image-to-video, and control workflows offer different tradeoffs."
+      },
+      {
+        "step": 3,
+        "label": "Short constrained motion beats long exact scenes",
+        "detail": "Generated video quality depends on motion priors, frame count, and reviewability."
+      },
+      {
+        "step": 4,
+        "label": "Code a temporal consistency check",
+        "detail": "A small report can flag flicker and jumps for human review."
+      },
+      {
+        "step": 5,
+        "label": "Product caveats decide where video belongs",
+        "detail": "Generated video belongs where review and labeling can handle errors."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Video adds time to the generation problem\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Code a temporal consistency check\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Product caveats decide where video belongs\" define the production or review gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Design a 4-second generated lesson intro. Include prompt, keyframe, motion, duration, aspect ratio, temporal review checklist, and fallback plan. Next rung: compare text-to-video and image-to-video.",
+      "scopedTo": "Generative media concepts",
+      "checks": [
+        "Motion and continuity specified.",
+        "Duration limits acknowledged.",
+        "Review checks sequence, not thumbnail.",
+        "Fallback exists."
+      ]
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Multimodal Generative AI",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Multimodal Generative AI",
+      "url": "https://arxiv.org/abs/2006.11239",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Diffusers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-20"
+    },
+    "canon_hf_video_generation": {
+      "id": "canon_hf_video_generation",
+      "kind": "canonical",
+      "title": "Diffusers video generation guide",
+      "url": "https://huggingface.co/docs/diffusers/en/using-diffusers/text-img2vid",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_hf_svd": {
+      "id": "canon_hf_svd",
+      "kind": "canonical",
+      "title": "Diffusers Stable Video Diffusion guide",
+      "url": "https://huggingface.co/docs/diffusers/using-diffusers/svd",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_hf_diffusers": {
+      "id": "canon_hf_diffusers",
+      "kind": "canonical",
+      "title": "Hugging Face Diffusers documentation",
+      "url": "https://huggingface.co/docs/diffusers/en/index",
+      "asOfDate": "2026-06-23"
+    },
+    "kb_multimodal_generative": {
+      "id": "kb_multimodal_generative",
+      "kind": "kb",
+      "title": "KB: Multimodal and Generative Models",
+      "url": "https://huggingface.co/docs/diffusers/index",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

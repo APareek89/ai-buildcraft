@@ -1,0 +1,88 @@
+{
+  "dataset": "Meridian SFT session corpus",
+  "version": 1,
+  "authored_date": "2026-09-29",
+  "provenance": "Questions and answer patterns authored with an AI coding assistant, expanded using canonical source facts plus authored policy/refusal families. No external generation API.",
+  "records": 1126,
+  "splits": {
+    "train": 995,
+    "validation": 131
+  },
+  "kind_counts": {
+    "train": {
+      "refusal": 224,
+      "single_fact": 432,
+      "comparison": 126,
+      "multi_fact": 84,
+      "premise_correction": 45,
+      "policy": 56,
+      "mixed": 28
+    },
+    "validation": {
+      "single_fact": 48,
+      "comparison": 18,
+      "premise_correction": 9,
+      "refusal": 32,
+      "policy": 8,
+      "multi_fact": 12,
+      "mixed": 4
+    }
+  },
+  "split_method": "Single-fact questions reserve the final authored wording for validation; other kinds keep entire comparison/scenario families in one split. Same48facts occur in both; this is not unseen-knowledge validation.",
+  "source_sha256": {
+    "data/raw/brand_guide.md": "3c9075c5c299fe3d28d327a83ea467bc263126fd5d6a735ed0278ff4c1d9c4e2",
+    "data/raw/facts.json": "a4c922436404c35a477c00a7d679feca393c1be4fb929eff12c45b8391f002b4",
+    "data/raw/spec_meridian_arc_110.md": "e5bf04c2ac835d164eb8f75460ed10742de52ddd97dafd18454b55b42306bdbd",
+    "data/raw/spec_meridian_pulse_125.md": "5e0bf7d8ab45e7ec1a1382cc86f9b35c57105d2231967f0c71bd16dba972d33c",
+    "data/raw/spec_meridian_volt_x.md": "a097efa23a8ce8f6d3c0d95a26eaea2be0b4baed25f15f81ae9283057a3550ba",
+    "data/raw/warranty_policy.md": "810c40f0dea6c207aa07dd7536f7b306e188635c619fe14362d7b136d9dd9ac6"
+  },
+  "authoring_seed_sha256": "0b0ff2b8f7f2335ed57d0a4722a594f41d2dc955383ff2db64e75426106779fa",
+  "builder_sha256": "e9e04675add083c905c08a6d80895a0fcad615d96f9c871d76f613822760cd8f",
+  "output_sha256": {
+    "sft_train.json": "c493a620cf05be4445fe784e4626d21b705fbea2d6a5a5d6330f3a2512b61e3b",
+    "sft_val.json": "3578875bb44a2ee102f6fbe23c8f6a44a6f65d598697f9d944e0c5370590939b"
+  },
+  "previous_files_backed_up": [
+    "outputs/sft_session/backups/20260929T124855007936Z/sft_train.json",
+    "outputs/sft_session/backups/20260929T124855010692Z/sft_val.json"
+  ],
+  "external_generation_api_calls": 0,
+  "model_training_executed": false,
+  "eval_content_used_for_authorship": false,
+  "checks": {
+    "unique_normalized_questions": 1126,
+    "duplicates": 0,
+    "all_48_facts_in_train_and_val": true,
+    "answers_max_90_words": true,
+    "answers_one_to_three_sentences": true,
+    "no_manual_chat_tokens": true,
+    "pure_refusals_explicit_under_existing_scorer": true,
+    "scenario_families_separated_except_single_fact_paraphrases": true
+  },
+  "notes": [
+    "Training reads only question and answer; extra fields provide provenance.",
+    "No exact dev unknown questions are recycled as refusal seeds, unlike the original notebook03 cell.",
+    "Correcting a false premise uses a wrong value in the masked question and only correct facts in the supervised answer.",
+    "Arc fast charging is unsupported, not a zero-minute duration; source facts.json stores a zero sentinel.",
+    "Specificity of numeric curation uses model/attribute provenance, rather than notebook03's global number whitelist.",
+    "These are controlled synthetic examples over the small fictional domain; improved performance is unmeasured."
+  ],
+  "notebook05_compatibility": {
+    "report": "outputs/sft_session/notebook05_compatibility.json",
+    "notebook_sha256": "80fcd8609f7fdeb13621cd68ed78bcab2decd1d391aed70469d2f34edf1bec05",
+    "all_rows_fit_512_tokens": true,
+    "max_full_tokens_train": 148,
+    "max_full_tokens_validation": 139,
+    "prompt_answer_EOS_padding_masks_valid": true,
+    "training_executed": false
+  },
+  "evaluation_question_overlap_audit": {
+    "report": "outputs/sft_session/evaluation_overlap_audit.json",
+    "method": "post-authoring normalized question hashes only",
+    "dev_exact_normalized_overlaps": 0,
+    "heldout_exact_normalized_overlaps": 0,
+    "no_unseen_topic_guarantee": true
+  },
+  "content_review_report": "outputs/sft_session/content_review.json"
+}

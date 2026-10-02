@@ -1,0 +1,534 @@
+"""Bounded arithmetic and live evidence restricted to the demo owner's websites."""
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import re
+import time
+from decimal import Decimal, ROUND_HALF_UP
+from urllib.parse import unquote, urlsplit
+
+from .runtime_state import ToolRequest
+
+
+def _normal(text: str) -> str:
+    return " ".join(str(text).lower().replace("’", "'").split())
+
+
+# Keep this source pattern in sync with web/player/player.js:CUSTOMER_URL_PATTERN.
+# Extraction grants no network permission: fetch_public still checks every hop.
+CUSTOMER_URL_PATTERN = r"""(?<![\w@.-])(?:https?://[^\s<>"'\]\)]+|(?:www\.)?(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}(?::\d{1,5})?(?:[/?#][^\s<>"'\]\)]*)?)(?![\w@-])"""
+CUSTOMER_URL_RE = re.compile(CUSTOMER_URL_PATTERN, re.I | re.ASCII)
+PUBLIC_TLDS = {"com", "in", "co", "net", "org", "io", "ai", "info", "biz", "edu", "gov", "uk", "de", "jp", "sg", "ae", "au", "ca", "us", "eu"}
+DOC_EXTENSIONS = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "csv", "txt", "md", "json", "js", "cjs", "mjs", "ts", "py", "html", "css", "png", "jpg", "jpeg", "gif", "webp", "svg", "mp4", "mov", "wav", "mp3", "zip"}
+
+
+def _supplied_url(url: str) -> str:
+    url = url.rstrip(".,;!")
+    return url if re.match(r"https?://", url, re.I) else "https://" + url
+
+
+def supplied_urls(question: str, history: list[dict] | None = None, extra: list[str] | None = None) -> list[str]:
+    text = "\n".join([str(m.get("text", "")) for m in (history or []) if m.get("role") == "user"] + [str(question)])
+    texts = [*(value for value in (extra or []) if isinstance(value, str)), text]
+    urls = []
+    for text in texts:
+        for match in CUSTOMER_URL_RE.finditer(text):
+            token = match.group().rstrip(".,;!")
+            if not re.match(r"(?:https?://|www\.)", token, re.I):
+                host = re.split(r"[/?#]", token, maxsplit=1)[0].split(":", 1)[0]
+                suffix = host.rsplit(".", 1)[-1].lower()
+                # The listed co.in/co.uk/com.au forms retain their public final label.
+                if suffix not in PUBLIC_TLDS or suffix in DOC_EXTENSIONS:
+                    continue
+            urls.append(_supplied_url(token))
+    return list(dict.fromkeys(urls))[:8]
+
+
+def source_domain(url: str) -> str:
+    """An exact host, with only the conventional www/apex pair treated alike.
+
+    Sibling or child subdomains do not inherit permission. A hostname suffix
+    comparison would accidentally authorize unrelated tenants or lookalikes.
+    The fetcher still validates addresses, ports and every redirect before I/O.
+    """
+    try:
+        parsed = urlsplit(str(url))
+        if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password:
+            return ""
+        if re.search(r"[\x00-\x20\x7f]", str(url)):
+            return ""
+        _ = parsed.port
+        host = parsed.hostname.encode("idna").decode("ascii").lower()
+        if host.endswith("."):
+            return ""  # Keep the same hostname representation as crawl's hop check.
+        return host[4:] if host.startswith("www.") else host
+    except (ValueError, UnicodeError):
+        return ""
+
+
+def source_hosts(urls: list[str] | None) -> set[str]:
+    domains = {source_domain(url) for url in urls or []} - {""}
+    return {host for domain in domains for host in (domain, "www." + domain)}
+
+
+def allowed_source_url(url: str, allowed_urls: list[str] | None) -> bool:
+    domain = source_domain(url)
+    return bool(domain and domain in {source_domain(value) for value in allowed_urls or []})
+
+
+def runtime_source_urls(demo: dict) -> list[str]:
+    """Only enabled top-level URLs explicitly added by the demo owner grant access.
+
+    Customer messages, provider results, crawl children and URLs inside uploaded
+    documents are context, never new network permissions. Re-read this on each
+    turn/tool attempt so an excluded source cannot survive in session history.
+    crawl_active records the last build fetch's availability, not owner consent:
+    a timeout must not revoke an enabled URL's permission to be checked live.
+    Build evidence still has its separate crawl/freshness checks.
+    """
+    return list(dict.fromkeys(str(source.get("url") or "") for source in demo.get("sources", [])
+        if source.get("kind") == "url" and not source.get("crawl_parent")
+        and source.get("use_in_demo", True)
+        and not source.get("scope_excluded") and source_domain(source.get("url", ""))))
+
+
+def _numbers(text: str) -> set[Decimal]:
+    from .agents.pitch import _numbers as number_strings
+    found = set()
+    for v in number_strings(text):
+        try:
+            found.add(Decimal(v))
+        except Exception:
+            pass
+    # Digit quantities with Indian/English scale words are explicit, not inferred.
+    for n, scale in re.findall(r"([\d,.]+)\s*(lakh|lac|crore|thousand|million)s?\b", text, re.I):
+        found.add(Decimal(n.replace(",", "")) * {"lakh":100000,"lac":100000,"crore":10000000,"thousand":1000,"million":1000000}[scale.lower()])
+    return found
+
+
+def _bound_unit(quote: str, value: Decimal, unit: str, *, annual: bool = False, monthly: bool = False) -> bool:
+    """Bind a unit to this occurrence, never to an unrelated number in the quote.
+
+    A short exact operand quote is preferable. Wider quotes are allowed, but the
+    next quantity/clause boundary ends the candidate's suffix. A percentage is
+    not an annual rate unless that basis is explicit beside it.
+    """
+    words = "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety hundred thousand lakh lac crore million".split()
+    word = r"(?:" + "|".join(words) + r")"
+    quantity = re.compile(r"(?<![\w.])(?:\d[\d,]*(?:\.\d+)?(?:\s*(?:lakh|lac|crore|thousand|million)s?)?|" + word + r"(?:[ -]+" + word + r")*)(?!\w)", re.I)
+    matches = list(quantity.finditer(quote))
+    patterns = {
+        "percent": r"^\s*(?:%|percent\b|per cent\b)",
+        "years": r"^\s*[- ]?\s*(?:years?|yrs?)\b",
+        "months": r"^\s*[- ]?\s*(?:months?|mos?)\b",
+        "km": r"^\s*(?:km\b|kilomet(?:er|re)s?\b)",
+        "km/month": r"^\s*(?:km\b|kilomet(?:er|re)s?\b)\s*(?:/|per|a|each|every)\s*month\b",
+        "km/litre": r"^\s*(?:kmpl\b|(?:km|kilomet(?:er|re)s?)\s*(?:/|per|a)\s*(?:l\b|lit(?:er|re)s?\b))",
+    }
+    for i, match in enumerate(matches):
+        quantities = _numbers(match.group())
+        scaled = re.fullmatch(r"([\d,.]+)\s*(lakh|lac|crore|thousand|million)s?", match.group(), re.I)
+        if scaled:
+            quantities = {Decimal(scaled[1].replace(',', '')) * {"lakh":100000,"lac":100000,"crore":10000000,"thousand":1000,"million":1000000}[scaled[2].lower()]}
+        if value not in quantities:
+            continue
+        before = quote[max(matches[i-1].end() if i else 0, match.start()-45):match.start()]
+        after = quote[match.end():min(matches[i+1].start() if i+1<len(matches) else len(quote), match.end()+65)]
+        before = re.split(r"[;!?\n]", before)[-1]
+        after = re.split(r"[;!?\n]", after)[0]
+        currency = bool(re.search(r"(?:₹|\binr|\brs\.?|\brupees?)\s*$", before, re.I) or
+                        re.match(r"\s*(?:inr|rupees?|rs\.?)\b", after, re.I) or
+                        re.search(r"\b(?:lakh|lac|crore)s?$", match.group(), re.I))
+        if unit == "number":
+            valid = True
+        elif unit in {"inr", "inr/litre"}:
+            valid = currency
+            if unit == "inr/litre":
+                valid = valid and bool(re.match(r"\s*(?:(?:inr|rupees?|rs\.?)\s*)?(?:/|per|a)\s*(?:l\b|lit(?:er|re)s?\b)", after, re.I))
+        else:
+            valid = unit in patterns and bool(re.search(patterns[unit], after, re.I))
+        if annual:
+            valid = valid and bool(re.search(r"\b(?:annual(?:ly)?|yearly|per\s+(?:year|annum)|p\.?a\.?)\b", before + match.group() + after, re.I))
+            valid = valid and not re.search(r"\b(?:monthly|per\s+month)\b", before + after, re.I)
+        if monthly:
+            valid = valid and bool(re.search(r"\b(?:monthly|per\s+month)\b", before + match.group() + after, re.I))
+            valid = valid and not re.search(r"\b(?:annual(?:ly)?|yearly|per\s+(?:year|annum))\b", before + after, re.I)
+        if valid:
+            return True
+    return False
+
+
+def calculate(request: ToolRequest | dict, evidence: list[dict], customer_text: str) -> dict:
+    request = request if isinstance(request, ToolRequest) else ToolRequest.model_validate(request)
+    by_id = {f["id"]: f for f in evidence}
+    values, units, origins = {}, {}, []
+    if not request.inputs or len(request.inputs) > 12:
+        raise ValueError("Calculation needs explicit inputs")
+    for item in request.inputs:
+        if not math.isfinite(item.value) or abs(item.value) > 1e12:
+            raise ValueError("Calculation input is outside the supported range")
+        if item.name in values:
+            raise ValueError("Duplicate calculation input")
+        if item.source_id == "customer":
+            source = customer_text
+        elif item.source_id in by_id:
+            fact = by_id[item.source_id]
+            source = " ".join(str(fact.get(k, "")) for k in ("claim", "value", "conditions")) + " " + str(fact.get("source", {}).get("quote", ""))
+        else:
+            raise ValueError("Calculation input lacks a known source")
+        if not item.quote.strip() or _normal(item.quote) not in _normal(source):
+            raise ValueError("Calculation quote is not present in its input source")
+        if Decimal(str(item.value)) not in _numbers(item.quote):
+            raise ValueError("Calculation value was not supplied by its quoted source")
+        unit = item.unit.strip().lower().replace("₹", "inr").replace("rupees", "inr")
+        # A quoted number must actually carry the proposed unit/meaning. Avoid
+        # accepting a five-year warranty as five months of loan tenure.
+        if not _bound_unit(item.quote, Decimal(str(item.value)), unit,
+                           annual=request.operation == "emi" and item.name == "annual_rate",
+                           monthly=request.operation == "emi" and item.name == "monthly_rate"):
+            raise ValueError("Input unit must be explicit in the quoted input")
+        values[item.name], units[item.name] = Decimal(str(item.value)), unit
+        origins.append(item.model_dump())
+
+    op, formula, result_unit = request.operation, "", ""
+    def require(names: list[str]):
+        if set(values) != set(names):
+            raise ValueError("Required inputs: " + ", ".join(names))
+    if op == "emi":
+        rate = "monthly_rate" if "monthly_rate" in values else "annual_rate"
+        require(["principal", rate, "tenure"])
+        if units["principal"] != "inr" or units[rate] != "percent" or units["tenure"] not in ("months", "years"):
+            raise ValueError("EMI needs INR principal, explicitly annual or monthly interest percent and months/years tenure")
+        p, r = values["principal"], values[rate] / (100 if rate == "monthly_rate" else 1200)
+        n = values["tenure"] * (12 if units["tenure"] == "years" else 1)
+        if not 0 < p <= 1e9 or not 0 <= r <= Decimal("0.1") or n != n.to_integral_value() or not 1 <= n <= 600:
+            raise ValueError("EMI input range is invalid")
+        result = p/n if r == 0 else p*r*(1+r)**int(n)/((1+r)**int(n)-1)
+        formula, result_unit = "P*r*(1+r)^n/((1+r)^n-1), r=" + ("monthly percent/100" if rate == "monthly_rate" else "annual percent/1200") + ", n=months; at zero interest P/n", "INR/month"
+    elif op == "fuel_cost":
+        require(["distance", "efficiency", "fuel_price"])
+        if units["distance"] not in ("km", "km/month") or units["efficiency"] != "km/litre" or units["fuel_price"] != "inr/litre":
+            raise ValueError("Fuel estimate needs distance km, km/litre efficiency and INR/litre fuel price")
+        if values["distance"] < 0 or values["efficiency"] <= 0 or values["fuel_price"] < 0:
+            raise ValueError("Fuel inputs must be positive")
+        result = values["distance"] / values["efficiency"] * values["fuel_price"]
+        formula, result_unit = "distance / efficiency * fuel_price", "INR/month" if units["distance"] == "km/month" else "INR"
+    else:
+        require(["a", "b"])
+        a, b = values["a"], values["b"]
+        if op in ("sum", "difference") and units["a"] != units["b"]:
+            raise ValueError("Cannot add or subtract unlike units")
+        if op == "sum": result, formula, result_unit = a+b, "a+b", units["a"]
+        elif op == "difference": result, formula, result_unit = a-b, "a-b", units["a"]
+        elif op == "product": result, formula, result_unit = a*b, "a*b", units["a"] + "*" + units["b"]
+        elif op == "divide":
+            if b == 0: raise ValueError("Division by zero")
+            result, formula, result_unit = a/b, "a/b", "number" if units["a"] == units["b"] else units["a"] + "/" + units["b"]
+        elif op == "percentage":
+            if units["b"] != "percent": raise ValueError("Input b must be a percent")
+            result, formula, result_unit = a*b/100, "a*b/100", units["a"]
+        else: raise ValueError("Unsupported operation")
+    rounded = result.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    payload = {"operation":op,"inputs":origins,"formula":formula,"value":str(rounded),"unit":result_unit,"rounding":"2 decimal places, half up"}
+    did = "D" + hashlib.sha256(json.dumps(payload,sort_keys=True).encode()).hexdigest()[:12]
+    qualifier = "Illustrative estimate using the explicitly supplied inputs; excludes fees/taxes and is not a lender quote." if op == "emi" else "Calculated from the stated inputs; actual usage may differ." if op == "fuel_cost" else "Calculated from the stated inputs."
+    return {"id":did,"kind":"calculation","claim":op.replace("_", " "),"value":f"{rounded} {result_unit}","conditions":qualifier,"truth":"modeled","approved":True,"source":{"ref":did,"locator":formula,"quote":json.dumps(payload,ensure_ascii=False)},"derivation":payload,"provenance":"calculation"}
+
+
+def _page_candidates(page: dict, final_url: str, terms: set[str], page_index: int, coverage: list[str]) -> list:
+    candidates = []
+    # Legacy adapters may supply paragraphs only. Never split table-like lines.
+    sections = page.get("sections") or [{"text": p.strip(), "locator": f"paragraph {i+1}", "kind": "text"}
+                for i, p in enumerate(re.split(r"\n\s*\n", str(page.get("text") or ""))) if p.strip()]
+    for section in sections:
+        passage = str(section.get("text", "")).strip()
+        if len(passage) < 20:
+            continue
+        heading = str(section.get("heading", ""))
+        normalized = lambda s: re.sub(r"\W+", " ", s.casefold()).strip()
+        heading_only = normalized(passage) == normalized(heading)
+        question_body = re.sub(r"^\s*(?:\d+[.)]|Q(?:uestion)?[:.])\s*", "", passage, flags=re.I)
+        question_only = (question_body.endswith("?")
+            and re.match(r"^(?:what|which|how|does|do|is|are|can|could|will|where|when|why)\b", question_body, re.I)
+            and not re.search(r"[.!?]\s+\S", question_body[:-1]))
+        if question_only:
+            continue  # A FAQ question is not its answer.
+        body_overlap = len(terms & set(re.findall(r"[a-z0-9]{3,}", passage.lower())))
+        heading_overlap = len(terms & set(re.findall(r"[a-z0-9]{3,}", heading.lower())))
+        if not body_overlap and re.search(r"\b(?:share (?:your )?number|enter your (?:email|mobile|phone))\b", passage, re.I):
+            continue  # A form's page heading cannot license an unrelated topic.
+        # Keep feature-bearing headings (e.g. a named panoramic sunroof)
+        # as page evidence, but prefer a complete answer over a section title.
+        overlap = heading_overlap if heading_only else 3 * body_overlap + 1.5 * heading_overlap
+        if not overlap:
+            continue
+        if len(passage) > 12000:
+            coverage.append(f"Section at {final_url} ({section.get('locator', 'document')}) exceeds the complete-section evidence limit; not quoted.")
+            continue
+        candidates.append((overlap, page_index, section, final_url, page.get("fetched_at", time.time())))
+    return candidates
+
+
+def _web_evidence(candidates: list, coverage: list[str], *, claim: str) -> list[dict]:
+    candidates.sort(key=lambda item: (-item[0], item[1]))
+    evidence, seen_quotes, used_chars = [], set(), 0
+    for _, _, section, final_url, fetched_at in candidates:
+        passage = str(section["text"]).strip()
+        if passage in seen_quotes:
+            continue
+        if len(evidence) >= 6 or used_chars + len(passage) > 18000:
+            coverage.append("Evidence pack limit reached; some matching sections were not included.")
+            break
+        seen_quotes.add(passage)
+        used_chars += len(passage)
+        locator = str(section.get("locator") or section.get("heading") or final_url)
+        wid = "W" + hashlib.sha256((str(final_url) + locator + passage).encode()).hexdigest()[:12]
+        evidence.append({"id": wid, "claim": claim, "value": passage,
+            "conditions": "Fresh website passage, not an independently verified product assertion. Preserve model, variant, market, date, table headers and footnotes; attribute the source. Uploaded documents take precedence only for established same-scope conflicts.",
+            "source": {"ref": str(final_url), "locator": locator, "quote": passage}, "scope": {}, "scope_unverified": True,
+            "context": {k: section[k] for k in ("kind", "heading", "rows", "footnote") if k in section},
+            "fetched_at": fetched_at, "provenance": "live_web", "approved": True, "truth": "stated"})
+    return evidence
+
+
+def source_lookup(request: ToolRequest | dict, question: str, history: list[dict], timeout: float = 5.0, *, extra: list[str] | None = None, allowed_urls: list[str] | None = None) -> dict:
+    """Read a selected owner-domain page and up to two relevant same-domain pages.
+
+    Whole sections preserve table headers/footnotes. Positive query overlap is
+    required; no matching evidence is an error, never a successful empty lookup.
+    """
+    from . import crawl
+    request = request if isinstance(request, ToolRequest) else ToolRequest.model_validate(request)
+    url = _supplied_url(request.url.strip())
+    if not allowed_source_url(url, allowed_urls):
+        raise ValueError("Live lookup is limited to websites supplied by the demo owner")
+    started, deadline = time.monotonic(), time.monotonic() + min(max(float(timeout), .1), 5.0)
+    query = CUSTOMER_URL_RE.sub("", request.query or question)
+    stop = {"the", "and", "for", "are", "what", "which", "this", "that", "with", "from", "you", "your", "can", "could", "please", "check", "tell", "about", "website", "page", "url", "information", "official", "have", "has", "does", "compare", "comparison", "using", "use", "verify", "actually", "provide", "provides", "mention", "mentions", "whether", "details", "specific", "list", "lists", "says", "state", "states", "its"}
+    terms = set(re.findall(r"[a-z0-9]{3,}", query.lower())) - stop
+    if not terms:
+        raise ValueError("Specify the product detail you want checked on that website")
+    allowed_hosts = source_hosts([url])
+    model_tokens = crawl._model_tokens({"url": url, "role": "competitor"}, {})
+    # The model name occurs in navigation, forms and every page title. When a
+    # topic exists, rank that topic rather than generic mentions of the car.
+    model_words = set(re.findall(r"[a-z0-9]{3,}", " ".join(model_tokens).lower()))
+    topic_terms = terms - model_words
+    terms = topic_terms or terms
+    seed_locale = crawl._locale_prefix(url)
+    def price_locality(candidate: str) -> str:
+        match = re.search(r"(?:^|/)price-in-([a-z0-9]+(?:-[a-z0-9]+)*)/?$", unquote(urlsplit(candidate).path).casefold())
+        return match[1].replace("-", " ") if match else ""
+
+    seed_locality = price_locality(url)
+    # A generated search query or a page's city menu cannot supply the buyer's
+    # locality. Only their own words (or the explicitly selected city URL) can.
+    customer_text = " ".join([str(m.get("text", "")) for m in history if m.get("role") == "user"] + [question])
+    customer_text = CUSTOMER_URL_RE.sub("", customer_text)
+    customer_words = " " + re.sub(r"\W+", " ", customer_text.casefold()).strip() + " "
+
+    def in_source_scope(candidate: str, label: str = "") -> bool:
+        if not allowed_source_url(candidate, [url]):
+            return False
+        if crawl.canonical_url(candidate) == crawl.canonical_url(url):
+            return True
+        locality = price_locality(candidate)
+        if locality and locality != seed_locality and f" {locality} " not in customer_words:
+            return False
+        if model_tokens:
+            # Retain the existing product/market guard for linked model pages.
+            # The permitted www/apex alias must not look like another host to it.
+            same_host = urlsplit(candidate)._replace(netloc=urlsplit(url).netloc).geturl()
+            return crawl._eligible(same_host, label, url, model_tokens)
+        return not seed_locale or crawl._locale_prefix(candidate) == seed_locale
+
+    queue, seen, pages, coverage = [(url, "customer URL")], set(), [], []
+    candidates = []
+    while queue and len(pages) < 3 and len(seen) < 3:
+        target, discovery = queue.pop(0)
+        canonical = crawl.canonical_url(target)
+        if canonical in seen:
+            continue
+        seen.add(canonical)
+        remaining = deadline - time.monotonic()
+        if remaining <= .1:
+            coverage.append(f"Time budget reached before reading {target}")
+            break
+        try:
+            page = crawl.fetch_public(target, timeout=remaining, max_bytes=2_000_000, allowed_hosts=allowed_hosts)
+        except Exception as exc:
+            coverage.append(f"Could not read {target}: {str(exc)[:160]}")
+            if target == url:
+                raise ValueError(coverage[-1]) from exc
+            continue
+        final_url = page.get("final_url") or page.get("url") or target
+        if not allowed_source_url(final_url, [url]):
+            coverage.append(f"Redirect outside customer-selected host was excluded: {final_url}")
+            continue
+        if not in_source_scope(final_url):
+            coverage.append(f"Redirect outside the customer-selected model or page scope was excluded: {final_url}")
+            continue
+        final_canonical = crawl.canonical_url(final_url)
+        if any(crawl.canonical_url(p["url"]) == final_canonical for p in pages):
+            continue
+        seen.add(final_canonical)
+        pages.append({"url": final_url, "discovery": discovery, "fetched_at": page.get("fetched_at", time.time())})
+        coverage.extend(str(w) for w in page.get("warnings", []))
+        candidates.extend(_page_candidates(page, final_url, terms, len(pages), coverage))
+        links = []
+        for link in page.get("links", []):
+            child = link.get("url", "")
+            if not allowed_source_url(child, [url]) or crawl.canonical_url(child) in seen:
+                continue
+            if crawl.EXCLUDE.search(urlsplit(child).path):
+                continue
+            if not in_source_scope(child, link.get("label", "")):
+                continue
+            score = len(terms & set(re.findall(r"[a-z0-9]{3,}", (urlsplit(child).path + " " + link.get("label", "")).lower())))
+            if score:
+                links.append((score, child))
+        links.sort(key=lambda item: (-item[0], item[1]))
+        queue.extend((child, f"relevant link from {final_url}") for _, child in links[:3])
+    if queue:
+        coverage.append(f"Bounded lookup read {len(pages)} pages; additional relevant links remain unvisited.")
+    evidence = _web_evidence(candidates, coverage, claim="Customer-selected website passage")
+    if not evidence:
+        raise ValueError("No readable section matched that question within the supplied-source lookup budget")
+    return {"tool": "source_lookup", "url": pages[0]["url"] if pages else url, "evidence": evidence, "pages": pages,
+            "scope": {"model_tokens": model_tokens, "locale": list(seed_locale), "seed_url": url},
+            "elapsed_ms": round((time.monotonic() - started) * 1000), "coverage": list(dict.fromkeys(coverage))}
+
+
+def _search_sources(query: str, timeout: float) -> dict:
+    """Discover citation URLs with the configured Gemini SDK; never use its prose as evidence."""
+    from . import config, usage
+    from .llm import gemini
+    if config.MOCK_LLM:
+        raise ValueError("Public web search is unavailable in mock mode")
+    t = gemini._types()
+    started = time.monotonic()
+    model = config.GEMINI_RUNTIME_MODEL
+    prompt = ("Search only the websites named by the site: domain restrictions in this query and cite relevant source pages. "
+              "Do not search outside those domains. Use one search query.\n" + query)
+    try:
+        response = gemini.client().models.generate_content(model=model, contents=prompt,
+            config=t.GenerateContentConfig(tools=[t.Tool(google_search=t.GoogleSearch())], temperature=0,
+                max_output_tokens=1200, http_options=t.HttpOptions(timeout=max(1, int(timeout * 1000)),
+                    headers={"X-Server-Timeout": str(max(10, math.ceil(timeout)))},
+                    retry_options=t.HttpRetryOptions(attempts=1))))
+    except Exception as exc:
+        usage.trace("runtime-web-search", model, latency_ms=(time.monotonic()-started)*1000,
+                    user=query, error=usage.redact(str(exc))[:250])
+        raise
+    metadata = (response.candidates or [None])[0]
+    metadata = getattr(metadata, "grounding_metadata", None)
+    chunks = getattr(metadata, "grounding_chunks", None) or []
+    supports = getattr(metadata, "grounding_supports", None) or []
+    cited = {index for support in supports for index in (getattr(support, "grounding_chunk_indices", None) or [])}
+    urls = []
+    for index, chunk in enumerate(chunks):
+        web = getattr(chunk, "web", None)
+        url = str(getattr(web, "uri", "") or "")
+        if index in cited and url.startswith(("https://", "http://")) and url not in urls:
+            urls.append(url)
+    entry_point = getattr(metadata, "search_entry_point", None)
+    result = {"urls": urls[:8], "search_queries": list(getattr(metadata, "web_search_queries", None) or []),
+              "search_entry_point": str(getattr(entry_point, "rendered_content", "") or ""),
+              "provider": "gemini", "model": model,
+              "cost_note": "Search query fees are additional to the recorded model token estimate."}
+    um = getattr(response, "usage_metadata", None)
+    inp = getattr(um, "prompt_token_count", 0) or 0
+    out = (getattr(um, "candidates_token_count", 0) or 0) + (getattr(um, "thoughts_token_count", 0) or 0)
+    usage.record("runtime-web-search", model, input_tokens=inp, output_tokens=out)
+    usage.trace("runtime-web-search", model, latency_ms=(time.monotonic()-started)*1000,
+                user=query, response=json.dumps({k:v for k,v in result.items() if k != "search_entry_point"}),
+                input_tokens=inp, output_tokens=out)
+    return result
+
+
+def web_search(request: ToolRequest | dict, question: str, timeout: float = 5.0, *, cancel_event=None, allowed_urls: list[str] | None = None) -> dict:
+    """One owner-domain search plus at most two secured page fetches, scoped to this turn.
+
+    Search citations discover URLs only. Each evidence quote is an actual fetched
+    whole section, with the same relevance, table and size guards as source_lookup.
+    """
+    from . import crawl
+    request = request if isinstance(request, ToolRequest) else ToolRequest.model_validate(request)
+    allowed_hosts = source_hosts(allowed_urls)
+    if not allowed_hosts:
+        raise ValueError("No owner-supplied website is available for live search")
+    query = (request.query or question).strip()
+    if not query:
+        raise ValueError("Specify the question to search for")
+    terms = set(re.findall(r"[a-z0-9]{3,}", CUSTOMER_URL_RE.sub("", query).lower())) - {
+        "the", "and", "for", "are", "what", "which", "this", "that", "with", "from", "you", "your",
+        "can", "could", "please", "check", "tell", "about", "website", "page", "search", "public", "web",
+        "internet", "online", "information", "official", "have", "has", "does", "using", "use", "verify"}
+    if not terms:
+        raise ValueError("Specify the product detail to search for")
+    started = time.monotonic()
+    budget = min(max(float(timeout), .1), 5.0)
+    # Leave room for assembling complete passages and returning through the
+    # caller's wait_for; an optional page must not consume a successful answer.
+    deadline = started + budget - min(.15, budget * .1)
+    def check_cancelled():
+        if cancel_event is not None and cancel_event.is_set():
+            raise InterruptedError("Turn cancelled")
+
+    def remaining():
+        check_cancelled()
+        left = deadline - time.monotonic()
+        if left <= .05:
+            raise TimeoutError("Public search time budget exhausted")
+        return left
+    # Reserve part of this tool's existing five-second allowance for source reads.
+    # A site query is discovery guidance; actual permission is enforced again
+    # before fetching, on each redirect, and before accepting returned evidence.
+    domains = sorted({source_domain(url) for url in allowed_urls or []} - {""})
+    restricted_query = "(" + " OR ".join("site:" + domain for domain in domains) + ") " + query
+    discovery = _search_sources(restricted_query, min(remaining(), budget * .65))
+    remaining()
+    urls = [url for url in dict.fromkeys(discovery.get("urls", [])) if allowed_source_url(url, allowed_urls)][:2]
+    if not urls:
+        raise ValueError("Search returned no cited pages on the demo owner's allowed websites")
+    pages, coverage, candidates = [], [], []
+    for url in urls:
+        try:
+            left = remaining()
+        except TimeoutError:
+            if not candidates:
+                raise
+            coverage.append(f"Time budget reached before reading {url}; completed cited passages were retained.")
+            break
+        try:
+            # fetch_public validates and pins every DNS result and redirect hop.
+            page = crawl.fetch_public(url, timeout=left, max_bytes=2_000_000, allowed_hosts=allowed_hosts)
+            check_cancelled()
+        except InterruptedError:
+            raise
+        except Exception as exc:
+            coverage.append(f"Could not read {url}: {str(exc)[:160]}")
+            continue
+        final_url = str(page.get("final_url") or page.get("url") or url)
+        if not allowed_source_url(final_url, allowed_urls):
+            coverage.append("Redirect outside the demo owner's allowed websites was excluded.")
+            continue
+        if any(crawl.canonical_url(item["url"]) == crawl.canonical_url(final_url) for item in pages):
+            continue
+        pages.append({"url": final_url, "discovery": "public search citation", "fetched_at": page.get("fetched_at", time.time())})
+        coverage.extend(str(warning) for warning in page.get("warnings", []))
+        candidates.extend(_page_candidates(page, final_url, terms, len(pages), coverage))
+    check_cancelled()
+    if not candidates:
+        remaining()
+    evidence = _web_evidence(candidates, coverage, claim="Owner-supplied website passage")
+    if not evidence:
+        raise ValueError("No fetched public-search passage matched that question")
+    return {"tool": "web_search", "query": query, "evidence": evidence, "pages": pages,
+            "elapsed_ms": round((time.monotonic()-started)*1000), "coverage": list(dict.fromkeys(coverage)),
+            "allowed_domains": domains,
+            # Provider-rendered search suggestions may link outside permission.
+            # Only the fetched, allowed pages are presented as source links.
+            **{key:discovery[key] for key in ("search_queries", "provider", "model", "cost_note") if key in discovery}}

@@ -1,0 +1,676 @@
+{
+  "schemaVersion": "1.0",
+  "project": {
+    "name": "Support triage · source fixture",
+    "objective": "Produce a policy-grounded support reply, explain refund eligibility without claiming a refund was issued, and return source-defined validation results.",
+    "sourceRevision": "Non-Git working-tree snapshot, read 2026-09-26 UTC; workflow.py sha256=72e281d923f4cda2697ee7b440b8e3b41112db4ae7ec88130c72ea5fc55b8ad1; README.md sha256=b739328d314867b4f745eab717ccd0884df6a01766d72f325ea222ae5f8bd5cd"
+  },
+  "lanes": [
+    {
+      "id": "orchestration",
+      "label": "Request & routing",
+      "description": "handle entry, category routing, and returned outcomes"
+    },
+    {
+      "id": "context",
+      "label": "Policy context",
+      "description": "Static, category-selected policy"
+    },
+    {
+      "id": "agents",
+      "label": "Reply writer",
+      "description": "Declared model task; implementation is deliberately absent"
+    },
+    {
+      "id": "checks",
+      "label": "Checks & failures",
+      "description": "Narrow output checks and current implementation stop"
+    },
+    {
+      "id": "staff",
+      "label": "Staff responsibility",
+      "description": "Policy-required financial action; no workflow implementation"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "handle",
+      "label": "Receive customer message",
+      "lane": "orchestration",
+      "kind": "orchestrator",
+      "description": "The source-defined handle(message) entry point orchestrates the reply task.",
+      "inputs": [
+        "Customer message string"
+      ],
+      "outputs": [
+        "Category, selected policy, draft, then validation result if each call completes"
+      ],
+      "logic": "Calls classify, retrieve_policy, draft_reply, then validate in order. No exception handling, retry, asynchronous wait, UI, API endpoint, or state persistence is present. There is no system prompt for this ordinary function.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 42,
+          "endLine": 46,
+          "title": "handle orchestration",
+          "kind": "code"
+        }
+      ],
+      "inspect": [
+        "Does handle catch any writer or validator exception?"
+      ],
+      "promptNote": "No system prompt exists for this source function or conceptual boundary."
+    },
+    {
+      "id": "classify",
+      "label": "Classify request",
+      "lane": "orchestration",
+      "kind": "tool",
+      "description": "Select a category using a case-insensitive substring check.",
+      "inputs": [
+        "message: str"
+      ],
+      "outputs": [
+        "refund when message contains “refund”; otherwise general"
+      ],
+      "logic": "The literal substring refund controls the category. This is deterministic source logic, not model reasoning or intent classification. No prompt exists.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 20,
+          "endLine": 21,
+          "title": "Category classifier",
+          "kind": "code"
+        }
+      ],
+      "inspect": [
+        "Does substring routing classify negated or unrelated mentions of refund?"
+      ],
+      "promptNote": "No system prompt exists for this source function or conceptual boundary."
+    },
+    {
+      "id": "policy",
+      "label": "Select static policy",
+      "lane": "context",
+      "kind": "tool",
+      "description": "Return one of two supplied policy dictionaries.",
+      "inputs": [
+        "category: str"
+      ],
+      "outputs": [
+        "refund-30 policy for refund category; otherwise general-1 policy"
+      ],
+      "logic": "Refund policy says requests within 30 days may be eligible and staff must approve and issue a refund. General policy says ask support to investigate if policy does not answer. No retrieval service or prompt exists.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 24,
+          "endLine": 27,
+          "title": "Static policy branches",
+          "kind": "code"
+        }
+      ],
+      "inspect": [
+        "Which category values select the general policy?"
+      ],
+      "promptNote": "No system prompt exists for this source function or conceptual boundary."
+    },
+    {
+      "id": "draft",
+      "label": "Draft reply · unimplemented",
+      "lane": "agents",
+      "kind": "agent",
+      "description": "The repository declares a support-writer prompt and Draft contract, but draft_reply raises NotImplementedError.",
+      "inputs": [
+        "Customer message",
+        "Selected policy dictionary",
+        "SYSTEM_PROMPT static literal as described by the function docstring"
+      ],
+      "outputs": [
+        "Intended: Draft with reply, requires_approval and cited_policy",
+        "Current implementation: NotImplementedError"
+      ],
+      "logic": "The literal prompt is available. The message and selected policy are runtime values, not an observed prompt. There is no prompt assembly, model call, provider client, or completed output. The intended writer must use only the supplied request and policy, resist conflicting customer instructions, avoid claiming refund issuance, and ask one precise question if information is missing. Source-only mapping does not authorize simulation.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 30,
+          "endLine": 32,
+          "title": "Unimplemented writer",
+          "kind": "code"
+        },
+        {
+          "path": "workflow.py",
+          "startLine": 5,
+          "endLine": 11,
+          "title": "Writer system prompt · static literal",
+          "kind": "prompt",
+          "extraction": "literal",
+          "symbol": "SYSTEM_PROMPT"
+        },
+        {
+          "path": "workflow.py",
+          "startLine": 14,
+          "endLine": 17,
+          "title": "Draft · TypedDict contract",
+          "kind": "schema"
+        }
+      ],
+      "inspect": [
+        "Does the implementation ever return a Draft?",
+        "Are runtime customer message and selected policy values available?"
+      ],
+      "promptNote": "Static SYSTEM_PROMPT is available; no runtime assembled prompt exists because draft_reply is a stub. Customer message and policy are runtime inputs."
+    },
+    {
+      "id": "validate",
+      "label": "Check action claims & citation",
+      "lane": "checks",
+      "kind": "validator",
+      "description": "Inspect the draft reply for two prohibited phrases and check that cited_policy matches the selected policy ID.",
+      "inputs": [
+        "Draft mapping",
+        "Policy mapping containing id"
+      ],
+      "outputs": [
+        "Dictionary: ok, original draft, and reason"
+      ],
+      "logic": "Case-insensitive phrase matching blocks “refund has been issued” or “refunded your payment”. A mismatched policy ID also fails. Action-claim reason takes priority if both fail. No approval enforcement, schema/type runtime validation, semantic grounding check, or retry is implemented; requires_approval is not read. Missing expected keys can raise KeyError. No prompt exists.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 35,
+          "endLine": 39,
+          "title": "Validator implementation and returned result",
+          "kind": "code"
+        },
+        {
+          "path": "workflow.py",
+          "startLine": 14,
+          "endLine": 17,
+          "title": "Draft · TypedDict contract",
+          "kind": "schema"
+        }
+      ],
+      "inspect": [
+        "Is requires_approval ever read?",
+        "Can a false action claim evade the two exact phrases?",
+        "What happens if a required key is missing?"
+      ],
+      "promptNote": "No system prompt exists for this source function or conceptual boundary."
+    },
+    {
+      "id": "result",
+      "label": "Return validation result",
+      "lane": "orchestration",
+      "kind": "orchestrator",
+      "description": "Conceptual return boundary of handle: it returns validate’s dictionary unchanged if drafting completes.",
+      "inputs": [
+        "Validator dictionary"
+      ],
+      "outputs": [
+        "Caller receives ok, draft, reason"
+      ],
+      "logic": "Both ok=true and ok=false return through the same statement. A failed check does not suppress the draft, retry the writer, or request staff approval. This is source wiring, not observed execution; the current writer exception prevents this return.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 42,
+          "endLine": 46,
+          "title": "handle return",
+          "kind": "code"
+        },
+        {
+          "path": "workflow.py",
+          "startLine": 35,
+          "endLine": 39,
+          "title": "Validator implementation and returned result",
+          "kind": "code"
+        }
+      ],
+      "inspect": [
+        "Is a draft with ok=false still returned to the caller?"
+      ],
+      "promptNote": "No system prompt exists for this source function or conceptual boundary."
+    },
+    {
+      "id": "unavailable",
+      "label": "Stop: writer unavailable",
+      "lane": "checks",
+      "kind": "guardrail",
+      "description": "Current failure outcome: draft_reply raises and handle does not catch it.",
+      "inputs": [
+        "A call to draft_reply"
+      ],
+      "outputs": [
+        "NotImplementedError propagates to the caller"
+      ],
+      "logic": "This is an implemented stop, not a simulated failure. The draft contract and prompt describe intended behavior but do not produce a reply. No actual execution was performed.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 30,
+          "endLine": 32,
+          "title": "Declared exception",
+          "kind": "code"
+        },
+        {
+          "path": "workflow.py",
+          "startLine": 42,
+          "endLine": 46,
+          "title": "No exception handling in caller",
+          "kind": "code"
+        }
+      ],
+      "inspect": [
+        "Where is NotImplementedError caught, if anywhere?"
+      ],
+      "promptNote": "No system prompt exists for this source function or conceptual boundary."
+    },
+    {
+      "id": "accepted",
+      "label": "Return ok = true",
+      "lane": "orchestration",
+      "kind": "validator",
+      "description": "Conceptual successful validator outcome; represents returned data rather than a separate function.",
+      "inputs": [
+        "Reply contains neither prohibited phrase",
+        "cited_policy equals policy.id"
+      ],
+      "outputs": [
+        "ok=true, unchanged draft, reason=source checks passed"
+      ],
+      "logic": "Passing these narrow checks is not proof of complete policy grounding or staff approval. The current application cannot reach this outcome through handle until the writer is implemented. No prompt exists.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 35,
+          "endLine": 39,
+          "title": "Validator implementation and returned result",
+          "kind": "code"
+        }
+      ],
+      "inspect": [
+        "Do these checks prove staff approval or full policy grounding?"
+      ],
+      "promptNote": "No system prompt exists for this source function or conceptual boundary."
+    },
+    {
+      "id": "rejected",
+      "label": "Return ok = false",
+      "lane": "checks",
+      "kind": "validator",
+      "description": "Conceptual failed validator outcome; represents returned data rather than a separate function.",
+      "inputs": [
+        "At least one prohibited phrase OR a mismatched policy ID"
+      ],
+      "outputs": [
+        "ok=false, unchanged draft, reason=unsupported action claim or citation mismatch"
+      ],
+      "logic": "Unsupported action claim takes precedence over citation mismatch. The invalid draft remains in the return value; the source defines no retry or escalation. No prompt exists.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 35,
+          "endLine": 39,
+          "title": "Validator implementation and returned result",
+          "kind": "code"
+        }
+      ],
+      "inspect": [
+        "Which reason wins when the action and citation checks both fail?"
+      ],
+      "promptNote": "No system prompt exists for this source function or conceptual boundary."
+    },
+    {
+      "id": "approval",
+      "label": "Staff must approve & issue",
+      "lane": "staff",
+      "kind": "human",
+      "description": "Unimplemented policy boundary: a staff member must approve and issue any refund. There is no callable approval gate or refund action in this fixture.",
+      "inputs": [
+        "A future refund action; its request format and staff interface are absent"
+      ],
+      "outputs": [
+        "No implemented approval or refund output"
+      ],
+      "logic": "This responsibility comes from the static refund policy and README, not executable workflow wiring. Draft.requires_approval is a declared output field with no enforcing branch. Eligibility and composing a reply do not issue a refund. No prompt exists.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 24,
+          "endLine": 27,
+          "title": "Policy requires staff action",
+          "kind": "code"
+        },
+        {
+          "path": "workflow.py",
+          "startLine": 14,
+          "endLine": 17,
+          "title": "Draft · TypedDict contract",
+          "kind": "schema"
+        }
+      ],
+      "inspect": [
+        "Where are staff approval, waiting, and refund issuance implemented?"
+      ],
+      "promptNote": "No system prompt exists for this source function or conceptual boundary."
+    }
+  ],
+  "edges": [
+    {
+      "id": "handle-classify",
+      "source": "handle",
+      "target": "classify",
+      "label": "Call classify",
+      "kind": "declared",
+      "condition": "handle receives a message.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 42,
+          "endLine": 43,
+          "title": "Entry and classification call",
+          "kind": "code"
+        }
+      ]
+    },
+    {
+      "id": "classify-policy",
+      "source": "classify",
+      "target": "policy",
+      "label": "Select policy by category",
+      "kind": "declared",
+      "condition": "category from classify is passed to retrieve_policy; refund selects refund-30, all other categories select general-1.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 43,
+          "endLine": 44,
+          "title": "Category to policy",
+          "kind": "code"
+        },
+        {
+          "path": "workflow.py",
+          "startLine": 24,
+          "endLine": 27,
+          "title": "Policy selection condition",
+          "kind": "code"
+        }
+      ]
+    },
+    {
+      "id": "policy-draft",
+      "source": "policy",
+      "target": "draft",
+      "label": "Pass message & policy",
+      "kind": "declared",
+      "condition": "Selected policy and original message are passed to draft_reply.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 44,
+          "endLine": 45,
+          "title": "Writer inputs",
+          "kind": "code"
+        }
+      ]
+    },
+    {
+      "id": "draft-validate",
+      "source": "draft",
+      "target": "validate",
+      "label": "If writer returns a Draft",
+      "kind": "conditional",
+      "condition": "Declared next call requires draft_reply to return; the current stub always raises instead.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 30,
+          "endLine": 32,
+          "title": "Current writer cannot return",
+          "kind": "code"
+        },
+        {
+          "path": "workflow.py",
+          "startLine": 45,
+          "endLine": 46,
+          "title": "Intended validation call",
+          "kind": "code"
+        }
+      ]
+    },
+    {
+      "id": "draft-stop",
+      "source": "draft",
+      "target": "unavailable",
+      "label": "Raises NotImplementedError",
+      "kind": "declared",
+      "condition": "Every call to the current draft_reply implementation raises.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 30,
+          "endLine": 32,
+          "title": "Unconditional exception",
+          "kind": "code"
+        }
+      ]
+    },
+    {
+      "id": "validate-return",
+      "source": "validate",
+      "target": "result",
+      "label": "Return result unchanged",
+      "kind": "declared",
+      "condition": "If validate completes, handle returns its dictionary regardless of ok.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 35,
+          "endLine": 39,
+          "title": "Validator return",
+          "kind": "code"
+        },
+        {
+          "path": "workflow.py",
+          "startLine": 46,
+          "endLine": 46,
+          "title": "handle return",
+          "kind": "code"
+        }
+      ]
+    },
+    {
+      "id": "validate-accepted",
+      "source": "validate",
+      "target": "accepted",
+      "label": "Checks pass",
+      "kind": "conditional",
+      "condition": "Neither prohibited phrase occurs in lowercased reply AND cited_policy equals policy.id.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 35,
+          "endLine": 39,
+          "title": "Validator implementation and returned result",
+          "kind": "code"
+        }
+      ]
+    },
+    {
+      "id": "validate-rejected",
+      "source": "validate",
+      "target": "rejected",
+      "label": "Action claim or citation fails",
+      "kind": "conditional",
+      "condition": "A prohibited phrase occurs OR cited_policy differs from policy.id; action claim determines reason when both fail.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 35,
+          "endLine": 39,
+          "title": "Validator implementation and returned result",
+          "kind": "code"
+        }
+      ]
+    },
+    {
+      "id": "policy-approval",
+      "source": "policy",
+      "target": "approval",
+      "label": "Refund action needs staff",
+      "kind": "inferred",
+      "condition": "Policy requirement only: before any financial refund action, staff must approve and issue it. There is no executable edge, approval state, or financial action here.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 24,
+          "endLine": 27,
+          "title": "Staff responsibility in policy",
+          "kind": "code"
+        }
+      ]
+    },
+    {
+      "id": "policy-writer-context",
+      "source": "policy",
+      "target": "draft",
+      "label": "Policy supplied to writer",
+      "kind": "declared",
+      "condition": "handle passes the selected policy to the unimplemented writer.",
+      "sourceRefs": [
+        {
+          "path": "workflow.py",
+          "startLine": 44,
+          "endLine": 45,
+          "title": "Policy supplied to writer",
+          "kind": "code"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "reply-workflow",
+      "label": "Reply workflow",
+      "description": "Source-defined orchestration with the current writer stop. Dashed conditional validation is intended wiring, not observed successful execution.",
+      "stages": [
+        "Receive",
+        "Classify",
+        "Select policy",
+        "Draft or stop",
+        "Validate",
+        "Return"
+      ],
+      "placements": [
+        {
+          "nodeId": "handle",
+          "column": 0
+        },
+        {
+          "nodeId": "classify",
+          "column": 1
+        },
+        {
+          "nodeId": "policy",
+          "column": 2
+        },
+        {
+          "nodeId": "draft",
+          "column": 3
+        },
+        {
+          "nodeId": "unavailable",
+          "column": 3
+        },
+        {
+          "nodeId": "validate",
+          "column": 4
+        },
+        {
+          "nodeId": "result",
+          "column": 5
+        }
+      ],
+      "edgeIds": [
+        "handle-classify",
+        "classify-policy",
+        "policy-draft",
+        "draft-validate",
+        "draft-stop",
+        "validate-return"
+      ]
+    },
+    {
+      "id": "validator-outcomes",
+      "label": "Validation outcomes",
+      "description": "Two returned outcomes for a supplied Draft. This view is conditional on receiving a draft; it does not imply the source stub ran.",
+      "stages": [
+        "Check supplied draft",
+        "Return verdict"
+      ],
+      "placements": [
+        {
+          "nodeId": "validate",
+          "column": 0
+        },
+        {
+          "nodeId": "accepted",
+          "column": 1
+        },
+        {
+          "nodeId": "rejected",
+          "column": 1
+        }
+      ],
+      "edgeIds": [
+        "validate-accepted",
+        "validate-rejected"
+      ]
+    },
+    {
+      "id": "refund-boundary",
+      "label": "Refund approval boundary",
+      "description": "Policy context and an unwired staff responsibility. No approval flow, waiting state, refund execution, or automatic transition is implemented.",
+      "stages": [
+        "Refund policy",
+        "Reply task",
+        "Required staff action"
+      ],
+      "placements": [
+        {
+          "nodeId": "policy",
+          "column": 0
+        },
+        {
+          "nodeId": "draft",
+          "column": 1
+        },
+        {
+          "nodeId": "approval",
+          "column": 2
+        }
+      ],
+      "edgeIds": [
+        "policy-writer-context",
+        "policy-approval"
+      ]
+    }
+  ],
+  "hiddenResources": [
+    "README.md"
+  ],
+  "coverage": {
+    "notes": [
+      "Read both eligible files in the bounded inventory: README.md and all 46 lines of workflow.py. Inventory scanned 2 files, skipped none, and was not truncated. README is hidden supporting documentation; workflow.py supplies all mapped source references.",
+      "Target has no Git repository in its parent chain. No commit or Git dirty state is available; sourceRevision records SHA-256 values of the two read files instead.",
+      "Mapped all four task functions plus handle, both policy categories, the writer exception, validator success/failure outcomes, and the policy-only staff boundary. Conceptual return nodes are labeled as such.",
+      "The current fixture cannot complete handle: draft_reply always raises NotImplementedError. No real application, module import, model/provider API, or target tool was executed.",
+      "Only the writer has a system prompt. It is a static literal; runtime message and policy values are missing until an actual request. No prompt is invented for classifier, retrieval, validation, or staff.",
+      "The fixture declares a Draft TypedDict but does not validate its schema at runtime. Missing keys may raise KeyError; requires_approval is not checked. Phrase matching and policy-ID equality are narrower than semantic grounding or approval enforcement.",
+      "Staff approval is a policy responsibility and an inferred contextual relationship, not an implemented workflow gate. No approval/resume flow, retries, persistence, refund API, UI, authentication, or external integrations exist in the inspected fixture.",
+      "No simulation has been started. Native-subagent simulation requires explicit approval after delivering source.html.",
+      "Visual browser QA is delegated to the parent task under its no-browser-control instruction. This forward test performs structure, source-reference, and generated-artifact checks only."
+    ]
+  }
+}

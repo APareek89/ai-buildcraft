@@ -1,0 +1,1224 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Semantic Kernel Overview",
+    "title": "Semantic Kernel Overview",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Semantic Kernel Overview is practical when learners can apply it to this concrete case: An enterprise copilot uses Semantic Kernel plugins for CRM, calendar, and knowledge-base actions. By the end, they should be able to build or review Semantic Kernel plugin plan with functions and planners, measure plugin calls remain auditable and permissioned, and catch the failure where the planner composes a high-risk action without policy checks."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Semantic Kernel Overview",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Semantic Kernel Overview: mental map",
+    "caption": "Teach Semantic Kernel in its current Microsoft context: kernel/plugins for existing apps and Microsoft Agent Framework for newer production agent workflows.",
+    "oneLineThesis": "Semantic Kernel remains important for kernel/plugin patterns, while Microsoft Agent Framework is the newer Microsoft production path for agents, workflows, middleware, and telemetry.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Separate Semantic Kernel from Agent Framework",
+        "sub": "Microsoft agent terminology has evolved.",
+        "what": "Learners avoid conflating SK, AutoGen, Foundry, and Agent Framework.",
+        "relevance": "The lesson stays accurate for existing code and new production choices.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Date-stamp which Microsoft agent layer you are teaching.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Kernel and plugins expose callable skills",
+        "sub": "Semantic Kernel organizes model services and functions in app code.",
+        "what": "Learners understand SK’s original center of gravity.",
+        "relevance": "Existing SK code often revolves around plugins and function invocation.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Teach the plugin boundary before planning or agents.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Agent Framework adds workflows, middleware, and telemetry",
+        "sub": "Newer Microsoft agent work looks like production app infrastructure.",
+        "what": "Learners map Agent Framework concepts to production needs.",
+        "relevance": "This avoids using SK plugin examples for workflow problems they do not naturally solve.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use Agent Framework when graph/workflow and enterprise hosting matter.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code the plugin/workflow idea in one slice",
+        "sub": "A small example should show agent, tool, review, and workflow relation.",
+        "what": "Learners see the intended production shape.",
+        "relevance": "Concrete artifacts make the Microsoft stack less abstract.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use pseudocode carefully when APIs are shifting or ecosystem-specific.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Plan migration and enterprise operations",
+        "sub": "Microsoft stack choices affect identity, telemetry, hosting, and support.",
+        "what": "Learners define production checks for Microsoft agent apps.",
+        "relevance": "Casual migration can break state, tools, observability, or deployment.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Review feature parity and operational assumptions before migrating.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Separate Semantic Kernel from Agent Framework",
+      "sub": "Microsoft agent terminology has evolved.",
+      "summary": "Semantic Kernel and Agent Framework solve related but different moments.",
+      "objectives": [
+        "Define Semantic Kernel historically.",
+        "Define Microsoft Agent Framework as newer production path.",
+        "Explain migration-aware framing."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The Microsoft stack has layers and eras",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a learner finds an old Semantic Kernel plugin tutorial and a new Microsoft Agent Framework workflow sample. Both are Microsoft agent material, but they teach different abstractions and production paths."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Semantic Kernel centers kernels, model services, plugins, functions, planners, memory, and agents in app code. Microsoft Agent Framework is positioned for newer production agents, workflows, state, middleware, telemetry, and .NET/Python parity."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Always say whether the example is SK, Agent Framework, Foundry-hosted, or AutoGen-era."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ],
+          "analogy": "Do not file every Microsoft agent sample in the same drawer."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Case study: existing SK plugin app",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "An enterprise already has SK plugins wrapping CRM and document search. A lesson should explain the kernel/plugin model instead of pretending the app is greenfield Agent Framework."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A new agent workflow with human approval, telemetry, and Azure hosting may be better framed with Microsoft Agent Framework."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Identify existing codebase and package family."
+                  }
+                ],
+                [
+                  {
+                    "text": "Name the abstraction being taught."
+                  }
+                ],
+                [
+                  {
+                    "text": "State whether the design is migration or greenfield."
+                  }
+                ],
+                [
+                  {
+                    "text": "Test feature parity before rewriting."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Naming clarity",
+          "prompt": "Why distinguish Semantic Kernel from Microsoft Agent Framework?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "They are both vector databases.",
+              "correct": false
+            },
+            {
+              "text": "They emphasize different abstractions and production paths in Microsoft’s agent ecosystem.",
+              "correct": true
+            },
+            {
+              "text": "Semantic Kernel has no plugins.",
+              "correct": false
+            }
+          ],
+          "explanation": "Naming clarity prevents wrong implementation choices.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb9",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Kernel and plugins expose callable skills",
+      "sub": "Semantic Kernel organizes model services and functions in app code.",
+      "summary": "The kernel wires model services and callable functions.",
+      "objectives": [
+        "Define kernel, plugins, and native/prompt functions.",
+        "Explain automatic function choice cautiously.",
+        "Apply tool-contract discipline."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Plugins are the SK tool surface",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "In Semantic Kernel, application code registers model services and plugins with the kernel. Plugins can wrap native code functions, prompt functions, OpenAPI functions, MCP tools, or other capabilities."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Automatic function choice is useful, but plugin descriptions, schemas, auth, and side-effect classification still matter. The app owns security and evaluation."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "A plugin function should have a narrow name, description, input schema, and failure behavior."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ],
+          "analogy": "The kernel is the workbench; plugins are the labeled tools hanging above it."
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Semantic Kernel callable surfaces",
+          "criteria": [
+            "Surface",
+            "Use for",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Native function",
+              "cells": [
+                {
+                  "criterion": "Surface",
+                  "text": "Application code exposed to model/kernel.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use for",
+                  "text": "Lookups, transformations, safe actions.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Broad authority if function is vague.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for bounded backend operations.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Prompt function",
+              "cells": [
+                {
+                  "criterion": "Surface",
+                  "text": "Reusable prompt behavior.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Use for",
+                  "text": "Text transformations or generation patterns.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Harder to validate than code.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use with evals.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "OpenAPI/MCP function",
+              "cells": [
+                {
+                  "criterion": "Surface",
+                  "text": "External service wrapped as tool.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use for",
+                  "text": "Shared APIs and host-neutral tools.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Permissions and auth need host policy.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use with curated operations.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Plugin contract",
+          "prompt": "What should every plugin function define?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A hidden global admin token in the prompt.",
+              "correct": false
+            },
+            {
+              "text": "A narrow purpose, input contract, auth/side-effect assumptions, and failure behavior.",
+              "correct": true
+            },
+            {
+              "text": "Only a catchy name.",
+              "correct": false
+            }
+          ],
+          "explanation": "Plugin design is tool design.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb9",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Agent Framework adds workflows, middleware, and telemetry",
+      "sub": "Newer Microsoft agent work looks like production app infrastructure.",
+      "summary": "Agent Framework is the newer Microsoft workflow-oriented layer.",
+      "objectives": [
+        "Name Agent, Workflow, middleware, state, and telemetry.",
+        "Explain Azure/Foundry fit.",
+        "Compare with LangGraph and OpenAI Agents SDK."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Agent Framework is more workflow-shaped",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Microsoft Agent Framework combines agents and workflows with sequential, concurrent, branching, handoff, and group collaboration patterns. It also emphasizes middleware, telemetry, state/checkpoints, and integration with Microsoft hosting and identity."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use it when the surrounding system is Microsoft-heavy: Azure OpenAI, Foundry, Microsoft 365, .NET services, enterprise identity, OpenTelemetry, or durable hosting."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If provider-neutral graph control matters more than Microsoft integration, compare LangGraph carefully."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ],
+          "analogy": "Agent Framework is a production floor, not just a plugin shelf."
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Worked Microsoft workflow fit",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A compliance assistant runs research, review, human approval, and publish steps inside Azure-hosted infrastructure. Agent Framework can express agents and workflow steps while telemetry flows into the Microsoft stack."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A small notebook demo with one function call may not need that layer."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "List enterprise integration requirements."
+                  }
+                ],
+                [
+                  {
+                    "text": "Define workflow steps and agents."
+                  }
+                ],
+                [
+                  {
+                    "text": "Add middleware for policy and telemetry."
+                  }
+                ],
+                [
+                  {
+                    "text": "Plan hosting and identity."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Agent Framework fit",
+          "prompt": "When is Microsoft Agent Framework especially plausible?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "When the app is a one-line string formatter.",
+              "correct": false
+            },
+            {
+              "text": "When the team needs Microsoft ecosystem integration, workflows, middleware, telemetry, and .NET/Python support.",
+              "correct": true
+            },
+            {
+              "text": "When no workflow or tools exist.",
+              "correct": false
+            }
+          ],
+          "explanation": "Fit follows ecosystem and production workflow needs.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb9",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code the plugin/workflow idea in one slice",
+      "sub": "A small example should show agent, tool, review, and workflow relation.",
+      "summary": "The code should reveal roles and review points.",
+      "objectives": [
+        "Sketch a Microsoft-style agent workflow.",
+        "Predict which step needs approval.",
+        "Avoid claiming one API fits all languages and versions."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Examples should be version-aware",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Microsoft docs and samples vary by package, language, and version. A lesson can show the production shape while warning learners to check current SDK signatures before copying."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from choosing frameworks, prototype the riskiest slice. For Microsoft stack, that may be identity, telemetry, or workflow approval."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Label code as pseudocode when it abstracts over preview or language-specific APIs."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Microsoft Agent Framework-style workflow sketch",
+          "language": "python",
+          "code": "# Pseudocode: check current Microsoft Agent Framework SDK signatures before copying.\nclass Agent:\n    def __init__(self, name, tools=None):\n        self.name = name\n        self.tools = tools or []\n\ndef search_kb(topic):\n    return f\"grounded notes for {topic}\"\n\nresearcher = Agent(\"researcher\", tools=[search_kb])\nreviewer = Agent(\"reviewer\")\n\nworkflow = [\n    (\"research\", researcher.name),\n    (\"review\", reviewer.name),\n    (\"human_approval\", \"required before publish\"),\n]\nprint(workflow)\n",
+          "explanation": "The sketch teaches the workflow shape without pretending every current SDK has identical syntax across languages and versions.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict which step requires human approval.",
+            "answer": "The `human_approval` step explicitly gates publish after research and review."
+          },
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Version-aware code",
+          "prompt": "Why label some Microsoft examples as pseudocode?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Because workflows are impossible.",
+              "correct": false
+            },
+            {
+              "text": "SDK packages and language-specific APIs can differ, so learners should check current signatures.",
+              "correct": true
+            },
+            {
+              "text": "Because plugins have no functions.",
+              "correct": false
+            }
+          ],
+          "explanation": "Version clarity is part of accurate teaching.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb9",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Plan migration and enterprise operations",
+      "sub": "Microsoft stack choices affect identity, telemetry, hosting, and support.",
+      "summary": "The overview ends with governance and migration discipline.",
+      "objectives": [
+        "Check feature parity before migration.",
+        "Verify telemetry and Responsible AI controls.",
+        "Document Azure-specific assumptions."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Migration is a product project",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Do not casually rewrite SK or AutoGen systems into Agent Framework without checking plugin parity, state shape, tool auth, telemetry, deployment, human review, and evals. A working demo is not a migration plan."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Azure examples may assume Azure identity, Foundry, Microsoft 365, or Durable Task. Call those assumptions out when teaching provider-neutral concepts."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "A migration plan should include rollback and side-by-side evals."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output from Microsoft agent stack",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review the framework layer and operational assumptions."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The lesson distinguishes SK, Agent Framework, AutoGen, Foundry, and M365 agents where relevant."
+                  }
+                ],
+                [
+                  {
+                    "text": "Plugin/tool permissions, schemas, and side-effect classes are explicit."
+                  }
+                ],
+                [
+                  {
+                    "text": "Workflow state, middleware, telemetry, and human approval are tested."
+                  }
+                ],
+                [
+                  {
+                    "text": "Azure or Microsoft 365 assumptions are named rather than implied."
+                  }
+                ],
+                [
+                  {
+                    "text": "Migration plans compare feature parity, eval results, and rollback path."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Migration risk",
+          "prompt": "What should block a casual SK-to-Agent-Framework rewrite?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A written rollback plan.",
+              "correct": false
+            },
+            {
+              "text": "Unverified feature parity, state shape, telemetry, tool permissions, or deployment assumptions.",
+              "correct": true
+            },
+            {
+              "text": "Side-by-side eval results.",
+              "correct": false
+            }
+          ],
+          "explanation": "Migration needs evidence, not vibes.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "kb9",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "kb9",
+        "kb10"
+      ]
+    }
+  ],
+  "glossary": {
+    "framework": {
+      "id": "framework",
+      "label": "Framework",
+      "laymanDefinition": "A library or platform that provides agent building blocks and conventions.",
+      "technicalNote": "Framework choice affects state handling, tools, tracing, deployment model, ecosystem fit, and how much control the application keeps.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "graph": {
+      "id": "graph",
+      "label": "Graph",
+      "laymanDefinition": "A workflow shape where nodes and edges define how work moves between steps.",
+      "technicalNote": "Graph-based agents make branching, retries, checkpoints, and human review more explicit than a single loose loop.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "checkpoint": {
+      "id": "checkpoint",
+      "label": "Checkpoint",
+      "laymanDefinition": "A saved workflow state that lets execution resume or be inspected later.",
+      "technicalNote": "Checkpoints are essential for durable agents because retries, approvals, and debugging need the exact state at a step boundary.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "handoff": {
+      "id": "handoff",
+      "label": "Handoff",
+      "laymanDefinition": "Passing work from one agent, tool, or human role to another.",
+      "technicalNote": "Handoffs need a typed payload, ownership transfer, stop condition, and audit trail so context does not vanish between actors.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "sdk": {
+      "id": "sdk",
+      "label": "SDK",
+      "laymanDefinition": "A software development kit with APIs and helpers for building applications.",
+      "technicalNote": "Agent SDKs encode assumptions about models, tools, sessions, tracing, and deployment, so evaluate those assumptions against the product architecture.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Software development kit"
+    },
+    "orchestration": {
+      "id": "orchestration",
+      "label": "Orchestration",
+      "laymanDefinition": "Coordinating steps, agents, tools, state, and decisions in a workflow.",
+      "technicalNote": "Orchestration owns sequencing, parallelism, retries, timeouts, approvals, and failure visibility across the agent system.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Semantic Kernel Overview",
+    "themes": [
+      {
+        "name": "Microsoft agent stack fit",
+        "questions": [
+          {
+            "q": "Are you teaching an existing Semantic Kernel plugin app or a new Microsoft production agent workflow?",
+            "why": "Microsoft agent naming has shifted, so learners need migration-aware framing.",
+            "opts": [
+              "Semantic Kernel plugin/kernel app",
+              "Microsoft Agent Framework workflow",
+              "OpenAI Agents SDK or LangGraph"
+            ],
+            "rot": "Use Semantic Kernel for kernel/plugin literacy and existing code; use Agent Framework for new Microsoft ecosystem agent workflows."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct the Microsoft stack by naming kernel, plugins/functions, SK agents, Agent Framework agents, workflows, state/checkpoints, middleware, telemetry, Azure/Foundry fit, and migration risks."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Microsoft agent stack path from plugins to workflows",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Separate Semantic Kernel from Agent Framework",
+          "sub": "Microsoft agent terminology has evolved.",
+          "what": "Learners avoid conflating SK, AutoGen, Foundry, and Agent Framework.",
+          "relevance": "The lesson stays accurate for existing code and new production choices.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Date-stamp which Microsoft agent layer you are teaching.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Kernel and plugins expose callable skills",
+          "sub": "Semantic Kernel organizes model services and functions in app code.",
+          "what": "Learners understand SK’s original center of gravity.",
+          "relevance": "Existing SK code often revolves around plugins and function invocation.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Teach the plugin boundary before planning or agents.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Agent Framework adds workflows, middleware, and telemetry",
+          "sub": "Newer Microsoft agent work looks like production app infrastructure.",
+          "what": "Learners map Agent Framework concepts to production needs.",
+          "relevance": "This avoids using SK plugin examples for workflow problems they do not naturally solve.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use Agent Framework when graph/workflow and enterprise hosting matter.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code the plugin/workflow idea in one slice",
+          "sub": "A small example should show agent, tool, review, and workflow relation.",
+          "what": "Learners see the intended production shape.",
+          "relevance": "Concrete artifacts make the Microsoft stack less abstract.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use pseudocode carefully when APIs are shifting or ecosystem-specific.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Plan migration and enterprise operations",
+          "sub": "Microsoft stack choices affect identity, telemetry, hosting, and support.",
+          "what": "Learners define production checks for Microsoft agent apps.",
+          "relevance": "Casual migration can break state, tools, observability, or deployment.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Review feature parity and operational assumptions before migrating.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Separate Semantic Kernel from Agent Framework",
+        "detail": "Semantic Kernel and Agent Framework solve related but different moments."
+      },
+      {
+        "step": 2,
+        "label": "Kernel and plugins expose callable skills",
+        "detail": "The kernel wires model services and callable functions."
+      },
+      {
+        "step": 3,
+        "label": "Agent Framework adds workflows, middleware, and telemetry",
+        "detail": "Agent Framework is the newer Microsoft workflow-oriented layer."
+      },
+      {
+        "step": 4,
+        "label": "Code the plugin/workflow idea in one slice",
+        "detail": "The code should reveal roles and review points."
+      },
+      {
+        "step": 5,
+        "label": "Plan migration and enterprise operations",
+        "detail": "The overview ends with governance and migration discipline."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_fit",
+        "label": "Can you justify the fit described in \"Separate Semantic Kernel from Agent Framework\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_impl",
+        "label": "Can you inspect the implementation surface in \"Code the plugin/workflow idea in one slice\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Plan migration and enterprise operations\" define production checks?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Take an existing Semantic Kernel plugin demo and write a migration-aware note: what remains SK, what would move to Agent Framework, what telemetry/state changes, and what must be tested before migration. Next rung: compare Microsoft Agent Framework with OpenAI Agents SDK.",
+      "scopedTo": "Semantic Kernel Overview"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LangGraph documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "kb9": {
+      "id": "kb9",
+      "kind": "kb",
+      "title": "KB: Semantic Kernel and Microsoft Agent Framework",
+      "url": "https://learn.microsoft.com/en-us/agent-framework/overview/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb10": {
+      "id": "kb10",
+      "kind": "kb",
+      "title": "KB: Tool and Plugin Standards",
+      "url": "https://spec.openapis.org/oas/latest.html",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

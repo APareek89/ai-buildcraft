@@ -1,0 +1,38 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Logistic regression — ML Hands-on Lab</title><style>
+:root{--ink:#24302f;--muted:#64706e;--paper:#fbfaf7;--card:#fff;--accent:#176b66;--line:#dce4e0;--code:#17201f}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.72 Georgia,'Times New Roman',serif}
+main{max-width:72ch;margin:0 auto;padding:4rem 1.4rem 7rem}h1,h2,h3{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.18;color:#172321}
+h1{font-size:clamp(2.25rem,7vw,4.5rem);letter-spacing:-.04em;margin:.2rem 0 1rem}h2{font-size:1.55rem;margin-top:3.6rem;padding-top:1rem;border-top:1px solid var(--line)}h3{font-size:1.05rem;margin-top:2rem}
+p,li{max-width:68ch}a{color:var(--accent);text-decoration-thickness:.08em;text-underline-offset:.18em}.eyebrow{font:700 .78rem/1.2 ui-sans-serif,-apple-system,sans-serif;text-transform:uppercase;letter-spacing:.13em;color:var(--accent)}
+.lede{font-size:1.28rem;line-height:1.55;color:#344441}.micro,.callout{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);padding:1rem 1.2rem;border-radius:.4rem}
+.equation{overflow-x:auto;background:#eef4f1;padding:.8rem 1rem;border-radius:.4rem}.terms{color:#3f514e}.figure{margin:2rem 0}.figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:.55rem;background:white}.caption{font-size:.92rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-family:ui-sans-serif,-apple-system,sans-serif;font-size:.92rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:.75rem .5rem}th{color:var(--accent)}
+pre{background:var(--code);color:#edf4f1;padding:1rem;overflow:auto;border-radius:.45rem;font-size:.85rem;line-height:1.55}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.steps li{margin:.7rem 0}
+.links{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:2rem}.button{font-family:ui-sans-serif,-apple-system,sans-serif;background:var(--accent);color:#fff;padding:.62rem .9rem;border-radius:.35rem;text-decoration:none}.button.secondary{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+@media(max-width:620px){main{padding-top:2rem}body{font-size:16px}table{display:block;overflow-x:auto}}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script>window.MathJax={tex:{inlineMath:[["\(","\)"]],displayMath:[["\[","\]"]]}};</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" onload="hljs.highlightAll()"></script></head>
+<body><main><p class="eyebrow">ML Hands-on Lab · 01 — Linear and generalized linear</p><h1>Logistic regression</h1>
+<section><h2>1. The one-sentence version</h2><p class="lede">Logistic regression adds feature evidence on the log-odds scale and turns that score into a probability between zero and one.</p></section>
+<section><h2>2. The intuition</h2><p>Treat each feature as adding or subtracting points from a scorecard. The sigmoid bends any score into a valid probability while preserving order.</p><div class="micro"><h3>A five-item example</h3><p>Scores [−2,−1,0,1,2] become probabilities about [0.12,0.27,0.50,0.73,0.88] through 1/(1+e⁻ˢ). A one-unit score increase multiplies the odds by e≈2.72.</p></div></section>
+<section><h2>3. The maths in plain English</h2><p class="equation">\[p(y=1\mid x)=\sigma(\beta_0+x^T\beta)=\frac{1}{1+e^{-(\beta_0+x^T\beta)}}\]</p><p class="terms">xᵀβ is the weighted score. A larger positive coefficient raises log-odds; exp(β) is the odds multiplier for one unit. The sigmoid prevents probabilities below zero or above one.</p></section>
+<section><h2>4. What the model is actually doing during training</h2><ol class="steps"><li>Standardize each feature using training statistics.</li><li>Form intercept + weighted feature sum for every row.</li><li>Convert scores to probabilities with the sigmoid.</li><li>Adjust coefficients to reduce log loss; freeze them before test.</li></ol></section>
+<section><h2>5. The knobs</h2><table><tr><th>Knob</th><th>Too low</th><th>Too high</th></tr><tr><td>C</td><td>Strong regularization flattens useful effects.</td><td>Weak regularization can chase noise.</td></tr><tr><td>Decision threshold</td><td>More positives and false alarms.</td><td>More missed positives.</td></tr><tr><td>Interaction features</td><td>Important combinations are missed.</td><td>Many speculative terms raise variance.</td></tr></table></section>
+<section><h2>6. Assumptions and failure modes</h2><p>Observations should match the deployment population and log-odds should be reasonably additive in the supplied features. Complete separation can make coefficients unstable. A well-calibrated historical probability can still drift when prevalence changes.</p><figure class="figure"><img src="key_figure.png" alt="Key result from the notebook"><figcaption class="caption">This figure is generated by the matching notebook from the seeded experiment.</figcaption></figure></section>
+<section><h2>7. Code</h2><h3>Minimal version</h3><pre><code class="language-python">from sklearn.linear_model import LogisticRegression
+model = LogisticRegression(max_iter=1000, random_state=0)
+model.fit(X_train, y_train)
+probability = model.predict_proba(X_test)[:, 1]</code></pre><h3>Realistic version</h3><pre><code class="language-python">from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegressionCV
+model = make_pipeline(StandardScaler(), LogisticRegressionCV(
+    Cs=10, cv=5, scoring=&quot;neg_log_loss&quot;, max_iter=2000, random_state=0
+))
+model.fit(X_train, y_train)</code></pre></section>
+<section><h2>8. Where it's actually used</h2><ul><li>Regulated credit scorecards where effects must be defensible.</li><li>Hospital risk flags with calibrated probabilities.</li><li>Subscription churn baselines before more complex models.</li><li>Manufacturing defect odds from measured process settings.</li></ul></section>
+<section><h2>9. How it relates to its neighbours</h2><p>It is a generalized linear model with Bernoulli likelihood and logit link. Linear SVM also draws a straight boundary but optimizes margin rather than probability likelihood. Naive Bayes reaches a linear boundary under different distribution assumptions.</p></section>
+<section><h2>10. Links</h2><div class="links"><a class="button" href="notebook.ipynb">Run the notebook</a><a class="button secondary" href="../index.html">Back to the lab index</a></div></section>
+</main></body></html>

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MLOps, end to end — beverage distribution edition</title>
+<style>
+  :root{
+    --ink:#1b2a41; --ink-2:#4a5568; --line:#d9dde3; --panel:#f3f5f7;
+    --amber:#c8891a; --amber-soft:#fbf1dd; --teal:#2f6f73; --teal-soft:#e3f0f0;
+    --alert:#b23a48; --alert-soft:#f9e6e9; --ok:#3f7d4a; --white:#fff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto} *{transition:none!important}}
+  body{margin:0;background:var(--white);color:var(--ink);font:16px/1.55 "Segoe UI",Helvetica,Arial,sans-serif}
+  h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:400;line-height:1.2;margin:0}
+  h1{font-size:2.4rem} h2{font-size:1.7rem;margin-top:3.2rem;margin-bottom:.6rem} h3{font-size:1.15rem;margin:1.4rem 0 .4rem}
+  p{margin:.5rem 0;max-width:72ch}
+  main{max-width:960px;margin:0 auto;padding:2.5rem 1.25rem 5rem}
+  .lede{font-size:1.15rem;color:var(--ink-2);max-width:66ch}
+  nav{display:flex;flex-wrap:wrap;gap:.35rem 1rem;margin:1.5rem 0 0;font-size:.92rem}
+  nav a{color:var(--teal);text-decoration:none;border-bottom:1px solid transparent}
+  nav a:hover,nav a:focus-visible{border-color:var(--teal)}
+  :focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+  /* Loop diagram */
+  .loop-wrap{margin:2rem 0 0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .loop-wrap svg{display:block;width:100%;height:auto;background:var(--panel)}
+  .node{cursor:pointer}
+  .node rect{fill:var(--white);stroke:var(--ink);stroke-width:1.5;transition:fill .15s}
+  .node text{fill:var(--ink);font:600 15px "Segoe UI",Helvetica,Arial,sans-serif;pointer-events:none}
+  .node .sub{font-weight:400;font-size:12px;fill:var(--ink-2)}
+  .node:hover rect,.node:focus rect{fill:var(--amber-soft)}
+  .node.active rect{fill:var(--ink)}
+  .node.active text{fill:#fff}.node.active .sub{fill:#d9dde3}
+  .arrow{fill:none;stroke:var(--ink);stroke-width:1.6;marker-end:url(#ah)}
+  .arrow.back{stroke:var(--amber);stroke-width:2.2;stroke-dasharray:6 4}
+  .hint{font-size:.9rem;color:var(--ink-2);margin:.4rem 0 0}
+
+  .stage{border-top:3px solid var(--ink);margin-top:0;padding:1.2rem 1.25rem 1.4rem;background:var(--white);border:1px solid var(--line);border-top-width:3px;border-top-color:var(--ink)}
+  .stage h3{margin-top:0;font-size:1.3rem}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:.8rem}
+  @media (max-width:700px){.two{grid-template-columns:1fr}}
+  .col h4{margin:0 0 .4rem;font:600 .8rem/1 "Segoe UI",Helvetica,Arial,sans-serif;letter-spacing:.02em;color:var(--ink-2)}
+  .col.generic h4{color:var(--ink)} .col.aws h4{color:var(--teal)}
+  .col ul{margin:0;padding-left:1.1rem} .col li{margin:.3rem 0}
+  .col.aws{border-left:3px solid var(--teal);padding-left:1rem}
+  .say{margin-top:1rem;padding:.8rem 1rem;background:var(--amber-soft);border-left:3px solid var(--amber);font-family:Georgia,serif;font-size:1.02rem}
+  .say b{font-family:"Segoe UI",Helvetica,Arial,sans-serif;font-size:.8rem;display:block;margin-bottom:.25rem;color:var(--amber);font-weight:700}
+
+  /* Tabs for use cases */
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-top:1rem;flex-wrap:wrap}
+  .tab{background:none;border:0;border-bottom:3px solid transparent;padding:.7rem 1rem;font:600 .95rem "Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink-2);cursor:pointer;margin-bottom:-1px}
+  .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--amber)}
+  .case{display:none;padding-top:1rem}.case.on{display:block}
+  .pattern{display:inline-block;padding:.15rem .55rem;border:1px solid var(--teal);color:var(--teal);border-radius:3px;font-size:.8rem;font-weight:600;margin-left:.4rem;vertical-align:middle}
+
+  table{border-collapse:collapse;width:100%;margin:.8rem 0;font-size:.93rem}
+  th,td{text-align:left;vertical-align:top;padding:.55rem .6rem;border-bottom:1px solid var(--line)}
+  th{font-weight:600;background:var(--panel)}
+  td.aws{color:var(--teal)} td.k{font-weight:600;white-space:nowrap}
+  @media (max-width:700px){table{font-size:.85rem} th,td{padding:.45rem .4rem}}
+
+  /* CI/CD strip */
+  .strip{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin:1rem 0;border:1px solid var(--line)}
+  .strip div{padding:.7rem .6rem;border-right:1px solid var(--line);font-size:.86rem}
+  .strip div:last-child{border-right:0}
+  .strip b{display:block;font-size:.95rem;margin-bottom:.2rem}
+  .strip .gate{background:var(--alert-soft)}
+  .strip .gate b{color:var(--alert)}
+  @media (max-width:700px){.strip{grid-template-columns:repeat(2,1fr)} .strip div{border-bottom:1px solid var(--line)}}
+
+  .monitor{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-top:.8rem}
+  @media (max-width:800px){.monitor{grid-template-columns:1fr 1fr}}
+  .monitor div{border:1px solid var(--line);padding:.8rem;font-size:.9rem;border-top:3px solid var(--teal)}
+  .monitor b{display:block;margin-bottom:.3rem}
+  .monitor .warn{color:var(--alert);font-size:.85rem;margin-top:.4rem}
+
+  details{border:1px solid var(--line);margin:.5rem 0;padding:0 1rem}
+  summary{cursor:pointer;padding:.7rem 0;font-weight:600}
+  details p{padding-bottom:.7rem}
+  .qa summary::before{content:"Q. ";color:var(--amber)}
+  .gloss dt{font-weight:600;margin-top:.6rem}.gloss dd{margin:0;color:var(--ink-2)}
+  .note{font-size:.9rem;color:var(--ink-2)}
+</style>
+</head>
+<body>
+<main>
+  <h1>MLOps, end to end.<br>One loop, three ways to run it.</h1>
+  <p class="lede">How a model at a beverage distributor goes from data to a sales rep's phone, stays healthy, and gets better. Generic first, then the AWS name for each piece. The scenarios and quantities are teaching assumptions, not reported company operations.</p>
+  <nav aria-label="Sections">
+    <a href="#loop">The loop</a><a href="#cases">Three use cases</a><a href="#stack">The full stack</a><a href="#cicd">CI/CD</a><a href="#monitor">Monitoring</a><a href="#improve">Improvement</a><a href="#qa">Questions they will ask</a><a href="#gloss">Glossary</a>
+  </nav>
+
+  <!-- ================= LOOP ================= -->
+  <h2 id="loop">The loop. Click any stage.</h2>
+  <p>Every ML system is the same six stages in a circle. The circle matters: the last stage feeds the first. A model that does not loop is a science project.</p>
+
+  <div class="loop-wrap">
+  <svg viewBox="0 0 960 300" role="group" aria-label="MLOps loop: data, features, train, deploy, monitor, improve">
+    <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1b2a41"/></marker></defs>
+    <!-- nodes -->
+    <g class="node" data-stage="data" tabindex="0" role="button" aria-label="Data stage">
+      <rect x="20" y="110" width="140" height="80" rx="4"/>
+      <text x="90" y="145" text-anchor="middle">1. Data</text>
+      <text x="90" y="168" text-anchor="middle" class="sub">collect, store, clean</text>
+    </g>
+    <g class="node" data-stage="features" tabindex="0" role="button" aria-label="Features stage">
+      <rect x="180" y="110" width="140" height="80" rx="4"/>
+      <text x="250" y="145" text-anchor="middle">2. Features</text>
+      <text x="250" y="168" text-anchor="middle" class="sub">make model inputs</text>
+    </g>
+    <g class="node" data-stage="train" tabindex="0" role="button" aria-label="Train stage">
+      <rect x="340" y="110" width="140" height="80" rx="4"/>
+      <text x="410" y="145" text-anchor="middle">3. Train</text>
+      <text x="410" y="168" text-anchor="middle" class="sub">experiment, evaluate</text>
+    </g>
+    <g class="node" data-stage="deploy" tabindex="0" role="button" aria-label="Deploy stage">
+      <rect x="500" y="110" width="140" height="80" rx="4"/>
+      <text x="570" y="145" text-anchor="middle">4. Deploy</text>
+      <text x="570" y="168" text-anchor="middle" class="sub">put it in production</text>
+    </g>
+    <g class="node" data-stage="monitor" tabindex="0" role="button" aria-label="Monitor stage">
+      <rect x="660" y="110" width="140" height="80" rx="4"/>
+      <text x="730" y="145" text-anchor="middle">5. Monitor</text>
+      <text x="730" y="168" text-anchor="middle" class="sub">watch it work</text>
+    </g>
+    <g class="node" data-stage="improve" tabindex="0" role="button" aria-label="Improve stage">
+      <rect x="820" y="110" width="120" height="80" rx="4"/>
+      <text x="880" y="145" text-anchor="middle">6. Improve</text>
+      <text x="880" y="168" text-anchor="middle" class="sub">retrain, replace</text>
+    </g>
+    <!-- forward arrows -->
+    <path class="arrow" d="M160,150 L178,150"/><path class="arrow" d="M320,150 L338,150"/><path class="arrow" d="M480,150 L498,150"/><path class="arrow" d="M640,150 L658,150"/><path class="arrow" d="M800,150 L818,150"/>
+    <!-- loop back -->
+    <path class="arrow back" d="M880,190 L880,250 L90,250 L90,192"/>
+    <text x="485" y="242" text-anchor="middle" style="font:12px 'Segoe UI',Helvetica,Arial,sans-serif;fill:#c8891a">new data + feedback flow back to the start</text>
+  </svg>
+  </div>
+  <p class="hint">Click a box. The panel below shows what happens there, what it is called on AWS, and one sentence you can say.</p>
+
+  <section class="stage" id="stagePanel" aria-live="polite">
+    <h3 id="stTitle">1. Data — collect, store, clean</h3>
+    <p id="stWhat"></p>
+    <div class="two">
+      <div class="col generic"><h4>Generic — any cloud</h4><ul id="stGeneric"></ul></div>
+      <div class="col aws"><h4>On AWS</h4><ul id="stAws"></ul></div>
+    </div>
+    <div class="say"><b>Say this</b><span id="stSay"></span></div>
+  </section>
+
+  <!-- ================= CASES ================= -->
+  <h2 id="cases">Three use cases, three deployment patterns</h2>
+  <p>This is the most useful idea on the page. The loop is the same, but <em>how you deploy</em> depends on when the answer is needed. There are only three patterns. If you can name which pattern a use case needs, you sound like you have built it.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-case="order">Order prediction</button>
+    <button class="tab" role="tab" aria-selected="false" data-case="demand">Demand forecasting</button>
+    <button class="tab" role="tab" aria-selected="false" data-case="eta">Delivery time prediction</button>
+  </div>
+
+  <!-- CASE 1 -->
+  <div class="case on" id="case-order">
+    <h3>Predictive order for sales reps <span class="pattern">Pattern: nightly batch</span></h3>
+    <p>Every night, score every store × SKU for next week. Write the top 10 per store into a table. The Sales App reads the table. Nobody waits for a model at 9am; the answer is already there.</p>
+    <table>
+      <tr><th>Stage</th><th>What happens</th><th>AWS name</th></tr>
+      <tr><td class="k">Data</td><td>Orders from the route-accounting database, store master, SKU master, promo calendar. Copied every night into the data lake.</td><td class="aws">Source: RDS / Aurora (Postgres). Copy: DMS or Glue job → S3 (raw zone).</td></tr>
+      <tr><td class="k">Features</td><td>Build one row per store × SKU × week: days since last order, gap ratio, last quantities, promo next week, store type. Saved so training and scoring use the same code.</td><td class="aws">Glue or Spark on EMR builds them → S3 (curated zone) and/or SageMaker Feature Store. Athena to query.</td></tr>
+      <tr><td class="k">Train</td><td>Two LightGBM models: will they buy, how much. Time-based split. Compare to the "same as last time" baseline. Log every run.</td><td class="aws">SageMaker Training job (or a container on ECS). Track runs in MLflow or SageMaker Experiments. Winner goes to SageMaker Model Registry.</td></tr>
+      <tr><td class="k">Deploy</td><td>Batch job: load model, score all rows, write predictions to a serving table. Runs at 2am, done by 4am.</td><td class="aws">Step Functions schedule → SageMaker Batch Transform (or a Glue/ECS job) → DynamoDB or Aurora table <code>rep_suggestions</code>. Sales App reads via API Gateway + Lambda.</td></tr>
+      <tr><td class="k">Monitor</td><td>Did the job finish? Did the input rows look normal? Are reps accepting suggestions? Is precision@10 holding when actual orders come in?</td><td class="aws">CloudWatch (job health, alarms). SageMaker Model Monitor or Evidently for drift. A QuickSight dashboard on acceptance rate.</td></tr>
+      <tr><td class="k">Improve</td><td>Rep accept / edit / reject is logged. Retrain weekly on the newest data. If a new model beats the current one on validation, promote it.</td><td class="aws">Rep actions → Kinesis or direct write → S3. Weekly SageMaker Pipeline: train → evaluate → gate → register → deploy.</td></tr>
+    </table>
+    <div class="say"><b>Say this</b>Predictive order is a nightly batch. I would score every store–SKU pair overnight, land the top 10 in a serving table, and let the Sales App read it. No real-time endpoint for v1 — batch is cheaper, simpler, and reps only need it at the start of the day.</div>
+  </div>
+
+  <!-- CASE 2 -->
+  <div class="case" id="case-demand">
+    <h3>Demand forecasting for distributors and suppliers <span class="pattern">Pattern: weekly batch, hierarchical</span></h3>
+    <p>Forecast cases per SKU, per region, per week for the next 8–13 weeks. Distributors use it to buy stock and plan trucks. Suppliers use it to plan production. One forecast, many levels.</p>
+    <p class="note">The word to use is <strong>hierarchical</strong>: forecasts at SKU → store → zone → region must add up. You forecast at a level with enough data (SKU × zone), then split down or roll up.</p>
+    <table>
+      <tr><th>Stage</th><th>What happens</th><th>AWS name</th></tr>
+      <tr><td class="k">Data</td><td>Weekly depletions (sales out of the distributor), inventory, promotions, price, holidays, weather. Longer history matters here — 3+ years to learn seasonality.</td><td class="aws">Same lake: S3 raw → curated. Weather and holidays pulled by a small Lambda.</td></tr>
+      <tr><td class="k">Features</td><td>Lags (last 1, 2, 4, 8, 52 weeks), rolling averages, seasonality flags, promo, price change, trend. Built per SKU × zone × week.</td><td class="aws">Glue job → S3 curated. Redshift or Athena as the analytics warehouse for planners.</td></tr>
+      <tr><td class="k">Train</td><td>Start with gradient boosting on lag features (global model across all series). Compare to seasonal naive baseline. Reconcile up and down the hierarchy so totals match.</td><td class="aws">SageMaker Training. Option: Amazon Forecast or SageMaker Canvas for a no-code baseline to compare against. Registry as before.</td></tr>
+      <tr><td class="k">Deploy</td><td>Weekly batch. Output a forecast table with prediction intervals (low / mid / high), not just one number. Planners see it in iDIG.</td><td class="aws">Step Functions weekly → Batch Transform → Redshift table <code>forecast_weekly</code> → QuickSight / iDIG.</td></tr>
+      <tr><td class="k">Monitor</td><td>Forecast error (WAPE) per SKU × zone once actuals arrive. Bias — are we always high or always low? Alert when error jumps for a whole category (a real market change).</td><td class="aws">A weekly "backtest" job writes error metrics to CloudWatch; alarms on threshold; dashboard in QuickSight.</td></tr>
+      <tr><td class="k">Improve</td><td>Retrain weekly with new actuals. Add new drivers when error is explained by something the model lacks (a new competitor launch, a new tax).</td><td class="aws">SageMaker Pipeline on a weekly schedule. Champion/challenger: run the new model in shadow for 4 weeks before switching.</td></tr>
+    </table>
+    <div class="say"><b>Say this</b>Forecasting is also batch, but the hard parts are hierarchy and horizon. I would train one global model across all SKU–zone series, reconcile so the numbers add up, ship prediction intervals not point estimates, and measure WAPE and bias weekly against actuals. The baseline to beat is seasonal naive — last year same week.</div>
+  </div>
+
+  <!-- CASE 3 -->
+  <div class="case" id="case-eta">
+    <h3>Delivery arrival and service-time prediction <span class="pattern">Pattern: real-time API</span></h3>
+    <p>A dispatcher plans routes at 6am and a driver's app needs "how long will this stop take" and "when will I reach the next store" while on the road. The answer is needed in under a second, for one stop at a time. That is a real-time endpoint.</p>
+    <table>
+      <tr><th>Stage</th><th>What happens</th><th>AWS name</th></tr>
+      <tr><td class="k">Data</td><td>Delivery log: arrival, departure, cases, store, truck, driver. GPS pings. Map distances. Traffic by hour.</td><td class="aws">Driver app → Kinesis stream → S3. Delivery log in Aurora. Amazon Location Service for distances.</td></tr>
+      <tr><td class="k">Features</td><td>Two kinds. <strong>Offline</strong> (store's average unload time, floor level, store type) computed nightly. <strong>Online</strong> (current hour, cases on this order, rain now) computed at request time. Both must be available at inference.</td><td class="aws">Offline → SageMaker Feature Store (online store, low-latency lookup). Online values arrive in the API request.</td></tr>
+      <tr><td class="k">Train</td><td>Gradient boosting: predict service minutes, predict travel minutes. Evaluate MAE and the % within ±5 minutes.</td><td class="aws">SageMaker Training + Registry, same as before.</td></tr>
+      <tr><td class="k">Deploy</td><td>Model behind an API. App sends store + order → gets minutes back. Must handle bursts at 6am when all routes are planned. Auto-scales.</td><td class="aws">SageMaker real-time endpoint (or Lambda + container for small models). API Gateway in front. Auto-scaling on invocations. Route optimizer (OR-Tools on ECS) calls the same endpoint.</td></tr>
+      <tr><td class="k">Monitor</td><td>Latency (p95 under 300ms), error rate, requests per second. Then accuracy: predicted vs actual minutes once the driver leaves the store.</td><td class="aws">CloudWatch metrics + alarms on latency/5xx. SageMaker Model Monitor captures request/response for drift. Actuals joined nightly for accuracy.</td></tr>
+      <tr><td class="k">Improve</td><td>Retrain monthly, or when MAE drifts. Roll out a new version to 10% of traffic first (canary), compare, then 100%.</td><td class="aws">SageMaker endpoint production variants: 90/10 traffic split → watch → promote. Rollback is one config change.</td></tr>
+    </table>
+    <div class="say"><b>Say this</b>Delivery-time prediction is the one real-time case. One stop at a time, sub-second, bursty at 6am, so it sits behind an auto-scaling endpoint with an online feature store. I would canary new versions on 10% of traffic and keep rollback to a single config change.</div>
+  </div>
+
+  <!-- ================= STACK ================= -->
+  <h2 id="stack">The full stack in one table</h2>
+  <p>Every layer, the generic name, the AWS name, and the one thing to remember. Read down the middle column once and you can draw the architecture on a whiteboard.</p>
+  <table>
+    <tr><th>Layer</th><th>Generic</th><th>AWS</th><th>Remember</th></tr>
+    <tr><td class="k">Source databases</td><td>The transactional DBs the products already use — orders, pricing, deliveries. Usually Postgres / SQL Server. Never train directly on them.</td><td class="aws">RDS, Aurora</td><td>Production DBs are for the product. ML reads a copy.</td></tr>
+    <tr><td class="k">Copy / ingest</td><td>Nightly copy or change-data-capture (CDC) into a lake. Streams for real-time events.</td><td class="aws">DMS (CDC), Glue jobs, Kinesis (streams)</td><td>"Raw zone" = untouched copy. Keep it forever.</td></tr>
+    <tr><td class="k">Data lake</td><td>Cheap object storage in zones: raw → cleaned → curated. Parquet files.</td><td class="aws">S3 (+ Lake Formation for permissions)</td><td>S3 is the centre of everything on AWS.</td></tr>
+    <tr><td class="k">Warehouse / query</td><td>SQL over the curated data for analysts and for building features.</td><td class="aws">Redshift (warehouse) or Athena (SQL on S3)</td><td>Athena = cheap and simple. Redshift = heavy analytics.</td></tr>
+    <tr><td class="k">Feature store</td><td>Shared, versioned features so training and serving use identical values. Offline (big, historical) + online (fast lookup).</td><td class="aws">SageMaker Feature Store</td><td>Fixes "training-serving skew". Optional for batch-only v1.</td></tr>
+    <tr><td class="k">Orchestration</td><td>The scheduler that runs steps in order and retries on failure.</td><td class="aws">Step Functions, MWAA (managed Airflow), SageMaker Pipelines</td><td>One pipeline definition, run on a schedule.</td></tr>
+    <tr><td class="k">Experiment tracking</td><td>Log every training run: data version, parameters, metrics. So you can answer "why is this model better?"</td><td class="aws">SageMaker Experiments, or MLflow on ECS</td><td>No tracking = no reproducibility.</td></tr>
+    <tr><td class="k">Training</td><td>Run training code in a container on a machine you rent for an hour.</td><td class="aws">SageMaker Training jobs; ECS / EC2 for custom</td><td>Container in, model file out to S3.</td></tr>
+    <tr><td class="k">Model registry</td><td>The library of approved models with version, metrics, and status (staging / production).</td><td class="aws">SageMaker Model Registry</td><td>Only registered models can deploy.</td></tr>
+    <tr><td class="k">Serving — batch</td><td>Score a big table on a schedule, write results to a DB.</td><td class="aws">SageMaker Batch Transform, Glue, ECS task</td><td>Default for most business ML.</td></tr>
+    <tr><td class="k">Serving — real time</td><td>Model behind an HTTPS endpoint, auto-scaled.</td><td class="aws">SageMaker Endpoint; Lambda for tiny models; API Gateway in front</td><td>Only when the answer is needed now.</td></tr>
+    <tr><td class="k">Serving database</td><td>Where predictions live so apps can read them fast.</td><td class="aws">DynamoDB (key-value, fast), Aurora (relational)</td><td>Apps read predictions, not models.</td></tr>
+    <tr><td class="k">Monitoring</td><td>System health, data drift, prediction drift, business KPI.</td><td class="aws">CloudWatch, SageMaker Model Monitor, Evidently (open source), QuickSight</td><td>Four layers, see below.</td></tr>
+    <tr><td class="k">CI/CD</td><td>Code tests, data checks, model evaluation gate, staged rollout.</td><td class="aws">GitHub Actions or CodePipeline / CodeBuild; infra as code with CDK or Terraform</td><td>Same as software CI/CD plus two extra gates.</td></tr>
+    <tr><td class="k">Security</td><td>Who can read data, who can deploy. Secrets not in code. Everything logged.</td><td class="aws">IAM roles, KMS encryption, Secrets Manager, CloudTrail, VPC</td><td>Least privilege. Audit trail for pricing models.</td></tr>
+    <tr><td class="k">GenAI layer</td><td>LLM access, prompt versions, RAG index, evals, cost tracking.</td><td class="aws">Bedrock (Claude etc.), OpenSearch or Bedrock Knowledge Bases for RAG, prompt registry in S3</td><td>Prompts are code: version them, test them.</td></tr>
+  </table>
+
+  <!-- ================= CI/CD ================= -->
+  <h2 id="cicd">CI/CD for ML: software CI/CD plus two gates</h2>
+  <p>Software CI/CD tests code and ships it. ML CI/CD does the same, but the thing being shipped is <em>code + data + model</em>. So you add two gates: does the data look right, and is the new model actually better.</p>
+
+  <div class="strip" role="list">
+    <div role="listitem"><b>1. Commit code</b>Feature code, training code, pipeline definition go to Git. A pull request opens.</div>
+    <div role="listitem"><b>2. Code tests</b>Unit tests on feature functions. Lint. Container builds. Same as any software.</div>
+    <div class="gate" role="listitem"><b>Gate A: data check</b>Schema unchanged? Row counts normal? No nulls where none expected? Fails → stop.</div>
+    <div role="listitem"><b>3. Train + evaluate</b>Pipeline trains on latest data, evaluates on the held-out time period, logs metrics.</div>
+    <div class="gate" role="listitem"><b>Gate B: model check</b>Beats baseline? Beats current production model? Within fairness / business rules? Fails → stop, notify.</div>
+    <div role="listitem"><b>4. Register + deploy</b>Model registered → staging → shadow or canary → production. Rollback = point to previous version.</div>
+  </div>
+
+  <h3>Continuous integration vs continuous delivery vs continuous training</h3>
+  <table>
+    <tr><th>Term</th><th>Means</th><th>Trigger</th></tr>
+    <tr><td class="k">CI</td><td>Every code change is tested automatically and built into a container.</td><td>A commit or pull request.</td></tr>
+    <tr><td class="k">CD</td><td>A tested model moves through staging → production without manual copying.</td><td>Model passes Gate B.</td></tr>
+    <tr><td class="k">CT</td><td>Continuous training: the pipeline retrains on a schedule or when drift is detected, with no code change.</td><td>Weekly cron, or a drift alarm.</td></tr>
+  </table>
+
+  <h3>Environments</h3>
+  <p><strong>Dev</strong> — data scientists experiment; small data. <strong>Staging</strong> — same setup as production; the pipeline runs end to end on real data; nothing reaches users. <strong>Production</strong> — real users. Promotion between them is automatic once gates pass; a human approves only high-risk models (pricing).</p>
+
+  <h3>Rollout strategies (say one of these when asked "how do you deploy safely")</h3>
+  <table>
+    <tr><th>Strategy</th><th>How</th><th>Use when</th></tr>
+    <tr><td class="k">Shadow</td><td>New model runs beside the old one, its answers are logged but not shown.</td><td>Forecasting, pricing — compare for weeks with zero risk.</td></tr>
+    <tr><td class="k">Canary</td><td>New model gets 10% of traffic; watch; then 50%; then 100%.</td><td>Real-time endpoints (delivery time).</td></tr>
+    <tr><td class="k">A/B test</td><td>Half the reps get model A, half model B, measure business outcome.</td><td>Order suggestions — measure order value, not just accuracy.</td></tr>
+    <tr><td class="k">Blue/green</td><td>Two full environments; flip a switch; flip back if needed.</td><td>Big platform upgrades.</td></tr>
+  </table>
+  <div class="say"><b>Say this</b>ML CI/CD is normal CI/CD with two extra gates — a data check before training and a model check before deploy. Nothing reaches production unless it beats the baseline and the current model on a time-based holdout. Rollback is pointing the endpoint or the batch job at the previous registered version.</div>
+
+  <!-- ================= MONITOR ================= -->
+  <h2 id="monitor">Monitoring: four layers, one dashboard</h2>
+  <p>Most teams monitor only the first layer and wonder why the model quietly stops working. Name all four.</p>
+  <div class="monitor">
+    <div><b>1. System health</b>Did the job run? Endpoint up? Latency, errors, cost.<span class="warn">Alarm: job failed, p95 latency &gt; 300ms.</span></div>
+    <div><b>2. Data drift</b>Are today's inputs like the training data? Distribution of gap_ratio, share of promo rows, missing store types.<span class="warn">Alarm: a feature's distribution shifts (PSI &gt; 0.2).</span></div>
+    <div><b>3. Prediction drift</b>Is the model saying different things? Average predicted probability, share of stores with zero suggestions.<span class="warn">Alarm: mean prediction moves &gt; 20% week on week.</span></div>
+    <div><b>4. Business outcome</b>The truth, once it arrives. Precision@10 vs actual orders. WAPE vs actual demand. Rep acceptance rate. Order value.<span class="warn">Alarm: acceptance drops 3 weeks running.</span></div>
+  </div>
+  <h3>Why layer 4 arrives late — and what to do about it</h3>
+  <p>You only know if the order prediction was right after the week ends. Layers 2 and 3 are early-warning signs while you wait for layer 4. For real-time delivery predictions, actuals come within hours; for forecasting, weeks. Design the monitoring to the lag.</p>
+  <h3>Drift, in plain words</h3>
+  <p><strong>Data drift:</strong> the world changed, the inputs look different. Example: a new tax makes every price feature jump. <strong>Concept drift:</strong> the inputs look the same but the relationship changed. Example: after a competitor launches, the same gap_ratio no longer means "about to reorder". Data drift is easy to detect; concept drift shows up only in layer 4.</p>
+  <div class="say"><b>Say this</b>I monitor four things: is the system up, do inputs still look like training data, has the model's output distribution moved, and is the business metric holding once actuals arrive. The first three are early warnings for the fourth.</div>
+
+  <!-- ================= IMPROVE ================= -->
+  <h2 id="improve">Improvement: the loop closes</h2>
+  <h3>Where the feedback comes from</h3>
+  <table>
+    <tr><th>Use case</th><th>Feedback signal</th><th>Becomes</th></tr>
+    <tr><td class="k">Order prediction</td><td>Rep accepts / edits / rejects a suggestion; actual order placed.</td><td>New labels for training + the acceptance KPI.</td></tr>
+    <tr><td class="k">Demand forecast</td><td>Actual depletions each week.</td><td>Backtest error; new training rows.</td></tr>
+    <tr><td class="k">Delivery time</td><td>Actual arrival and departure from the driver app.</td><td>Labels within hours; canary comparison.</td></tr>
+  </table>
+  <h3>When to retrain</h3>
+  <p><strong>On a schedule</strong> (weekly for orders, weekly for forecasts, monthly for delivery time) because new data keeps arriving. <strong>On a trigger</strong> when a drift alarm fires or the business metric drops. <strong>On a change</strong> when you add a feature or fix data. Every retrain goes through the same gates — retraining is not an excuse to skip evaluation.</p>
+  <h3>Champion / challenger</h3>
+  <p>The production model is the champion. Each retrain produces a challenger. The challenger must beat the champion on the same holdout and, for important models, in shadow or canary for a set period. Then it becomes the champion. Old versions stay in the registry for rollback.</p>
+  <h3>The improvement that is not about the model</h3>
+  <p>Half of the gains come from outside the model: better data (fix the store master), better features (add promo calendar), better UX (show the reason for a suggestion), better business rules (cap quantities). A CoE lead watches all four, not just accuracy.</p>
+  <div class="say"><b>Say this</b>Improvement is a loop, not a project. Feedback from reps and actuals becomes training data, retraining runs on a schedule and on drift triggers, and every challenger has to beat the champion through the same gates before it ships.</div>
+
+  <!-- ================= Q&A ================= -->
+  <h2 id="qa">Questions they will ask, and short answers</h2>
+  <div class="qa">
+    <details><summary>Batch or real-time — how do you decide?</summary><p>Ask when the answer is needed and for how many things at once. Needed tomorrow for everyone → batch. Needed now for one thing → real-time. Batch is cheaper and simpler; start there. At VIP, order prediction and forecasting are batch; delivery time on the road is real-time.</p></details>
+    <details><summary>What is training-serving skew and how do you avoid it?</summary><p>The features at training time are computed differently from the features at prediction time, so the model sees data it was never trained on. Avoid it by using the same feature code for both, ideally through a feature store, and by logging what the model actually received in production.</p></details>
+    <details><summary>How do you version a model?</summary><p>Three things get versioned together: the code (Git commit), the data (snapshot or date range in S3), and the model file (registry version with metrics). If you cannot rebuild a model from those three, it is not reproducible.</p></details>
+    <details><summary>How do you roll back?</summary><p>Point the batch job or endpoint at the previous registered model version. It is a config change, not a rebuild. That only works if every model is in the registry and every deploy is by version number.</p></details>
+    <details><summary>Where does the data live? Do you train on the production database?</summary><p>No. Production DBs (Aurora / RDS) serve the product. ML reads a nightly copy in S3 via DMS or Glue. Training on production tables slows the product and mixes concerns.</p></details>
+    <details><summary>What does CI/CD look like for a model?</summary><p>Same as software plus two gates: a data validation gate before training and a model evaluation gate before deploy. Code goes through tests and containers; the model goes through registry → staging → canary or shadow → production.</p></details>
+    <details><summary>How do you know the model is still good three months later?</summary><p>Four monitoring layers: system health, data drift, prediction drift, and business KPI once actuals arrive. Alerts on each. Scheduled retraining plus drift-triggered retraining, with challengers gated against the champion.</p></details>
+    <details><summary>What would you build first, and what would you skip?</summary><p>First: S3 lake, one Glue feature job, one SageMaker training pipeline, the registry, a batch scoring job, CloudWatch alarms, and a dashboard. Skip for v1: feature store, real-time endpoints, custom drift tooling. Add them when the second and third use cases need them.</p></details>
+    <details><summary>How do you handle a high-risk model like pricing?</summary><p>Human approval on every recommendation, hard guardrails on price moves, full audit trail (CloudTrail + a decision log table), shadow mode for weeks before anyone sees it, and a manual approval step in the pipeline before production.</p></details>
+    <details><summary>Where does GenAI fit in this stack?</summary><p>Same loop, different artifacts. The "model" is a prompt + retrieval index + tool set. Version prompts like code, keep an eval set as the gate, monitor cost and answer quality, and serve through Bedrock behind the same API Gateway. RAG index refresh is the "retraining".</p></details>
+  </div>
+
+  <!-- ================= GLOSSARY ================= -->
+  <h2 id="gloss">Glossary — one line each</h2>
+  <dl class="gloss">
+    <dt>Data lake</dt><dd>Cheap storage of all raw and cleaned data as files. On AWS: S3.</dd>
+    <dt>Warehouse</dt><dd>A database built for analytics queries over big tables. Redshift, Snowflake, or Athena over S3.</dd>
+    <dt>CDC</dt><dd>Change data capture — copy only the rows that changed in the source DB. AWS DMS does this.</dd>
+    <dt>Parquet</dt><dd>A compressed column file format. Standard for lake data.</dd>
+    <dt>Feature</dt><dd>One input column the model uses, like days_since_last_order.</dd>
+    <dt>Feature store</dt><dd>A shared library of features with history, so training and serving match.</dd>
+    <dt>Pipeline</dt><dd>A fixed sequence of steps — ingest, features, train, evaluate, register — run by a scheduler.</dd>
+    <dt>Experiment tracking</dt><dd>A log of every training run and its results. MLflow, SageMaker Experiments.</dd>
+    <dt>Model registry</dt><dd>Versioned catalogue of trained models with metrics and approval status.</dd>
+    <dt>Batch inference</dt><dd>Score many rows at once on a schedule; write results to a table.</dd>
+    <dt>Endpoint</dt><dd>A model served behind an HTTPS URL for one-at-a-time predictions.</dd>
+    <dt>Latency / p95</dt><dd>Response time; p95 means 95% of requests are faster than this number.</dd>
+    <dt>Drift</dt><dd>The data or the relationship the model learned has changed since training.</dd>
+    <dt>PSI</dt><dd>Population stability index — a number for how much a feature's distribution moved. Above 0.2 is a warning.</dd>
+    <dt>Champion / challenger</dt><dd>Current production model vs a candidate that must beat it.</dd>
+    <dt>Shadow / canary</dt><dd>Run new model silently beside the old one / send it a small slice of real traffic.</dd>
+    <dt>Infra as code</dt><dd>Cloud resources defined in files (Terraform, CDK) so environments are reproducible.</dd>
+    <dt>IAM</dt><dd>AWS permissions — which role can read which bucket, deploy which model.</dd>
+    <dt>WAPE / MAE / precision@10</dt><dd>Forecast error as a % of volume / average error in units / share of top-10 suggestions that were correct.</dd>
+  </dl>
+
+  <p class="note" style="margin-top:3rem">Built for interview preparation. Service names are current AWS names; the generic column is the part that transfers to Azure or GCP.</p>
+</main>
+
+<script>
+(function(){
+  var S = {
+    data:{ t:"1. Data — collect, store, clean",
+      w:"Get the raw material. Orders, deliveries, prices, store master, calendars. Copy it out of the product databases into one place where ML can read it without slowing the product down. Keep the untouched copy; clean into a second copy.",
+      g:["Source: the transactional databases the products already use (orders, pricing, deliveries).","Copy nightly, or stream changes as they happen (CDC).","Land in a data lake in zones: raw → cleaned → curated.","Data quality checks: schema, row counts, nulls, duplicates.","Keep history. Models need 2–3 years to learn seasonality."],
+      a:["Source: RDS / Aurora Postgres.","DMS for change-data-capture; Glue jobs for nightly batch; Kinesis for streams.","S3 buckets per zone; Parquet files; Lake Formation for access rules.","Glue Data Quality or Deequ for checks; Glue Data Catalog to register tables.","Athena to query S3 with SQL; Redshift if planners need a heavy warehouse."],
+      s:"ML never trains on the production database. We copy into an S3 lake nightly with DMS or Glue, keep a raw zone untouched, and run data-quality checks before anything downstream sees it." },
+    features:{ t:"2. Features — make model inputs",
+      w:"Turn raw tables into the exact columns a model learns from: days since last order, gap ratio, promo next week, store type, lags for forecasting. The same code must produce the same numbers in training and in production, or the model sees data it never learned from (training-serving skew).",
+      g:["Feature code lives in Git, not in a notebook.","Build features at the prediction grain (store × SKU × week).","No leakage: use only information available before the prediction week.","Store computed features with timestamps so you can rebuild any past training set.","Optional feature store: offline (big history) + online (fast lookup for real-time)."],
+      a:["Glue (Spark) or EMR builds features on a schedule → S3 curated zone.","SageMaker Feature Store: offline store on S3, online store for low-latency reads.","Athena to inspect features; Glue Catalog for schema.","Step Functions or SageMaker Pipelines to schedule the build."],
+      s:"Features are code, built at the prediction grain, with no leakage, and shared between training and serving. A feature store is optional for batch-only v1 and essential once there is a real-time use case." },
+    train:{ t:"3. Train — experiment, evaluate",
+      w:"Fit the model, compare it to a simple baseline, and record everything so the result can be reproduced and explained. Time-based validation, not random. If it does not beat the baseline it does not go further.",
+      g:["Baseline first (same as last time; seasonal naive).","Time-based train / validation / test split.","Track every run: data version, parameters, metrics, code commit.","Evaluate on the metric the business feels (precision@10, WAPE), not just accuracy.","Save the winner with its metrics to a registry."],
+      a:["SageMaker Training jobs run a container on a rented machine; output model file to S3.","SageMaker Experiments or MLflow (on ECS) for run tracking.","SageMaker Processing jobs for the evaluation step.","SageMaker Model Registry holds the approved version with metrics and status."],
+      s:"Every training run is tracked with its data version, parameters, and metrics, evaluated on a time-based holdout against a baseline, and only the winner is registered." },
+    deploy:{ t:"4. Deploy — put it in production",
+      w:"Make predictions available to the product. Three patterns: nightly batch into a table (most cases), a real-time API (when the answer is needed now), or a stream processor (rare). Roll out safely: staging, then shadow or canary, then everyone.",
+      g:["Batch: scheduled job scores all rows, writes to a serving table the app reads.","Real-time: model behind an HTTPS endpoint with auto-scaling.","Deploy by registry version number, never by copying files.","Staging environment identical to production.","Shadow / canary / A-B before full rollout; rollback = previous version."],
+      a:["Batch: Step Functions → SageMaker Batch Transform (or Glue / ECS task) → DynamoDB or Aurora serving table.","Real-time: SageMaker Endpoint with auto-scaling; Lambda for tiny models; API Gateway in front.","Endpoint production variants for canary traffic splits.","CodePipeline / GitHub Actions to promote registry versions across environments.","Infra as code with CDK or Terraform."],
+      s:"Batch by default, real-time only when the product needs an answer in under a second. Every deploy is a registry version, promoted through staging with a shadow or canary step, and rollback is pointing back at the previous version." },
+    monitor:{ t:"5. Monitor — watch it work",
+      w:"A model can be up and still be wrong. Watch four layers: is the system healthy, do inputs still look like training data, is the model's output moving, and is the business outcome holding once real results arrive.",
+      g:["System: job success, latency, error rate, cost.","Data drift: feature distributions vs training (PSI, KS test).","Prediction drift: output distribution week over week.","Business: precision@10, WAPE, acceptance rate, order value — once actuals land.","Alerts with owners; a single dashboard."],
+      a:["CloudWatch metrics, logs, alarms for system health.","SageMaker Model Monitor for data and prediction drift (captures endpoint traffic; batch via Processing jobs). Evidently as an open-source alternative.","Nightly join of predictions to actuals → metrics table → QuickSight dashboard.","SNS / Slack alerts on alarms."],
+      s:"Four monitoring layers — system, data drift, prediction drift, business KPI. The first three are early warnings while we wait for actuals to confirm the fourth." },
+    improve:{ t:"6. Improve — retrain, replace",
+      w:"Close the loop. Feedback (rep actions, actual orders, actual delivery times) becomes new training data. Retrain on a schedule and on drift triggers. A new model is a challenger that must beat the champion through the same gates.",
+      g:["Log feedback as labels: accepted / edited / rejected; actuals.","Scheduled retraining (weekly) plus triggered retraining (drift alarm).","Challenger vs champion on the same holdout; shadow or canary before promotion.","Keep old versions for rollback.","Improve data, features, UX and rules — not only the model."],
+      a:["Feedback → Kinesis or app DB → S3.","SageMaker Pipelines on an EventBridge schedule; drift alarm → EventBridge rule → pipeline run.","Model Registry approval status gates promotion; manual approval step for high-risk models.","Endpoint variants or batch job config for the switch."],
+      s:"Improvement is continuous: feedback becomes labels, retraining is scheduled and drift-triggered, and every challenger passes the same evaluation gate before it replaces the champion." }
+  };
+  var nodes = document.querySelectorAll('.node');
+  function show(k){
+    var d=S[k]; if(!d) return;
+    document.getElementById('stTitle').textContent=d.t;
+    document.getElementById('stWhat').textContent=d.w;
+    var g=document.getElementById('stGeneric'), a=document.getElementById('stAws');
+    g.innerHTML=''; a.innerHTML='';
+    d.g.forEach(function(x){var li=document.createElement('li');li.textContent=x;g.appendChild(li);});
+    d.a.forEach(function(x){var li=document.createElement('li');li.textContent=x;a.appendChild(li);});
+    document.getElementById('stSay').textContent=d.s;
+    nodes.forEach(function(n){n.classList.toggle('active',n.dataset.stage===k);});
+  }
+  nodes.forEach(function(n){
+    n.addEventListener('click',function(){show(n.dataset.stage);});
+    n.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();show(n.dataset.stage);}});
+  });
+  show('data');
+
+  var tabs=document.querySelectorAll('.tab');
+  tabs.forEach(function(t){
+    t.addEventListener('click',function(){
+      tabs.forEach(function(x){x.setAttribute('aria-selected',x===t?'true':'false');});
+      document.querySelectorAll('.case').forEach(function(c){c.classList.toggle('on',c.id==='case-'+t.dataset.case);});
+    });
+  });
+})();
+</script>
+</body>
+</html>

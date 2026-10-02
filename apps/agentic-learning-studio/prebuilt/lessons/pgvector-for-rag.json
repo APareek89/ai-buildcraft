@@ -1,0 +1,1226 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "pgvector for RAG",
+    "title": "pgvector for RAG",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "pgvector for RAG is practical when learners can apply it to this concrete case: A SaaS app stores embeddings in Postgres so docs search can share existing auth and backups. By the end, they should be able to build or review pgvector schema, indexing, and retrieval checklist, measure query latency and recall on real support questions, and catch the failure where embedding dimensions or index settings mismatch the model in production."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "pgvector for RAG",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "pgvector for RAG: mental map",
+    "caption": "Use Postgres-native vectors when embeddings belong beside app records, metadata, transactions, and SQL filters.",
+    "oneLineThesis": "pgvector is a pragmatic RAG store when retrieval needs vector similarity and relational control in the same Postgres boundary.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Vectors live beside relational facts",
+        "sub": "pgvector keeps embeddings inside the application database.",
+        "what": "Learners connect vector search to ordinary SQL data modeling.",
+        "relevance": "This prevents treating the vector store as disconnected from permissions and source metadata.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Start with the operational reason for storing chunks in Postgres.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Dimensions and distance must match the embedding model",
+        "sub": "The vector column encodes a contract.",
+        "what": "Learners plan vector columns and distance operators deliberately.",
+        "relevance": "Dimension mismatch and wrong distance metrics are common silent or hard failures.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Treat embedding dimension as schema, not a loose setting.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "HNSW and IVFFlat are tradeoffs",
+        "sub": "ANN indexes reduce latency by trading exactness and resources.",
+        "what": "Learners compare pgvector index choices.",
+        "relevance": "Blindly adding an ANN index can hurt writes, memory, or recall.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Choose the index by corpus size, write pattern, and measured recall.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Write the filtered vector query",
+        "sub": "The query should combine SQL eligibility and vector distance.",
+        "what": "Learners write a realistic pgvector query.",
+        "relevance": "A clear query exposes filters, limits, and distance operator choices.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Make the production retrieval contract visible in SQL.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Operate pgvector with eval and migrations",
+        "sub": "The database path still needs retrieval quality gates.",
+        "what": "Learners prepare production safeguards for pgvector RAG.",
+        "relevance": "Operational simplicity can hide stale embeddings, poor ANN recall, or overloaded databases.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Plan index maintenance, model changes, and answer verification together.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Vectors live beside relational facts",
+      "sub": "pgvector keeps embeddings inside the application database.",
+      "summary": "pgvector makes semantic search another Postgres capability.",
+      "objectives": [
+        "Define what pgvector adds to Postgres.",
+        "Explain why metadata joins matter for RAG.",
+        "Identify when pgvector is the simplest viable store."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "RAG rows are still database rows",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a course assistant stores lesson chunks, categories, source URLs, learner levels, and embeddings. The answer must retrieve semantically relevant chunks, but only from published lessons and the learner’s permitted category."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "With pgvector, chunk text, metadata, and embeddings live together. The query can filter by status, category, tenant, or date before ordering by vector distance. That is the main appeal: semantic ranking plus relational control."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If your retrieval decision depends on a SQL field, model it as a first-class column rather than hiding it inside unstructured text."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ],
+          "analogy": "pgvector turns Postgres into a library catalog that can sort by meaning as well as shelf labels."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Case study: Supabase-backed lesson retrieval",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Agentic Learning Studio already uses Postgres-like application data. A separate vector database would add another sync path and permission boundary. pgvector lets the team store lesson chunks with slug, category, level, source hash, and embedding in one table."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When a learner asks about RAG evaluation, SQL filters to RAG lessons and published sources, then vector distance ranks the evidence. Debugging is possible with ordinary SQL selects."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Create a chunks table with text, metadata, and embedding."
+                  }
+                ],
+                [
+                  {
+                    "text": "Filter by product, category, status, and permissions."
+                  }
+                ],
+                [
+                  {
+                    "text": "Order eligible rows by vector distance."
+                  }
+                ],
+                [
+                  {
+                    "text": "Return source fields needed for citation display."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ],
+          "personalizedFor": "pgvector for RAG"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Why Postgres?",
+          "prompt": "What is the strongest reason to choose pgvector for a modest RAG app already built on Postgres?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It removes the need to evaluate retrieval.",
+              "correct": false
+            },
+            {
+              "text": "It keeps embeddings close to relational metadata, transactions, backups, and filters.",
+              "correct": true
+            },
+            {
+              "text": "It lets vectors have any dimension in one column.",
+              "correct": false
+            }
+          ],
+          "explanation": "pgvector simplifies operations, but dimensions, indexes, and eval still matter.",
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon3"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Dimensions and distance must match the embedding model",
+      "sub": "The vector column encodes a contract.",
+      "summary": "A vector column is tied to the embedding model that produced it.",
+      "objectives": [
+        "Explain fixed vector dimensions.",
+        "Choose cosine, inner product, or L2 intentionally.",
+        "Plan embedding-model migrations."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The embedding model writes your schema",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If an embedding model outputs 384 numbers, the pgvector column must accept 384-dimensional vectors. A 1536-dimensional model requires a different column or table. This is not a prompt setting; it is database schema."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Distance operators also matter. Cosine distance is common for normalized semantic embeddings, but the model and retrieval library should guide the choice. Mismatches distort ranking."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Store the embedding model name and version with each index or table so migrations are visible."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ],
+          "analogy": "Changing embedding dimensions is more like changing a table column than changing a search keyword."
+        },
+        {
+          "id": "m2_worked",
+          "kind": "functionalExample",
+          "title": "Worked migration: 384 to 1536 dimensions",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A team starts with a local 384-dimensional model for cost. Later they test a hosted 1536-dimensional embedding model. They cannot insert new vectors into the old vector(384) column."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A safe migration creates a new vector column or table, backfills embeddings, builds a new ANN index, runs retrieval eval side by side, then switches the query path after quality and latency pass."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Record current model, dimension, and distance operator."
+                  }
+                ],
+                [
+                  {
+                    "text": "Create a parallel column/table for the new dimension."
+                  }
+                ],
+                [
+                  {
+                    "text": "Backfill and index in the background."
+                  }
+                ],
+                [
+                  {
+                    "text": "Compare retrieval eval before switching traffic."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ],
+          "personalizedFor": "pgvector for RAG"
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Dimension contract",
+          "prompt": "What happens if you try to store 1536-dimensional vectors in a vector(384) column?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Postgres silently truncates vectors safely.",
+              "correct": false
+            },
+            {
+              "text": "The database schema does not match the vector, so inserts or queries must be migrated.",
+              "correct": true
+            },
+            {
+              "text": "The LLM automatically converts dimensions.",
+              "correct": false
+            }
+          ],
+          "explanation": "Vector dimensionality is part of the database contract.",
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon3"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "HNSW and IVFFlat are tradeoffs",
+      "sub": "ANN indexes reduce latency by trading exactness and resources.",
+      "summary": "Approximate indexes need measurement, not faith.",
+      "objectives": [
+        "Describe exact scan, HNSW, and IVFFlat at a practical level.",
+        "Name HNSW write and storage tradeoffs.",
+        "Explain why IVFFlat needs representative data."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Index choice changes retrieval behavior",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For small corpora, exact vector search may be acceptable and simpler to reason about. As rows grow, approximate indexes such as HNSW and IVFFlat reduce latency by searching a structured subset of the vector space."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "HNSW often gives strong recall with higher memory and write cost. IVFFlat depends on representative data and probe settings. Either way, measure recall on your eval queries before trusting the speedup."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "An ANN index that is fast but drops the decisive evidence is a quality regression."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ],
+          "analogy": "ANN search is a shortcut through the city; faster only helps if it still reaches the right address."
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "pgvector search choices",
+          "criteria": [
+            "Choice",
+            "Best for",
+            "Watch"
+          ],
+          "options": [
+            {
+              "name": "Exact scan",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Order eligible rows directly by distance.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Best for",
+                  "text": "Small corpora or filtered candidate sets.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Watch",
+                  "text": "Latency grows with rows.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Start here for tiny KBs and baseline eval.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "HNSW",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Graph-based approximate nearest neighbor index.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Best for",
+                  "text": "Low-latency search with strong recall.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Watch",
+                  "text": "Higher memory/index size and write overhead.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when corpus grows and eval recall remains strong.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "IVFFlat",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "List-based ANN index with probes.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best for",
+                  "text": "Large datasets with representative training data.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Watch",
+                  "text": "Poor setup can miss good neighbors.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use when you can tune and evaluate probes.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Index caution",
+          "prompt": "Why should you run retrieval eval after adding HNSW?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "HNSW deletes metadata filters.",
+              "correct": false
+            },
+            {
+              "text": "Approximate search can change which chunks are returned and ranked.",
+              "correct": true
+            },
+            {
+              "text": "Evaluation only matters before indexing.",
+              "correct": false
+            }
+          ],
+          "explanation": "Speedups must preserve the answer evidence your app needs.",
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon3"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Write the filtered vector query",
+      "sub": "The query should combine SQL eligibility and vector distance.",
+      "summary": "The RAG retriever is a SQL statement plus an embedding call.",
+      "objectives": [
+        "Install the extension and define a vector column.",
+        "Create an ANN index with a matching operator class.",
+        "Query with metadata filters and distance ordering."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "SQL is the retrieval interface",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The application embeds the user question, passes that vector into SQL, filters eligible rows, orders by distance, and returns text plus provenance. This is simple enough to test directly."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from structured outputs, validation still belongs outside the model. For RAG, SQL filters are one of those external validations: the model should never see unauthorized chunks."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "The query should return source URL, heading, and distance score for tracing, not only text."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Minimal pgvector table and retrieval query",
+          "language": "sql",
+          "code": "create extension if not exists vector;\n\ncreate table lesson_chunks (\n  id bigserial primary key,\n  lesson_slug text not null,\n  category text not null,\n  status text not null default 'published',\n  heading_path text not null,\n  content text not null,\n  embedding vector(384) not null\n);\n\ncreate index lesson_chunks_embedding_hnsw\n  on lesson_chunks using hnsw (embedding vector_cosine_ops);\n\n-- $1 is the query embedding, produced by the same 384-dim model.\nselect id, lesson_slug, heading_path, content, embedding <=> $1::vector as distance\nfrom lesson_chunks\nwhere status = 'published'\n  and category = 'RAG'\norder by embedding <=> $1::vector\nlimit 8;",
+          "explanation": "The query filters to eligible published RAG chunks before ordering by cosine distance and returning citation metadata.",
+          "predictThenReveal": {
+            "prompt": "Before running this against data, predict what breaks if the query embedding comes from a 1536-dimensional model.",
+            "answer": "The query vector no longer matches vector(384), so you need a migration path rather than a runtime guess."
+          },
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "SQL contract",
+          "prompt": "Where should tenant or document status filtering happen?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only in the final natural-language answer.",
+              "correct": false
+            },
+            {
+              "text": "In the SQL retrieval query before results reach the prompt.",
+              "correct": true
+            },
+            {
+              "text": "In the user’s browser after generation.",
+              "correct": false
+            }
+          ],
+          "explanation": "Unauthorized or stale evidence should not enter model context.",
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon3"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Operate pgvector with eval and migrations",
+      "sub": "The database path still needs retrieval quality gates.",
+      "summary": "pgvector is simple to adopt, but still needs RAG discipline.",
+      "objectives": [
+        "Name pgvector production failure modes.",
+        "Design side-by-side embedding migrations.",
+        "Verify generated answers against returned chunks."
+      ],
+      "termIds": [
+        "rag",
+        "embedding",
+        "vector_search",
+        "chunk"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Simple storage does not remove retrieval risk",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "pgvector keeps the stack compact, but RAG risks remain: stale rows after source changes, wrong dimensions after model changes, ANN recall loss, slow scans on busy OLTP databases, and citations that do not support claims."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Operational review should include backup strategy, index build cost, query limits, table growth, and whether vector workloads interfere with ordinary application traffic."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every embedding-model migration should run old and new retrieval side by side on the same eval set."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output from pgvector RAG",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use this checklist before trusting the generated answer."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The SQL filters match the user’s tenant, product, status, and category."
+                  }
+                ],
+                [
+                  {
+                    "text": "The returned chunks include source URL, heading, version, and distance for trace review."
+                  }
+                ],
+                [
+                  {
+                    "text": "The ANN index preserves expected evidence within packed top-k on eval queries."
+                  }
+                ],
+                [
+                  {
+                    "text": "Embedding model name, dimension, and distance operator are recorded together."
+                  }
+                ],
+                [
+                  {
+                    "text": "Generated claims are supported by the retrieved chunks, not only semantically nearby text."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Production signal",
+          "prompt": "A new HNSW index cuts latency but answer citations get worse. What should block release?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The index name is too long.",
+              "correct": false
+            },
+            {
+              "text": "Retrieval eval showing expected evidence no longer appears in packed top-k.",
+              "correct": true
+            },
+            {
+              "text": "The model temperature is below one.",
+              "correct": false
+            }
+          ],
+          "explanation": "Latency gains are not acceptable if they remove grounding evidence.",
+          "termIds": [
+            "rag",
+            "embedding",
+            "vector_search",
+            "chunk"
+          ],
+          "sources": [
+            "kb3",
+            "kb4",
+            "canon3"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb4",
+        "canon3"
+      ]
+    }
+  ],
+  "glossary": {
+    "rag": {
+      "id": "rag",
+      "label": "RAG",
+      "laymanDefinition": "Retrieving relevant evidence before generation so answers can be grounded in sources.",
+      "technicalNote": "RAG quality depends on corpus freshness, chunking, embeddings, filters, ranking, citation handling, and faithfulness evaluation.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Retrieval-augmented generation"
+    },
+    "embedding": {
+      "id": "embedding",
+      "label": "Embedding",
+      "laymanDefinition": "A numeric vector representation of text used for semantic comparison.",
+      "technicalNote": "Embedding choices fix dimension, distance metric, query/passage formatting, model version, and migration requirements for retrieval.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "vector_search": {
+      "id": "vector_search",
+      "label": "Vector search",
+      "laymanDefinition": "Finding nearby vectors to retrieve semantically related chunks.",
+      "technicalNote": "Vector search needs metadata filters, recall tests, index tuning, and fallback for exact terms, IDs, and rare phrases.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "chunk": {
+      "id": "chunk",
+      "label": "Chunk",
+      "laymanDefinition": "A source text segment stored and retrieved as a unit.",
+      "technicalNote": "Chunk design balances semantic completeness, citation accuracy, token budget, overlap, metadata, and update/delete behavior.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "reranker": {
+      "id": "reranker",
+      "label": "Reranker",
+      "laymanDefinition": "A second-stage model or method that reorders retrieved candidates by relevance.",
+      "technicalNote": "Rerankers improve top-result precision when candidate recall is adequate, but add latency, cost, and evaluation complexity.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "rrf": {
+      "id": "rrf",
+      "label": "RRF",
+      "laymanDefinition": "A rank-fusion method that merges multiple result lists by reciprocal rank.",
+      "technicalNote": "RRF is useful for hybrid retrieval because it combines lexical and vector rankings without requiring comparable raw scores.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Reciprocal rank fusion"
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for pgvector for RAG",
+    "themes": [
+      {
+        "name": "Postgres vector architecture",
+        "questions": [
+          {
+            "q": "Should this RAG app keep vectors inside Postgres or adopt a separate vector database?",
+            "why": "The storage choice affects metadata joins, backups, latency, index tuning, and operational ownership.",
+            "opts": [
+              "pgvector in existing Postgres",
+              "Dedicated vector database",
+              "Long-context prompting only"
+            ],
+            "rot": "Choose pgvector when relational filters and operational simplicity matter more than independent vector-store scaling."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: explain pgvector by reconstructing extension install, vector column dimensions, metadata filters, HNSW or IVFFlat indexing, query ordering, and migration risks."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "pgvector RAG path from chunk row to filtered nearest-neighbor search",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Vectors live beside relational facts",
+          "sub": "pgvector keeps embeddings inside the application database.",
+          "what": "Learners connect vector search to ordinary SQL data modeling.",
+          "relevance": "This prevents treating the vector store as disconnected from permissions and source metadata.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Start with the operational reason for storing chunks in Postgres.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Dimensions and distance must match the embedding model",
+          "sub": "The vector column encodes a contract.",
+          "what": "Learners plan vector columns and distance operators deliberately.",
+          "relevance": "Dimension mismatch and wrong distance metrics are common silent or hard failures.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Treat embedding dimension as schema, not a loose setting.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "HNSW and IVFFlat are tradeoffs",
+          "sub": "ANN indexes reduce latency by trading exactness and resources.",
+          "what": "Learners compare pgvector index choices.",
+          "relevance": "Blindly adding an ANN index can hurt writes, memory, or recall.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Choose the index by corpus size, write pattern, and measured recall.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Write the filtered vector query",
+          "sub": "The query should combine SQL eligibility and vector distance.",
+          "what": "Learners write a realistic pgvector query.",
+          "relevance": "A clear query exposes filters, limits, and distance operator choices.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Make the production retrieval contract visible in SQL.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Operate pgvector with eval and migrations",
+          "sub": "The database path still needs retrieval quality gates.",
+          "what": "Learners prepare production safeguards for pgvector RAG.",
+          "relevance": "Operational simplicity can hide stale embeddings, poor ANN recall, or overloaded databases.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Plan index maintenance, model changes, and answer verification together.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "shapes"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "proves"
+        }
+      ]
+    },
+    "capstone": {
+      "prompt": "Design a Postgres table for a small RAG KB with source metadata, tenant filter, embedding vector column, index choice, and a SQL query that returns the top evidence for one question. Next rung: evaluate retrieval faithfulness.",
+      "scopedTo": "pgvector for RAG"
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Vectors live beside relational facts",
+        "detail": "pgvector makes semantic search another Postgres capability."
+      },
+      {
+        "step": 2,
+        "label": "Dimensions and distance must match the embedding model",
+        "detail": "A vector column is tied to the embedding model that produced it."
+      },
+      {
+        "step": 3,
+        "label": "HNSW and IVFFlat are tradeoffs",
+        "detail": "Approximate indexes need measurement, not faith."
+      },
+      {
+        "step": 4,
+        "label": "Write the filtered vector query",
+        "detail": "The RAG retriever is a SQL statement plus an embedding call."
+      },
+      {
+        "step": 5,
+        "label": "Operate pgvector with eval and migrations",
+        "detail": "pgvector is simple to adopt, but still needs RAG discipline."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_problem_anchor",
+        "label": "Can you explain why “Vectors live beside relational facts” matters for the running case?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_design_choice",
+        "label": "Did you make the design choice from “HNSW and IVFFlat are tradeoffs” explicit?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_evidence_gate",
+        "label": "Can the capstone be reviewed using “Operate pgvector with eval and migrations”?",
+        "fromModuleId": "m5"
+      }
+    ]
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Retrieval-Augmented Generation & Vector Search",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Retrieval-Augmented Generation & Vector Search",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LlamaIndex RAG documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-20"
+    },
+    "kb3": {
+      "id": "kb3",
+      "kind": "kb",
+      "title": "KB: RAG Fundamentals",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-22"
+    },
+    "kb4": {
+      "id": "kb4",
+      "kind": "kb",
+      "title": "KB: Chunking, hybrid retrieval, Graph RAG, and retrieval evaluation notes",
+      "url": "kb/RAG-tooling",
+      "asOfDate": "2026-06-22"
+    },
+    "canon3": {
+      "id": "canon3",
+      "kind": "canonical",
+      "title": "LangChain retrieval concepts",
+      "url": "https://docs.langchain.com/oss/python/langchain/retrieval",
+      "asOfDate": "2026-06-22"
+    },
+    "canon4": {
+      "id": "canon4",
+      "kind": "canonical",
+      "title": "LlamaIndex RAG guide",
+      "url": "https://developers.llamaindex.ai/python/framework/understanding/rag/",
+      "asOfDate": "2026-06-22"
+    },
+    "canon8": {
+      "id": "canon8",
+      "kind": "canonical",
+      "title": "pgvector repository and docs",
+      "url": "https://github.com/pgvector/pgvector",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

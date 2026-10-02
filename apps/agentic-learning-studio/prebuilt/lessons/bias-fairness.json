@@ -1,0 +1,1108 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Bias and Fairness",
+    "title": "Bias and Fairness",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Bias and Fairness is practical when learners can apply it to this concrete case: A loan support assistant prioritizes cases and must not disadvantage protected groups or proxies. By the end, they should be able to build or review fairness review card with segments, metrics, and mitigation decisions, measure performance parity across relevant user groups, and catch the failure where a neutral feature acts as a proxy for a protected attribute."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Bias and Fairness",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Bias and Fairness: mental map",
+    "caption": "Move from uneven outcomes to measured slices, root causes, mitigations, and reviewable tradeoffs.",
+    "oneLineThesis": "Fairness work turns vague concern into measured slice behavior, documented tradeoffs, and accountable mitigation decisions.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Define fairness as uneven system behavior",
+        "sub": "Start with a real decision, affected people, and the harm that would matter.",
+        "what": "Fairness is not a personality trait of a model; it is measured behavior in a deployment context.",
+        "relevance": "Turn a vague bias concern into a specific decision and harm.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Anchor fairness in a concrete decision and affected population."
+      },
+      {
+        "id": "n_m2",
+        "label": "Measure slices without pretending metrics are neutral",
+        "sub": "Use aggregate and slice metrics, then inspect examples and data collection limits.",
+        "what": "Fairness measurement combines quantitative slice gaps with qualitative review of examples and context.",
+        "relevance": "Build a slice metric table.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Measure uneven behavior across slices while respecting privacy limits."
+      },
+      {
+        "id": "n_m3",
+        "label": "Find causes before choosing mitigations",
+        "sub": "Trace gaps to data, prompts, labels, policy, thresholds, retrieval, or feedback loops.",
+        "what": "A fairness gap can come from training data, eval labels, product policy, prompt framing, retrieval coverage, or downstream workflow.",
+        "relevance": "Map fairness gaps to possible causes.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Trace fairness gaps to data, policy, model, or workflow causes."
+      },
+      {
+        "id": "n_m4",
+        "label": "Make a slice check executable",
+        "sub": "Turn fairness review into a small reproducible table and AI-output verification checklist.",
+        "what": "A runnable slice check makes fairness review repeatable enough for release gates and monitoring.",
+        "relevance": "Write a small slice-gap calculation.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Make slice measurement reproducible and review the generated report."
+      },
+      {
+        "id": "n_m5",
+        "label": "Govern residual risk over time",
+        "sub": "Close with a risk-register entry, monitoring loop, and solo fairness review.",
+        "what": "Fairness is maintained through release gates, monitoring, incident review, and accountability for residual risk.",
+        "relevance": "Recall the fairness loop from memory.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Document residual fairness risk and keep monitoring it after release."
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "conceptual"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Define fairness as uneven system behavior",
+      "sub": "Start with a real decision, affected people, and the harm that would matter.",
+      "summary": "Fairness is not a personality trait of a model; it is measured behavior in a deployment context.",
+      "objectives": [
+        "Turn a vague bias concern into a specific decision and harm.",
+        "Separate group-level, language-level, and context-level fairness questions.",
+        "Explain why fairness metrics require human judgment about tradeoffs."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The unit is a decision that affects people",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a scholarship essay tutor gives detailed improvement advice to fluent English writers but vague, discouraging feedback to English-language learners. The model is not making loan approvals, yet the product still affects opportunity, confidence, and learning outcomes."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Fairness work begins by naming the decision or recommendation, the people affected, the possible harm, and the slices where uneven behavior is plausible. The question is not \"Is the model biased?\" It is \"Does this system behave worse for a group, language, dialect, disability context, school type, or content style in a way that matters?\""
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Product framing: fairness protects access, dignity, opportunity, and trust."
+                  }
+                ],
+                [
+                  {
+                    "text": "Engineering framing: fairness needs datasets, slice labels or safe proxies, eval rubrics, thresholds, and monitoring."
+                  }
+                ],
+                [
+                  {
+                    "text": "Governance framing: teams must document tradeoffs because fairness definitions can conflict."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Worked artifact: fairness problem statement",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Decision: the tutor returns essay feedback that influences whether a learner revises and resubmits. Affected slices: English-language learners, rural schools, disabled learners using speech-to-text, and students writing about culturally specific topics. Harm: lower-quality feedback, harsher tone, unsupported claims, or fewer actionable next steps."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Initial metric set: rubric score for actionability, unsupported-claim rate, tone severity, refusal rate, and learner revision success. The team will compare aggregate performance and slice performance, then review examples before changing prompts or thresholds."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Fairness review card"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Bias question shape",
+          "prompt": "Which fairness question is most actionable?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Is the model biased in general?",
+              "correct": false
+            },
+            {
+              "text": "Does the essay tutor provide less actionable feedback for English-language learners on the same rubric?",
+              "correct": true
+            },
+            {
+              "text": "Can we remove all sensitive data and still prove fairness automatically?",
+              "correct": false
+            }
+          ],
+          "explanation": "Actionable fairness questions name a decision, a slice, a metric, and a review context.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Measure slices without pretending metrics are neutral",
+      "sub": "Use aggregate and slice metrics, then inspect examples and data collection limits.",
+      "summary": "Fairness measurement combines quantitative slice gaps with qualitative review of examples and context.",
+      "objectives": [
+        "Build a slice metric table.",
+        "Explain proxy and privacy risks in fairness measurement.",
+        "Recognize when a metric gap needs context before mitigation."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Averages can hide the harm",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The tutor can score 90 percent overall while one slice receives poor feedback 30 percent of the time. Aggregate metrics are useful for release health, but fairness reviews must slice by the contexts where harm could concentrate. Some attributes are sensitive or regulated, so measurement design also needs privacy and governance review."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Metrics are not neutral. Equal refusal rates, equal actionability, equal error rates, and equal calibration can point in different directions. The team must say which definition matters for this product and why."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Fairness evidence table",
+          "criteria": [
+            "Evidence",
+            "What it reveals",
+            "Caution"
+          ],
+          "options": [
+            {
+              "name": "Slice score gap",
+              "cells": [
+                {
+                  "criterion": "Evidence",
+                  "text": "Rubric score by learner group or context",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it reveals",
+                  "text": "Where quality differs materially",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Caution",
+                  "text": "Requires enough examples and lawful, privacy-aware slice data",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for release gates.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Example review",
+              "cells": [
+                {
+                  "criterion": "Evidence",
+                  "text": "Human inspection of worst cases",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it reveals",
+                  "text": "Tone, stereotypes, unsupported assumptions, missing context",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Caution",
+                  "text": "Reviewer bias and sampling must be managed",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use after metrics flag a gap.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Feedback loop check",
+              "cells": [
+                {
+                  "criterion": "Evidence",
+                  "text": "Who gets corrections, appeals, or human help",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it reveals",
+                  "text": "Whether users can recover from poor output",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Caution",
+                  "text": "Feedback data can overrepresent vocal users",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for monitoring residual risk.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Case study: proxy attribute surprise",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A team avoids collecting disability status, which is appropriate for privacy. But speech-to-text artifacts become a proxy: essays with transcription errors receive harsher grammar comments and less substantive guidance. The fairness review uses a permitted accessibility-context sample and aggregate reporting instead of storing sensitive user labels broadly."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This carries forward module 1: the point is not to collect every attribute. The point is to measure foreseeable uneven behavior with the least intrusive evidence that can answer the risk question."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2",
+        "canon1"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Find causes before choosing mitigations",
+      "sub": "Trace gaps to data, prompts, labels, policy, thresholds, retrieval, or feedback loops.",
+      "summary": "A fairness gap can come from training data, eval labels, product policy, prompt framing, retrieval coverage, or downstream workflow.",
+      "objectives": [
+        "Map fairness gaps to possible causes.",
+        "Compare mitigation types and tradeoffs.",
+        "Avoid hiding fairness failures behind generic safety language."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Mitigation depends on the cause",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If the tutor is worse for English-language learners because the eval rubric rewards idiomatic English, changing the model may not fix the problem. If retrieved examples overrepresent one school system, prompt edits may not fix coverage. If human escalation is available only during business hours, the workflow itself creates uneven support."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Mitigations can include dataset balancing, rubric redesign, prompt constraints, retrieval improvements, threshold changes, human review, appeal paths, monitoring, and product limits. Each can improve one metric while worsening another, so the risk register should record the tradeoff."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m3_policy",
+          "kind": "functionalExample",
+          "title": "Worked mitigation decision",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Finding: actionability score is 18 points lower for English-language learner essays. Review shows the model over-focuses on grammar and misses argument structure. Mitigation: revise the prompt to separate language mechanics from argument feedback, add examples written by multilingual students, and update the eval rubric to score both substance and language support."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Residual risk: the system may still misread culturally specific examples. Owner: learning-quality lead. Monitor: weekly slice review of unsupported claims and actionability score, with manual review for lowest-scoring outputs."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Fairness mitigation review"
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Choose mitigations that change the cause and leave reviewable evidence.",
+          "useWhen": "Use multiple controls when a fairness gap involves data, prompt, workflow, and monitoring together.",
+          "avoidWhen": "Avoid claiming fairness improvement from a generic guardrail that was never evaluated on the affected slice.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon2",
+        "canon1"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Bias and Fairness: baseline, production design, or advanced optimization."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Make a slice check executable",
+      "sub": "Turn fairness review into a small reproducible table and AI-output verification checklist.",
+      "summary": "A runnable slice check makes fairness review repeatable enough for release gates and monitoring.",
+      "objectives": [
+        "Write a small slice-gap calculation.",
+        "Predict what sample imbalance can hide.",
+        "Verify AI-generated fairness reports for missing context."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Compute a simple slice gap",
+          "language": "python",
+          "code": "examples = [\n    {\"slice\": \"fluent_english\", \"actionable\": 1},\n    {\"slice\": \"fluent_english\", \"actionable\": 1},\n    {\"slice\": \"ell\", \"actionable\": 0},\n    {\"slice\": \"ell\", \"actionable\": 1},\n    {\"slice\": \"ell\", \"actionable\": 0},\n]\n\nfrom collections import defaultdict\nscores = defaultdict(list)\nfor row in examples:\n    scores[row[\"slice\"]].append(row[\"actionable\"])\n\nrates = {s: sum(v) / len(v) for s, v in scores.items()}\ngap = max(rates.values()) - min(rates.values())\nprint({\"rates\": rates, \"gap\": round(gap, 3)})\nassert all(len(v) >= 2 for v in scores.values()), \"sample too small for review\"",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This toy check is not a complete fairness audit. It teaches the habit: compute slice rates, expose sample sizes, and stop when the evidence is too thin for a confident conclusion."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "What goes wrong if one slice has only one or two examples?",
+            "answer": "The measured gap can be dominated by noise, so the right response is to collect or sample more evidence before making a strong claim."
+          },
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify an AI-generated fairness report",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When an AI assistant drafts a fairness report, check that it names the product decision, affected slices, data source, sample sizes, metrics, examples reviewed, privacy constraints, mitigation owner, residual risk, and monitoring plan."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Does it avoid saying \"unbiased\" as an absolute claim?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it show both aggregate and slice results?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it explain which sensitive attributes or proxies were used and why?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it document tradeoffs and unresolved risks?"
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Fairness report red flag",
+          "prompt": "What is a red flag in a fairness review?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A table that includes confidence limits and caveats.",
+              "correct": false
+            },
+            {
+              "text": "A claim that the model is fair without slice metrics, sample sizes, examples, or residual risk.",
+              "correct": true
+            },
+            {
+              "text": "A mitigation with a named owner and follow-up date.",
+              "correct": false
+            }
+          ],
+          "explanation": "Fairness evidence should be specific, contextual, and reviewable.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Govern residual risk over time",
+      "sub": "Close with a risk-register entry, monitoring loop, and solo fairness review.",
+      "summary": "Fairness is maintained through release gates, monitoring, incident review, and accountability for residual risk.",
+      "objectives": [
+        "Recall the fairness loop from memory.",
+        "Write a retrieval prompt for future fairness reviews.",
+        "Create a capstone slice-review card."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "conceptual",
+          "title": "Retrieval prompt for the whole lesson",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer this from memory: \"How do I turn a bias concern into a usable fairness review?\" Include decision, affected slices, harm, metrics, sample sizes, privacy constraints, example review, root cause, mitigation, owner, residual risk, and monitoring."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: module 1 asked for a decision and affected people. If the final report cannot name both, it is too abstract to guide action."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Treat fairness as an ongoing risk decision, not a one-time certificate.",
+          "useWhen": "Use fairness gates when model outputs influence access, opportunity, treatment, safety, money, education, or trust.",
+          "avoidWhen": "Avoid absolute claims such as \"bias-free\"; document measured behavior, limits, and residual risk instead.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m5_capstone",
+          "kind": "functionalExample",
+          "title": "Capstone: build one slice-review card",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Choose a model feature. Write the decision, affected slices, plausible harms, two metrics, minimum sample size, privacy rule, example-review plan, mitigation options, owner, and monitoring cadence. Then test one small slice table and write the residual-risk sentence a release reviewer would see."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Next rung: connect this to NIST AI RMF for GenAI, where fairness becomes one risk in a larger Govern, Map, Measure, Manage system."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Solo fairness review"
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Bias and Fairness: baseline, production design, or advanced optimization."
+    }
+  ],
+  "glossary": {
+    "hallucination": {
+      "id": "hallucination",
+      "label": "Hallucination",
+      "laymanDefinition": "A fluent but unsupported model claim.",
+      "technicalNote": "Hallucination can create fairness harm when unsupported advice affects one language, group, or context more than another.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "prompt_injection": {
+      "id": "prompt_injection",
+      "label": "Prompt injection",
+      "laymanDefinition": "An attack that tries to override intended model instructions.",
+      "technicalNote": "Injection is not fairness by itself, but poisoned prompts or retrieved text can create uneven or discriminatory behavior if not controlled.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "guardrail": {
+      "id": "guardrail",
+      "label": "Guardrail",
+      "laymanDefinition": "A control that reduces unfair or harmful model behavior before, during, or after generation.",
+      "technicalNote": "In fairness work, guardrails include data review, slice evals, threshold policy, human review, refusal rules, and monitoring, not only output filters.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "privacy": {
+      "id": "privacy",
+      "label": "Privacy",
+      "laymanDefinition": "The duty to minimize and protect personal or sensitive data.",
+      "technicalNote": "Fairness analysis may need slice attributes or proxies, so privacy controls decide what can be measured, stored, aggregated, or reviewed.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "owasp": {
+      "id": "owasp",
+      "label": "OWASP",
+      "laymanDefinition": "A security-risk framework often used for LLM application threats.",
+      "technicalNote": "OWASP is not the main fairness framework here, but its data leakage and excessive-agency risks can interact with biased outcomes.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Open Worldwide Application Security Project"
+    },
+    "risk_register": {
+      "id": "risk_register",
+      "label": "Risk register",
+      "laymanDefinition": "A living record of harms, impacted groups, severity, owners, mitigations, and residual risk.",
+      "technicalNote": "Bias and fairness issues belong in the risk register with evidence, decisions, owners, and review dates.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Bias and Fairness",
+    "themes": [
+      {
+        "name": "Release-readiness check",
+        "questions": [
+          {
+            "q": "What decision does Bias and Fairness change for this case?",
+            "why": "A good lesson changes how the learner builds, reviews, or ships fairness review card with segments, metrics, and mitigation decisions.",
+            "opts": [
+              "Thin slice",
+              "Production path",
+              "Advanced optimization"
+            ],
+            "rot": "Choose the smallest option that catches: a neutral feature acts as a proxy for a protected attribute."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct a fairness review: define the decision, identify likely impacted groups, measure aggregate and slice behavior, investigate data and feedback sources, choose mitigations, document tradeoffs, and monitor residual risk."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Bias and Fairness operating path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Define fairness as uneven system behavior",
+          "sub": "Start with a real decision, affected people, and the harm that would matter.",
+          "what": "Fairness is not a personality trait of a model; it is measured behavior in a deployment context.",
+          "relevance": "Turn a vague bias concern into a specific decision and harm.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Anchor fairness in a concrete decision and affected population."
+        },
+        {
+          "id": "n_m2",
+          "label": "Measure slices without pretending metrics are neutral",
+          "sub": "Use aggregate and slice metrics, then inspect examples and data collection limits.",
+          "what": "Fairness measurement combines quantitative slice gaps with qualitative review of examples and context.",
+          "relevance": "Build a slice metric table.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Measure uneven behavior across slices while respecting privacy limits."
+        },
+        {
+          "id": "n_m3",
+          "label": "Find causes before choosing mitigations",
+          "sub": "Trace gaps to data, prompts, labels, policy, thresholds, retrieval, or feedback loops.",
+          "what": "A fairness gap can come from training data, eval labels, product policy, prompt framing, retrieval coverage, or downstream workflow.",
+          "relevance": "Map fairness gaps to possible causes.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Trace fairness gaps to data, policy, model, or workflow causes."
+        },
+        {
+          "id": "n_m4",
+          "label": "Make a slice check executable",
+          "sub": "Turn fairness review into a small reproducible table and AI-output verification checklist.",
+          "what": "A runnable slice check makes fairness review repeatable enough for release gates and monitoring.",
+          "relevance": "Write a small slice-gap calculation.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Make slice measurement reproducible and review the generated report."
+        },
+        {
+          "id": "n_m5",
+          "label": "Govern residual risk over time",
+          "sub": "Close with a risk-register entry, monitoring loop, and solo fairness review.",
+          "what": "Fairness is maintained through release gates, monitoring, incident review, and accountability for residual risk.",
+          "relevance": "Recall the fairness loop from memory.",
+          "moduleId": "m5",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Document residual fairness risk and keep monitoring it after release."
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Define fairness as uneven system behavior",
+        "detail": "Start with a real decision, affected people, and the harm that would matter."
+      },
+      {
+        "step": 2,
+        "label": "Measure slices without pretending metrics are neutral",
+        "detail": "Use aggregate and slice metrics, then inspect examples and data collection limits."
+      },
+      {
+        "step": 3,
+        "label": "Find causes before choosing mitigations",
+        "detail": "Trace gaps to data, prompts, labels, policy, thresholds, retrieval, or feedback loops."
+      },
+      {
+        "step": 4,
+        "label": "Make a slice check executable",
+        "detail": "Turn fairness review into a small reproducible table and AI-output verification checklist."
+      },
+      {
+        "step": 5,
+        "label": "Govern residual risk over time",
+        "detail": "Close with a risk-register entry, monitoring loop, and solo fairness review."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_context",
+        "label": "Can you name the user decision and the groups or contexts where harm may differ?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_evidence",
+        "label": "Does the evaluation compare meaningful slices instead of only aggregate scores?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_controls",
+        "label": "Have privacy constraints for slice attributes and proxies been documented?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_verify",
+        "label": "Is each mitigation tied to an owner, metric, tradeoff, and monitoring plan?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_next",
+        "label": "Can reviewers explain residual risk in plain language?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a one-page release-ready plan for fairness review card with segments, metrics, and mitigation decisions. Include: the user problem, realistic input, mechanism, design choice, runnable or reviewable check, metric (performance parity across relevant user groups), failure case (a neutral feature acts as a proxy for a protected attribute), owner, and the next rung after this lesson.",
+      "scopedTo": "Bias and Fairness"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI Safety and Governance",
+      "url": "https://doi.org/10.6028/NIST.AI.600-1",
+      "asOfDate": "2026-06-22"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB: Moderation, PII, and Data Governance",
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "asOfDate": "2026-06-22"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "NIST AI Risk Management Framework",
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "asOfDate": "2026-06-23"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "NIST AI 600-1 Generative AI Profile",
+      "url": "https://doi.org/10.6028/NIST.AI.600-1",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+# Optional notebook tools; the preparation/scoring requirements remain separate.
+-r requirements.txt
+ipykernel>=6.29,<7
+nbformat>=5.10,<6
+nbclient>=0.10,<1
+matplotlib>=3.9,<3.11

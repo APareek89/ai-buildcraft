@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RLHF: how a reward becomes a weight update</title>
+<style>
+:root{--bg:#f7f5f0;--card:#fff;--ink:#181815;--muted:#55534b;--faint:#6e6b5e;--accent:#0d7370;--accent2:#0a5c5a;--line:#e0dbd0;--soft:#e9f2f1;--warn:#8c3b2e;--warnbg:#fbf0ed;--pos:#1d6b4a;--neg:#8c3b2e;--code:#f4f1ea;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#13201f;--card:#1a2a28;--ink:#eee9df;--muted:#a9a498;--faint:#8e8a7e;--accent:#4db3a8;--accent2:#7fd0c5;--line:#2a3b39;--soft:#1d3330;--warnbg:#2e1f1c;--pos:#5fc493;--neg:#e08b7a;--code:#16241f;}}
+:root[data-theme="dark"]{--bg:#13201f;--card:#1a2a28;--ink:#eee9df;--muted:#a9a498;--faint:#8e8a7e;--accent:#4db3a8;--accent2:#7fd0c5;--line:#2a3b39;--soft:#1d3330;--warnbg:#2e1f1c;--pos:#5fc493;--neg:#e08b7a;--code:#16241f;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;line-height:1.62;font-size:16px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 80px}
+header{padding:48px 0 24px;border-bottom:3px solid var(--accent);margin-bottom:28px}
+.eyebrow{font-size:.74rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+h1{font-family:Georgia,serif;font-weight:600;font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.15;letter-spacing:-.015em}
+h1 em{font-style:italic;color:var(--accent)}
+.sub{color:var(--muted);margin-top:14px;font-size:1.04rem;max-width:62ch}
+h2{font-family:Georgia,serif;font-size:1.5rem;font-weight:600;margin:44px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+h3{font-size:1.06rem;font-weight:650;margin:26px 0 8px;color:var(--ink)}
+p{margin:12px 0;color:var(--muted);max-width:68ch}
+p strong,li strong{color:var(--ink);font-weight:650}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:20px 0}
+.big{background:var(--soft);border:1px solid var(--accent);border-radius:12px;padding:22px 24px;margin:24px 0}
+.big p{color:var(--accent2);margin:0}
+.big strong{color:var(--ink)}
+.warn{background:var(--warnbg);border-left:3px solid var(--warn);border-radius:8px;padding:14px 18px;margin:18px 0}
+.warn p{margin:0;color:var(--muted)}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;background:var(--code);padding:2px 6px;border-radius:4px}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:14px 0;font-size:.85rem;line-height:1.55}
+pre code{background:none;padding:0}
+.eq{background:var(--code);border-left:3px solid var(--accent);padding:14px 18px;margin:16px 0;border-radius:0 8px 8px 0;font-family:ui-monospace,Menlo,monospace;font-size:.95rem;overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.92rem}
+th{text-align:left;font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);font-weight:700;padding:0 10px 8px 0;border-bottom:1px solid var(--line)}
+td{padding:9px 10px 9px 0;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:top}
+td strong{color:var(--ink)}
+ul{margin:12px 0 12px 20px}li{color:var(--muted);margin:7px 0}
+.ctrl{display:grid;grid-template-columns:130px 1fr 68px;gap:10px;align-items:center;margin:11px 0}
+.ctrl label{font-size:.88rem;color:var(--ink);font-weight:600}
+.ctrl output{font-family:ui-monospace,Menlo,monospace;font-size:.9rem;text-align:right;color:var(--accent2);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent);height:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:680px){.grid2{grid-template-columns:1fr}.ctrl{grid-template-columns:100px 1fr 58px}}
+.bar{height:22px;border-radius:5px;background:var(--accent);transition:width .18s ease;min-width:2px}
+.barrow{display:grid;grid-template-columns:54px 1fr 66px;gap:8px;align-items:center;margin:7px 0;font-size:.86rem}
+.barrow .lbl{font-family:ui-monospace,Menlo,monospace;color:var(--ink)}
+.barrow .val{font-family:ui-monospace,Menlo,monospace;text-align:right;color:var(--muted)}
+.gbar{height:22px;border-radius:5px;transition:all .18s ease;min-width:2px}
+.gpos{background:var(--neg)}.gneg{background:var(--pos)}
+.axis{position:relative;height:1px;background:var(--line);margin:4px 0 10px}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:18px 0}
+.step{flex:1;min-width:132px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:12px}
+.step.nograd{border-style:dashed;opacity:.82}
+.step .n{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:5px}
+.step.nograd .n{color:var(--warn)}.step.grad .n{color:var(--pos)}
+.step .t{font-weight:650;font-size:.92rem;color:var(--ink);margin-bottom:3px}
+.step .d{font-size:.8rem;color:var(--faint);line-height:1.4}
+.tag{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-top:6px}
+.tag.no{background:var(--warnbg);color:var(--warn)}
+.tag.yes{background:var(--soft);color:var(--accent2)}
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-size:.85rem;color:var(--faint)}
+.toggle{position:fixed;top:14px;right:14px;background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:7px 14px;font-size:.8rem;cursor:pointer;font-weight:600;z-index:10}
+</style></head><body>
+<button class="toggle" onclick="const r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark'">◑ theme</button>
+<div class="wrap">
+
+<header>
+<div class="eyebrow">Post-Training Lab · companion to notebook 09</div>
+<h1>How a reward number becomes a <em>weight update</em></h1>
+<p class="sub">A reward model outputs one number. Weights change by backpropagation, which needs a differentiable path. The text was <em>sampled</em>, and sampling has no derivative. So where is the path? This page answers that with numbers you can change.</p>
+</header>
+
+<div class="big">
+<p><strong>The answer in one sentence.</strong> The reward never receives a gradient. It acts as a <strong>multiplier</strong> on a gradient that comes entirely from <code>log π(y|x)</code>, the log-probability the policy assigned to the tokens it already produced. You never differentiate the reward, and you never differentiate the sampling.</p>
+</div>
+
+<h2>Where the gradient does and does not flow</h2>
+<p>Five steps happen per training example. Only one of them is differentiable, and that is the whole trick.</p>
+
+<div class="flow">
+<div class="step nograd"><div class="n">1 · no gradient</div><div class="t">Sample</div><div class="d">The policy generates a response. <code>multinomial</code> returns an integer index.</div><span class="tag no">graph severed</span></div>
+<div class="step nograd"><div class="n">2 · no gradient</div><div class="t">Score</div><div class="d">A frozen reward model reads the text and returns a scalar <code>R</code>.</div><span class="tag no">a plain float</span></div>
+<div class="step nograd"><div class="n">3 · no gradient</div><div class="t">Advantage</div><div class="d"><code>A = R − baseline</code>. Still arithmetic on floats.</div><span class="tag no">a plain float</span></div>
+<div class="step grad"><div class="n">4 · gradient</div><div class="t">Recompute log π</div><div class="d">Run the policy again over the tokens already produced, this time keeping the graph.</div><span class="tag yes">differentiable</span></div>
+<div class="step grad"><div class="n">5 · gradient</div><div class="t">Surrogate loss</div><div class="d"><code>L = −(A × log π)</code>. Backprop flows through <code>log π</code> only.</div><span class="tag yes">backward()</span></div>
+</div>
+
+<div class="warn"><p><strong>The thing that trips people up:</strong> you generate the text once without gradients, then run the model <em>again</em> over those same tokens with gradients on. Step 4 is not a second generation. It is a forward pass over a fixed sequence, purely to obtain a differentiable <code>log π</code>.</p></div>
+
+<h2>Why a loss at all, when we want to maximise reward?</h2>
+<p>Because optimisers minimise. The quantity you actually want to maximise is expected reward. The score-function identity, also called REINFORCE, says its gradient can be written as:</p>
+<div class="eq">∇<sub>θ</sub> E[R]  =  E[ R · ∇<sub>θ</sub> log π<sub>θ</sub>(y) ]</div>
+<p>Read where the ∇ sits. It is applied <strong>only to log π</strong>. <code>R</code> is outside it. So if you define a loss whose gradient equals that expression, an ordinary optimiser does the right thing:</p>
+<div class="eq">L  =  − R · log π<sub>θ</sub>(y)</div>
+<p>Minimising this maximises reward-weighted log-probability. That is the entire bridge.</p>
+
+<h2>The calculation, with numbers you control</h2>
+<p>A toy policy with a vocabulary of three tokens. Move the sliders and watch the gradient. The hand formula and the answer are computed live.</p>
+
+<div class="card">
+<div class="ctrl"><label>logit: good</label><input type="range" id="z0" min="-2" max="2" step="0.1" value="0.5"><output id="z0v">0.5</output></div>
+<div class="ctrl"><label>logit: okay</label><input type="range" id="z1" min="-2" max="2" step="0.1" value="0.2"><output id="z1v">0.2</output></div>
+<div class="ctrl"><label>logit: bad</label><input type="range" id="z2" min="-2" max="2" step="0.1" value="0.3"><output id="z2v">0.3</output></div>
+<div class="ctrl"><label>reward R</label><input type="range" id="R" min="-2" max="2" step="0.25" value="1"><output id="Rv">+1.00</output></div>
+<div class="ctrl"><label>sampled token</label><select id="act" style="padding:6px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:.88rem"><option value="0">good</option><option value="1">okay</option><option value="2">bad</option></select><output></output></div>
+
+<h3 style="margin-top:22px">Step 1 · softmax turns logits into probabilities</h3>
+<div id="probs"></div>
+
+<h3>Step 2 · the surrogate loss</h3>
+<pre id="lossbox"></pre>
+
+<h3>Step 3 · the gradient on each logit</h3>
+<p style="font-size:.9rem;margin:4px 0 10px">Formula: <code>∂L/∂z<sub>i</sub> = −R · ( 1[i = sampled] − π(i) )</code>. Bars left of centre mean the logit goes <strong style="color:var(--pos)">up</strong> after the optimiser subtracts the gradient. Bars right mean it goes <strong style="color:var(--neg)">down</strong>.</p>
+<div id="grads"></div>
+<div id="verdict" style="margin-top:14px;padding:12px 14px;border-radius:8px;background:var(--soft);font-size:.9rem;color:var(--accent2)"></div>
+</div>
+
+<h3>What to notice</h3>
+<ul>
+<li>Set <strong>R = 0</strong>. Every gradient becomes zero. No reward, no learning signal, regardless of how confident the policy was.</li>
+<li>Set <strong>R = −1</strong>. Every sign flips. The sampled token is now pushed down.</li>
+<li>Change R from 1 to 2. The gradients double exactly. <strong>R scales, it never redirects.</strong></li>
+<li>Raise the sampled token's logit until its probability is near 1. Its gradient shrinks toward zero. A policy already certain has little left to learn from being told it was right.</li>
+</ul>
+
+<h2>Why raw REINFORCE is unusable, and what PPO bolts on</h2>
+
+<h3>Problem 1 · variance, fixed by a baseline</h3>
+<p>The gradient depends on which token happened to be sampled. Over a large vocabulary that estimate swings violently. The fix is to subtract a baseline <code>b</code> and use the <strong>advantage</strong> <code>A = R − b</code>.</p>
+<p>It is provably unbiased because the baseline does not depend on the action sampled. The intuition shifts from <em>"was this good"</em> to <em>"was this better than usual for this prompt"</em>. In PPO that baseline is produced by a learned <strong>value model</strong>, which is a third network in memory.</p>
+
+<h3>Problem 2 · reusing samples, fixed by a ratio</h3>
+<p>Generation is the slow part, so you want several gradient steps per batch. After step one the policy has moved, so the samples came from an <em>old</em> policy. Correct for it by importance sampling:</p>
+<div class="eq">r(θ)  =  π<sub>new</sub>(y) / π<sub>old</sub>(y)</div>
+
+<h3>Problem 3 · the ratio explodes, fixed by clipping</h3>
+<p>This is all PPO really is:</p>
+<div class="eq">L<sup>PPO</sup>  =  − min( r·A ,  clip(r, 1−ε, 1+ε)·A )</div>
+
+<div class="card">
+<div class="ctrl"><label>ratio r</label><input type="range" id="ratio" min="0.2" max="3" step="0.05" value="1"><output id="ratiov">1.00</output></div>
+<div class="ctrl"><label>advantage A</label><input type="range" id="adv" min="-2" max="2" step="0.25" value="1"><output id="advv">+1.00</output></div>
+<div class="ctrl"><label>epsilon ε</label><input type="range" id="eps" min="0.05" max="0.5" step="0.05" value="0.2"><output id="epsv">0.20</output></div>
+<pre id="ppobox" style="margin-top:14px"></pre>
+<div id="ppoverdict" style="padding:12px 14px;border-radius:8px;background:var(--soft);font-size:.9rem;color:var(--accent2)"></div>
+</div>
+
+<p><strong>The clip is deliberately one-sided.</strong> With a positive advantage it caps the gain, so one lucky sample cannot run away with the policy. With a negative advantage it keeps pushing down hard, because a response the policy has drifted toward that scores badly should be suppressed without a ceiling. Set A to −1 and slide the ratio past 1+ε to see it.</p>
+
+<h3>Problem 4 · reward hacking, fixed by a KL penalty</h3>
+<p>A policy optimising a reward model will find its blind spots and produce output that scores brilliantly and is useless. So the reward gets a penalty for drifting from the frozen reference model:</p>
+<div class="eq">R<sub>final</sub>  =  R(x,y)  −  β · KL( π<sub>θ</sub> ‖ π<sub>ref</sub> )</div>
+<p><strong>That β is the same β as in DPO.</strong> DPO folds this leash algebraically into its loss rather than applying it as a separate penalty. Recognising that the two are the same quantity is a good interview answer.</p>
+
+<h2>Where the reward model itself comes from</h2>
+<p>It never sees a score. Humans are unreliable at absolute ratings and reliable at comparisons, so the training data is pairs, and the loss only cares about the <strong>difference</strong>:</p>
+<div class="eq">L<sub>RM</sub>  =  − log σ( r(x, y<sub>chosen</sub>) − r(x, y<sub>rejected</sub>) )</div>
+<table>
+<tr><th>r chosen</th><th>r rejected</th><th>margin</th><th>loss</th><th>reading</th></tr>
+<tr><td>3.0</td><td>1.0</td><td>+2.0</td><td>0.1269</td><td>confident and right</td></tr>
+<tr><td>1.0</td><td>0.5</td><td>+0.5</td><td>0.4741</td><td>right, unsure</td></tr>
+<tr><td>1.0</td><td>1.0</td><td>0.0</td><td><strong>0.6931</strong></td><td>no opinion, = −log(0.5)</td></tr>
+<tr><td>0.5</td><td>1.0</td><td>−0.5</td><td>0.9741</td><td>wrong</td></tr>
+<tr><td>1.0</td><td>3.0</td><td>−2.0</td><td>2.1269</td><td>confidently wrong</td></tr>
+</table>
+<p>Because only differences matter, the absolute scale of the reward is arbitrary. That is <em>why</em> a baseline is not optional: without it, the numbers fed into the policy gradient have no meaningful zero.</p>
+<div class="warn"><p><strong>The ceiling nobody mentions.</strong> The reward model's ranking accuracy caps everything downstream. At 60% accuracy it emits near-noise, and no amount of PPO tuning will rescue the policy. Check that number first when an RLHF run disappoints.</p></div>
+
+<h2>GRPO, and why PPO is fading</h2>
+<p>PPO holds four models in memory: policy, reference, reward model, value model. On a large model that is brutal. <strong>GRPO deletes the value model.</strong> Instead of learning a baseline, sample several responses to the same prompt and use the group's own mean as the baseline:</p>
+<div class="eq">A<sub>i</sub>  =  ( R<sub>i</sub> − mean(R<sub>group</sub>) ) / std(R<sub>group</sub>)</div>
+<p>Legitimate for exactly the reason given earlier: any baseline independent of the sampled action leaves the estimator unbiased, and a group mean qualifies. By construction roughly half the group gets a positive advantage and half negative.</p>
+
+<h2>So which do you actually use?</h2>
+<table>
+<tr><th></th><th>RLHF / PPO</th><th>GRPO</th><th>DPO</th></tr>
+<tr><td><strong>Reward model</strong></td><td>trained separately</td><td>a function or verifier</td><td><strong>none</strong></td></tr>
+<tr><td><strong>Value model</strong></td><td>yes</td><td>none</td><td>none</td></tr>
+<tr><td><strong>Generates while training</strong></td><td>yes, the slow part</td><td>yes, several per prompt</td><td><strong>no</strong></td></tr>
+<tr><td><strong>Models in memory</strong></td><td>4</td><td>2</td><td>2, one frozen</td></tr>
+<tr><td><strong>Stability</strong></td><td>notoriously fiddly</td><td>better</td><td>well-behaved</td></tr>
+<tr><td><strong>Use when</strong></td><td>large preference data, need online exploration</td><td>the answer is checkable, as in maths or code</td><td><strong>you have preference pairs. Start here</strong></td></tr>
+</table>
+<p>DPO showed that for the specific reward model RLHF uses, the optimal policy has a closed form. Rearranged, the reward model cancels out and you are left with a supervised-looking classification loss over preference pairs. No sampling, no reward model, no value model, no clipping. For a grounded product assistant that is the right tool, which is why notebook 06 used it.</p>
+
+<h2>Six things to be able to say</h2>
+<ul>
+<li><strong>Where the gradient comes from.</strong> The reward is a scalar multiplier on ∇log π. Sampling is never differentiated; log-probs are recomputed afterwards on tokens already produced.</li>
+<li><strong>Why a baseline exists.</strong> Variance reduction, and it is unbiased because it does not depend on the sampled action.</li>
+<li><strong>What clipping does</strong>, and that it is one-sided on purpose.</li>
+<li><strong>What β controls</strong>, and that DPO's β is the same leash.</li>
+<li><strong>Why the reward model's accuracy is the ceiling</strong> on everything downstream.</li>
+<li><strong>Why you would choose DPO</strong> for a grounded assistant, and when GRPO beats it.</li>
+</ul>
+
+<footer>Companion to <code>notebooks/09_rlhf_reward_to_weights.ipynb</code> in the Post-Training Lab. The three-token gradient shown here was verified against PyTorch autograd; they agree to six decimal places. Built 28 September 2026.</footer>
+</div>
+
+<script>
+const V=["good","okay","bad"];
+const $=id=>document.getElementById(id);
+function softmax(z){const m=Math.max(...z),e=z.map(x=>Math.exp(x-m)),s=e.reduce((a,b)=>a+b,0);return e.map(x=>x/s)}
+function render(){
+  const z=[+$("z0").value,+$("z1").value,+$("z2").value], R=+$("R").value, a=+$("act").value;
+  $("z0v").textContent=z[0].toFixed(1);$("z1v").textContent=z[1].toFixed(1);$("z2v").textContent=z[2].toFixed(1);
+  $("Rv").textContent=(R>=0?"+":"")+R.toFixed(2);
+  const p=softmax(z);
+  $("probs").innerHTML=V.map((t,i)=>`<div class="barrow"><span class="lbl">${t}</span><div class="bar" style="width:${(p[i]*100).toFixed(1)}%;${i==a?'':'opacity:.45'}"></div><span class="val">${p[i].toFixed(4)}</span></div>`).join("");
+  const lp=Math.log(p[a]), loss=-(R*lp);
+  $("lossbox").textContent=
+`sampled token   = ${V[a]}
+P(sampled)      = ${p[a].toFixed(4)}
+log P(sampled)  = ${lp.toFixed(4)}
+reward R        = ${R.toFixed(2)}
+
+L = -(R * log P) = -(${R.toFixed(2)} * ${lp.toFixed(4)}) = ${loss.toFixed(4)}`;
+  const g=[0,1,2].map(i=>-R*((i===a?1:0)-p[i]));
+  const mx=Math.max(0.001,...g.map(Math.abs));
+  $("grads").innerHTML=g.map((gi,i)=>{
+    const w=Math.abs(gi)/mx*46, left=gi<0;
+    return `<div class="barrow"><span class="lbl">${V[i]}</span>
+      <div style="display:flex;align-items:center;height:22px">
+        <div style="width:50%;display:flex;justify-content:flex-end">${left?`<div class="gbar gneg" style="width:${w*2}%"></div>`:""}</div>
+        <div style="width:1px;height:22px;background:var(--faint)"></div>
+        <div style="width:50%">${!left&&gi!==0?`<div class="gbar gpos" style="width:${w*2}%"></div>`:""}</div>
+      </div><span class="val">${gi>=0?"+":""}${gi.toFixed(4)}</span></div>`}).join("");
+  let msg;
+  if(Math.abs(R)<1e-9) msg="<strong>R = 0.</strong> Every gradient is exactly zero. With no reward there is no signal, however the policy behaved.";
+  else if(R>0) msg=`<strong>R is positive.</strong> <code>${V[a]}</code> has a negative gradient, so its logit rises and it becomes more likely. The other two fall, because probability must still sum to one.`;
+  else msg=`<strong>R is negative.</strong> Every sign has flipped. <code>${V[a]}</code> is pushed down and the alternatives rise.`;
+  $("verdict").innerHTML=msg;
+}
+function renderPPO(){
+  const r=+$("ratio").value,A=+$("adv").value,e=+$("eps").value;
+  $("ratiov").textContent=r.toFixed(2);$("advv").textContent=(A>=0?"+":"")+A.toFixed(2);$("epsv").textContent=e.toFixed(2);
+  const un=r*A, cl=Math.min(Math.max(r,1-e),1+e)*A, obj=Math.min(un,cl);
+  $("ppobox").textContent=
+`ratio r            = ${r.toFixed(3)}
+advantage A        = ${A.toFixed(2)}
+clip range         = [${(1-e).toFixed(2)}, ${(1+e).toFixed(2)}]
+
+unclipped  r * A   = ${un.toFixed(4)}
+clipped            = ${cl.toFixed(4)}
+objective = min()  = ${obj.toFixed(4)}
+loss      = -obj   = ${(-obj).toFixed(4)}`;
+  let m;
+  const outside = r>1+e||r<1-e;
+  if(Math.abs(A)<1e-9) m="<strong>A = 0.</strong> The response was exactly as good as expected, so there is nothing to learn from it.";
+  else if(!outside) m="<strong>Inside the trust region.</strong> Clipping is inactive; the objective is just r × A.";
+  else if(A>0) m="<strong>Clipped.</strong> Positive advantage and the ratio has run past 1+ε, so the gain is capped. One lucky sample cannot run away with the policy.";
+  else m="<strong>Not capped.</strong> Negative advantage, so PPO keeps pushing this response down even far outside the trust region. The clip is one-sided by design.";
+  $("ppoverdict").innerHTML=m;
+}
+["z0","z1","z2","R","act"].forEach(i=>$(i).addEventListener("input",render));
+["ratio","adv","eps"].forEach(i=>$(i).addEventListener("input",renderPPO));
+render();renderPPO();
+</script>
+</body></html>

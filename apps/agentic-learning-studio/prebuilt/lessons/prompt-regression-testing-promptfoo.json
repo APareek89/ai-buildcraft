@@ -1,0 +1,981 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Prompt Regression Testing with promptfoo",
+    "title": "Prompt Regression Testing with promptfoo",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Prompt Regression Testing with promptfoo is practical when learners can apply it to this concrete case: A release changes the refund-policy prompt and must prove old behavior still works. By the end, they should be able to build or review Promptfoo regression pack with assertions and release gates, measure known behaviors preserved after prompt edits, and catch the failure where the new prompt passes happy paths but fails refusal and citation cases."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Prompt Regression Testing with promptfoo",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Prompt Regression Testing with promptfoo: mental map",
+    "caption": "Use promptfoo to protect prompt behavior with cases, assertions, provider matrices, CI gates, and triage loops.",
+    "oneLineThesis": "Prompt regression testing is about preserving important behavior across prompt and model changes, not freezing exact prose.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Prompt tests protect behavior, not exact wording",
+        "sub": "Start by deciding what the release must not break.",
+        "what": "Learners anchor promptfoo in release behavior rather than tool syntax.",
+        "relevance": "This prevents green tests that ignore refusals, citations, or policy boundaries.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Anchor the prompt release in behaviors that must survive wording changes.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Cases need inputs, expected properties, and slices",
+        "sub": "A good promptfoo suite is a small dataset, not a list of vibes.",
+        "what": "Learners design test cases that explain what each example protects.",
+        "relevance": "This prevents a suite of happy paths that misses high-risk slices.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Turn refund scenarios into slice-labeled promptfoo test cases.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Assertions mix deterministic checks and rubric judges",
+        "sub": "Use hard checks for contracts and judges for semantic quality.",
+        "what": "Learners choose assertion types rather than outsourcing judgment to one score.",
+        "relevance": "This catches failures that a broad quality rubric would miss.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Map each refund behavior to a hard assertion or rubric check.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Provider and prompt matrices expose release tradeoffs",
+        "sub": "The same case should run across prompt and model candidates.",
+        "what": "Learners see the actual config shape that makes regression testing repeatable.",
+        "relevance": "This prevents a single lucky run from becoming a release decision.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Run the same refund cases across prompt versions and providers.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "CI gates need budgets, baselines, and triage",
+        "sub": "Regression testing becomes useful when failures change release behavior.",
+        "what": "Learners close the loop between promptfoo runs and release decisions.",
+        "relevance": "This stops evals from becoming optional reports nobody reads.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Turn matrix results into release gates and regression-maintenance rules.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "builds"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "checks"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "compares"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "gates"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Prompt tests protect behavior, not exact wording",
+      "sub": "Start by deciding what the release must not break.",
+      "summary": "The regression target is a behavior contract for prompt changes.",
+      "objectives": [
+        "Explain why exact-output snapshots are brittle for LLMs.",
+        "Define behavior-level checks for a concrete prompt edit.",
+        "Identify critical slices before writing config."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The prompt changed; the product promise did not",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a team rewrites a refund-policy prompt to sound warmer. The new answer is friendlier, but it stops citing the policy page and gives refunds for cases that need escalation. A manual read of three happy paths misses the regression."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "promptfoo helps by running prompts, providers, and tests as a repeatable matrix. The important move is pedagogical: test the behavior contract. The answer may use different words, but it must cite policy, refuse unsupported requests, keep the JSON shape, and avoid promising unauthorized actions."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_promptfoo_intro",
+            "kb_eval_frameworks",
+            "kb_regression_testing"
+          ],
+          "analogy": "A prompt regression suite is a seatbelt check, not a handwriting comparison."
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Worked behavior contract: refund prompt v4 to v5",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The team writes four preserved behaviors: cite the refund terms for eligibility, refuse automatic refunds after the cutoff, ask for account review when exception data is missing, and output JSON with decision, rationale, citations, and escalation_needed."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Happy path: eligible refund with citation."
+                  }
+                ],
+                [
+                  {
+                    "text": "Refusal path: outside window, no automatic refund."
+                  }
+                ],
+                [
+                  {
+                    "text": "Missing-data path: account status absent, ask for escalation."
+                  }
+                ],
+                [
+                  {
+                    "text": "Injection path: user asks the model to ignore policy."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_promptfoo_intro",
+            "kb_regression_testing"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Behavior contract",
+          "prompt": "What should a prompt regression test usually preserve?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Every adjective from the previous answer.",
+              "correct": false
+            },
+            {
+              "text": "Required behavior such as citations, refusal rules, and output shape.",
+              "correct": true
+            },
+            {
+              "text": "Only the average token count.",
+              "correct": false
+            }
+          ],
+          "explanation": "LLM outputs vary; tests should focus on product-critical properties.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_regression_testing"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_promptfoo_intro",
+        "kb_eval_frameworks",
+        "kb_regression_testing"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Cases need inputs, expected properties, and slices",
+      "sub": "A good promptfoo suite is a small dataset, not a list of vibes.",
+      "summary": "Regression cases should include scenario, variables, expected properties, and metadata.",
+      "objectives": [
+        "Create cases with vars, expected outcomes, and slice metadata.",
+        "Separate critical cases from exploratory cases.",
+        "Use production failures as durable examples."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "A case should say what failure it catches",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Each promptfoo case should include the input variables, the product slice, expected properties, and severity. A case that says only \"refund question\" is weak. A case that says slice=refund_cutoff, severity=critical, expected_citation=refund_terms, expected_decision=deny is useful."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_promptfoo_intro",
+            "kb_eval_frameworks"
+          ]
+        },
+        {
+          "id": "m2_worked",
+          "kind": "functionalExample",
+          "title": "Case pack for refunds",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Case 1 asks for a refund after 12 days and expects approval with a citation. Case 2 asks after 45 days and expects denial plus escalation option. Case 3 provides no account status and expects a question or tool call. Case 4 contains an instruction to ignore the policy and expects the model to treat it as user text, not authority."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Spaced recall: bring back module 1 and ask which behavior each case protects."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_regression_testing"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_promptfoo_intro",
+        "kb_eval_frameworks",
+        "kb_regression_testing"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Assertions mix deterministic checks and rubric judges",
+      "sub": "Use hard checks for contracts and judges for semantic quality.",
+      "summary": "promptfoo assertions should match the risk of the behavior.",
+      "objectives": [
+        "Choose contains, regex, JSON/schema, JavaScript, and rubric-style checks appropriately.",
+        "Keep LLM judge checks secondary to hard contract checks.",
+        "Avoid making weak metrics look official."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Hard contracts before fuzzy grading",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use deterministic assertions for things the product cannot compromise: valid JSON, required keys, required citation field, no unauthorized refund promise, allowed tool name, or refusal phrase. Use rubric or LLM-judge checks for semantic quality: is the rationale grounded, concise, and helpful?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The KB warns that frameworks can make weak metrics look official. The fix is not to avoid judges; it is to put them after hard gates and version their rubrics."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_promptfoo_intro",
+            "kb_eval_frameworks",
+            "kb_regression_testing"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Assertion choice for prompt regressions",
+          "criteria": [
+            "Behavior",
+            "Best check",
+            "Failure it catches"
+          ],
+          "options": [
+            {
+              "name": "JSON contract",
+              "cells": [
+                {
+                  "criterion": "Behavior",
+                  "text": "JSON contract",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best check",
+                  "text": "schema or JavaScript assertion",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure it catches",
+                  "text": "renderer-breaking output",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "When downstream code parses the response.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Citation required",
+              "cells": [
+                {
+                  "criterion": "Behavior",
+                  "text": "Citation required",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best check",
+                  "text": "contains/regex plus source field check",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure it catches",
+                  "text": "unsupported policy answer",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "When grounding is a release blocker.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Semantic rationale",
+              "cells": [
+                {
+                  "criterion": "Behavior",
+                  "text": "Semantic rationale",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best check",
+                  "text": "versioned rubric judge",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure it catches",
+                  "text": "thin or misleading explanation",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "After hard checks pass.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Injection handling",
+              "cells": [
+                {
+                  "criterion": "Behavior",
+                  "text": "Injection handling",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best check",
+                  "text": "negative case plus forbidden action check",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure it catches",
+                  "text": "user text overriding policy",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "When prompts see untrusted input.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_promptfoo_intro",
+            "kb_eval_frameworks"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_promptfoo_intro",
+        "kb_eval_frameworks",
+        "kb_regression_testing"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Provider and prompt matrices expose release tradeoffs",
+      "sub": "The same case should run across prompt and model candidates.",
+      "summary": "promptfoo matrices show whether a change is robust or model-specific.",
+      "objectives": [
+        "Read a promptfoo-style matrix config.",
+        "Predict the failure caused by removing a citation assertion.",
+        "Compare prompt and provider candidates without hiding cost."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Minimal promptfoo config for refund prompt regression",
+          "language": "yaml",
+          "code": "prompts:\n  - file://prompts/refund_v4.txt\n  - file://prompts/refund_v5.txt\nproviders:\n  - openai:gpt-5.5\n  - openai:gpt-5.5-mini\n\ntests:\n  - vars:\n      question: \"I used the subscription for 45 days. Can I get a refund?\"\n      policy_excerpt: \"Refunds are automatic only within 30 days. After that, escalate for review.\"\n    metadata:\n      slice: refund_cutoff\n      severity: critical\n    assert:\n      - type: contains\n        value: \"30 days\"\n      - type: contains\n        value: \"escalate\"\n      - type: javascript\n        value: \"output.includes('refund') && !output.includes('automatic refund approved')\"\n      - type: llm-rubric\n        value: \"The answer is grounded in the policy excerpt and does not invent eligibility.\"",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This config compares prompt versions and provider choices on the same critical case. In a real suite, add more cases and keep cost limits in CI."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the risk if the contains assertion for \"escalate\" is removed while the rubric remains.",
+            "answer": "The suite may pass an answer that sounds grounded but omits the required escalation path. Rubrics are useful, but hard product obligations should have hard assertions."
+          },
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_promptfoo_intro",
+            "kb_eval_frameworks"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify the AI-generated promptfoo config",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: cases include slice and severity; critical cases have deterministic assertions; rubric wording is versioned; providers match the release candidates; the suite runs the real prompt path; secrets are not embedded in config; and CI has a budget limit."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_regression_testing",
+            "canon_promptfoo_intro"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_promptfoo_intro",
+        "kb_eval_frameworks",
+        "kb_regression_testing"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "CI gates need budgets, baselines, and triage",
+      "sub": "Regression testing becomes useful when failures change release behavior.",
+      "summary": "A promptfoo suite should block, warn, or route review based on severity.",
+      "objectives": [
+        "Define pass thresholds and triage rules.",
+        "Handle flaky judge checks without ignoring failures.",
+        "Promote production incidents into future cases."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "A failing case needs an owner and a decision",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "CI should not merely upload a pretty table. Critical hard-gate failures block release. Medium semantic failures route to reviewer. Exploratory failures create tickets or dataset candidates. Judge flakiness should be fixed by better rubrics, deterministic checks, or quarantine with a dated reason, not ignored forever."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_regression_testing",
+            "canon_promptfoo_intro"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Gate releases on critical behavior, review semantic drift, and retire stale cases deliberately.",
+          "useWhen": "Use CI prompt regression when prompts, providers, retrieval, or model settings change and old behavior must be preserved.",
+          "avoidWhen": "Avoid making CI depend only on expensive or flaky LLM-judge checks, and avoid keeping stale baselines that encode known-bad behavior.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_regression_testing"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "CI behavior",
+          "prompt": "What should happen when a critical citation assertion fails in CI?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Ship if the answer sounds polite.",
+              "correct": false
+            },
+            {
+              "text": "Block the prompt release until fixed or explicitly waived with owner and rationale.",
+              "correct": true
+            },
+            {
+              "text": "Delete the case because LLMs vary.",
+              "correct": false
+            }
+          ],
+          "explanation": "Critical deterministic failures should change release behavior.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_regression_testing"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_regression_testing",
+        "canon_promptfoo_intro"
+      ]
+    }
+  ],
+  "glossary": {
+    "eval": {
+      "id": "eval",
+      "label": "Eval",
+      "laymanDefinition": "A repeatable test of model or system behavior against expected criteria.",
+      "technicalNote": "In these lessons, evals are release evidence: they combine cases, assertions, scores, and review rules.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_promptfoo_intro"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A structured record of one run, including spans, inputs, outputs, metadata, and scores.",
+      "technicalNote": "Traces make failures diagnosable by showing which retrieval, model, tool, or scoring step produced the result.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_promptfoo_intro"
+      ]
+    },
+    "dataset": {
+      "id": "dataset",
+      "label": "Dataset",
+      "laymanDefinition": "A curated set of examples used for evaluation, debugging, or regression checks.",
+      "technicalNote": "A useful eval dataset stores inputs, expected behavior, metadata slices, and source or rubric references.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_promptfoo_intro"
+      ]
+    },
+    "judge": {
+      "id": "judge",
+      "label": "LLM-as-judge",
+      "laymanDefinition": "An LLM used to grade or compare outputs with a rubric.",
+      "technicalNote": "LLM judges are semantic scorers, not final authority; their prompts, model, thresholds, and spot checks must be versioned.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_promptfoo_intro"
+      ],
+      "acronymExpansion": "Large language model as judge"
+    },
+    "regression": {
+      "id": "regression",
+      "label": "Regression",
+      "laymanDefinition": "A previously working behavior that breaks after a prompt, model, data, or code change.",
+      "technicalNote": "Regression testing protects known capabilities and safety boundaries while allowing harmless wording variation.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_promptfoo_intro"
+      ]
+    },
+    "rubric": {
+      "id": "rubric",
+      "label": "Rubric",
+      "laymanDefinition": "A scoring guide that states what a good answer or run must demonstrate.",
+      "technicalNote": "Rubrics make qualitative judgment reviewable by naming criteria, severity, examples, and thresholds.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_promptfoo_intro"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Prompt Regression Testing with promptfoo",
+    "themes": [
+      {
+        "name": "Regression gate",
+        "questions": [
+          {
+            "q": "Which old behaviors must the new prompt prove it still preserves?",
+            "why": "Prompt changes can improve tone while breaking refusals, citations, format, or tool-use boundaries.",
+            "opts": [
+              "Behavior cases with assertions",
+              "Manual spot check only",
+              "Exact prose snapshot"
+            ],
+            "rot": "Assert required properties and critical examples; avoid brittle tests that demand identical wording."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: rebuild promptfoo regression testing by naming the changed prompt, behavior cases, deterministic assertions, rubric checks, provider matrix, CI budget, and triage rule for failed cases."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "promptfoo regression path from prompt change to release gate",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Prompt tests protect behavior, not exact wording",
+          "sub": "Start by deciding what the release must not break.",
+          "what": "Learners anchor promptfoo in release behavior rather than tool syntax.",
+          "relevance": "This prevents green tests that ignore refusals, citations, or policy boundaries.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Anchor the prompt release in behaviors that must survive wording changes.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Cases need inputs, expected properties, and slices",
+          "sub": "A good promptfoo suite is a small dataset, not a list of vibes.",
+          "what": "Learners design test cases that explain what each example protects.",
+          "relevance": "This prevents a suite of happy paths that misses high-risk slices.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Turn refund scenarios into slice-labeled promptfoo test cases.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Assertions mix deterministic checks and rubric judges",
+          "sub": "Use hard checks for contracts and judges for semantic quality.",
+          "what": "Learners choose assertion types rather than outsourcing judgment to one score.",
+          "relevance": "This catches failures that a broad quality rubric would miss.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Map each refund behavior to a hard assertion or rubric check.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Provider and prompt matrices expose release tradeoffs",
+          "sub": "The same case should run across prompt and model candidates.",
+          "what": "Learners see the actual config shape that makes regression testing repeatable.",
+          "relevance": "This prevents a single lucky run from becoming a release decision.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Run the same refund cases across prompt versions and providers.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "CI gates need budgets, baselines, and triage",
+          "sub": "Regression testing becomes useful when failures change release behavior.",
+          "what": "Learners close the loop between promptfoo runs and release decisions.",
+          "relevance": "This stops evals from becoming optional reports nobody reads.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Turn matrix results into release gates and regression-maintenance rules.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "defines cases"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "asserts"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "compares"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates release"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Prompt tests protect behavior, not exact wording",
+        "detail": "The regression target is a behavior contract for prompt changes."
+      },
+      {
+        "step": 2,
+        "label": "Cases need inputs, expected properties, and slices",
+        "detail": "Regression cases should include scenario, variables, expected properties, and metadata."
+      },
+      {
+        "step": 3,
+        "label": "Assertions mix deterministic checks and rubric judges",
+        "detail": "promptfoo assertions should match the risk of the behavior."
+      },
+      {
+        "step": 4,
+        "label": "Provider and prompt matrices expose release tradeoffs",
+        "detail": "promptfoo matrices show whether a change is robust or model-specific."
+      },
+      {
+        "step": 5,
+        "label": "CI gates need budgets, baselines, and triage",
+        "detail": "A promptfoo suite should block, warn, or route review based on severity."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Prompt tests protect behavior, not exact wording\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Provider and prompt matrices expose release tradeoffs\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"CI gates need budgets, baselines, and triage\" define the release or production gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a promptfoo regression pack for a refund-policy prompt. Include two prompt versions, two providers or model settings, six cases with slice metadata, deterministic citation/refusal checks, one rubric check, and a CI threshold. Next rung: add red-team probes and production-derived cases.",
+      "scopedTo": "Prompt releases",
+      "checks": [
+        "Cases cover happy path, refusal, citation, and edge cases.",
+        "Assertions check behavior rather than exact prose.",
+        "Provider/prompt matrix shows tradeoffs.",
+        "CI gate has a triage process for failures."
+      ]
+    }
+  },
+  "citations": {
+    "canon_promptfoo_intro": {
+      "id": "canon_promptfoo_intro",
+      "kind": "canonical",
+      "title": "promptfoo documentation",
+      "url": "https://www.promptfoo.dev/docs/intro/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb_eval_frameworks": {
+      "id": "kb_eval_frameworks",
+      "kind": "kb",
+      "title": "KB: Eval Frameworks",
+      "url": "https://www.promptfoo.dev/docs/intro/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb_regression_testing": {
+      "id": "kb_regression_testing",
+      "kind": "kb",
+      "title": "KB: Regression Testing for Agentic Systems",
+      "url": "https://www.promptfoo.dev/docs/intro/",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

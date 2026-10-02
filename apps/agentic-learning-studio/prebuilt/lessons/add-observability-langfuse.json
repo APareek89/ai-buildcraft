@@ -1,0 +1,999 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Add Observability with Langfuse",
+    "title": "Add Observability with Langfuse",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Add Observability with Langfuse is practical when learners can apply it to this concrete case: A support agent sometimes gives slow unsupported answers and the team needs trace-level evidence. By the end, they should be able to build or review Langfuse tracing plan for prompts, retrieval, tools, and scores, measure percentage of bad answers with actionable traces, and catch the failure where only final answers are logged, so root cause is invisible."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Add Observability with Langfuse",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Add Observability with Langfuse: mental map",
+    "caption": "Build Langfuse observability into a support agent one trace contract at a time.",
+    "oneLineThesis": "A Langfuse integration is done when bad answers produce actionable traces, not when the SDK import compiles.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Define the trace contract before touching the SDK",
+        "sub": "Write what evidence a useful trace must contain.",
+        "what": "Learners begin with observable behavior instead of library ceremony.",
+        "relevance": "This prevents a build that emits traces but cannot answer root-cause questions.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Specify the fields required to debug one slow unsupported answer.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Instrument the request boundary and model call",
+        "sub": "Create one parent trace and attach model metadata consistently.",
+        "what": "Learners wire the first useful trace around the production request path.",
+        "relevance": "This keeps model calls from floating outside the user incident.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Wrap the support request and model call with stable trace metadata.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Capture retrieval, tools, and scores as separate spans",
+        "sub": "Add child spans where the agent can fail differently.",
+        "what": "Learners add the observability pieces that explain bad answers.",
+        "relevance": "This catches unsupported answers whose model span looks normal.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Record evidence, tool effects, and quality scores as separate child spans.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Write a verifier for trace completeness",
+        "sub": "Make observability fail loudly when a required field disappears.",
+        "what": "Learners treat traces as product output that can be tested.",
+        "relevance": "This prevents silent regressions where a refactor drops source IDs or scores.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Run a small test that rejects incomplete observability payloads.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Promote traces into datasets and release gates",
+        "sub": "Use observed failures to harden the next prompt or model change.",
+        "what": "Learners connect the build to ongoing evaluation and operations.",
+        "relevance": "This keeps observability from ending as a passive dashboard.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Turn failed traces into eval cases and retention-aware release gates.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "adds"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "tests"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "promotes"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Define the trace contract before touching the SDK",
+      "sub": "Write what evidence a useful trace must contain.",
+      "summary": "The first build artifact is a trace acceptance contract.",
+      "objectives": [
+        "Specify required trace and span fields.",
+        "Connect those fields to the support-agent failure being debugged.",
+        "Separate must-have evidence from nice dashboard fields."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Acceptance target: every bad answer has a usable trace",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A support agent sometimes gives slow unsupported answers, so the team defines the target trace before touching SDK code: every flagged answer should include a user-session hash, route, release SHA, prompt version, model, retrieval source IDs, tool status, token cost, latency, and groundedness score."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Do not start by asking where to paste the Langfuse SDK call. Start by asking which question the trace must answer: did the right evidence arrive, did the model use it, did the tool agree, and did a score catch the issue?"
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Trace contract for the support-agent slice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Required trace fields: name=support_answer, session_hash, release_sha, prompt_version, route, model, total_tokens, cost_usd. Required spans: retrieve_policy, call_account_tool, draft_answer, validate_citations, score_groundedness."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Failure test: delete source_ids from retrieve_policy and the verifier must fail."
+                  }
+                ],
+                [
+                  {
+                    "text": "Failure test: omit score_groundedness and the release gate must fail."
+                  }
+                ],
+                [
+                  {
+                    "text": "Failure test: include raw account_id and the privacy check must fail."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Build starting point",
+          "prompt": "What is the first artifact in this observability build?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A screenshot of the Langfuse dashboard.",
+              "correct": false
+            },
+            {
+              "text": "A trace contract describing required fields and spans.",
+              "correct": true
+            },
+            {
+              "text": "A model upgrade plan.",
+              "correct": false
+            }
+          ],
+          "explanation": "The contract makes the SDK integration measurable.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_observability"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langfuse_tracing",
+        "kb_observability"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Instrument the request boundary and model call",
+      "sub": "Create one parent trace and attach model metadata consistently.",
+      "summary": "Boundary instrumentation ties user-facing work to model behavior.",
+      "objectives": [
+        "Place the parent trace at the request boundary.",
+        "Record prompt, model, and release metadata on the model span.",
+        "Avoid trace names that contain user-specific values."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The request boundary owns the parent trace",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Create the trace when the support request enters the application. That parent should survive routing, retrieval, tool calls, model calls, validation, and response formatting. If each helper creates its own trace, a single bad answer becomes scattered evidence."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model span should include model, provider, prompt_version, temperature or decoding settings, input/output token counts, and cost. Store the prompt version, not a long prompt name with a ticket number embedded in it."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Boundary wiring review",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A good AI-generated integration starts trace support_answer at the HTTP handler or job worker, then passes the trace context into retrieve_policy and draft_answer. A weak integration starts a trace inside the LLM helper only; it cannot show the retrieval context that caused the answer."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Verify the trace has one parent ID for the whole request."
+                  }
+                ],
+                [
+                  {
+                    "text": "Verify model metadata is on the model span, not only in logs."
+                  }
+                ],
+                [
+                  {
+                    "text": "Verify errors and retries attach to the same trace."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langfuse_tracing",
+        "kb_observability"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Capture retrieval, tools, and scores as separate spans",
+      "sub": "Add child spans where the agent can fail differently.",
+      "summary": "The integration becomes useful when evidence, action, and quality are distinct.",
+      "objectives": [
+        "Add retrieval span fields for source IDs and ranking.",
+        "Add tool span fields for validated arguments and status.",
+        "Attach a score that can promote failures into evals."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Different spans imply different owners",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Retrieval failures usually belong to indexing, chunking, filters, or reranking. Tool failures belong to authorization, validation, external service status, or argument construction. Scoring failures belong to eval rubric, threshold, or product policy. Separate spans make ownership clear."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For the support agent, retrieve_policy stores query, filters, top_k, source_ids, and reranker. call_account_tool stores tool name, validated args shape, status, and latency. score_groundedness stores score name, score version, value, and threshold."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "canon_langfuse_eval",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Child span checklist",
+          "criteria": [
+            "Span",
+            "Minimum fields",
+            "Owner"
+          ],
+          "options": [
+            {
+              "name": "retrieve_policy",
+              "cells": [
+                {
+                  "criterion": "Span",
+                  "text": "query, filter, top_k, source_ids, rank positions",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Minimum fields",
+                  "text": "Search/RAG owner",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Owner",
+                  "text": "retrieve_policy",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the retrieve_policy row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "call_account_tool",
+              "cells": [
+                {
+                  "criterion": "Span",
+                  "text": "tool, argument schema, status, latency, error class",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Minimum fields",
+                  "text": "Integration owner",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Owner",
+                  "text": "call_account_tool",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the call_account_tool row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "draft_answer",
+              "cells": [
+                {
+                  "criterion": "Span",
+                  "text": "prompt_version, model, tokens, cost, finish reason",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Minimum fields",
+                  "text": "Prompt/model owner",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Owner",
+                  "text": "draft_answer",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the draft_answer row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "score_groundedness",
+              "cells": [
+                {
+                  "criterion": "Span",
+                  "text": "score_version, value, threshold, dataset_case_id",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Minimum fields",
+                  "text": "Eval owner",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Owner",
+                  "text": "score_groundedness",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the score_groundedness row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "canon_langfuse_eval"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langfuse_tracing",
+        "canon_langfuse_eval",
+        "kb_observability"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Write a verifier for trace completeness",
+      "sub": "Make observability fail loudly when a required field disappears.",
+      "summary": "A small verifier turns trace quality into a testable contract.",
+      "objectives": [
+        "Implement a trace completeness check.",
+        "Use predict-then-reveal to reason about missing fields.",
+        "Review AI-generated instrumentation with a concrete checklist."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Trace completeness verifier for the Langfuse build",
+          "language": "python",
+          "code": "trace = {\n    \"metadata\": {\"release_sha\": \"9f31c2a\", \"prompt_version\": \"support-v3\", \"model\": \"gpt-5.5\"},\n    \"spans\": {\n        \"retrieve_policy\": {\"source_ids\": [\"refunds#45\"], \"top_k\": 5},\n        \"call_account_tool\": {\"status\": \"ok\", \"validated_args\": True},\n        \"draft_answer\": {\"input_tokens\": 900, \"output_tokens\": 120, \"cost_usd\": 0.004},\n        \"score_groundedness\": {\"score\": 0.91, \"threshold\": 0.85},\n    },\n}\n\nrequired = {\n    \"metadata\": [\"release_sha\", \"prompt_version\", \"model\"],\n    \"spans.retrieve_policy\": [\"source_ids\", \"top_k\"],\n    \"spans.call_account_tool\": [\"status\", \"validated_args\"],\n    \"spans.draft_answer\": [\"input_tokens\", \"output_tokens\", \"cost_usd\"],\n    \"spans.score_groundedness\": [\"score\", \"threshold\"],\n}\n\nmissing = []\nfor path, fields in required.items():\n    target = trace\n    for part in path.split('.'):\n        target = target.get(part, {})\n    for field in fields:\n        if field not in target:\n            missing.append(f\"{path}.{field}\")\n\nprint(\"OK\" if not missing else {\"missing\": missing})",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use this as a release test around the payload your Langfuse instrumentation emits. The exact SDK calls can change; the evidence contract should not disappear quietly."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the result if retrieve_policy.source_ids is removed from the trace.",
+            "answer": "The script prints a missing list containing spans.retrieve_policy.source_ids. That is the exact failure this build is meant to catch: an answer can no longer be tied to evidence."
+          },
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify the AI-generated integration",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: the parent trace starts at the request boundary; each child span has stable names; source IDs are captured without full private documents; tool args are shape-validated before logging; cost includes retries; score version and threshold are stored; and the verifier fails when a required span or field is absent."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langfuse_tracing",
+        "kb_observability"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Promote traces into datasets and release gates",
+      "sub": "Use observed failures to harden the next prompt or model change.",
+      "summary": "The build closes when traces feed regression tests and governance.",
+      "objectives": [
+        "Convert a failed trace into a redacted dataset item.",
+        "Define a release gate using trace-derived scores.",
+        "Add privacy and retention rules before broader rollout."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Observability should improve the next release",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "After the first incident, the team should not merely stare at a dashboard. They should turn the redacted input, expected policy citation, and score rubric into a dataset case. The next prompt or model change must pass that case before deployment."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Privacy hardening belongs here too: decide which fields are redacted, which traces are sampled, who can view raw content, and when trace data expires."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langfuse_eval",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "A trace is production-ready when it can become a safe regression case.",
+          "useWhen": "A failed answer represents a recurring product risk. The trace includes enough evidence to define expected behavior. Sensitive fields can be removed or replaced with stable surrogates.",
+          "avoidWhen": "The trace depends on private content that cannot be safely retained. The failure is a one-off infrastructure outage already covered elsewhere. No owner will maintain the score or dataset case.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langfuse_eval",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Release gate",
+          "prompt": "What should happen to a high-severity failed trace after redaction?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Delete it immediately and rely on memory.",
+              "correct": false
+            },
+            {
+              "text": "Promote it into a dataset case that future releases must pass.",
+              "correct": true
+            },
+            {
+              "text": "Use it only as a dashboard screenshot.",
+              "correct": false
+            }
+          ],
+          "explanation": "Observability becomes durable when incidents enter regression testing.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_langfuse_eval"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langfuse_eval",
+        "kb_observability"
+      ]
+    }
+  ],
+  "glossary": {
+    "prototype": {
+      "id": "prototype",
+      "label": "Prototype",
+      "laymanDefinition": "A narrow build slice that proves one behavior before full production hardening.",
+      "technicalNote": "A prototype should include the smallest runnable path, its failure test, and the evidence needed to decide the next build step.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langfuse_tracing"
+      ]
+    },
+    "retriever": {
+      "id": "retriever",
+      "label": "Retriever",
+      "laymanDefinition": "A component that selects candidate context or records for a question.",
+      "technicalNote": "Retrievers need source IDs, filters, top-k choices, and evaluation because missing evidence changes every downstream answer.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langfuse_tracing"
+      ]
+    },
+    "validator": {
+      "id": "validator",
+      "label": "Validator",
+      "laymanDefinition": "A deterministic or model-assisted check that accepts, rejects, or repairs an output.",
+      "technicalNote": "Validators protect contracts such as schema, citations, allowed tools, approval rules, and safety policy.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langfuse_tracing"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A structured record of one run, including spans, inputs, outputs, metadata, and scores.",
+      "technicalNote": "Traces make failures diagnosable by showing which retrieval, model, tool, or scoring step produced the result.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langfuse_tracing"
+      ]
+    },
+    "deployment": {
+      "id": "deployment",
+      "label": "Deployment",
+      "laymanDefinition": "A released runtime configuration with model, prompt, data, infrastructure, monitoring, and rollback decisions.",
+      "technicalNote": "Deployment quality depends on observability, eval gates, ownership, and privacy controls, not only code running.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langfuse_tracing"
+      ]
+    },
+    "acceptance_test": {
+      "id": "acceptance_test",
+      "label": "Acceptance test",
+      "laymanDefinition": "A test that proves a feature meets its release contract.",
+      "technicalNote": "Acceptance tests should be tied to user-visible behavior and include critical failure cases, not just happy paths.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langfuse_tracing"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Add Observability with Langfuse",
+    "themes": [
+      {
+        "name": "Build gate",
+        "questions": [
+          {
+            "q": "What trace evidence must exist before this support agent ships?",
+            "why": "The build should prove retrieval, model, tool, score, cost, and version fields are visible for one representative bad answer.",
+            "opts": [
+              "Trace contract with verifier",
+              "SDK import only",
+              "Manual screenshot review"
+            ],
+            "rot": "Define the contract first, instrument the boundary second, and gate the release with trace completeness."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: rebuild the Langfuse implementation from memory by naming the trace contract, request boundary, child spans, verifier, dataset promotion rule, and privacy hardening step."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Langfuse build path from contract to release gate",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Define the trace contract before touching the SDK",
+          "sub": "Write what evidence a useful trace must contain.",
+          "what": "Learners begin with observable behavior instead of library ceremony.",
+          "relevance": "This prevents a build that emits traces but cannot answer root-cause questions.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Specify the fields required to debug one slow unsupported answer.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Instrument the request boundary and model call",
+          "sub": "Create one parent trace and attach model metadata consistently.",
+          "what": "Learners wire the first useful trace around the production request path.",
+          "relevance": "This keeps model calls from floating outside the user incident.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Wrap the support request and model call with stable trace metadata.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Capture retrieval, tools, and scores as separate spans",
+          "sub": "Add child spans where the agent can fail differently.",
+          "what": "Learners add the observability pieces that explain bad answers.",
+          "relevance": "This catches unsupported answers whose model span looks normal.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Record evidence, tool effects, and quality scores as separate child spans.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Write a verifier for trace completeness",
+          "sub": "Make observability fail loudly when a required field disappears.",
+          "what": "Learners treat traces as product output that can be tested.",
+          "relevance": "This prevents silent regressions where a refactor drops source IDs or scores.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Run a small test that rejects incomplete observability payloads.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Promote traces into datasets and release gates",
+          "sub": "Use observed failures to harden the next prompt or model change.",
+          "what": "Learners connect the build to ongoing evaluation and operations.",
+          "relevance": "This keeps observability from ending as a passive dashboard.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Turn failed traces into eval cases and retention-aware release gates.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "defines"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "captures"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "verifies"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "promotes"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Define the trace contract before touching the SDK",
+        "detail": "The first build artifact is a trace acceptance contract."
+      },
+      {
+        "step": 2,
+        "label": "Instrument the request boundary and model call",
+        "detail": "Boundary instrumentation ties user-facing work to model behavior."
+      },
+      {
+        "step": 3,
+        "label": "Capture retrieval, tools, and scores as separate spans",
+        "detail": "The integration becomes useful when evidence, action, and quality are distinct."
+      },
+      {
+        "step": 4,
+        "label": "Write a verifier for trace completeness",
+        "detail": "A small verifier turns trace quality into a testable contract."
+      },
+      {
+        "step": 5,
+        "label": "Promote traces into datasets and release gates",
+        "detail": "The build closes when traces feed regression tests and governance."
+      }
+    ],
+    "capstone": {
+      "prompt": "Add Langfuse-style observability to a toy support agent. Produce one trace with retrieval, model, tool, and score spans; run a completeness verifier; redact private fields; then promote one failed trace into a regression dataset item. Next rung: wire the same spans to CI evals.",
+      "scopedTo": "Build Projects",
+      "checks": [
+        "Trace contract exists before SDK wiring.",
+        "Every required child span appears in a failing case.",
+        "Verifier fails on missing source IDs or score.",
+        "Dataset promotion removes sensitive values."
+      ]
+    },
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Define the trace contract before touching the SDK\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Write a verifier for trace completeness\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Promote traces into datasets and release gates\" define the release or production gate?",
+        "fromModuleId": "m5"
+      }
+    ]
+  },
+  "citations": {
+    "canon_langfuse_tracing": {
+      "id": "canon_langfuse_tracing",
+      "kind": "canonical",
+      "title": "Langfuse tracing documentation",
+      "url": "https://langfuse.com/docs/tracing",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_langfuse_eval": {
+      "id": "canon_langfuse_eval",
+      "kind": "canonical",
+      "title": "Langfuse evaluation overview",
+      "url": "https://langfuse.com/docs/evaluation/overview",
+      "asOfDate": "2026-06-22"
+    },
+    "kb_observability": {
+      "id": "kb_observability",
+      "kind": "kb",
+      "title": "KB: Tracing and Observability",
+      "url": "https://langfuse.com/docs/tracing",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

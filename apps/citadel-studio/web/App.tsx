@@ -1,0 +1,6314 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Background,
+  Controls,
+  Handle,
+  Position,
+  ReactFlow,
+  MarkerType,
+  type ReactFlowInstance,
+  type Connection,
+  type NodeProps,
+  type Node as FlowNode,
+} from "@xyflow/react";
+import {
+  ArrowDownToLine,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  Blocks,
+  Braces,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Circle,
+  CircleHelp,
+  Clock3,
+  Code2,
+  FileCode2,
+  FlaskConical,
+  GitBranch,
+  KeyRound,
+  Layers3,
+  Loader2,
+  Moon,
+  MoreHorizontal,
+  Maximize2,
+  Minimize2,
+  Scan,
+  PanelRight,
+  Focus,
+  Play,
+  Plus,
+  Search,
+  Settings2,
+  ShieldCheck,
+  Square,
+  Sun,
+  TerminalSquare,
+  Trash2,
+  Workflow,
+  X,
+} from "lucide-react";
+import type {
+  Alignment,
+  Comparison,
+  Credential,
+  EvalCase,
+  EvalReport,
+  EvalSuite,
+  Graph,
+  GraphEdge,
+  GraphNode,
+  Model,
+  ModelConfig,
+  ObservedSpan,
+  Preflight,
+  Project,
+  Provider,
+  RedPlan,
+  Run,
+  RunEvent,
+  SourceRef,
+} from "../shared/types";
+
+import {
+  layoutGraph,
+  selectPresentationEdges,
+  recordedGraph,
+} from "./graph-presentation";
+
+import { PortfolioSession, ThemeButton, expireSession, captureSession, type PortfolioAccount } from "./portfolio-auth";
+
+type GitHubStatus = {
+  connected: boolean;
+  authSource: "token" | "gh" | null;
+  login?: string;
+};
+type ConnectionStatus = {
+  native: { enabled: boolean; endpoint: string; lastReceivedAt?: string };
+  langfuse: {
+    connected: boolean;
+    url?: string;
+    projectName?: string;
+    lastSyncAt?: string;
+  };
+};
+type MappingStatus = {
+  method: "ai" | "static";
+  model?: string;
+  discoveredFiles: number;
+  candidates: number;
+  mappedCandidates: number;
+  unresolvedCandidates: number;
+  sourceFilesRead: number;
+  truncated: boolean;
+  notes: string[];
+  error?: string;
+};
+type ExternalEvidence = {
+  kind: "workbench" | "langfuse";
+  traceId: string;
+  partial: boolean;
+  spans: ObservedSpan[];
+};
+type SourcePreview = {
+  key: string;
+  source: SourceRef;
+  content?: string;
+  truncated?: boolean;
+  startLine?: number;
+  error?: string;
+};
+type FolderReview = {
+  name: string;
+  files: { path: string; content: string }[];
+  skipped: Record<string, number>;
+  totalBytes: number;
+};
+const DEFAULT_BRAND_RULES =
+  "Be clear, accurate and respectful. State uncertainty. Never claim a tool action succeeded without evidence.";
+const DEFAULT_RUBRIC =
+  "Assess whether the response satisfies the expected behavior. Use only the supplied evidence.";
+const DEFAULT_CASES = JSON.stringify(
+  [
+    {
+      id: "case-1",
+      input: "Explain what this assistant can help with.",
+      expected: "A clear, relevant response.",
+      assertions: [{ type: "not-contains", value: "API_KEY" }],
+    },
+  ],
+  null,
+  2,
+);
+
+type Mode = "build" | "connect" | "redteam" | "models" | "evals";
+type Bootstrap = {
+  projects: Project[];
+  credentials: Credential[];
+  runs: Run[];
+  comparisons: Comparison[];
+  suites: EvalSuite[];
+  reports: EvalReport[];
+  redPlans: RedPlan[];
+  system: {
+    docker: boolean | { available: boolean };
+    localSecretsAvailable: boolean;
+    hosting?: {
+      mode: "local" | "hosted";
+      publicOrigin?: string;
+      localSource: boolean;
+    };
+  };
+};
+const EMPTY: Bootstrap = {
+  projects: [],
+  credentials: [],
+  runs: [],
+  comparisons: [],
+  suites: [],
+  reports: [],
+  redPlans: [],
+  system: { docker: false, localSecretsAvailable: false },
+};
+const MODES: {
+  id: Mode;
+  label: string;
+  icon: typeof Workflow;
+  description: string;
+  steps: string[];
+}[] = [
+  {
+    id: "build",
+    label: "Build",
+    icon: Blocks,
+    description: "From an idea to a working agent.",
+    steps: ["Align", "Review", "Run & Test", "Launch"],
+  },
+  {
+    id: "connect",
+    label: "Connect & Debug",
+    icon: GitBranch,
+    description: "Understand what your application actually does.",
+    steps: ["Connect", "Map", "Observe", "Diagnose"],
+  },
+  {
+    id: "redteam",
+    label: "Red Team",
+    icon: ShieldCheck,
+    description: "Find the edges before your users do.",
+    steps: ["Scope", "Test Plan", "Run", "Findings"],
+  },
+  {
+    id: "models",
+    label: "Model Lab",
+    icon: FlaskConical,
+    description: "Same task. Different models. Visible tradeoffs.",
+    steps: ["Configure", "Compare", "Graph Results"],
+  },
+  {
+    id: "evals",
+    label: "Evals",
+    icon: CheckCircle2,
+    description: "Turn expectations into repeatable checks.",
+    steps: ["Dataset", "Criteria", "Run", "Results"],
+  },
+];
+const PROVIDERS: Provider[] = [
+  "gemini",
+  "openai",
+  "anthropic",
+  "groq",
+  "openrouter",
+];
+const ROLES: GraphNode["role"][] = [
+  "orchestrator",
+  "agent",
+  "tool",
+  "validator",
+  "guardrail",
+  "output",
+  "resource",
+  "opaque",
+];
+const uid = () => crypto.randomUUID();
+const pretty = (x: unknown) => JSON.stringify(x, null, 2);
+const preferredModel = (models: Model[]) =>
+  models.find(
+    (m) => m.available && m.text && m.id === "gemini-3.5-flash-lite",
+  ) ||
+  models.find((m) => m.available && m.text && m.id.includes("flash-lite")) ||
+  models.find((m) => m.available && m.text);
+const terminal = (r?: Run) => !!r && !["queued", "running"].includes(r.status);
+const fmtDate = (s: string) =>
+  new Date(s).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const duration = (r: Run) =>
+  r.finishedAt
+    ? `${((+new Date(r.finishedAt) - +new Date(r.createdAt)) / 1000).toFixed(1)}s`
+    : "Running";
+async function api<T>(
+  path: string,
+  method = "GET",
+  body?: unknown,
+): Promise<T> {
+  const sessionAtStart = captureSession();
+  const res = await fetch(`/api${path}`, {
+    method,
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    if (res.status === 401) expireSession(sessionAtStart);
+    let e;
+    try {
+      e = await res.json();
+    } catch {
+      e = { error: res.statusText };
+    }
+    throw new Error(e.message || e.error || `Request failed (${res.status})`);
+  }
+  return res.json();
+}
+function Status({ value }: { value: string }) {
+  return (
+    <span className={`status status-${value}`}>
+      <span />
+      {value.replaceAll("-", " ")}
+    </span>
+  );
+}
+function Empty({
+  icon: Icon = Workflow,
+  title,
+  children,
+  action,
+}: {
+  icon?: typeof Workflow;
+  title: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="empty">
+      <span className="empty-icon">
+        <Icon size={25} />
+      </span>
+      <h3>{title}</h3>
+      <p>{children}</p>
+      {action}
+    </div>
+  );
+}
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      {children}
+      {hint && <small>{hint}</small>}
+    </label>
+  );
+}
+function Modal({
+  title,
+  kicker,
+  children,
+  onClose,
+  wide = false,
+}: {
+  title: string;
+  kicker?: string;
+  children: React.ReactNode;
+  onClose: () => void;
+  wide?: boolean;
+}) {
+  const dialog = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const focusable = () =>
+      Array.from(
+        dialog.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],[tabindex="0"]',
+        ) || [],
+      ).filter((el) => el.offsetParent !== null);
+    const raf = requestAnimationFrame(() => {
+      (
+        dialog.current?.querySelector<HTMLElement>("[autofocus]") ||
+        focusable()[0]
+      )?.focus();
+    });
+    const fn = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+      if (e.key === "Tab") {
+        const items = focusable();
+        const first = items[0],
+          last = items.at(-1);
+        if (!first) {
+          e.preventDefault();
+          return;
+        }
+        if (
+          e.shiftKey &&
+          (document.activeElement === first ||
+            !dialog.current?.contains(document.activeElement))
+        ) {
+          e.preventDefault();
+          last?.focus();
+        } else if (
+          !e.shiftKey &&
+          (document.activeElement === last ||
+            !dialog.current?.contains(document.activeElement))
+        ) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", fn);
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("keydown", fn);
+      if (previous?.isConnected) previous.focus();
+    };
+  }, []);
+  return (
+    <div
+      className="modal-backdrop"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <section
+        ref={dialog}
+        className={`modal ${wide ? "wide" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
+        <button
+          className="icon-button modal-close"
+          onClick={onClose}
+          aria-label="Close dialog"
+        >
+          <X size={19} />
+        </button>
+        {kicker && <span className="eyebrow">{kicker}</span>}
+        <h2>{title}</h2>
+        {children}
+      </section>
+    </div>
+  );
+}
+function initialSelection(graph: Graph) {
+  const node = graph.nodes.find((candidate) => !candidate.hidden);
+  return node ? { type: "node" as const, id: node.id } : null;
+}
+function AgentNode({
+  data,
+  selected,
+}: NodeProps<FlowNode<{ node: GraphNode; state: string; count: number }>>) {
+  const n = data.node;
+  return (
+    <div
+      className={`agent-node role-${n.role} ${selected ? "selected" : ""} state-${data.state}`}
+    >
+      <Handle id="flow-in" type="target" position={Position.Left} />
+      <Handle
+        id="feedback-in"
+        className="feedback-handle"
+        type="target"
+        position={Position.Top}
+        style={{ left: "35%" }}
+      />
+      <div className="node-top">
+        <span className="node-role">
+          {n.role === "orchestrator" ? (
+            <Workflow size={13} />
+          ) : n.role === "guardrail" ? (
+            <ShieldCheck size={13} />
+          ) : n.role === "tool" ? (
+            <TerminalSquare size={13} />
+          ) : (
+            <Blocks size={13} />
+          )}{" "}
+          {n.role}
+        </span>
+        {data.state === "running" ? (
+          <Loader2 size={13} className="spin" />
+        ) : (
+          <MoreHorizontal size={15} />
+        )}
+      </div>
+      <strong>{n.label}</strong>
+      <p>{n.description || n.source?.path || "Select to configure"}</p>
+      <div className="node-bottom">
+        <span>
+          {data.count
+            ? `${data.count} invocation${data.count === 1 ? "" : "s"}`
+            : n.source
+              ? "Source linked"
+              : n.modelFixed
+                ? "Fixed model"
+                : "Graph definition"}
+        </span>
+        {data.state !== "pending" && <span>{data.state}</span>}
+      </div>
+      <Handle id="flow-out" type="source" position={Position.Right} />
+      <Handle
+        id="feedback-out"
+        className="feedback-handle"
+        type="source"
+        position={Position.Top}
+        style={{ left: "65%" }}
+      />
+    </div>
+  );
+}
+function GraphSection({
+  data,
+}: NodeProps<FlowNode<{ node: GraphNode; state: string; count: number }>>) {
+  return (
+    <div className="graph-section-label">
+      <span>{data.node.label}</span>
+      <small>{data.node.description}</small>
+    </div>
+  );
+}
+const NODE_TYPES = { agent: AgentNode, section: GraphSection };
+
+export default function App() {
+  return <PortfolioSession>{account => <Workspace key={account.user?.id || "local-fixture"} account={account} />}</PortfolioSession>;
+}
+
+function Workspace({ account }: { account: PortfolioAccount }) {
+  const { theme, setTheme } = account;
+  const selectionKey = `citadel-project:${account.user?.id || "local-fixture"}`;
+  const [data, setData] = useState<Bootstrap>(EMPTY),
+    [booting, setBooting] = useState(true),
+    [error, setError] = useState(""),
+    [notice, setNotice] = useState(""),
+    [busy, setBusy] = useState("");
+  const [mode, setMode] = useState<Mode>("build"),
+    [step, setStep] = useState("Align"),
+    [projectId, setProjectId] = useState(
+      () => localStorage.getItem(selectionKey) || "",
+    );
+  const [credentialModal, setCredentialModal] = useState(false),
+    [newModal, setNewModal] = useState(false),
+    [hiddenModal, setHiddenModal] = useState(false),
+    [searchModal, setSearchModal] = useState(false),
+    [search, setSearch] = useState("");
+  const [sourcePreview, setSourcePreview] = useState<SourcePreview | null>(
+    null,
+  );
+  const sourceCodeRef = useRef<HTMLPreElement>(null);
+  const pendingExample = useRef<{ projectId: string; config: ModelConfig; input: string; run?: Run } | null>(null);
+  const [exampleRevision, setExampleRevision] = useState(0);
+  const [graphExpanded, setGraphExpanded] = useState(false);
+  const [fullscreenInspector, setFullscreenInspector] = useState(false);
+  const [graphDetail, setGraphDetail] = useState<"overview" | "all">(
+    "overview",
+  );
+  const [graphLabels, setGraphLabels] = useState(false);
+  const [traceScope, setTraceScope] = useState<"path" | "context">("path");
+  const flowRef = useRef<
+    | (Pick<ReactFlowInstance, "setCenter" | "getViewport"> & {
+        fitView: (options?: {
+          padding?: number;
+          minZoom?: number;
+          maxZoom?: number;
+          duration?: number;
+        }) => Promise<boolean>;
+      })
+    | null
+  >(null);
+  const expandButtonRef = useRef<HTMLButtonElement>(null);
+  const graphWorkspaceRef = useRef<HTMLDivElement>(null);
+  const [models, setModels] = useState<Record<string, Model[]>>({}),
+    [config, setConfig] = useState<ModelConfig>({
+      credentialId: "",
+      model: "",
+      temperature: 0.3,
+    });
+  const [brief, setBrief] = useState(""),
+    [alignment, setAlignment] = useState<Alignment | null>(null),
+    [graph, setGraph] = useState<Graph | null>(null),
+    [dirty, setDirty] = useState(false),
+    [selection, setSelection] = useState<{
+      type: "node" | "edge";
+      id: string;
+    } | null>(null),
+    [inspectorTab, setInspectorTab] = useState("Configuration");
+  const [runId, setRunId] = useState(""),
+    [view, setView] = useState<"design" | "observed">("design"),
+    [input, setInput] = useState(""),
+    [preflight, setPreflight] = useState<Preflight | null>(null),
+    [eventId, setEventId] = useState("");
+  const [repoPath, setRepoPath] = useState(""),
+    [repoDefault, setRepoDefault] = useState("");
+  const [githubRepos, setGithubRepos] = useState<
+    | { name: string; url: string; isPrivate: boolean; description: string }[]
+    | null
+  >(null);
+  const [sourceMethod, setSourceMethod] = useState<
+      "github" | "local" | "upload"
+    >("github"),
+    [githubStatus, setGithubStatus] = useState<GitHubStatus | null>(null),
+    [githubToken, setGithubToken] = useState(""),
+    [folderReview, setFolderReview] = useState<FolderReview | null>(null),
+    [folderConfirmed, setFolderConfirmed] = useState(false);
+  const [mappingMode, setMappingMode] = useState<"ai" | "static">("ai");
+  const [traceMethod, setTraceMethod] = useState<"native" | "langfuse">(
+      "native",
+    ),
+    [connections, setConnections] = useState<{
+      projectId: string;
+      status: ConnectionStatus;
+    } | null>(null),
+    [nativeIssued, setNativeIssued] = useState<{
+      projectId: string;
+      token: string;
+      endpoint: string;
+      snippet: string;
+    } | null>(null),
+    [langfuseUrl, setLangfuseUrl] = useState("https://cloud.langfuse.com"),
+    [langfusePublicKey, setLangfusePublicKey] = useState(""),
+    [langfuseSecretKey, setLangfuseSecretKey] = useState("");
+  const [redMethod, setRedMethod] = useState<"source-review" | "behavioral">(
+    "behavioral",
+  );
+  const [redScope, setRedScope] = useState("local-test"),
+    [brandRules, setBrandRules] = useState(DEFAULT_BRAND_RULES),
+    [maxProbes, setMaxProbes] = useState(4),
+    [redId, setRedId] = useState(""),
+    [confirmed, setConfirmed] = useState(false);
+  const [slots, setSlots] = useState<
+      { id: string; label: string; config: ModelConfig }[]
+    >([]),
+    [strategy, setStrategy] = useState<"node" | "workflow">("workflow"),
+    [compareNode, setCompareNode] = useState(""),
+    [comparisonId, setComparisonId] = useState("");
+  const [suiteId, setSuiteId] = useState(""),
+    [suiteName, setSuiteName] = useState("Core behavior"),
+    [casesText, setCasesText] = useState(DEFAULT_CASES),
+    [judgeEnabled, setJudgeEnabled] = useState(false),
+    [rubric, setRubric] = useState(DEFAULT_RUBRIC),
+    [baselineId, setBaselineId] = useState(""),
+    [reportId, setReportId] = useState("");
+  const project = data.projects.find((p) => p.id === projectId),
+    activeMode = MODES.find((m) => m.id === mode)!;
+  const isHosted = data.system.hosting?.mode === "hosted";
+  const cachedExample = project?.example?.kind === "cached-workflow";
+  const selectableCredentials = data.credentials.filter(c => cachedExample ? c.source === "example" : c.source !== "example");
+  const run = data.runs.find(
+      (r) => r.id === runId && r.projectId === projectId,
+    ),
+    red = data.redPlans.find(
+      (r) => r.id === redId && r.projectId === projectId,
+    ),
+    comparison = data.comparisons.find(
+      (c) => c.id === comparisonId && c.projectId === projectId,
+    ),
+    report = data.reports.find(
+      (r) => r.id === reportId && r.suite.projectId === projectId,
+    );
+  const projectRuns = data.runs.filter((r) => r.projectId === projectId),
+    projectSuites = data.suites.filter((s) => s.projectId === projectId),
+    projectReports = data.reports.filter(
+      (r) => r.suite.projectId === projectId,
+    );
+  const isImported = !!project?.repo,
+    docker =
+      typeof data.system.docker === "object"
+        ? data.system.docker.available
+        : data.system.docker;
+  const mappingStatus = (
+    project?.repo as
+      (NonNullable<Project["repo"]> & { mapping?: MappingStatus }) | undefined
+  )?.mapping;
+  const liveStatus =
+    connections?.projectId === projectId ? connections.status : null;
+  const externalRun = (
+    run as (Run & { external?: ExternalEvidence }) | undefined
+  )?.external;
+  const canExecuteProject =
+    !isImported ||
+    (project?.repo?.adapter === "learning-studio" &&
+      project.repo.executionAvailable !== false);
+  const observedGraph = useMemo(() => {
+    if (view !== "observed" || !run) return graph;
+    return externalRun && traceScope === "path"
+      ? recordedGraph(run.graph, run.events)
+      : run.graph;
+  }, [view, run, graph, externalRun, traceScope]);
+  useEffect(() => {
+    if (
+      view === "observed" &&
+      externalRun &&
+      traceScope === "path" &&
+      selection &&
+      !(selection.type === "node"
+        ? observedGraph?.nodes.some((node) => node.id === selection.id)
+        : observedGraph?.edges.some((edge) => edge.id === selection.id))
+    ) {
+      const first = observedGraph?.nodes[0];
+      setSelection(first ? { type: "node", id: first.id } : null);
+    }
+  }, [view, traceScope, observedGraph, externalRun, selection]);
+  const running = !!run && !terminal(run),
+    selectedNode = observedGraph?.nodes.find(
+      (n) => selection?.type === "node" && n.id === selection.id,
+    ),
+    selectedEdge = observedGraph?.edges.find(
+      (e) => selection?.type === "edge" && e.id === selection.id,
+    );
+  const [disconnected, setDisconnected] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  useEffect(() => {
+    const entry = document.querySelector<HTMLScriptElement>(
+      'script[type="module"][src]',
+    )?.src;
+    const loadedEntry = entry ? new URL(entry).pathname : null;
+    if (!loadedEntry?.startsWith("/assets/")) return;
+    let active = true;
+    const check = () => {
+      if (document.visibilityState === "hidden") return;
+      api<{ uiEntry: string | null }>("/health")
+        .then((health) => {
+          if (active && health.uiEntry)
+            setUpdateAvailable(health.uiEntry !== loadedEntry);
+        })
+        .catch(() => {});
+    };
+    check();
+    const timer = setInterval(check, 30000);
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      active = false;
+      clearInterval(timer);
+      window.removeEventListener("focus", check);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, []);
+  async function refresh() {
+    const b = await api<Bootstrap>("/bootstrap");
+    setDisconnected(false);
+    setData(b);
+    setConfig((current) =>
+      b.credentials.some((c) => c.id === current.credentialId && c.valid)
+        ? current
+        : {
+            ...current,
+            credentialId: b.credentials.find((c) => c.valid && c.source !== "example")?.id || "",
+            model: "",
+          },
+    );
+    setModels((current) =>
+      Object.fromEntries(
+        Object.entries(current).filter(([id]) =>
+          b.credentials.some((c) => c.id === id && c.valid),
+        ),
+      ),
+    );
+    setSlots((current) =>
+      current.map((slot) =>
+        b.credentials.some((c) => c.id === slot.config.credentialId && c.valid)
+          ? slot
+          : {
+              ...slot,
+              config: { ...slot.config, credentialId: "", model: "" },
+            },
+      ),
+    );
+    setProjectId((p) =>
+      b.projects.some((project) => project.id === p)
+        ? p
+        : b.projects[0]?.id || "",
+    );
+    return b;
+  }
+  useEffect(() => {
+    refresh()
+      .catch((e) => setError(e.message))
+      .finally(() => setBooting(false));
+    api<{ path: string }>("/repos/default")
+      .then((r) => {
+        setRepoDefault(r.path);
+        setRepoPath(r.path);
+      })
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (projectId) localStorage.setItem(selectionKey, projectId);
+  }, [projectId, selectionKey]);
+  useEffect(() => {
+    if (!project) return;
+    setBrief(project.brief);
+    setAlignment(project.alignment || null);
+    setGraph(structuredClone(project.graph));
+    setDirty(false);
+    setSelection(initialSelection(project.graph));
+    setRunId("");
+    setView("design");
+    setPreflight(null);
+    setSuiteId("");
+    setSuiteName("Core behavior");
+    setCasesText(DEFAULT_CASES);
+    setJudgeEnabled(false);
+    setRubric(DEFAULT_RUBRIC);
+    setBaselineId("");
+    setInput("");
+    setEventId("");
+    setSlots([]);
+    setStrategy("workflow");
+    setCompareNode("");
+    setBrandRules(DEFAULT_BRAND_RULES);
+    setRedScope("local-test");
+    setMaxProbes(4);
+    setError("");
+    setNotice("");
+    setFolderReview(null);
+    setFolderConfirmed(false);
+    setReportId("");
+    setRedId("");
+    setConfirmed(false);
+    setRedMethod(
+      project.repo &&
+        (project.repo.adapter === "discovery-only" ||
+          project.repo.executionAvailable === false)
+        ? "source-review"
+        : "behavioral",
+    );
+    setComparisonId("");
+    if (project.repo) {
+      setMode("connect");
+      setStep("Map");
+    }
+    const prepared = pendingExample.current;
+    if (prepared?.projectId === project.id) {
+      pendingExample.current = null;
+      setConfig(prepared.config);
+      setInput(prepared.input);
+      setMode(prepared.run ? "build" : "connect");
+      setStep(prepared.run ? "Run & Test" : "Map");
+      if (prepared.run) {
+        setRunId(prepared.run.id);
+        setView("observed");
+        setInspectorTab("Output");
+      }
+    }
+  }, [project?.id, exampleRevision]);
+  useEffect(() => {
+    const f = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        if (!busy) setSearchModal((s) => !s);
+      }
+    };
+    document.addEventListener("keydown", f);
+    return () => document.removeEventListener("keydown", f);
+  }, [busy]);
+  useEffect(() => {
+    if (!selectableCredentials.some(c => c.id === config.credentialId && c.valid)) {
+      const c = selectableCredentials.find(c => c.valid);
+      if (c || config.credentialId) setConfig(v => ({ ...v, credentialId: c?.id || "", model: c ? preferredModel(models[c.id] || [])?.id || "" : "" }));
+    }
+  }, [project?.id, data.credentials, config.credentialId]);
+  const hasActive =
+    data.runs.some((r) => !terminal(r)) ||
+    data.redPlans.some((p) => p.status === "running") ||
+    data.reports.some((r) => r.status === "running");
+  useEffect(() => {
+    if (!hasActive) return;
+    const timer = setInterval(
+      () => refresh().catch(() => setDisconnected(true)),
+      1500,
+    );
+    return () => clearInterval(timer);
+  }, [hasActive]);
+  useEffect(() => {
+    if (mode !== "connect" || step !== "Observe" || hasActive) return;
+    const timer = setInterval(
+      () => refresh().catch(() => setDisconnected(true)),
+      3000,
+    );
+    return () => clearInterval(timer);
+  }, [mode, step, hasActive]);
+  useEffect(() => {
+    setSourcePreview(null);
+    setNativeIssued(null);
+    setLangfusePublicKey("");
+    setLangfuseSecretKey("");
+    setConnections(null);
+  }, [projectId]);
+  useEffect(() => {
+    if (!projectId || mode !== "connect") return;
+    let current = true;
+    api<ConnectionStatus>(`/projects/${projectId}/connections`)
+      .then((status) => {
+        if (current) {
+          setConnections({ projectId, status });
+          if (status.langfuse.url) setLangfuseUrl(status.langfuse.url);
+        }
+      })
+      .catch((e) => {
+        if (current) setError(e.message);
+      });
+    return () => {
+      current = false;
+    };
+  }, [projectId, mode, step]);
+  useEffect(() => {
+    if (mode !== "connect" || step !== "Observe" || runId) return;
+    const incoming = projectRuns.find(
+      (r) => (r as Run & { external?: ExternalEvidence }).external,
+    );
+    if (incoming) inspectRun(incoming);
+  }, [mode, step, projectId, runId, projectRuns.map((r) => r.id).join("|")]);
+  useEffect(() => {
+    if (!config.credentialId || models[config.credentialId]) return;
+    api<Model[]>(`/credentials/${config.credentialId}/models`)
+      .then((m) => {
+        setModels((v) => ({ ...v, [config.credentialId]: m }));
+        setConfig((c) =>
+          c.credentialId === config.credentialId && !c.model
+            ? { ...c, model: preferredModel(m)?.id || "" }
+            : c,
+        );
+      })
+      .catch(() => {});
+  }, [config.credentialId]);
+  useEffect(() => {
+    setConfig((c) =>
+      c.credentialId && !c.model && models[c.credentialId]
+        ? { ...c, model: preferredModel(models[c.credentialId])?.id || "" }
+        : c,
+    );
+    setSlots((current) => {
+      let changed = false;
+      const next = current.map((slot) => {
+        const model =
+          !slot.config.model &&
+          preferredModel(models[slot.config.credentialId] || []);
+        if (!model) return slot;
+        changed = true;
+        return { ...slot, config: { ...slot.config, model: model.id } };
+      });
+      return changed ? next : current;
+    });
+  }, [models, config.credentialId]);
+  const completedForCredential = data.runs
+    .filter(
+      (r) =>
+        r.status === "completed" &&
+        r.config.credentialId === config.credentialId,
+    )
+    .map((r) => r.id)
+    .sort()
+    .join(",");
+  useEffect(() => {
+    if (!config.credentialId || !completedForCredential || disconnected) return;
+    const credentialId = config.credentialId;
+    api<Model[]>(`/credentials/${credentialId}/models`)
+      .then((list) =>
+        setModels((current) => ({ ...current, [credentialId]: list })),
+      )
+      .catch(() => {});
+  }, [config.credentialId, completedForCredential, disconnected]);
+  useEffect(() => {
+    if (mode === "connect" && step === "Connect")
+      refreshGitHub().catch((e) => setError(e.message));
+  }, [mode, step]);
+  useEffect(() => {
+    if (sourcePreview?.content === undefined) return;
+    sourceCodeRef.current
+      ?.querySelector<HTMLElement>(
+        `[data-line="${sourcePreview.source.line || sourcePreview.startLine || 1}"]`,
+      )
+      ?.scrollIntoView({ block: "center", inline: "nearest" });
+  }, [sourcePreview?.key, sourcePreview?.content]);
+  const comparisonTraceState = comparison?.slots
+    .map(
+      (slot) =>
+        `${slot.runId || slot.id}:${data.runs.find((r) => r.id === slot.runId)?.status || slot.error || "pending"}`,
+    )
+    .join("|");
+  useEffect(() => {
+    if (mode !== "models" || !["Compare", "Graph Results"].includes(step))
+      return;
+    const completed =
+      comparison?.slots
+        .map((slot) =>
+          slot.error
+            ? undefined
+            : data.runs.find(
+                (r) => r.id === slot.runId && r.status === "completed",
+              ),
+        )
+        .filter((r): r is Run => !!r) || [];
+    if (!completed.some((r) => r.id === runId)) {
+      if (completed[0]) inspectRun(completed[0]);
+      else {
+        setRunId("");
+        setEventId("");
+      }
+    }
+    if (step === "Graph Results")
+      setView(completed.length ? "observed" : "design");
+  }, [mode, step, comparisonId, comparisonTraceState, runId]);
+  useEffect(() => {
+    if (notice) {
+      const t = setTimeout(() => setNotice(""), 6000);
+      return () => clearTimeout(t);
+    }
+  }, [notice]);
+  async function act(label: string, fn: () => Promise<void>) {
+    if (busy) return;
+    setBusy(label);
+    setError("");
+    try {
+      await fn();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy("");
+    }
+  }
+  function navigate(m: Mode, s?: string) {
+    if (busy) return;
+    setMode(m);
+    setStep(s || MODES.find((x) => x.id === m)!.steps[0]);
+    setPreflight(null);
+  }
+  function syncProject(p: Project) {
+    setData((d) => ({
+      ...d,
+      projects: [p, ...d.projects.filter((x) => x.id !== p.id)],
+    }));
+    setProjectId(p.id);
+    setGraph(structuredClone(p.graph));
+    setBrief(p.brief);
+    setAlignment(p.alignment || null);
+    setDirty(false);
+    setSelection((current) =>
+      current &&
+      (current.type === "node"
+        ? p.graph.nodes.some((node) => node.id === current.id)
+        : p.graph.edges.some((edge) => edge.id === current.id))
+        ? current
+        : initialSelection(p.graph),
+    );
+  }
+  async function openExample(runCached = false) {
+    await act(runCached ? "Running cached workflow" : "Preparing example", async () => {
+      const example = await api<{ project: Project; runnableProject: Project; config: ModelConfig; input: string }>("/examples", "POST", {});
+      const target = runCached ? example.runnableProject : example.project;
+      let preparedRun: Run | undefined;
+      if (runCached) {
+        const ready = await api<Preflight>("/preflight", "POST", { projectId: target.id, config: example.config, input: example.input });
+        if (!ready.ok) throw new Error("The cached workflow is not ready. Please try again.");
+        preparedRun = await api<Run>("/runs", "POST", { projectId: target.id, config: example.config, input: example.input });
+      }
+      await refresh();
+      if (runCached) {
+        const catalog = await api<Model[]>(`/credentials/${example.config.credentialId}/models`);
+        setModels(current => ({ ...current, [example.config.credentialId]: catalog }));
+      }
+      pendingExample.current = { projectId: target.id, config: runCached ? example.config : config, input: runCached ? example.input : "", run: preparedRun };
+      syncProject(target);
+      setExampleRevision(value => value + 1);
+    });
+  }
+  function requireConfig(c = config) {
+    if (
+      !data.credentials.some(
+        (credential) => credential.id === c.credentialId && credential.valid,
+      ) ||
+      !models[c.credentialId]?.some(
+        (model) => model.id === c.model && model.available && model.text,
+      )
+    ) {
+      setCredentialModal(true);
+      throw new Error(
+        "Choose a validated credential and compatible model before continuing.",
+      );
+    }
+    return c;
+  }
+  function updateGraph(updater: (g: Graph) => Graph) {
+    if (!graph || busy) return;
+    setGraph(updater(graph));
+    setDirty(true);
+    setPreflight(null);
+  }
+  async function saveGraph() {
+    if (!project || !graph) return;
+    const p = await api<Project>(`/projects/${project.id}`, "PUT", { graph });
+    syncProject(p);
+    setNotice(
+      `Saved graph revision ${p.graph.revision}. Earlier runs keep their original graph.`,
+    );
+  }
+  async function checkReady() {
+    if (!project) throw new Error("Create or connect a project first.");
+    if (dirty) throw new Error("Save your graph changes before running.");
+    const p = await api<Preflight>("/preflight", "POST", {
+      projectId,
+      config: requireConfig(),
+      input,
+    });
+    setPreflight(p);
+    return p;
+  }
+  async function startRun(importRun = false) {
+    if (!input.trim()) throw new Error("Add sample input before running.");
+    const p = await checkReady();
+    if (!p.ok) return;
+    const r = await api<Run>(
+      importRun ? `/projects/${projectId}/import-run` : "/runs",
+      "POST",
+      { projectId, config, input },
+    );
+    setData((d) => ({
+      ...d,
+      runs: [r, ...d.runs.filter((x) => x.id !== r.id)],
+    }));
+    setRunId(r.id);
+    setView("observed");
+    setInspectorTab("Output");
+    setEventId("");
+    setNotice("Run started. Trace events will appear as each step executes.");
+  }
+  function inspectRun(r: Run) {
+    setInput(r.input);
+    setRunId(r.id);
+    setView("observed");
+    setInspectorTab("Output");
+    setEventId("");
+    setSelection(initialSelection(r.graph));
+  }
+  function promoteCase(inputText: string, expected = "", sourceRunId?: string) {
+    let cases: EvalCase[] = [];
+    try {
+      cases = JSON.parse(casesText);
+    } catch {}
+    cases.push({
+      id: `case-${cases.length + 1}`,
+      input: inputText,
+      expected,
+      assertions: [],
+      sourceRunId,
+    });
+    setCasesText(pretty(cases));
+    navigate("evals", "Criteria");
+    setNotice(
+      "Case added as a draft. Review its expected outcome and assertions before saving.",
+    );
+  }
+  function mappingOptions() {
+    return mappingMode === "ai"
+      ? { mapping: "ai", config: requireConfig() }
+      : { mapping: "static" };
+  }
+  async function remapSource() {
+    const p = await api<Project>(
+      `/projects/${projectId}/remap`,
+      "POST",
+      mappingOptions(),
+    );
+    syncProject(p);
+    setView("design");
+    setSelection(initialSelection(p.graph));
+    setNotice(
+      `Source map refreshed to revision ${p.graph.revision}. Earlier traces retain their recorded graphs.`,
+    );
+  }
+  async function inspectSource(source: SourceRef) {
+    const key = `${projectId}:${source.path}:${source.line || 1}:${Date.now()}`;
+    setSourcePreview({ key, source });
+    const query = new URLSearchParams({ path: source.path });
+    if (source.line) query.set("line", String(source.line));
+    try {
+      const result = await api<{
+        path: string;
+        content: string;
+        truncated: boolean;
+        startLine: number;
+      }>(`/projects/${projectId}/source?${query}`);
+      setSourcePreview((current) =>
+        current?.key === key ? { ...current, ...result } : current,
+      );
+    } catch (error) {
+      setSourcePreview((current) =>
+        current?.key === key
+          ? { ...current, error: (error as Error).message }
+          : current,
+      );
+    }
+  }
+  async function refreshConnections() {
+    const status = await api<ConnectionStatus>(
+      `/projects/${projectId}/connections`,
+    );
+    setConnections({ projectId, status });
+    return status;
+  }
+  async function refreshGitHub(loadRepositories = false) {
+    const status = await api<GitHubStatus>("/github/status");
+    setGithubStatus(status);
+    if (loadRepositories && status.connected) {
+      setGithubRepos(
+        await api<NonNullable<typeof githubRepos>>("/repos/github"),
+      );
+    } else if (!status.connected) {
+      setGithubRepos(null);
+    }
+    return status;
+  }
+  async function reviewFolder(files: File[]) {
+    setFolderReview(null);
+    setFolderConfirmed(false);
+    const accepted: FolderReview["files"] = [];
+    const skipped: Record<string, number> = {};
+    let totalBytes = 0;
+    const skip = (reason: string) => {
+      skipped[reason] = (skipped[reason] || 0) + 1;
+    };
+    const ignored =
+      /(^|\/)(node_modules|vendor|dist|build|coverage|__pycache__|venv|\.venv|\.git|\.next|\.local|\.cache|output|target)(\/|$)/i;
+    const sensitive =
+      /(^|\/)(\.env[^/]*|\.npmrc|\.pypirc|\.netrc|id_rsa[^/]*|id_ed25519[^/]*)(\/|$)|(?:secret|credential|access.?keys)|\.(pem|p12|pfx|key|keystore)$/i;
+    const textFile =
+      /\.(tsx?|jsx?|mjs|cjs|py|go|rs|rb|php|java|kt|swift|c|cpp|h|cs|sh|bash|zsh|ps1|json|jsonc|ya?ml|toml|ini|cfg|conf|md|mdx|txt|html?|css|scss|sass|less|sql|graphql|gql|xml|csv|ipynb|dockerfile)$/i;
+    const textName =
+      /(^|\/)(Dockerfile|Makefile|Procfile|Gemfile|Rakefile|requirements[^/]*|LICENSE|README|\.gitignore|\.dockerignore|\.editorconfig)$/i;
+    const ordered = [...files].sort((a, b) =>
+      a.webkitRelativePath.localeCompare(b.webkitRelativePath),
+    );
+    for (const file of ordered) {
+      const relative = file.webkitRelativePath || file.name;
+      const path = relative.includes("/")
+        ? relative.split("/").slice(1).join("/")
+        : relative;
+      if (ignored.test(path)) {
+        skip("Dependencies and generated files");
+        continue;
+      }
+      if (sensitive.test(path)) {
+        skip("Sensitive file names");
+        continue;
+      }
+      if (!textFile.test(path) && !textName.test(path)) {
+        skip("Binary or unsupported file types");
+        continue;
+      }
+      if (file.size > 900_000) {
+        skip("Files larger than 900 KB");
+        continue;
+      }
+      if (accepted.length >= 500 || totalBytes + file.size > 8 * 1024 * 1024) {
+        skip("Import size limit");
+        continue;
+      }
+      const content = await file.text();
+      if (content.includes("\0") || content.includes("\ufffd")) {
+        skip("Binary or invalid text");
+        continue;
+      }
+      if (
+        /(?:AIza[0-9A-Za-z_-]{30,}|github_pat_[0-9A-Za-z_]{20,}|gh[pousr]_[0-9A-Za-z]{20,}|sk-(?:proj-)?[0-9A-Za-z_-]{24,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)/.test(
+          content,
+        )
+      ) {
+        skip("Potential credentials in content");
+        continue;
+      }
+      accepted.push({ path, content });
+      totalBytes += file.size;
+    }
+    setFolderReview({
+      name:
+        files[0]?.webkitRelativePath.split("/")[0] || "Imported application",
+      files: accepted,
+      skipped,
+      totalBytes,
+    });
+  }
+  async function selectCredential(id: string) {
+    setConfig((c) => ({ ...c, credentialId: id, model: "" }));
+    if (!id) return;
+    try {
+      const list = await api<Model[]>(`/credentials/${id}/models`);
+      setModels((m) => ({ ...m, [id]: list }));
+      const first = preferredModel(list);
+      if (first)
+        setConfig((c) =>
+          c.credentialId === id ? { ...c, model: first.id } : c,
+        );
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+  function ModelFields({
+    value,
+    onChange,
+    compact = false,
+  }: {
+    value: ModelConfig;
+    onChange: (c: ModelConfig) => void;
+    compact?: boolean;
+  }) {
+    const options = models[value.credentialId] || [];
+    return (
+      <div className={`model-fields ${compact ? "compact" : ""}`}>
+        <label>
+          <span className="sr-only">Credential</span>
+          <select
+            aria-label="Credential"
+            value={value.credentialId}
+            onChange={(e) => {
+              const id = e.target.value;
+              onChange({
+                ...value,
+                credentialId: id,
+                model: preferredModel(models[id] || [])?.id || "",
+              });
+              if (id && !models[id])
+                api<Model[]>(`/credentials/${id}/models`)
+                  .then((list) => {
+                    setModels((m) => ({ ...m, [id]: list }));
+                    // Resolve defaults from the currently selected credential, never from this old closure.
+                  })
+                  .catch((e) => setError(e.message));
+            }}
+          >
+            <option value="">Select credential</option>
+            {selectableCredentials.map((c) => (
+              <option key={c.id} value={c.id} disabled={!c.valid}>
+                {c.label} · {c.provider}
+                {!c.valid ? " · validate first" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span className="sr-only">Model</span>
+          <select
+            aria-label="Model"
+            value={value.model}
+            disabled={!value.credentialId}
+            onChange={(e) => onChange({ ...value, model: e.target.value })}
+          >
+            <option value="">Select compatible model</option>
+            {options.map((m) => (
+              <option
+                key={m.id}
+                value={m.id}
+                disabled={!m.available || !m.text}
+              >
+                {m.name || m.id}
+                {!m.available
+                  ? ` · ${m.reason || "unavailable"}`
+                  : m.verified || cachedExample
+                    ? ""
+                    : " · advertised"}
+              </option>
+            ))}
+          </select>
+        </label>
+        {!compact && (
+          <button
+            className="button subtle"
+            onClick={() => setCredentialModal(true)}
+          >
+            <KeyRound size={14} /> Manage keys
+          </button>
+        )}
+      </div>
+    );
+  }
+  const presentation = useMemo(
+    () =>
+      observedGraph
+        ? layoutGraph(
+            observedGraph,
+            externalRun && view === "observed" && traceScope === "path"
+              ? { parallelRows: 4, verticalGap: 28 }
+              : {},
+          )
+        : null,
+    [observedGraph, externalRun, view, traceScope],
+  );
+  const graphViewKey = `${observedGraph?.id}:${observedGraph?.revision}:${view}:${observedGraph?.nodes.length}`;
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void flowRef.current?.fitView({
+        padding: 0.14,
+        minZoom: 0.16,
+        maxZoom: 1,
+        duration: 250,
+      });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [graphViewKey, graphExpanded, fullscreenInspector]);
+  useEffect(() => {
+    setGraphDetail(project?.repo ? "overview" : "all");
+    setGraphExpanded(false);
+  }, [project?.id, mode, step]);
+  useEffect(() => {
+    if (!graphExpanded) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const childModalOpen =
+      sourcePreview || hiddenModal || searchModal || credentialModal;
+    const focusable = () =>
+      Array.from(
+        graphWorkspaceRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) || [],
+      ).filter((element) => element.getClientRects().length > 0);
+    const keepFocus = (event: FocusEvent) => {
+      if (
+        !childModalOpen &&
+        !graphWorkspaceRef.current?.contains(event.target as Node)
+      )
+        expandButtonRef.current?.focus();
+    };
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Tab" && !childModalOpen) {
+        const targets = focusable();
+        const first = targets[0],
+          last = targets.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+      if (
+        event.key === "Escape" &&
+        !sourcePreview &&
+        !hiddenModal &&
+        !searchModal &&
+        !credentialModal
+      ) {
+        setGraphExpanded(false);
+        requestAnimationFrame(() => expandButtonRef.current?.focus());
+      }
+    };
+    document.addEventListener("keydown", close);
+    document.addEventListener("focusin", keepFocus);
+    if (
+      !childModalOpen &&
+      !graphWorkspaceRef.current?.contains(document.activeElement)
+    )
+      expandButtonRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", close);
+      document.removeEventListener("focusin", keepFocus);
+    };
+  }, [graphExpanded, sourcePreview, hiddenModal, searchModal, credentialModal]);
+  function focusGraphNode(nodeId: string) {
+    const node = observedGraph?.nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+    setSelection({ type: "node", id: nodeId });
+    setEventId("");
+    const position =
+      (!isImported && view === "design" ? node.position : undefined) ||
+      presentation?.positions[nodeId];
+    if (position)
+      void flowRef.current?.setCenter(position.x + 122, position.y + 80, {
+        zoom: 1,
+        duration: 300,
+      });
+  }
+  const nodes = useMemo(() => {
+    if (!observedGraph) return [];
+    const visible = observedGraph.nodes.filter((n) => !n.hidden),
+      layout = presentation?.positions || {};
+    return visible.map((n, i) => {
+      const events =
+        run && view === "observed"
+          ? run.events.filter((e) => e.nodeId === n.id)
+          : [];
+      const last = events.at(-1);
+      const state =
+        last?.type === "node.started"
+          ? "running"
+          : last?.type === "node.failed"
+            ? "failed"
+            : last?.type === "node.blocked"
+              ? "blocked"
+              : last?.type === "node.completed"
+                ? "completed"
+                : "pending";
+      return {
+        id: n.id,
+        type: "agent",
+        position: (!isImported && view === "design" ? n.position : undefined) ||
+          layout[n.id] || { x: 0, y: 0 },
+        ariaLabel: `${n.label}, ${n.role}`,
+        data: {
+          node: n,
+          state,
+          count: events.filter((e) => e.type === "node.started").length,
+        },
+        selected: selection?.type === "node" && selection.id === n.id,
+      };
+    });
+  }, [observedGraph, presentation, isImported, run, view, selection]);
+  const graphSections = useMemo(() => {
+    if (!presentation || !observedGraph || (!isImported && view === "design"))
+      return [];
+    return presentation.columns.map((column) => {
+      const members = observedGraph.nodes.filter((n) =>
+        column.nodeIds.includes(n.id),
+      );
+      const roles = new Set(members.map((n) => n.role));
+      const label =
+        view === "observed" && externalRun && traceScope === "path"
+          ? column.rank === 0
+            ? "Trace entry"
+            : "Observed components"
+          : roles.size === 1 && roles.has("orchestrator")
+            ? "Coordination"
+            : roles.size === 1 && roles.has("agent")
+              ? "Specialist agents"
+              : roles.size === 1 && roles.has("tool")
+                ? "Tools & services"
+                : column.rank === 0
+                  ? "Entry & coordination"
+                  : "Connected components";
+      const y =
+        Math.min(...column.nodeIds.map((id) => presentation.positions[id].y)) -
+        56;
+      return {
+        id: `presentation-column:${column.rank}`,
+        type: "section",
+        position: { x: column.x, y },
+        data: {
+          node: {
+            id: `column-${column.rank}`,
+            role: "resource" as const,
+            label,
+            description: column.parallel
+              ? "Related components"
+              : view === "observed"
+                ? "Recorded relationships"
+                : "Source relationships",
+          },
+          state: "pending",
+          count: 0,
+        },
+        draggable: false,
+        selectable: false,
+        connectable: false,
+        focusable: false,
+        zIndex: -1,
+        style: { width: column.width, height: 32 },
+      };
+    });
+  }, [presentation, observedGraph, isImported, view, externalRun, traceScope]);
+  const edges = useMemo(() => {
+    if (!observedGraph || !presentation) return [];
+    return selectPresentationEdges(
+      observedGraph,
+      presentation,
+      graphDetail,
+      isImported && view === "design",
+    ).map((e) => {
+      const feedback =
+        e.kind === "feedback" || presentation.feedbackEdgeIds.has(e.id);
+      const active = selection?.type === "edge" && selection.id === e.id;
+      return {
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        sourceHandle: feedback ? "feedback-out" : "flow-out",
+        targetHandle: feedback ? "feedback-in" : "flow-in",
+        label: graphLabels || active ? e.label : undefined,
+        ariaLabel: e.label,
+        type: "smoothstep",
+        pathOptions: { borderRadius: 18, offset: 28 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: feedback ? "var(--purple)" : "var(--edge)",
+          width: 16,
+          height: 16,
+        },
+        animated: view === "observed" && running && e.provenance === "observed",
+        style: {
+          stroke: feedback ? "var(--purple)" : "var(--edge)",
+          strokeWidth: active ? 2.3 : 1.5,
+          strokeDasharray: feedback
+            ? "5 5"
+            : e.provenance === "inferred"
+              ? "4 4"
+              : undefined,
+        },
+        labelStyle: { fill: "var(--text)", fontSize: 11 },
+        labelBgStyle: { fill: "var(--card)", fillOpacity: 0.96 },
+        labelBgPadding: [7, 4] as [number, number],
+        labelBgBorderRadius: 5,
+        selected: active,
+      };
+    });
+  }, [
+    observedGraph,
+    presentation,
+    graphDetail,
+    graphLabels,
+    isImported,
+    view,
+    running,
+    selection,
+  ]);
+  function connectEdge(c: Connection) {
+    if (busy || isImported || view === "observed" || !c.source || !c.target)
+      return;
+    updateGraph((g) => ({
+      ...g,
+      edges: [
+        ...g.edges,
+        {
+          id: uid(),
+          source: c.source!,
+          target: c.target!,
+          label: "pass output",
+          kind: "data",
+          inputMapping: "previous",
+          provenance: "declared",
+        },
+      ],
+    }));
+  }
+  const graphPanel = (
+    <div className="graph-panel">
+      {graphExpanded && (
+        <div className="expanded-graph-heading">
+          <div>
+            <span className="eyebrow">
+              {view === "observed"
+                ? "RECORDED EXECUTION"
+                : "APPLICATION STRUCTURE"}
+            </span>
+            <h2>{project?.name}</h2>
+          </div>
+          <span className="small muted">
+            Select a node to explore · Esc to exit
+          </span>
+        </div>
+      )}
+      <div className="graph-toolbar">
+        <div className="segmented">
+          <button
+            className={view === "design" ? "active" : ""}
+            disabled={mode === "models" && step === "Graph Results"}
+            onClick={() => setView("design")}
+          >
+            {isImported ? "Source map" : "Graph"}
+          </button>
+          <button
+            className={view === "observed" ? "active" : ""}
+            disabled={!run}
+            onClick={() => setView("observed")}
+          >
+            Observed run
+          </button>
+        </div>
+        <div className="toolbar-actions">
+          <button
+            className="button subtle small"
+            onClick={() => {
+              void flowRef.current?.fitView({
+                padding: 0.14,
+                minZoom: 0.16,
+                maxZoom: 1,
+                duration: 250,
+              });
+            }}
+            title="Fit the complete graph into view"
+          >
+            <Scan size={15} /> Fit graph
+          </button>
+          <button
+            className="button subtle small"
+            onClick={() => focusGraphNode(selectedNode?.id || nodes[0]?.id)}
+            disabled={!nodes.length}
+            title="Show the selected node at readable size"
+          >
+            <Focus size={15} /> Focus node
+          </button>
+          {graphExpanded && (
+            <button
+              className={`button subtle small ${fullscreenInspector ? "active" : ""}`}
+              aria-pressed={fullscreenInspector}
+              onClick={() => setFullscreenInspector((v) => !v)}
+            >
+              <PanelRight size={15} /> Inspector
+            </button>
+          )}
+          <button
+            ref={expandButtonRef}
+            className="button small graph-expand"
+            aria-label={
+              graphExpanded ? "Exit full screen" : "Full screen graph"
+            }
+            onClick={() => setGraphExpanded((v) => !v)}
+          >
+            {graphExpanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}{" "}
+            {graphExpanded ? "Exit full screen" : "Full screen"}
+          </button>
+          <button
+            className="button subtle small hidden-resources-button"
+            disabled={!!busy}
+            onClick={() => setHiddenModal(true)}
+          >
+            <Layers3 size={14} /> Hidden nodes{" "}
+            <span className="count">
+              {graph?.nodes.filter((n) => n.hidden).length || 0}
+            </span>
+          </button>
+          {!isImported && view === "design" && (
+            <button
+              className="icon-button"
+              aria-label="Add graph node"
+              disabled={!!busy}
+              onClick={() => {
+                const id = uid();
+                updateGraph((g) => ({
+                  ...g,
+                  nodes: [
+                    ...g.nodes,
+                    {
+                      id,
+                      label: "New agent",
+                      role: "agent",
+                      prompt:
+                        "Describe this agent’s task, constraints and output.",
+                      position: {
+                        x: 50 + (g.nodes.length % 3) * 280,
+                        y: Math.floor(g.nodes.length / 3) * 190,
+                      },
+                    },
+                  ],
+                }));
+                setSelection({ type: "node", id });
+                setInspectorTab("Configuration");
+              }}
+            >
+              <Plus size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="graph-view-options">
+        {view === "observed" && externalRun ? (
+          <div
+            className="segmented"
+            role="group"
+            aria-label="Observed graph scope"
+          >
+            <button
+              className={traceScope === "path" ? "active" : ""}
+              aria-pressed={traceScope === "path"}
+              onClick={() => setTraceScope("path")}
+            >
+              Recorded path
+            </button>
+            <button
+              className={traceScope === "context" ? "active" : ""}
+              aria-pressed={traceScope === "context"}
+              onClick={() => setTraceScope("context")}
+            >
+              Full source context
+            </button>
+          </div>
+        ) : (
+          <div
+            className="segmented"
+            role="group"
+            aria-label="Graph connection detail"
+          >
+            <button
+              className={
+                isImported && view === "design" && graphDetail === "overview"
+                  ? "active"
+                  : ""
+              }
+              aria-pressed={
+                isImported && view === "design" && graphDetail === "overview"
+              }
+              disabled={!isImported || view !== "design"}
+              title="Simplify an imported source map. Executable and recorded graphs retain every connection."
+              onClick={() => setGraphDetail("overview")}
+            >
+              Structure overview
+            </button>
+            <button
+              className={
+                !isImported || view !== "design" || graphDetail === "all"
+                  ? "active"
+                  : ""
+              }
+              aria-pressed={
+                !isImported || view !== "design" || graphDetail === "all"
+              }
+              onClick={() => setGraphDetail("all")}
+            >
+              All connections{" "}
+              <span className="count">{presentation?.totalEdgeCount || 0}</span>
+            </button>
+          </div>
+        )}
+        <select
+          aria-label="Jump to graph node"
+          value={
+            selection?.type === "node" &&
+            nodes.some((n) => n.id === selection.id)
+              ? selection.id
+              : ""
+          }
+          onChange={(event) => focusGraphNode(event.target.value)}
+        >
+          <option value="">Jump to a node…</option>
+          {nodes.map((n) => (
+            <option key={n.id} value={n.id}>
+              {n.data.node.label}
+            </option>
+          ))}
+        </select>
+        <label className="graph-label-toggle">
+          <input
+            type="checkbox"
+            checked={graphLabels}
+            onChange={(e) => setGraphLabels(e.target.checked)}
+          />
+          Edge labels
+        </label>
+      </div>
+      <div className="graph-caption">
+        <span>
+          {view === "observed" && run ? (
+            <>
+              Recorded r{run.graph.revision} · <Status value={run.status} />
+            </>
+          ) : isImported ? (
+            <>Source · {project?.repo?.revision.slice(0, 8)}</>
+          ) : (
+            <>
+              Draft r{graph?.revision}
+              {dirty ? " · unsaved" : ""}
+            </>
+          )}
+        </span>
+        <span>
+          {isImported && view === "design" && graphDetail === "overview"
+            ? "Primary relationships · other connections remain available"
+            : view === "observed"
+              ? externalRun && traceScope === "path"
+                ? "Only recorded nodes and links · parent links show trace context, not timing"
+                : "Full graph context · source links do not prove execution"
+              : "All relationships · select an arrow for details"}
+        </span>
+      </div>
+      <div className="flow-wrap">
+        <ReactFlow
+          key={`${observedGraph?.id}:${view}`}
+          nodes={[...graphSections, ...nodes]}
+          edges={edges}
+          onInit={(instance) => {
+            flowRef.current = instance;
+          }}
+          nodeTypes={NODE_TYPES}
+          onNodeClick={(_, n) => {
+            setSelection({ type: "node", id: n.id });
+            setEventId("");
+          }}
+          onEdgeClick={(_, e) => setSelection({ type: "edge", id: e.id })}
+          onNodesChange={(changes) => {
+            const selected = changes.find(
+              (c) => c.type === "select" && c.selected,
+            );
+            if (selected?.type === "select")
+              setSelection((current) =>
+                current?.type === "node" && current.id === selected.id
+                  ? current
+                  : { type: "node", id: selected.id },
+              );
+          }}
+          onNodeDrag={(_, n) => {
+            if (!isImported && view === "design")
+              updateGraph((g) => ({
+                ...g,
+                nodes: g.nodes.map((x) =>
+                  x.id === n.id ? { ...x, position: n.position } : x,
+                ),
+              }));
+          }}
+          onNodeDragStop={(_, n) => {
+            if (!isImported && view === "design")
+              updateGraph((g) => ({
+                ...g,
+                nodes: g.nodes.map((x) =>
+                  x.id === n.id ? { ...x, position: n.position } : x,
+                ),
+              }));
+          }}
+          onConnect={connectEdge}
+          nodesDraggable={!busy && !isImported && view === "design"}
+          nodesConnectable={!busy && !isImported && view === "design"}
+          defaultViewport={{ x: 35, y: 45, zoom: 1 }}
+          minZoom={0.12}
+          maxZoom={1.75}
+          fitView
+          fitViewOptions={{ padding: 0.14, minZoom: 0.16, maxZoom: 1 }}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background color="var(--dots)" gap={22} size={1} />
+          <Controls showInteractive={false} />
+        </ReactFlow>
+      </div>
+      <div className="graph-bottom">
+        <span>
+          <span className="dot" />{" "}
+          {view === "observed"
+            ? "Observed activity"
+            : isImported
+              ? "Source structure · not execution order"
+              : "Declared workflow"}
+        </span>
+        <span>
+          {nodes.length} nodes · {edges.length} of{" "}
+          {presentation?.totalEdgeCount || 0} connections shown
+        </span>
+      </div>
+    </div>
+  );
+  function RunPanel() {
+    return (
+      <section className="run-panel">
+        <div className="section-header">
+          <div>
+            <span className="eyebrow">PLAYGROUND</span>
+            <h3>
+              {isImported ? "Observe an application run" : "Try a real input"}
+            </h3>
+          </div>
+          <div className="run-select">
+            <select
+              aria-label="Recorded run"
+              value={runId}
+              onChange={(e) => {
+                const r = data.runs.find((r) => r.id === e.target.value);
+                if (r) inspectRun(r);
+                else {
+                  setRunId("");
+                  setView("design");
+                }
+              }}
+            >
+              <option value="">
+                {canExecuteProject ? "New run" : "Choose an observed trace"}
+              </option>
+              {projectRuns.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {fmtDate(r.createdAt)} · r{r.graph.revision} · {r.status}
+                  {(r as Run & { external?: ExternalEvidence }).external
+                    ? " · external"
+                    : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        {!canExecuteProject && (
+          <div className="callout small external-callout">
+            <div>
+              <strong>Observe through instrumentation</strong>
+              <p>
+                {project?.repo?.executionUnavailableReason ||
+                  "This source map has no execution adapter."}{" "}
+                Run your application in its own environment and send native
+                traces, or sync Langfuse observations.
+              </p>
+            </div>
+            <button
+              className="button small"
+              onClick={() => {
+                setTraceMethod("native");
+                navigate("connect", "Connect");
+              }}
+            >
+              Connect live traces
+            </button>
+          </div>
+        )}
+        {externalRun && (
+          <div className="external-evidence">
+            <span className="connection-kind">
+              Observed externally ·{" "}
+              {externalRun.kind === "langfuse" ? "Langfuse" : "Native"}
+            </span>
+            <span>
+              {externalRun.partial ? "Partial trace" : "Recorded trace"} ·{" "}
+              {externalRun.spans.length} spans
+            </span>
+            {externalRun.spans.some((span) => span.model) && (
+              <span>
+                Observed model:{" "}
+                {[
+                  ...new Set(
+                    externalRun.spans.flatMap((span) =>
+                      span.model ? [span.model] : [],
+                    ),
+                  ),
+                ].join(", ")}
+              </span>
+            )}
+            <span className="muted">
+              Execution is controlled by the connected application.
+            </span>
+          </div>
+        )}
+        <div className="playground-grid">
+          <div>
+            <textarea
+              aria-label="Sample input"
+              className="sample-input"
+              disabled={!canExecuteProject}
+              placeholder={
+                !canExecuteProject
+                  ? "Select an incoming trace above to inspect its recorded input."
+                  : isImported
+                    ? "Describe a lesson or learning goal for the connected application…"
+                    : "Give this application an input to work with…"
+              }
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+            />
+            <div className="row spread">
+              <span className="muted small">
+                {!canExecuteProject || externalRun
+                  ? "External execution · no provider key needed here"
+                  : config.model
+                    ? `Using ${config.model}`
+                    : "Choose a model above"}
+              </span>
+              <div className="row">
+                <button
+                  className="button small"
+                  disabled={!!busy || running || !canExecuteProject}
+                  onClick={() =>
+                    act("Checking preflight", async () => {
+                      await checkReady();
+                    })
+                  }
+                >
+                  Check setup
+                </button>
+                {running ? (
+                  <button
+                    className="button small danger"
+                    disabled={!!externalRun}
+                    title={
+                      externalRun
+                        ? "This run is controlled by the connected application"
+                        : undefined
+                    }
+                    onClick={() =>
+                      act("Stopping run", async () => {
+                        await api(`/runs/${runId}/cancel`, "POST", {});
+                        await refresh();
+                      })
+                    }
+                  >
+                    <Square size={13} />{" "}
+                    {externalRun ? "Controlled by app" : "Stop"}
+                  </button>
+                ) : (
+                  <button
+                    className="button primary small"
+                    disabled={!!busy || !canExecuteProject}
+                    onClick={() =>
+                      act("Starting run", () => startRun(isImported))
+                    }
+                  >
+                    <Play size={13} /> Run
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="response">
+            <div className="row spread">
+              <span className="eyebrow">RESPONSE</span>
+              {run && <Status value={run.status} />}
+            </div>
+            {run ? (
+              <>
+                <div className="response-text">
+                  {run.output ||
+                    run.error ||
+                    (running
+                      ? "Working through the graph. Select a node to inspect its activity."
+                      : "This run produced no final response.")}
+                </div>
+                <div className="response-meta">
+                  <span>
+                    {duration(run)} ·{" "}
+                    {run.usage.inputTokens + run.usage.outputTokens} tokens
+                    {run.usage.estimatedCostUsd !== undefined
+                      ? ` · ~$${run.usage.estimatedCostUsd.toFixed(4)}`
+                      : ""}
+                  </span>
+                  <button
+                    className="text-button"
+                    onClick={() => promoteCase(run.input, "", run.id)}
+                  >
+                    Add eval case <ArrowUpRight size={12} />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p className="muted">
+                The response will appear here. Intermediate inputs, outputs and
+                failures stay attached to their nodes.
+              </p>
+            )}
+          </div>
+        </div>
+        {preflight && (
+          <div className={`preflight ${preflight.ok ? "pass" : "fail"}`}>
+            <strong>
+              {preflight.ok ? "Ready to run" : "Resolve before running"}
+            </strong>
+            {preflight.issues.map((i, k) => (
+              <p key={k}>{i.message}</p>
+            ))}
+            {preflight.warnings.map((w, k) => (
+              <p key={k}>{w}</p>
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
+  function SourceReferences(node: GraphNode) {
+    const refs = [
+      ...new Map(
+        [...(node.source ? [node.source] : []), ...(node.sourceRefs || [])].map(
+          (source) => [
+            `${source.path}:${source.line || ""}:${source.symbol || ""}`,
+            source,
+          ],
+        ),
+      ).values(),
+    ];
+    if (!refs.length) return null;
+    return (
+      <section
+        className="source-references"
+        aria-label="Node source references"
+      >
+        <div className="row spread">
+          <span className="eyebrow">SOURCE REFERENCES</span>
+          <span className="count">{refs.length}</span>
+        </div>
+        <div className="source-reference-list">
+          {refs.map((source, index) => {
+            const label = `${source.path}${source.line ? `:${source.line}` : ""}`;
+            const content = (
+              <>
+                <FileCode2 size={14} />
+                <span>
+                  <code>{label}</code>
+                  {source.symbol && <small>{source.symbol}</small>}
+                </span>
+                {isImported && <ChevronRight size={13} />}
+              </>
+            );
+            return isImported ? (
+              <button
+                key={index}
+                className="source-reference-item"
+                aria-label={`Inspect source ${label}${source.symbol ? `, ${source.symbol}` : ""}`}
+                onClick={() => void inspectSource(source)}
+              >
+                {content}
+              </button>
+            ) : (
+              <div key={index} className="source-reference-item">
+                {content}
+              </div>
+            );
+          })}
+        </div>
+        {!isImported && (
+          <p className="muted small">Connect source to inspect these files.</p>
+        )}
+      </section>
+    );
+  }
+  function Inspector() {
+    if (!graph || !selection)
+      return (
+        <aside className="inspector">
+          <Empty title="Every detail, in reach">
+            Select a node or connection to inspect its configuration and
+            evidence.
+          </Empty>
+        </aside>
+      );
+    const node = selectedNode;
+    const events = run?.events.filter((e) => e.nodeId === selection.id) || [];
+    const invocations = events.filter(
+      (e) =>
+        e.output !== undefined ||
+        e.type === "node.failed" ||
+        e.type === "node.blocked",
+    );
+    const evt =
+      events.find((e) => e.id === eventId) ||
+      invocations.at(-1) ||
+      events.at(-1);
+    const readOnly = isImported || view === "observed";
+    const locked = readOnly || !!busy;
+    const patchNode = (p: Partial<GraphNode>) =>
+      updateGraph((g) => ({
+        ...g,
+        nodes: g.nodes.map((n) => (n.id === selection.id ? { ...n, ...p } : n)),
+      }));
+    const patchEdge = (p: Partial<GraphEdge>) =>
+      updateGraph((g) => ({
+        ...g,
+        edges: g.edges.map((e) => (e.id === selection.id ? { ...e, ...p } : e)),
+      }));
+    return (
+      <aside className="inspector">
+        <div className="inspector-head">
+          <span className="eyebrow">
+            {selection.type === "edge" ? "CONNECTION" : "NODE"} INSPECTOR
+          </span>
+          <Settings2 size={15} />
+          <h2>
+            {node?.label || selectedEdge?.label || "Historical component"}
+          </h2>
+          <p>
+            {node?.description ||
+              (selectedEdge
+                ? `${observedGraph?.nodes.find((n) => n.id === selectedEdge.source)?.label || selectedEdge.source} → ${observedGraph?.nodes.find((n) => n.id === selectedEdge.target)?.label || selectedEdge.target}`
+                : "")}
+          </p>
+        </div>
+        <div className="inspector-tabs">
+          {["Configuration", "Output", "Activity"].map((t) => (
+            <button
+              key={t}
+              className={inspectorTab === t ? "active" : ""}
+              onClick={() => setInspectorTab(t)}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+        <div className="inspector-body">
+          {inspectorTab === "Configuration" ? (
+            <>
+              {readOnly && (
+                <div className="callout small">
+                  {isImported
+                    ? "This application owns its source. Configuration is read-only here; inspect the source location and adapter coverage."
+                    : `You are inspecting immutable run revision ${run?.graph.revision}. ${mode === "models" ? "Use Open current draft" : "Switch to Graph"} to edit the current draft.`}
+                </div>
+              )}
+              {node ? (
+                <>
+                  <div className="row spread">
+                    <span className={`role-pill role-${node.role}`}>
+                      {node.role}
+                    </span>
+                    {node.hidden && (
+                      <span className="muted small">Hidden resource</span>
+                    )}
+                  </div>
+                  {SourceReferences(node)}
+                  <Field label="Name">
+                    <input
+                      value={node.label}
+                      disabled={locked}
+                      onChange={(e) => patchNode({ label: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Role">
+                    <select
+                      value={node.role}
+                      disabled={locked}
+                      onChange={(e) =>
+                        patchNode({ role: e.target.value as GraphNode["role"] })
+                      }
+                    >
+                      {ROLES.map((r) => (
+                        <option key={r}>{r}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Description">
+                    <textarea
+                      rows={2}
+                      value={node.description || ""}
+                      disabled={locked}
+                      onChange={(e) =>
+                        patchNode({ description: e.target.value })
+                      }
+                    />
+                  </Field>
+                  <Field label="System instructions">
+                    <textarea
+                      className="code-input"
+                      rows={8}
+                      value={node.prompt || ""}
+                      placeholder="Describe the task, constraints and response shape."
+                      disabled={locked}
+                      onChange={(e) => patchNode({ prompt: e.target.value })}
+                    />
+                  </Field>
+                  <JsonEditor
+                    key={`${node.id}-schema-${locked}`}
+                    label="Output schema"
+                    value={node.schema || {}}
+                    disabled={locked}
+                    onSave={(schema) =>
+                      patchNode({
+                        schema: Object.keys(schema).length ? schema : undefined,
+                      })
+                    }
+                  />
+                  {(node.role === "tool" || node.code) && (
+                    <>
+                      <Field label="Tool implementation">
+                        <select
+                          value={node.tool || "code"}
+                          disabled={locked}
+                          onChange={(e) =>
+                            patchNode({
+                              tool: e.target.value as GraphNode["tool"],
+                            })
+                          }
+                        >
+                          <option value="uppercase">Uppercase text</option>
+                          <option value="word-count">Word count</option>
+                          <option value="json-format">Format JSON</option>
+                          <option value="code">Isolated code</option>
+                        </select>
+                      </Field>
+                      <Field
+                        label="Code"
+                        hint={
+                          docker
+                            ? "Docker is available for isolated code execution."
+                            : "Docker is unavailable. Built-in tools still work; arbitrary code cannot run."
+                        }
+                      >
+                        <textarea
+                          rows={8}
+                          className="code-input"
+                          value={node.code || ""}
+                          disabled={locked}
+                          onChange={(e) => patchNode({ code: e.target.value })}
+                        />
+                      </Field>
+                    </>
+                  )}
+                  {node.role === "guardrail" && (
+                    <JsonEditor
+                      key={`${node.id}-rules`}
+                      label="Policy rules"
+                      value={node.rules || { forbidden: [], required: [] }}
+                      disabled={locked}
+                      onSave={(rules) => patchNode({ rules })}
+                    />
+                  )}
+                  <div className="inspector-related">
+                    <span className="eyebrow">CONNECTIONS</span>
+                    {observedGraph?.edges
+                      .filter(
+                        (e) => e.source === node.id || e.target === node.id,
+                      )
+                      .map((e) => (
+                        <button
+                          key={e.id}
+                          onClick={() => {
+                            setGraphDetail("all");
+                            setSelection({ type: "edge", id: e.id });
+                          }}
+                        >
+                          <GitBranch size={13} />
+                          {e.label}
+                          <ChevronRight size={12} />
+                        </button>
+                      ))}
+                  </div>
+                  {!locked && (
+                    <button
+                      className="text-button danger-text"
+                      onClick={() => {
+                        updateGraph((g) => ({
+                          ...g,
+                          nodes: g.nodes.filter((n) => n.id !== node.id),
+                          edges: g.edges.filter(
+                            (e) => e.source !== node.id && e.target !== node.id,
+                          ),
+                        }));
+                        setSelection(null);
+                      }}
+                    >
+                      <Trash2 size={13} /> Remove node
+                    </button>
+                  )}
+                </>
+              ) : selectedEdge ? (
+                <>
+                  <Field label="Label">
+                    <input
+                      value={selectedEdge.label}
+                      disabled={locked}
+                      onChange={(e) => patchEdge({ label: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Relationship">
+                    <select
+                      value={selectedEdge.kind}
+                      disabled={locked}
+                      onChange={(e) =>
+                        patchEdge({ kind: e.target.value as GraphEdge["kind"] })
+                      }
+                    >
+                      <option value="data">Data flow</option>
+                      <option value="feedback">Feedback / revision</option>
+                      <option value="dependency">Dependency</option>
+                    </select>
+                  </Field>
+                  <Field label="Instruction">
+                    <textarea
+                      rows={7}
+                      value={selectedEdge.instruction || ""}
+                      disabled={locked}
+                      onChange={(e) =>
+                        patchEdge({ instruction: e.target.value })
+                      }
+                    />
+                  </Field>
+                  <Field label="Input passed to target">
+                    <select
+                      value={selectedEdge.inputMapping || "previous"}
+                      disabled={locked}
+                      onChange={(e) =>
+                        patchEdge({
+                          inputMapping: e.target
+                            .value as GraphEdge["inputMapping"],
+                        })
+                      }
+                    >
+                      <option value="previous">Previous node output</option>
+                      <option value="original">Original request</option>
+                      <option value="all">All preceding outputs</option>
+                    </select>
+                  </Field>
+                  <div className="callout small">
+                    Provenance: {selectedEdge.provenance || "declared"}.{" "}
+                    {externalRun && selectedEdge.provenance === "observed"
+                      ? "Parent links show trace context; they do not prove a data dependency or execution order."
+                      : isImported
+                        ? "Source relationships describe structure. Observe a run to verify actual activity."
+                        : "Revision cycles are capped by the graph’s maximum revisions."}
+                  </div>
+                  {!locked && (
+                    <button
+                      className="text-button danger-text"
+                      onClick={() => {
+                        updateGraph((g) => ({
+                          ...g,
+                          edges: g.edges.filter(
+                            (e) => e.id !== selectedEdge.id,
+                          ),
+                        }));
+                        setSelection(null);
+                      }}
+                    >
+                      <Trash2 size={13} /> Remove connection
+                    </button>
+                  )}
+                </>
+              ) : null}
+            </>
+          ) : inspectorTab === "Output" ? (
+            run ? (
+              <>
+                {invocations.length > 1 && (
+                  <div className="invocations">
+                    {invocations.map((e, i) => (
+                      <button
+                        key={e.id}
+                        className={evt?.id === e.id ? "active" : ""}
+                        onClick={() => setEventId(e.id)}
+                      >
+                        Attempt {e.invocation || i + 1}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {evt ? (
+                  <>
+                    <div className="row spread">
+                      <Status value={evt.type.replace("node.", "")} />
+                      <span className="muted small">
+                        {evt.latencyMs !== undefined
+                          ? `${evt.latencyMs}ms`
+                          : fmtDate(evt.time)}
+                      </span>
+                    </div>
+                    <p className="muted small">
+                      Recorded evidence · graph r{run.graph.revision}
+                    </p>
+                    <span className="eyebrow">INPUT</span>
+                    <pre>
+                      {evt.input || "No input captured for this event."}
+                    </pre>
+                    <span className="eyebrow">OUTPUT</span>
+                    <pre>
+                      {evt.output || evt.message || "No output captured yet."}
+                    </pre>
+                  </>
+                ) : (
+                  <Empty
+                    icon={Clock3}
+                    title={
+                      selectedEdge ? "Connection evidence" : "No invocation"
+                    }
+                  >
+                    {selectedEdge
+                      ? "Select the target node to inspect the input delivered through this connection."
+                      : "This node was not observed in the selected run."}
+                  </Empty>
+                )}
+              </>
+            ) : (
+              <Empty icon={Play} title="Run to see evidence">
+                Real invocation inputs and outputs appear here after execution.
+              </Empty>
+            )
+          ) : (
+            <div className="event-list">
+              {events.length ? (
+                events.map((e) => (
+                  <button
+                    key={e.id}
+                    onClick={() => {
+                      setEventId(e.id);
+                      setInspectorTab("Output");
+                    }}
+                  >
+                    <span
+                      className={`event-dot ${e.type.includes("failed") ? "failed" : ""}`}
+                    />
+                    <div>
+                      <strong>{e.type.replaceAll(".", " · ")}</strong>
+                      <small>
+                        {e.message || `Invocation ${e.invocation || 1}`}
+                      </small>
+                    </div>
+                    <time>{fmtDate(e.time)}</time>
+                  </button>
+                ))
+              ) : (
+                <p className="muted">No recorded activity for this node.</p>
+              )}
+            </div>
+          )}
+        </div>
+        {inspectorTab === "Configuration" && !locked && (
+          <div className="inspector-footer">
+            <span className="muted small">
+              {dirty ? "Unsaved draft changes" : `Revision ${graph.revision}`}
+            </span>
+            <button
+              className="button primary small"
+              disabled={!dirty || !!busy}
+              onClick={() => act("Saving graph", saveGraph)}
+            >
+              Save changes
+            </button>
+          </div>
+        )}
+      </aside>
+    );
+  }
+  function AlignmentView() {
+    return (
+      <div className="page-content align-page">
+        <div className="page-intro">
+          <span className="eyebrow">BUILD / ALIGN</span>
+          <h1>Start with the outcome.</h1>
+          <p>
+            Describe who this is for, what it should do, and what a good result
+            looks like. We’ll make the workflow explicit.
+          </p>
+        </div>
+        <div className="align-grid">
+          <section className="card brief-card">
+            <div className="card-heading">
+              <span className="number">01</span>
+              <h3>Your application brief</h3>
+            </div>
+            <textarea
+              className="brief-input"
+              aria-label="Application brief"
+              disabled={!!busy}
+              value={brief}
+              onChange={(e) => setBrief(e.target.value)}
+              placeholder="Build a support assistant that answers from approved knowledge, checks evidence, and escalates when it is unsure…"
+            />
+            <div className="brief-suggestions">
+              {["Research & evidence", "Support triage", "Document review"].map(
+                (label, i) => (
+                  <button
+                    key={label}
+                    disabled={!!busy}
+                    onClick={() =>
+                      setBrief(
+                        [
+                          "Build a research assistant that gives concise answers, identifies uncertainty and checks that its claims follow from the supplied evidence.",
+                          "Build a support triage assistant that classifies the issue, suggests a helpful response and escalates requests needing human review. Never promise a refund or claim an action was taken.",
+                          "Build a document review assistant that summarizes supplied text, identifies missing information and returns structured recommendations.",
+                        ][i],
+                      )
+                    }
+                  >
+                    {label}
+                  </button>
+                ),
+              )}
+            </div>
+            <div className="card-footer">
+              <span className="muted small">
+                One real planning call · your selected model
+              </span>
+              <button
+                className="button primary"
+                disabled={!!busy || !brief.trim()}
+                onClick={() =>
+                  act("Drafting a plan", async () => {
+                    requireConfig();
+                    const a = await api<Alignment>(
+                      `/projects/${projectId}/align`,
+                      "POST",
+                      { brief, config },
+                    );
+                    setAlignment(a);
+                    setNotice(
+                      "Plan ready. Review the assumptions and open questions before accepting.",
+                    );
+                    await refresh();
+                  })
+                }
+              >
+                {busy === "Drafting a plan" ? (
+                  <Loader2 size={15} className="spin" />
+                ) : (
+                  <ArrowRight size={15} />
+                )}{" "}
+                Draft plan
+              </button>
+            </div>
+          </section>
+          <section className="alignment-result">
+            {alignment ? (
+              <>
+                <div className="row spread">
+                  <span className="eyebrow">PROPOSED PLAN</span>
+                  <Status value="review" />
+                </div>
+                <h2>{alignment.summary}</h2>
+                <dl className="definition-list">
+                  <dt>For</dt>
+                  <dd>{alignment.users}</dd>
+                  <dt>Input</dt>
+                  <dd>{alignment.input}</dd>
+                  <dt>Output</dt>
+                  <dd>{alignment.output}</dd>
+                </dl>
+                <h4>Success looks like</h4>
+                <ul className="check-list">
+                  {alignment.successCriteria.map((s, i) => (
+                    <li key={i}>
+                      <Check size={14} />
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+                {alignment.questions.length > 0 && (
+                  <div className="callout">
+                    <strong>Before you accept</strong>
+                    <ul>
+                      {alignment.questions.map((q, i) => (
+                        <li key={i}>{q}</li>
+                      ))}
+                    </ul>
+                    <small>
+                      Add your answers to the brief, then draft the plan again.
+                    </small>
+                  </div>
+                )}
+                {alignment.assumptions.length > 0 && (
+                  <details>
+                    <summary>
+                      Assumptions · {alignment.assumptions.length}
+                    </summary>
+                    <ul>
+                      {alignment.assumptions.map((a, i) => (
+                        <li key={i}>{a}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+                <button
+                  className="button primary"
+                  disabled={!!busy}
+                  onClick={() =>
+                    act("Accepting plan", async () => {
+                      const p = await api<Project>(
+                        `/projects/${projectId}/accept`,
+                        "POST",
+                        { alignment },
+                      );
+                      syncProject(p);
+                      setStep("Review");
+                      setNotice(
+                        "Plan accepted. Inspect and refine your application graph.",
+                      );
+                    })
+                  }
+                >
+                  Accept & review graph <ArrowRight size={15} />
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="soft-icon">
+                  <Workflow size={30} />
+                </span>
+                <h2>A plan you can inspect.</h2>
+                <p className="muted">
+                  The planner turns your goal into a small graph: agents, tools,
+                  policies and explicit relationships. Nothing runs until you
+                  choose to run it.
+                </p>
+                <div className="principles">
+                  <div>
+                    <CheckCircle2 size={17} />
+                    <strong>Clear responsibilities</strong>
+                    <span>Each node has one purpose.</span>
+                  </div>
+                  <div>
+                    <GitBranch size={17} />
+                    <strong>Explicit connections</strong>
+                    <span>Follow the data and decision paths.</span>
+                  </div>
+                  <div>
+                    <ShieldCheck size={17} />
+                    <strong>Bounded execution</strong>
+                    <span>Checks and limits belong in the graph.</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      </div>
+    );
+  }
+  function GraphWorkspace({ playground = false }: { playground?: boolean }) {
+    return (
+      <div
+        className={`workspace ${graphExpanded ? "graph-fullscreen" : ""} ${graphExpanded && !fullscreenInspector ? "inspector-collapsed" : ""}`}
+        ref={graphWorkspaceRef}
+        role={graphExpanded ? "dialog" : undefined}
+        aria-modal={graphExpanded ? true : undefined}
+        aria-label={graphExpanded ? "Full-screen graph" : undefined}
+      >
+        <div className="workspace-main">
+          {graphPanel}
+          {playground && !graphExpanded && RunPanel()}
+          {!playground && !graphExpanded && (
+            <div className="graph-guidance">
+              <div>
+                <strong>
+                  {view === "observed"
+                    ? "Recorded evidence, tied to this run."
+                    : isImported
+                      ? "A map of the source, with coverage made explicit."
+                      : "Less wiring. More control."}
+                </strong>
+                <p>
+                  {view === "observed"
+                    ? "Select a node to inspect recorded inputs, outputs and decisions. This graph revision is immutable; edits belong in the current draft."
+                    : isImported
+                      ? "Inferred relationships describe source structure. Start an instrumented run to see the path actually taken."
+                      : "Select a node to edit its instructions, schema or code. Drag between node handles to add a data connection."}
+                </p>
+              </div>
+              {view === "observed" ? (
+                <button
+                  className="button"
+                  onClick={() => {
+                    setView("design");
+                    navigate(
+                      isImported ? "connect" : "build",
+                      isImported ? "Map" : "Review",
+                    );
+                  }}
+                >
+                  {isImported ? "Open source map" : "Open current draft"}{" "}
+                  <ArrowRight size={15} />
+                </button>
+              ) : !isImported ? (
+                <button
+                  className="button"
+                  disabled={!!busy}
+                  onClick={() => setStep("Run & Test")}
+                >
+                  Try in playground <ArrowRight size={15} />
+                </button>
+              ) : (
+                <button className="button" onClick={() => setStep("Observe")}>
+                  Observe a run <ArrowRight size={15} />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        {(!graphExpanded || fullscreenInspector) && Inspector()}
+      </div>
+    );
+  }
+  function Limits() {
+    if (!graph) return null;
+    return (
+      <div className="limits-grid">
+        {(
+          [
+            { key: "maxCalls", label: "Model calls", min: 1, max: 30 },
+            { key: "maxRevisions", label: "Revision attempts", min: 0, max: 3 },
+            { key: "timeoutMs", label: "Timeout (ms)", min: 1000, max: 180000 },
+            {
+              key: "maxOutputTokens",
+              label: "Output token limit",
+              min: 64,
+              max: 16000,
+            },
+          ] as const
+        ).map((x) => (
+          <Field key={x.key} label={x.label}>
+            <input
+              type="number"
+              min={x.min}
+              max={x.max}
+              disabled={isImported || !!busy}
+              value={graph.limits[x.key]}
+              onChange={(e) =>
+                updateGraph((g) => ({
+                  ...g,
+                  limits: { ...g.limits, [x.key]: Number(e.target.value) },
+                }))
+              }
+            />
+          </Field>
+        ))}
+        <Field
+          label="Cost cap (USD)"
+          hint="Optional. Requires a model with known text pricing."
+        >
+          <input
+            type="number"
+            min="0.001"
+            max="3"
+            step="0.01"
+            disabled={isImported || !!busy}
+            value={graph.limits.maxCostUsd ?? ""}
+            placeholder="Call limits only"
+            onChange={(e) =>
+              updateGraph((g) => ({
+                ...g,
+                limits: {
+                  ...g.limits,
+                  maxCostUsd: e.target.value
+                    ? Number(e.target.value)
+                    : undefined,
+                },
+              }))
+            }
+          />
+        </Field>
+      </div>
+    );
+  }
+  function Launch() {
+    const passed = projectRuns.find(
+      (r) => r.status === "completed" && r.graph.revision === graph?.revision,
+    );
+    return (
+      <div className="page-content">
+        <div className="page-intro">
+          <span className="eyebrow">BUILD / LAUNCH</span>
+          <h1>Your application. Your code.</h1>
+          <p>
+            Download the exact graph revision as a runnable local project.
+            Hosted deployment comes later.
+          </p>
+        </div>
+        <div className="launch-grid">
+          <section className="card">
+            <span className="soft-icon">
+              <ArrowDownToLine size={25} />
+            </span>
+            <h2>Project export</h2>
+            <p className="muted">
+              Source, graph, prompts, runtime dependencies, tests and setup
+              instructions. Credentials and private run data are excluded.
+            </p>
+            <div className="export-list">
+              {[
+                "Versioned application graph",
+                "Node instructions and implementation",
+                "Runnable local service and package manifest",
+                "Setup README and environment template",
+              ].map((s) => (
+                <div key={s}>
+                  <Check size={15} />
+                  {s}
+                </div>
+              ))}
+            </div>
+            <div className="callout">
+              {passed
+                ? `A completed run exists for revision ${graph?.revision}. The export endpoint performs its own readiness checks.`
+                : "Run the current graph successfully before exporting. This makes the code handoff reviewable."}
+            </div>
+            <button
+              className="button primary"
+              disabled={!!busy || !passed || dirty || isImported}
+              onClick={() =>
+                act("Preparing export", async () => {
+                  const sessionAtStart = captureSession();
+                  const res = await fetch(`/api/projects/${projectId}/export`);
+                  if (!res.ok) {
+                    if (res.status === 401) expireSession(sessionAtStart);
+                    let e;
+                    try {
+                      e = await res.json();
+                    } catch {
+                      e = { error: "Export failed" };
+                    }
+                    throw new Error(e.message || e.error);
+                  }
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob),
+                    a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${project?.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "agent-app"}.zip`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  setNotice(
+                    "Project ZIP downloaded. Follow its README to configure fresh credentials and run locally.",
+                  );
+                })
+              }
+            >
+              <ArrowDownToLine size={15} /> Download project ZIP
+            </button>
+            {isImported && (
+              <p className="muted small">
+                Connected repositories stay source-owned. Export is for
+                applications created in this workbench.
+              </p>
+            )}
+          </section>
+          <section className="card">
+            <span className="eyebrow">EXECUTION CONTRACT</span>
+            <h2>Limits travel with the graph.</h2>
+            <p className="muted">
+              The local runtime enforces these values. Saving a change creates a
+              new graph revision.
+            </p>
+            {Limits()}
+            {dirty && (
+              <button
+                className="button"
+                disabled={!!busy}
+                onClick={() => act("Saving limits", saveGraph)}
+              >
+                Save limits
+              </button>
+            )}
+            <div className="readiness">
+              <div>
+                <span>Current revision</span>
+                <strong>r{graph?.revision}</strong>
+              </div>
+              <div>
+                <span>Latest matching run</span>
+                {passed ? (
+                  <Status value="completed" />
+                ) : (
+                  <Status value="not tested" />
+                )}
+              </div>
+              <div>
+                <span>Code isolation</span>
+                <strong>
+                  {docker ? "Docker available" : "Docker unavailable"}
+                </strong>
+              </div>
+              <div>
+                <span>Delivery</span>
+                <strong>Local project ZIP</strong>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
+  function MappingFields() {
+    return (
+      <div className="mapping-options">
+        <Field label="Mapping approach">
+          <select
+            value={mappingMode}
+            onChange={(e) => setMappingMode(e.target.value as "ai" | "static")}
+          >
+            <option value="ai">AI workflow map (recommended)</option>
+            <option value="static">Source inventory only</option>
+          </select>
+        </Field>
+        <p className="muted small">
+          {mappingMode === "ai"
+            ? `Uses ${config.model || "your selected model"} to identify workflows from bounded source excerpts. This is a billed model call. A small model such as Gemini Flash Lite is recommended.`
+            : "Discovers files and source references without model inference. Agent relationships may remain unresolved."}
+        </p>
+        {mappingMode === "ai" && (!config.credentialId || !config.model) && (
+          <button
+            className="button small"
+            onClick={() => setCredentialModal(true)}
+          >
+            <KeyRound size={13} /> Choose a model credential
+          </button>
+        )}
+      </div>
+    );
+  }
+  function MappingCoverage() {
+    if (!mappingStatus) return null;
+    return (
+      <div className="mapping-coverage">
+        <div className="row spread">
+          <strong>
+            {mappingStatus.method === "ai"
+              ? "AI workflow map"
+              : "Source inventory"}
+          </strong>
+          {mappingStatus.model && (
+            <span className="muted small">{mappingStatus.model}</span>
+          )}
+        </div>
+        {mappingStatus.error && (
+          <div className="mapping-error" role="alert">
+            <strong>AI mapping failed; source inventory retained.</strong>
+            <p>{mappingStatus.error}</p>
+          </div>
+        )}
+        <div className="mapping-metrics">
+          <div>
+            <strong>{mappingStatus.discoveredFiles}</strong>
+            <span>discovered files</span>
+          </div>
+          <div>
+            <strong>
+              {mappingStatus.mappedCandidates}/{mappingStatus.candidates}
+            </strong>
+            <span>candidates mapped</span>
+          </div>
+          <div>
+            <strong>{mappingStatus.unresolvedCandidates}</strong>
+            <span>unresolved</span>
+          </div>
+        </div>
+        <p className="muted small">
+          {mappingStatus.sourceFilesRead} source files read
+          {mappingStatus.truncated
+            ? " · bounded excerpts; source was truncated"
+            : ""}
+          .
+        </p>
+        {mappingStatus.notes.length > 0 && (
+          <details>
+            <summary>Mapping coverage notes</summary>
+            <ul>
+              {mappingStatus.notes.map((note, index) => (
+                <li key={index}>{note}</li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </div>
+    );
+  }
+  function SourceConnection() {
+    const githubReady = !!githubStatus?.connected;
+    const selectedRepo = githubRepos?.find((r) => r.url === repoPath);
+    return (
+      <section className="card source-connection">
+        <div className="card-heading">
+          <GitBranch size={20} />
+          <h3>Connect source</h3>
+          <span className="connection-kind">Static discovery</span>
+        </div>
+        <p className="muted small">
+          Read source to map agents, tools and supporting files. Source access
+          does not establish a live connection.
+        </p>
+        <div
+          className="connection-methods"
+          role="group"
+          aria-label="Source connection method"
+        >
+          {(
+            [
+              ["github", "GitHub"],
+              ["local", "Local path"],
+              ["upload", "Upload folder"],
+            ] as const
+          )
+            .filter(
+              ([id]) =>
+                id !== "local" || data.system.hosting?.localSource !== false,
+            )
+            .map(([id, label]) => (
+              <button
+                className={sourceMethod === id ? "active" : ""}
+                aria-pressed={sourceMethod === id}
+                key={id}
+                onClick={() => {
+                  setSourceMethod(id);
+                  if (id === "local" && repoPath.startsWith("https://"))
+                    setRepoPath(repoDefault);
+                  if (id === "github" && !repoPath.startsWith("https://"))
+                    setRepoPath("");
+                }}
+              >
+                {label}
+              </button>
+            ))}
+        </div>
+        {sourceMethod === "github" ? (
+          <>
+            <div className="connection-status">
+              <span className={`dot ${githubReady ? "green" : ""}`} />
+              <div>
+                <strong>
+                  {githubReady
+                    ? `Connected${githubStatus?.login ? ` as ${githubStatus.login}` : ""}`
+                    : "Public repository or private access"}
+                </strong>
+                <p>
+                  {githubReady
+                    ? `Using ${githubStatus?.authSource === "token" ? "a validated personal access token" : "the GitHub CLI on this computer"}.`
+                    : "Paste a public GitHub URL below. For a private repository, add an optional token with read access."}
+                </p>
+              </div>
+            </div>
+            <div className="row connection-actions">
+              {(!isHosted || githubReady) && <button
+                className="button small"
+                disabled={!!busy}
+                onClick={() =>
+                  act("Checking GitHub", async () => {
+                    const status = await refreshGitHub(true);
+                    if (!status.connected)
+                      throw new Error(
+                        "No saved GitHub access. Public repository URLs still work; private repositories require a token.",
+                      );
+                  })
+                }
+              >
+                {githubReady ? "Refresh repositories" : "Check GitHub CLI"}
+              </button>}
+              {githubStatus?.authSource === "token" && (
+                <button
+                  className="text-button"
+                  disabled={!!busy}
+                  onClick={() =>
+                    act("Disconnecting GitHub token", async () => {
+                      await api("/github/token", "DELETE", {});
+                      setGithubRepos(null);
+                      await refreshGitHub();
+                      setNotice(
+                        "GitHub token removed from your session.",
+                      );
+                    })
+                  }
+                >
+                  Remove token
+                </button>
+              )}
+            </div>
+            <details className="token-details">
+              <summary>
+                {githubReady
+                  ? "Use a different GitHub token"
+                  : "Optional token for a private repository"}
+              </summary>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const token = githubToken.trim();
+                  if (!token) return;
+                  setGithubToken("");
+                  act("Validating GitHub token", async () => {
+                    await api("/github/token", "POST", { token });
+                    await refreshGitHub(true);
+                    setNotice(
+                      "GitHub token validated for this account. Choose a repository to map.",
+                    );
+                  });
+                }}
+              >
+                <Field
+                  label="Personal access token"
+                  hint="Use repository read access only. Kept in your server-side session; never stored in your browser."
+                >
+                  <input
+                    type="password"
+                    autoComplete="off"
+                    spellCheck={false}
+                    value={githubToken}
+                    onChange={(e) => setGithubToken(e.target.value)}
+                    placeholder="Optional token for private repositories"
+                  />
+                </Field>
+                <button
+                  className="button small"
+                  type="submit"
+                  disabled={!!busy || !githubToken.trim()}
+                >
+                  Validate & connect
+                </button>
+              </form>
+            </details>
+            {githubReady && (
+              <>
+                <Field label="GitHub repository">
+                  <select
+                    value={selectedRepo ? repoPath : ""}
+                    onChange={(e) => {
+                      if (e.target.value) setRepoPath(e.target.value);
+                    }}
+                  >
+                    <option value="">
+                      {githubRepos === null
+                        ? "Refresh repositories to choose one"
+                        : "Choose a repository"}
+                    </option>
+                    {githubRepos?.map((r) => (
+                      <option key={r.url} value={r.url}>
+                        {r.name} · {r.isPrivate ? "Private" : "Public"}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                {selectedRepo?.description && (
+                  <p className="muted small">{selectedRepo.description}</p>
+                )}
+                {githubRepos?.length === 0 && (
+                  <p className="muted small">
+                    No repositories returned. Check that your token can read the
+                    intended repository, or paste its URL below.
+                  </p>
+                )}
+              </>
+            )}
+            <Field label="Repository URL">
+              <input
+                placeholder="https://github.com/owner/repository"
+                value={repoPath.startsWith("https://") ? repoPath : ""}
+                onChange={(e) => setRepoPath(e.target.value)}
+              />
+            </Field>
+          </>
+        ) : sourceMethod === "local" ? (
+          <>
+            <Field
+              label="Local repository path"
+              hint="An existing folder on the computer running this server."
+            >
+              <input
+                placeholder="/path/to/repository"
+                value={repoPath}
+                onChange={(e) => setRepoPath(e.target.value)}
+              />
+            </Field>
+            {repoDefault && repoPath !== repoDefault && (
+              <button
+                className="text-button"
+                onClick={() => setRepoPath(repoDefault)}
+              >
+                Use Learning Studio checkout
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <Field
+              label="Choose an application folder"
+              hint="Files are reviewed in your browser before you import. Up to 500 text files, 900 KB each and 8 MB total."
+            >
+              <input
+                type="file"
+                multiple
+                ref={(el) => {
+                  if (el) el.setAttribute("webkitdirectory", "");
+                }}
+                disabled={!!busy}
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  e.target.value = "";
+                  if (files.length)
+                    act("Reviewing folder", () => reviewFolder(files));
+                }}
+              />
+            </Field>
+            {folderReview && (
+              <div className="folder-review">
+                <Field label="Application name">
+                  <input
+                    value={folderReview.name}
+                    onChange={(e) =>
+                      setFolderReview({ ...folderReview, name: e.target.value })
+                    }
+                  />
+                </Field>
+                <div className="row spread">
+                  <strong>{folderReview.files.length} files ready</strong>
+                  <span className="muted small">
+                    {(folderReview.totalBytes / 1024 / 1024).toFixed(2)} MB
+                  </span>
+                </div>
+                {Object.entries(folderReview.skipped).length > 0 && (
+                  <ul className="import-skips">
+                    {Object.entries(folderReview.skipped).map(
+                      ([reason, count]) => (
+                        <li key={reason}>
+                          <span>{reason}</span>
+                          <strong>{count} skipped</strong>
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                )}
+                <details>
+                  <summary>Review included files</summary>
+                  <ul className="import-files">
+                    {folderReview.files.map((f) => (
+                      <li key={f.path}>
+                        <code>{f.path}</code>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={folderConfirmed}
+                    onChange={(e) => setFolderConfirmed(e.target.checked)}
+                  />
+                  <span>
+                    I reviewed the files and confirmed they can be imported.
+                  </span>
+                </label>
+              </div>
+            )}
+            <p className="muted small">
+              Dependencies, generated files, common credential files and binary
+              files are excluded. Review the list: automatic filtering cannot
+              identify every secret.
+            </p>
+          </>
+        )}
+        {MappingFields()}
+        <button
+          className="button primary"
+          disabled={
+            !!busy ||
+            (sourceMethod === "upload"
+              ? !folderConfirmed ||
+                !folderReview?.files.length ||
+                !folderReview.name.trim()
+              : !repoPath.trim() ||
+                (sourceMethod === "github" &&
+                  !repoPath.startsWith("https://github.com/")))
+          }
+          onClick={() =>
+            act("Mapping source", async () => {
+              const options = mappingOptions();
+              const p =
+                sourceMethod === "upload" && folderReview
+                  ? await api<Project>("/repos/upload", "POST", {
+                      name: folderReview.name.trim(),
+                      files: folderReview.files,
+                      ...options,
+                    })
+                  : await api<Project>("/repos/connect", "POST", {
+                      path: repoPath.trim(),
+                      ...options,
+                    });
+              syncProject(p);
+              setStep("Map");
+              setFolderReview(null);
+              setFolderConfirmed(false);
+              setNotice(
+                "Source map created. Connect live traces separately to observe execution.",
+              );
+            })
+          }
+        >
+          {sourceMethod === "upload"
+            ? "Import reviewed source"
+            : "Connect & map"}
+          <ArrowRight size={15} />
+        </button>
+        <div className="callout small">
+          {sourceMethod === "github"
+            ? "GitHub repositories use a managed read-only source clone. "
+            : sourceMethod === "upload"
+              ? "Selected files are stored in your workspace. "
+              : "Local source is read without changing your files. "}
+          Connecting source does not run application code.
+        </div>
+      </section>
+    );
+  }
+  function LiveConnection() {
+    const issued = nativeIssued?.projectId === projectId ? nativeIssued : null;
+    const externalCount = projectRuns.filter(
+      (r) => (r as Run & { external?: ExternalEvidence }).external,
+    ).length;
+    return (
+      <section className="card live-connection">
+        <div className="card-heading">
+          <Workflow size={20} />
+          <h3>Connect live traces</h3>
+          <span className="connection-kind">Execution evidence</span>
+        </div>
+        <p className="muted small">
+          For <strong>{project?.name || "the selected application"}</strong>.
+          Send native events from your running application or pull recorded
+          observations from Langfuse. These connections do not execute your app.
+          No model-provider API key is needed for trace ingestion.
+        </p>
+        <div
+          className="connection-methods"
+          role="group"
+          aria-label="Live trace connection method"
+        >
+          {(
+            [
+              ["native", "Native instrumentation"],
+              ["langfuse", "Langfuse"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              className={traceMethod === id ? "active" : ""}
+              aria-pressed={traceMethod === id}
+              onClick={() => setTraceMethod(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {traceMethod === "native" ? (
+          <>
+            <div className="connection-status">
+              <span
+                className={`dot ${liveStatus?.native.lastReceivedAt ? "green" : ""}`}
+              />
+              <div>
+                <strong>
+                  {liveStatus?.native.lastReceivedAt
+                    ? "Receiving native trace evidence"
+                    : liveStatus?.native.enabled
+                      ? "Endpoint enabled · awaiting events"
+                      : "Add instrumentation to your app"}
+                </strong>
+                <p>
+                  {liveStatus?.native.lastReceivedAt
+                    ? `Last event ${fmtDate(liveStatus.native.lastReceivedAt)}.`
+                    : "A source map shows what may run. Native events show what actually ran."}
+                </p>
+              </div>
+            </div>
+            <div className="callout small">
+              Keep the endpoint and token in your application’s server
+              environment. This receiver is local to this computer; it is not a
+              public internet endpoint. The application must be able to reach
+              it.
+            </div>
+            {liveStatus?.native.enabled && !issued && (
+              <Field label="Trace receiver endpoint">
+                <input readOnly value={liveStatus.native.endpoint} />
+              </Field>
+            )}
+            {issued && (
+              <div className="native-integration">
+                <div className="row spread">
+                  <strong>Save this integration token now</strong>
+                  <span className="connection-kind">Shown once</span>
+                </div>
+                <p className="muted small">
+                  It is cleared when you switch projects or reload. Creating a
+                  new token replaces the previous token.
+                </p>
+                <Field label="Endpoint">
+                  <input readOnly value={issued.endpoint} />
+                </Field>
+                <Field label="Integration token">
+                  <div className="input-action">
+                    <input
+                      type="password"
+                      autoComplete="off"
+                      readOnly
+                      value={issued.token}
+                    />
+                    <button
+                      className="button small"
+                      onClick={() =>
+                        act("Copying token", async () => {
+                          await navigator.clipboard.writeText(issued.token);
+                          setNotice("Integration token copied.");
+                        })
+                      }
+                    >
+                      Copy token
+                    </button>
+                  </div>
+                </Field>
+                <Field label="Integration example">
+                  <textarea
+                    className="code-input"
+                    rows={9}
+                    readOnly
+                    value={issued.snippet}
+                    spellCheck={false}
+                  />
+                </Field>
+                <button
+                  className="button small"
+                  onClick={() =>
+                    act("Copying integration", async () => {
+                      await navigator.clipboard.writeText(issued.snippet);
+                      setNotice("Integration example copied.");
+                    })
+                  }
+                >
+                  Copy integration example
+                </button>
+              </div>
+            )}
+            <div className="row connection-actions">
+              <button
+                className="button primary small"
+                disabled={!!busy || !projectId}
+                onClick={() =>
+                  act("Creating trace integration", async () => {
+                    const result = await api<{
+                      token: string;
+                      endpoint: string;
+                      snippet: string;
+                    }>(`/projects/${projectId}/telemetry/token`, "POST", {});
+                    setNativeIssued({ ...result, projectId });
+                    await refreshConnections();
+                    setNotice(
+                      "Trace endpoint enabled. Add the integration to your app to receive events.",
+                    );
+                  })
+                }
+              >
+                {liveStatus?.native.enabled
+                  ? "Replace integration token"
+                  : "Create integration token"}
+              </button>
+              {liveStatus?.native.enabled && (
+                <button
+                  className="text-button"
+                  disabled={!!busy}
+                  onClick={() =>
+                    act("Disabling native traces", async () => {
+                      await api(
+                        `/projects/${projectId}/telemetry/token`,
+                        "DELETE",
+                        {},
+                      );
+                      setNativeIssued(null);
+                      await refreshConnections();
+                      setNotice(
+                        "Native trace receiver disabled for this application.",
+                      );
+                    })
+                  }
+                >
+                  Disable receiver
+                </button>
+              )}
+            </div>
+            <details className="instrumentation-guide">
+              <summary>Instrument an agent call</summary>
+              <p>
+                Download a helper into your app and set the server environment
+                variables shown above. Wrap the real agent or tool call so its
+                input, output, timing and failures are recorded.
+              </p>
+              <div className="row connection-actions">
+                <a
+                  className="button small"
+                  href="/api/telemetry/client.mjs"
+                  download="workbench-client.mjs"
+                >
+                  <ArrowDownToLine size={13} />
+                  JavaScript helper
+                </a>
+                <a
+                  className="button small"
+                  href="/api/telemetry/client.py"
+                  download="workbench_client.py"
+                >
+                  <ArrowDownToLine size={13} />
+                  Python helper
+                </a>
+              </div>
+              <pre className="integration-code">{`import { WorkbenchTrace } from './workbench-client.mjs';
+
+const trace = new WorkbenchTrace('My app');
+await trace.run(() => trace.span(
+  'Research',
+  () => research(),
+  { role: 'agent', input: 'sample' }
+));`}</pre>
+              <p>
+                Replace <code>research()</code> with your actual function. Only
+                wrapped activity is observed; uninstrumented calls remain
+                unknown.
+              </p>
+            </details>
+          </>
+        ) : (
+          <>
+            <div className="connection-status">
+              <span
+                className={`dot ${liveStatus?.langfuse.connected ? "green" : ""}`}
+              />
+              <div>
+                <strong>
+                  {liveStatus?.langfuse.connected
+                    ? `Connected${liveStatus.langfuse.projectName ? ` · ${liveStatus.langfuse.projectName}` : ""}`
+                    : "Connect a Langfuse project"}
+                </strong>
+                <p>
+                  {liveStatus?.langfuse.lastSyncAt
+                    ? `Last synced ${fmtDate(liveStatus.langfuse.lastSyncAt)}.`
+                    : "Uses a project public key and secret key, not a personal access token."}
+                </p>
+              </div>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const publicKey = langfusePublicKey.trim(),
+                  secretKey = langfuseSecretKey.trim();
+                if (!publicKey || !secretKey) return;
+                setLangfusePublicKey("");
+                setLangfuseSecretKey("");
+                act("Validating Langfuse connection", async () => {
+                  await api(`/projects/${projectId}/langfuse`, "POST", {
+                    url: langfuseUrl.trim(),
+                    publicKey,
+                    secretKey,
+                  });
+                  await refreshConnections();
+                  setNotice(
+                    "Langfuse connection validated. Sync recent traces when ready.",
+                  );
+                });
+              }}
+            >
+              <Field
+                label="Langfuse base URL"
+                hint={
+                  isHosted
+                    ? "Use a supported Langfuse Cloud URL. A localhost URL refers to this private server, not your computer."
+                    : "Official EU, US, JP or HIPAA cloud, or a localhost self-hosted v4 instance."
+                }
+              >
+                <input
+                  type="url"
+                  value={langfuseUrl}
+                  onChange={(e) => setLangfuseUrl(e.target.value)}
+                  placeholder="https://cloud.langfuse.com"
+                  required
+                />
+              </Field>
+              <div className="connection-key-grid">
+                <Field label="Project public key">
+                  <input
+                    type="password"
+                    autoComplete="off"
+                    value={langfusePublicKey}
+                    onChange={(e) => setLangfusePublicKey(e.target.value)}
+                    placeholder="pk-lf-…"
+                  />
+                </Field>
+                <Field label="Project secret key">
+                  <input
+                    type="password"
+                    autoComplete="off"
+                    value={langfuseSecretKey}
+                    onChange={(e) => setLangfuseSecretKey(e.target.value)}
+                    placeholder="sk-lf-…"
+                  />
+                </Field>
+              </div>
+              <button
+                className="button small"
+                type="submit"
+                disabled={
+                  !!busy ||
+                  !projectId ||
+                  !langfuseUrl.trim() ||
+                  !langfusePublicKey.trim() ||
+                  !langfuseSecretKey.trim()
+                }
+              >
+                {liveStatus?.langfuse.connected
+                  ? "Validate replacement keys"
+                  : "Validate & connect"}
+              </button>
+            </form>
+            <p className="muted small">
+              Keys are sent to this local server and cleared from the form. Sync
+              is manual and imports available observations; it does not imply
+              full application coverage.
+            </p>
+            {liveStatus?.langfuse.connected && (
+              <div className="row connection-actions">
+                <button
+                  className="button primary small"
+                  disabled={!!busy}
+                  onClick={() =>
+                    act("Syncing recent traces", async () => {
+                      const result = await api<{
+                        runs: number;
+                        spans: number;
+                        limited: boolean;
+                        message: string;
+                      }>(`/projects/${projectId}/langfuse/sync`, "POST", {
+                        hours: 24,
+                      });
+                      await refresh();
+                      await refreshConnections();
+                      setNotice(
+                        result.message ||
+                          `${result.runs} runs and ${result.spans} spans synced${result.limited ? " (limited result)" : ""}.`,
+                      );
+                    })
+                  }
+                >
+                  Sync recent traces · 24 h
+                </button>
+                <button
+                  className="text-button"
+                  disabled={!!busy}
+                  onClick={() =>
+                    act("Disconnecting Langfuse", async () => {
+                      await api(`/projects/${projectId}/langfuse`, "DELETE", {});
+                      await refreshConnections();
+                      setNotice(
+                        "Langfuse disconnected. Previously imported traces remain available.",
+                      );
+                    })
+                  }
+                >
+                  Disconnect
+                </button>
+              </div>
+            )}
+          </>
+        )}
+        <div className="connection-evidence-footer">
+          <span>
+            {externalCount
+              ? `${externalCount} external trace${externalCount === 1 ? "" : "s"} recorded`
+              : "No external traces recorded yet"}
+          </span>
+          <button
+            className="text-button"
+            onClick={() => {
+              setView("observed");
+              setStep("Observe");
+            }}
+          >
+            Open live observation <ArrowRight size={14} />
+          </button>
+        </div>
+      </section>
+    );
+  }
+  function Connect() {
+    if (step === "Map")
+      return (
+        <>
+          <div className="coverage-bar">
+            <GitBranch size={16} />
+            <strong>
+              {project?.repo?.adapter || "No repository connected"}
+            </strong>
+            <span>
+              {mappingStatus
+                ? `${mappingStatus.method === "ai" ? "AI map" : "Source inventory"} · ${mappingStatus.mappedCandidates}/${mappingStatus.candidates} candidates · ${mappingStatus.unresolvedCandidates} unresolved`
+                : project?.repo?.coverage.join(" · ")}
+            </span>
+            {project?.repo && (
+              <button
+                className="text-button"
+                disabled={!!busy}
+                title={
+                  mappingMode === "ai"
+                    ? "Refresh using one bounded model call with the selected model"
+                    : "Refresh source inventory without inference"
+                }
+                onClick={() => act("Refreshing source map", remapSource)}
+              >
+                Refresh source map{mappingMode === "ai" ? " · AI" : ""}
+              </button>
+            )}
+            <button className="text-button" onClick={() => setStep("Connect")}>
+              Coverage details
+            </button>
+          </div>
+          {mappingStatus?.error && (
+            <div className="mapping-error map-error" role="alert">
+              <div>
+                <strong>AI mapping failed; source inventory retained.</strong>
+                <p>{mappingStatus.error}</p>
+              </div>
+              <button
+                className="button small"
+                onClick={() => setStep("Connect")}
+              >
+                Review mapping setup
+              </button>
+            </div>
+          )}
+          {GraphWorkspace({})}
+        </>
+      );
+    if (step === "Observe") return GraphWorkspace({ playground: true });
+    if (step === "Diagnose")
+      return (
+        <div className="page-content">
+          <div className="page-intro">
+            <span className="eyebrow">CONNECT / DIAGNOSE</span>
+            <h1>Start from the evidence.</h1>
+            <p>
+              Inspect a failed invocation and its source location. Imported code
+              remains read-only.
+            </p>
+          </div>
+          {projectRuns.length ? (
+            <div className="diagnosis-grid">
+              {projectRuns.map((r) => (
+                <section className="card" key={r.id}>
+                  <div className="row spread">
+                    <Status value={r.status} />
+                    <span className="muted small">
+                      {fmtDate(r.createdAt)} · r{r.graph.revision}
+                    </span>
+                  </div>
+                  <h3>{r.input.slice(0, 110)}</h3>
+                  <p className="muted">
+                    {r.error ||
+                      `${r.events.length} recorded events. Inspect individual node inputs and outputs.`}
+                  </p>
+                  {r.events
+                    .filter(
+                      (e) =>
+                        e.type === "node.failed" || e.type === "node.blocked",
+                    )
+                    .map((e) => {
+                      const n = r.graph.nodes.find((n) => n.id === e.nodeId);
+                      return (
+                        <div className="finding-snippet" key={e.id}>
+                          <strong>{n?.label || e.nodeId}</strong>
+                          <p>{e.message || e.output}</p>
+                          {n?.source && (
+                            <code>
+                              {n.source.path}:{n.source.line}
+                            </code>
+                          )}
+                        </div>
+                      );
+                    })}
+                  <button
+                    className="button small"
+                    onClick={() => {
+                      inspectRun(r);
+                      setStep("Observe");
+                    }}
+                  >
+                    Inspect trace <ArrowRight size={13} />
+                  </button>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <Empty
+              icon={GitBranch}
+              title="No execution evidence yet"
+              action={
+                <button className="button" onClick={() => setStep("Observe")}>
+                  Open Observe
+                </button>
+              }
+            >
+              Connect a compatible repository and run a bounded test before
+              diagnosing its behavior.
+            </Empty>
+          )}
+        </div>
+      );
+    return (
+      <div className="page-content">
+        <div className="page-intro">
+          <span className="eyebrow">CONNECT & DEBUG</span>
+          <h1>Bring the app you already have.</h1>
+          <p>
+            Connect source to understand the structure. Connect live traces
+            separately to see actual execution. Your code remains yours.
+          </p>
+        </div>
+        <div className="connect-grid">
+          {SourceConnection()}
+          <section className="card">
+            <span className="eyebrow">SOURCE STATUS & COVERAGE</span>
+            <h3>{project?.repo?.name || "What you can expect"}</h3>
+            {project?.repo ? (
+              <>
+                <div className="connection-status">
+                  <span className="dot green" />
+                  <strong>Source connected · static map</strong>
+                </div>
+                <div className="source-ref">
+                  <FileCode2 size={14} />
+                  <code>{project.repo.path}</code>
+                </div>
+                <div className="row spread">
+                  <span className="muted">Pinned revision</span>
+                  <code>{project.repo.revision.slice(0, 12)}</code>
+                </div>
+                {MappingCoverage()}
+                <h4>Covered paths</h4>
+                <ul className="check-list">
+                  {project.repo.coverage.map((x, i) => (
+                    <li key={i}>
+                      <Check size={14} />
+                      {x}
+                    </li>
+                  ))}
+                </ul>
+                <h4>Limits of this integration</h4>
+                <ul className="plain-list">
+                  {project.repo.limitations.map((x, i) => (
+                    <li key={i}>{x}</li>
+                  ))}
+                </ul>
+                <div className="row connection-actions">
+                  <button className="button" onClick={() => setStep("Map")}>
+                    Open source map <ArrowRight size={14} />
+                  </button>
+                  <button
+                    className="text-button"
+                    disabled={!!busy}
+                    onClick={() => act("Refreshing source map", remapSource)}
+                  >
+                    Refresh source map{mappingMode === "ai" ? " · AI" : ""}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="coverage-item">
+                  <span className="dot" />
+                  <div>
+                    <strong>Source map</strong>
+                    <p>
+                      Workflow entry points and supporting files, linked back to
+                      source.
+                    </p>
+                  </div>
+                </div>
+                <div className="coverage-item">
+                  <span className="dot purple" />
+                  <div>
+                    <strong>Real traces where supported</strong>
+                    <p>
+                      Learning Studio is the first adapter. Its overview and
+                      build paths have distinct coverage.
+                    </p>
+                  </div>
+                </div>
+                <div className="coverage-item">
+                  <CircleHelp size={15} />
+                  <div>
+                    <strong>Visible limitations</strong>
+                    <p>
+                      Unsupported behavior is labelled as discovery-only.
+                      Credentials do not create instrumentation.
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+        {LiveConnection()}
+      </div>
+    );
+  }
+  function RedTeam() {
+    const plans = data.redPlans.filter((p) => p.projectId === projectId);
+    const behaviorAvailable = canExecuteProject;
+    const sourceMode =
+      isImported && (!behaviorAvailable || redMethod === "source-review");
+    const sourcePlan = red?.mode === "source-review";
+    const reviewerReady =
+      !!config.model &&
+      data.credentials.some(
+        (credential) =>
+          credential.id === config.credentialId && credential.valid,
+      );
+    return (
+      <div className="page-content">
+        <div className="page-intro horizontal">
+          <div>
+            <span className="eyebrow">RED TEAM / {step.toUpperCase()}</span>
+            <h1>
+              {step === "Scope"
+                ? "Test the boundaries."
+                : step === "Test Plan"
+                  ? sourcePlan
+                    ? "Review the source plan."
+                    : "Review the probes."
+                  : step === "Run"
+                    ? "A controlled examination."
+                    : "Findings with evidence."}
+            </h1>
+            <p>
+              Review source for security, brand and customer risks. Run
+              behavioral probes where an isolated execution adapter is
+              available.
+            </p>
+          </div>
+          {plans.length > 0 && (
+            <select
+              aria-label="Red team plan"
+              value={redId}
+              onChange={(e) => {
+                setRedId(e.target.value);
+                setConfirmed(false);
+              }}
+            >
+              <option value="">Select a plan</option>
+              {plans.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {fmtDate(p.createdAt)} · {p.status} ·{" "}
+                  {p.mode === "source-review"
+                    ? "source review"
+                    : `${p.probes.length} probes`}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+        {step === "Scope" ? (
+          <div className="two-column">
+            <section className="card">
+              <Field label="Review method">
+                <select
+                  aria-label="Review method"
+                  value={sourceMode ? "source-review" : "behavioral"}
+                  onChange={(e) => {
+                    setRedMethod(
+                      e.target.value as "source-review" | "behavioral",
+                    );
+                    setConfirmed(false);
+                  }}
+                >
+                  <option value="source-review" disabled={!isImported}>
+                    Source review · no target execution
+                  </option>
+                  <option value="behavioral" disabled={!behaviorAvailable}>
+                    Behavioral probes
+                    {!behaviorAvailable ? " · runner unavailable" : ""}
+                  </option>
+                </select>
+              </Field>
+              {isImported && (
+                <div className="callout small" role="status">
+                  <strong>
+                    {behaviorAvailable
+                      ? "Source review and scoped behavioral testing are available."
+                      : "Source review is available for this repository."}
+                  </strong>
+                  <p>
+                    {behaviorAvailable
+                      ? "Behavioral coverage is limited to the inspected Learning Studio overview adapter."
+                      : `${project?.repo?.executionUnavailableReason || "This app has a source map but no supported execution runner."} Live traces let you observe runs; they do not enable behavioral probes. Source review can inspect its code now.`}
+                  </p>
+                </div>
+              )}
+              <Field
+                label="Permitted target scope"
+                hint="Use isolated test identities and storage, with billing disabled."
+              >
+                <select
+                  value={redScope}
+                  onChange={(e) => setRedScope(e.target.value)}
+                >
+                  <option value="local-test">Local test application</option>
+                  <option value="owned-staging">
+                    Owned, isolated staging application
+                  </option>
+                </select>
+              </Field>
+              <Field label="Brand and behavior rules">
+                <textarea
+                  rows={5}
+                  value={brandRules}
+                  onChange={(e) => setBrandRules(e.target.value)}
+                />
+              </Field>
+              {!sourceMode && (
+                <Field label="Maximum behavioral probes">
+                  <input
+                    type="number"
+                    min={1}
+                    max={6}
+                    value={maxProbes}
+                    onChange={(e) =>
+                      setMaxProbes(
+                        Math.max(1, Math.min(6, Number(e.target.value))),
+                      )
+                    }
+                  />
+                </Field>
+              )}
+              {sourceMode && (
+                <p className="muted small">
+                  Preparing the plan is free. After approval, one capped model
+                  call reviews redacted source excerpts. The connected app is
+                  not executed.
+                </p>
+              )}
+              <button
+                className="button primary"
+                disabled={!!busy || !project}
+                onClick={() =>
+                  act("Preparing test plan", async () => {
+                    if (dirty)
+                      throw new Error(
+                        "Save your draft before preparing a test plan.",
+                      );
+                    if (!sourceMode) requireConfig();
+                    const p = await api<RedPlan>("/redteam/plan", "POST", {
+                      projectId,
+                      scope: redScope,
+                      brandRules,
+                      maxProbes: sourceMode ? undefined : maxProbes,
+                      config: sourceMode ? undefined : config,
+                      mode: sourceMode ? "source-review" : "behavioral",
+                    });
+                    setData((d) => ({
+                      ...d,
+                      redPlans: [p, ...d.redPlans.filter((x) => x.id !== p.id)],
+                    }));
+                    setRedId(p.id);
+                    setStep("Test Plan");
+                    setConfirmed(false);
+                  })
+                }
+              >
+                {sourceMode ? "Prepare source review" : "Propose test plan"}{" "}
+                <ArrowRight size={15} />
+              </button>
+            </section>
+            <section className="card calm">
+              <ShieldCheck size={26} />
+              <h2>
+                {sourceMode
+                  ? "Review code, with evidence."
+                  : "A test plan before a test run."}
+              </h2>
+              <p>
+                {sourceMode
+                  ? "The reviewer checks source excerpts for security weaknesses, prompt and policy gaps, brand risks and customer failure paths. Every accepted finding includes a verified source quotation and a suggested correction."
+                  : "A planning agent proposes security, brand and customer probes. Review their inputs before the supported target executes."}
+              </p>
+              <ul className="check-list">
+                <li>
+                  <Check size={14} />
+                  Local or isolated test target
+                </li>
+                <li>
+                  <Check size={14} />
+                  {sourceMode
+                    ? "Bounded, redacted source excerpts"
+                    : "Synthetic inputs and bounded calls"}
+                </li>
+                <li>
+                  <Check size={14} />
+                  Reproduced findings separate from suspicions
+                </li>
+                <li>
+                  <Check size={14} />
+                  {sourceMode
+                    ? "Verified file and line citations"
+                    : "Preserved inputs, outputs and trace evidence"}
+                </li>
+              </ul>
+              <div className="callout small">
+                For imported apps, inference coverage follows the adapter.
+                Source-only findings are never presented as reproduced failures.
+              </div>
+            </section>
+          </div>
+        ) : !red ? (
+          <Empty
+            icon={ShieldCheck}
+            title="Start with a scoped plan"
+            action={
+              <button className="button" onClick={() => setStep("Scope")}>
+                Define scope
+              </button>
+            }
+          >
+            There is no selected red-team plan. Describe what may be tested
+            first.
+          </Empty>
+        ) : step === "Test Plan" || step === "Run" ? (
+          <>
+            <div className="summary-strip">
+              <div>
+                <span>Target</span>
+                <strong>{red.targetName || project?.name}</strong>
+              </div>
+              <div>
+                <span>{sourcePlan ? "Source excerpts" : "Probe cap"}</span>
+                <strong>
+                  {sourcePlan
+                    ? `${red.review?.files || 0} files`
+                    : red.maxProbes}
+                </strong>
+              </div>
+              <div>
+                <span>Status</span>
+                <Status value={red.status} />
+              </div>
+              <div>
+                <span>Scope</span>
+                <strong>
+                  {sourcePlan
+                    ? "Source review only"
+                    : red.target === "import"
+                      ? "Connected application"
+                      : "Manifest application"}
+                </strong>
+              </div>
+            </div>
+            {sourcePlan && red.review && (
+              <section className="card source-review-plan">
+                <div className="row spread">
+                  <h2>Review the source scope.</h2>
+                  <span className="badge">Graph r{red.graphRevision}</span>
+                </div>
+                <p>
+                  {red.review.files} files selected from a bounded inventory of{" "}
+                  {red.review.inventoryFiles}.{" "}
+                  {red.review.characters.toLocaleString()} characters of
+                  redacted source. This is an excerpt review, not a complete
+                  audit.
+                </p>
+                <div className="probe-grid">
+                  {[
+                    [
+                      "Security",
+                      "Prompt injection boundaries, authorization, tool execution and sensitive data.",
+                    ],
+                    [
+                      "Brand",
+                      "Instructions and checks for your stated brand and behavior rules.",
+                    ],
+                    [
+                      "Customer experience",
+                      "Missing validation, unsupported claims and failure or fallback handling.",
+                    ],
+                  ].map(([title, description]) => (
+                    <div key={title}>
+                      <strong>{title}</strong>
+                      <p className="muted small">{description}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="muted small">
+                  One model review · up to US${red.review.maxCostUsd.toFixed(2)}{" "}
+                  · 90-second deadline · no target app execution.
+                </p>
+                <details>
+                  <summary>Included files and line ranges</summary>
+                  <div className="review-source-list">
+                    {red.review.sources.map((source) => (
+                      <div key={source.path}>
+                        <code>{source.path}</code>
+                        <span className="muted small">
+                          {source.ranges
+                            .map((range) => `${range.start}–${range.end}`)
+                            .join(", ")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+                {red.review.notes.length > 0 && (
+                  <details>
+                    <summary>Coverage limits</summary>
+                    <ul>
+                      {red.review.notes.map((note, i) => (
+                        <li key={i}>{note}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </section>
+            )}
+            <div className="probe-grid">
+              {red.probes.map((p, i) => (
+                <section className="card" key={p.id}>
+                  <span className="eyebrow">
+                    {String(i + 1).padStart(2, "0")} / {p.specialist}
+                  </span>
+                  <h3>{p.description}</h3>
+                  <pre>{p.input}</pre>
+                  <p className="muted small">
+                    <strong>Failure signal:</strong>{" "}
+                    {p.forbidden || "Evaluated from evidence"}
+                  </p>
+                </section>
+              ))}
+            </div>
+            <div className="action-card">
+              <div>
+                <h3>
+                  {red.status === "completed"
+                    ? "Test evidence is ready"
+                    : red.status === "running"
+                      ? "Testing in progress"
+                      : sourcePlan
+                        ? "Ready to review these source excerpts?"
+                        : "Ready to run these probes?"}
+                </h3>
+                {red.status === "proposed" && !reviewerReady && (
+                  <p className="muted small">
+                    Choose a validated credential and compatible model before
+                    running.{" "}
+                    <button
+                      className="text-button"
+                      onClick={() => setCredentialModal(true)}
+                    >
+                      Configure review model
+                    </button>
+                  </p>
+                )}
+                {red.status === "proposed" && (
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={confirmed}
+                      onChange={(e) => setConfirmed(e.target.checked)}
+                    />
+                    {sourcePlan
+                      ? "I approve this source review using the selected workbench model. My app will not be executed."
+                      : "I approve this finite plan against my isolated local/test application."}
+                  </label>
+                )}
+                {red.status === "running" && (
+                  <p className="muted">
+                    {sourcePlan
+                      ? "Reviewing the approved excerpts. Source citations are checked before findings appear."
+                      : "Results appear as probes finish. You can inspect the underlying runs."}
+                  </p>
+                )}
+              </div>
+              {red.status === "completed" ? (
+                <button
+                  className="button primary"
+                  onClick={() => setStep("Findings")}
+                >
+                  Review findings <ArrowRight size={14} />
+                </button>
+              ) : (
+                <button
+                  className="button primary"
+                  disabled={
+                    !!busy ||
+                    !confirmed ||
+                    !reviewerReady ||
+                    red.status === "running"
+                  }
+                  onClick={() =>
+                    act("Starting red team", async () => {
+                      const p = await api<RedPlan>(
+                        `/redteam/${red.id}/run`,
+                        "POST",
+                        { config: requireConfig(), confirmed: true },
+                      );
+                      setData((d) => ({
+                        ...d,
+                        redPlans: [
+                          p,
+                          ...d.redPlans.filter((x) => x.id !== p.id),
+                        ],
+                      }));
+                      setStep("Run");
+                      await refresh();
+                    })
+                  }
+                >
+                  {red.status === "running" ? (
+                    <Loader2 size={15} className="spin" />
+                  ) : (
+                    <Play size={15} />
+                  )}{" "}
+                  {sourcePlan ? "Run source review" : "Run approved plan"}
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {red.status !== "completed" && (
+              <div className="callout">
+                {red.status === "running"
+                  ? "Testing is still in progress. Findings may be partial."
+                  : "This plan has not been executed yet."}
+              </div>
+            )}
+            {sourcePlan && red.review && (
+              <section className="card source-review-summary">
+                <div className="row spread">
+                  <h2>Source review</h2>
+                  <span className="badge">No behavioral probes</span>
+                </div>
+                <p>
+                  {red.review.summary ||
+                    (red.status === "running"
+                      ? "Review in progress…"
+                      : red.status === "completed"
+                        ? "Review ended. Check the findings and any incomplete evidence below."
+                        : "Approve and run the review to receive findings.")}
+                </p>
+                <p className="muted small">
+                  {red.targetName || project?.name} · Graph r{red.graphRevision}{" "}
+                  · {red.review.files} files in scope /{" "}
+                  {red.review.inventoryFiles} inventoried ·{" "}
+                  {red.review.model || "Model selected at run time"}
+                  {red.review.usage?.estimatedCostUsd !== undefined
+                    ? ` · estimated US$${red.review.usage.estimatedCostUsd.toFixed(4)}`
+                    : ""}
+                </p>
+                <div className="callout small">
+                  These are source-based suspicions, not reproduced
+                  vulnerabilities. Citation checks confirm the quoted source,
+                  not the diagnosis. Unreviewed code and runtime behavior remain
+                  unassessed.
+                </div>
+                {red.review.notes.length > 0 && (
+                  <details>
+                    <summary>Coverage and validation notes</summary>
+                    <ul>
+                      {red.review.notes.map((note, i) => (
+                        <li key={i}>{note}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </section>
+            )}
+            {red.findings.length ? (
+              <div className="findings-list">
+                {red.findings.map((f) => (
+                  <section className="card finding-card" key={f.id}>
+                    <div className="row spread">
+                      <span className={`severity ${f.severity}`}>
+                        {f.severity} severity
+                      </span>
+                      <Status value={f.evidenceType} />
+                    </div>
+                    <h3>{f.title}</h3>
+                    <p>{f.description}</p>
+                    {f.source && (
+                      <button
+                        className="button small source-ref"
+                        onClick={() => inspectSource(f.source!)}
+                        aria-label={`Inspect current source ${f.source.path}:${f.source.line}`}
+                        title="Open the current source file. The quotation below is the evidence saved with this review."
+                      >
+                        <FileCode2 size={14} />
+                        <code>
+                          {f.source.path}:{f.source.line}
+                        </code>
+                      </button>
+                    )}
+                    {f.quote && (
+                      <>
+                        <p className="muted small">
+                          Quoted evidence saved with this review; the source
+                          viewer opens the current file.
+                        </p>
+                        <pre className="review-quote">{f.quote}</pre>
+                      </>
+                    )}
+                    {f.recommendation && (
+                      <p>
+                        <strong>Suggested correction:</strong>{" "}
+                        {f.recommendation}
+                      </p>
+                    )}
+                    {f.input && (
+                      <details>
+                        <summary>Reproduction input</summary>
+                        <pre>{f.input}</pre>
+                      </details>
+                    )}
+                    <div className="row">
+                      {f.runId && (
+                        <button
+                          className="button small"
+                          onClick={() => {
+                            const r = data.runs.find((r) => r.id === f.runId);
+                            if (r) {
+                              inspectRun(r);
+                              navigate(
+                                isImported ? "connect" : "build",
+                                isImported ? "Observe" : "Run & Test",
+                              );
+                            }
+                          }}
+                        >
+                          Inspect trace <ArrowUpRight size={13} />
+                        </button>
+                      )}
+                      {f.input && (
+                        <button
+                          className="button small"
+                          onClick={() => promoteCase(f.input!, "", f.runId)}
+                        >
+                          Create regression case
+                        </button>
+                      )}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <Empty
+                icon={ShieldCheck}
+                title={
+                  red.status === "completed"
+                    ? "No findings were returned"
+                    : "No findings yet"
+                }
+              >
+                {sourcePlan
+                  ? "No supported finding was returned for these excerpts. This does not establish that the application is safe."
+                  : "A completed probe plan and its evidence will appear here. An empty report is not proof of complete safety."}
+              </Empty>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+  function ModelLab() {
+    const comps = data.comparisons.filter((c) => c.projectId === projectId);
+    if (step === "Graph Results")
+      return (
+        <>
+          <div className="candidate-bar">
+            <span className="eyebrow">CANDIDATE TRACE</span>
+            {comparison?.slots.map((s) => {
+              const candidateRun = data.runs.find((r) => r.id === s.runId);
+              const ready = !s.error && candidateRun?.status === "completed";
+              return (
+                <button
+                  key={s.id}
+                  className={`button small ${s.runId === runId ? "active" : ""}`}
+                  disabled={!ready}
+                  title={
+                    s.error ||
+                    (ready
+                      ? "Inspect this recorded candidate trace"
+                      : `Candidate ${candidateRun?.status || "has not completed"}`)
+                  }
+                  onClick={() => {
+                    if (ready && candidateRun) inspectRun(candidateRun);
+                  }}
+                >
+                  {s.label}
+                  {s.error
+                    ? " · error"
+                    : candidateRun?.status !== "completed"
+                      ? ` · ${candidateRun?.status || "pending"}`
+                      : ""}
+                </button>
+              );
+            })}
+            {!comparison && (
+              <span className="muted">
+                Run a comparison to inspect candidate graphs.
+              </span>
+            )}
+          </div>
+          {view === "observed" &&
+          run?.status === "completed" &&
+          comparison?.slots.some((s) => s.runId === run.id && !s.error) ? (
+            GraphWorkspace({ playground: false })
+          ) : (
+            <Empty icon={FlaskConical} title="No completed candidate trace yet">
+              Successful candidates become available here when their runs
+              finish. Candidate errors remain visible in Compare.
+            </Empty>
+          )}
+        </>
+      );
+    return (
+      <div className="page-content">
+        <div className="page-intro horizontal">
+          <div>
+            <span className="eyebrow">MODEL LAB / {step.toUpperCase()}</span>
+            <h1>
+              {step === "Configure"
+                ? "Make the comparison fair."
+                : "Different models. Shared evidence."}
+            </h1>
+            <p>
+              Up to five candidates. Isolated run state. Provider fallback stays
+              off.
+            </p>
+          </div>
+          {comps.length > 0 && (
+            <select
+              aria-label="Comparison"
+              value={comparisonId}
+              onChange={(e) => {
+                setComparisonId(e.target.value);
+                setStep("Compare");
+              }}
+            >
+              <option value="">Select comparison</option>
+              {comps.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {fmtDate(c.createdAt)} · {c.slots.length} candidates ·{" "}
+                  {c.strategy}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+        {step === "Configure" ? (
+          <>
+            <div className="comparison-setup">
+              <section className="card">
+                <Field label="Experiment">
+                  <select
+                    value={strategy}
+                    onChange={(e) =>
+                      setStrategy(e.target.value as "node" | "workflow")
+                    }
+                  >
+                    <option value="workflow">
+                      Complete workflow · independent downstream paths
+                    </option>
+                    <option value="node" disabled={isImported}>
+                      Fixed-input node · identical input per candidate
+                    </option>
+                  </select>
+                </Field>
+                {strategy === "node" && (
+                  <Field label="Model node to compare">
+                    <select
+                      value={compareNode}
+                      onChange={(e) => setCompareNode(e.target.value)}
+                    >
+                      <option value="">Select node</option>
+                      {graph?.nodes
+                        .filter((n) => n.role === "agent")
+                        .map((n) => (
+                          <option
+                            key={n.id}
+                            value={n.id}
+                            disabled={n.modelFixed}
+                          >
+                            {n.label}
+                            {n.modelFixed ? " · fixed model" : ""}
+                          </option>
+                        ))}
+                    </select>
+                  </Field>
+                )}
+                <Field label="Shared input">
+                  <textarea
+                    rows={5}
+                    value={input}
+                    placeholder="The exact input each candidate starts with…"
+                    onChange={(e) => setInput(e.target.value)}
+                  />
+                </Field>
+                <p className="muted small">
+                  {strategy === "workflow"
+                    ? "Complete workflows can take different downstream paths. Compare the resulting behavior, not just the final text."
+                    : "The selected node receives the same captured input. This is a narrower comparison of one responsibility."}
+                </p>
+                {graph?.nodes.some((n) => n.modelFixed) && (
+                  <div className="callout small">
+                    Fixed calls remain pinned:{" "}
+                    {graph.nodes
+                      .filter((n) => n.modelFixed)
+                      .map((n) => n.label)
+                      .join(", ")}
+                  </div>
+                )}
+              </section>
+              <section className="card">
+                <div className="row spread">
+                  <h3>
+                    Candidates <span className="count">{slots.length} / 5</span>
+                  </h3>
+                  <button
+                    className="button small"
+                    disabled={slots.length >= 5}
+                    onClick={() =>
+                      setSlots((s) => [
+                        ...s,
+                        {
+                          id: uid(),
+                          label: `Candidate ${s.length + 1}`,
+                          config: { ...config },
+                        },
+                      ])
+                    }
+                  >
+                    <Plus size={14} /> Add
+                  </button>
+                </div>
+                {slots.length === 0 ? (
+                  <Empty
+                    icon={FlaskConical}
+                    title="Choose your candidates"
+                    action={
+                      <button
+                        className="button"
+                        onClick={() =>
+                          setSlots([
+                            {
+                              id: uid(),
+                              label: "Candidate A",
+                              config: { ...config },
+                            },
+                            {
+                              id: uid(),
+                              label: "Candidate B",
+                              config: { ...config },
+                            },
+                          ])
+                        }
+                      >
+                        Start with two slots
+                      </button>
+                    }
+                  >
+                    A provider credential can be reused across its compatible
+                    models.
+                  </Empty>
+                ) : (
+                  slots.map((s, i) => (
+                    <div className="candidate-editor" key={s.id}>
+                      <div className="row">
+                        <span className="candidate-index">
+                          {String.fromCharCode(65 + i)}
+                        </span>
+                        <input
+                          aria-label={`Candidate ${i + 1} label`}
+                          value={s.label}
+                          onChange={(e) =>
+                            setSlots((sl) =>
+                              sl.map((x) =>
+                                x.id === s.id
+                                  ? { ...x, label: e.target.value }
+                                  : x,
+                              ),
+                            )
+                          }
+                        />
+                        <button
+                          className="icon-button"
+                          aria-label={`Remove ${s.label}`}
+                          onClick={() =>
+                            setSlots((sl) => sl.filter((x) => x.id !== s.id))
+                          }
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+                      {ModelFields({
+                        value: s.config,
+                        onChange: (c) =>
+                          setSlots((sl) =>
+                            sl.map((x) =>
+                              x.id === s.id ? { ...x, config: c } : x,
+                            ),
+                          ),
+                        compact: true,
+                      })}
+                    </div>
+                  ))
+                )}
+              </section>
+            </div>
+            <div className="action-card">
+              <div>
+                <strong>
+                  A comparison is an experiment, not a leaderboard.
+                </strong>
+                <p className="muted small">
+                  One failed candidate keeps its error; successful results
+                  remain available. Calls share the workbench’s execution
+                  limits.
+                </p>
+              </div>
+              <button
+                className="button primary"
+                disabled={!!busy || !slots.length || !input.trim() || dirty}
+                onClick={() =>
+                  act("Starting comparison", async () => {
+                    if (strategy === "node" && !compareNode)
+                      throw new Error(
+                        "Select a model node for fixed-input comparison.",
+                      );
+                    slots.forEach((s) => requireConfig(s.config));
+                    const c = await api<Comparison>("/comparisons", "POST", {
+                      projectId,
+                      input,
+                      strategy,
+                      nodeId: strategy === "node" ? compareNode : undefined,
+                      slots: slots.map(({ label, config }) => ({
+                        label,
+                        config,
+                      })),
+                    });
+                    setData((d) => ({
+                      ...d,
+                      comparisons: [c, ...d.comparisons],
+                    }));
+                    setComparisonId(c.id);
+                    setStep("Compare");
+                    await refresh();
+                  })
+                }
+              >
+                <Play size={15} /> Run comparison
+              </button>
+            </div>
+          </>
+        ) : !comparison ? (
+          <Empty
+            icon={FlaskConical}
+            title="No comparison selected"
+            action={
+              <button className="button" onClick={() => setStep("Configure")}>
+                Configure candidates
+              </button>
+            }
+          >
+            Choose candidate models and a shared input to start.
+          </Empty>
+        ) : (
+          <>
+            <div className="comparison-context">
+              <span className="eyebrow">
+                {comparison.strategy === "node"
+                  ? "FIXED-INPUT NODE"
+                  : "COMPLETE WORKFLOW"}
+              </span>
+              <p>{comparison.input}</p>
+            </div>
+            <div className="comparison-results">
+              {comparison.slots.map((s, i) => {
+                const r = data.runs.find((r) => r.id === s.runId);
+                return (
+                  <section className="card candidate-result" key={s.id}>
+                    <div className="row spread">
+                      <span className="candidate-index">
+                        {String.fromCharCode(65 + i)}
+                      </span>
+                      <Status
+                        value={s.error ? "error" : r?.status || "queued"}
+                      />
+                    </div>
+                    <h3>{s.label}</h3>
+                    <code className="model-name">{s.config.model}</code>
+                    <div className="candidate-answer">
+                      {s.error ||
+                        r?.output ||
+                        r?.error ||
+                        (r
+                          ? "Execution is in progress."
+                          : "Waiting for run details.")}
+                    </div>
+                    <div className="metrics">
+                      <div>
+                        <span>Elapsed</span>
+                        <strong>{r ? duration(r) : "—"}</strong>
+                      </div>
+                      <div>
+                        <span>Tokens</span>
+                        <strong>
+                          {r ? r.usage.inputTokens + r.usage.outputTokens : "—"}
+                        </strong>
+                      </div>
+                      <div>
+                        <span>Est. cost</span>
+                        <strong>
+                          {r?.usage.estimatedCostUsd !== undefined
+                            ? `$${r.usage.estimatedCostUsd.toFixed(4)}`
+                            : "Unavailable"}
+                        </strong>
+                      </div>
+                    </div>
+                    <button
+                      className="button small"
+                      disabled={!r || r.status !== "completed" || !!s.error}
+                      onClick={() => {
+                        if (r?.status === "completed" && !s.error) {
+                          inspectRun(r);
+                          setStep("Graph Results");
+                        }
+                      }}
+                    >
+                      Inspect graph <ArrowUpRight size={13} />
+                    </button>
+                  </section>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+  function loadSuite(id: string) {
+    setSuiteId(id);
+    const s = data.suites.find((x) => x.id === id);
+    if (s) {
+      setSuiteName(s.name);
+      setCasesText(pretty(s.cases));
+      setJudgeEnabled(!!s.judge);
+      setRubric(s.judge?.rubric || rubric);
+    }
+  }
+  async function saveSuite() {
+    let cases: EvalCase[];
+    try {
+      cases = JSON.parse(casesText);
+    } catch {
+      throw new Error("Cases must be valid JSON.");
+    }
+    if (!Array.isArray(cases) || !cases.length)
+      throw new Error("Add at least one evaluation case.");
+    const s = await api<EvalSuite>(
+      suiteId ? `/suites/${suiteId}` : "/suites",
+      suiteId ? "PUT" : "POST",
+      {
+        projectId,
+        name: suiteName,
+        cases,
+        judge: judgeEnabled ? { rubric, config: requireConfig() } : undefined,
+      },
+    );
+    setData((d) => ({
+      ...d,
+      suites: [s, ...d.suites.filter((x) => x.id !== s.id)],
+    }));
+    setSuiteId(s.id);
+    setNotice(`Saved ${s.name}, version ${s.version}.`);
+    return s;
+  }
+  function Evals() {
+    let parsed: EvalCase[] = [];
+    try {
+      const p = JSON.parse(casesText);
+      if (Array.isArray(p)) parsed = p;
+    } catch {}
+    return (
+      <div className="page-content">
+        <div className="page-intro horizontal">
+          <div>
+            <span className="eyebrow">EVALS / {step.toUpperCase()}</span>
+            <h1>
+              {step === "Dataset"
+                ? "Define what good looks like."
+                : step === "Criteria"
+                  ? "Make the criteria explicit."
+                  : step === "Run"
+                    ? "A repeatable test of behavior."
+                    : "Track behavior, not impressions."}
+            </h1>
+            <p>
+              Versioned cases, clear verdicts, and a trace behind every result.
+            </p>
+          </div>
+          <select
+            aria-label="Evaluation suite"
+            value={suiteId}
+            onChange={(e) => loadSuite(e.target.value)}
+          >
+            <option value="">New suite</option>
+            {projectSuites.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} · v{s.version}
+              </option>
+            ))}
+          </select>
+        </div>
+        {step === "Dataset" || step === "Criteria" ? (
+          <div className="eval-editor-grid">
+            <section className="card">
+              <Field label="Suite name">
+                <input
+                  value={suiteName}
+                  onChange={(e) => setSuiteName(e.target.value)}
+                />
+              </Field>
+              <div className="row spread">
+                <h3>
+                  {step === "Criteria" ? "Cases & assertions" : "Dataset"}{" "}
+                  <span className="count">{parsed.length} cases</span>
+                </h3>
+                <label className="button small file-button">
+                  <ArrowDownToLine size={13} /> Import JSON
+                  <input
+                    type="file"
+                    accept="application/json,.json"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        try {
+                          const text = await f.text();
+                          const obj = JSON.parse(text);
+                          setCasesText(
+                            pretty(Array.isArray(obj) ? obj : obj.cases),
+                          );
+                          setNotice(
+                            "Dataset loaded into the draft. Review it before saving.",
+                          );
+                        } catch {
+                          setError(
+                            "Could not import dataset. Choose a JSON array of evaluation cases.",
+                          );
+                        }
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+              <textarea
+                className="code-input case-editor"
+                aria-label="Evaluation cases JSON"
+                value={casesText}
+                onChange={(e) => setCasesText(e.target.value)}
+              />
+              <div className="row spread">
+                <span className="muted small">
+                  Each case: id, input, expected, assertions[]
+                </span>
+                <button
+                  className="button small"
+                  onClick={() => {
+                    setCasesText(
+                      pretty([
+                        ...parsed,
+                        {
+                          id: `case-${parsed.length + 1}`,
+                          input: "",
+                          expected: "",
+                          assertions: [],
+                        },
+                      ]),
+                    );
+                  }}
+                >
+                  <Plus size={13} /> Add case
+                </button>
+              </div>
+              <button
+                className="button primary"
+                disabled={!!busy}
+                onClick={() =>
+                  act("Saving evaluation suite", async () => {
+                    await saveSuite();
+                    setStep(step === "Dataset" ? "Criteria" : "Run");
+                  })
+                }
+              >
+                Save version & continue <ArrowRight size={14} />
+              </button>
+            </section>
+            <section className="card">
+              <span className="eyebrow">EVALUATION POLICY</span>
+              <h3>Deterministic first. Judge when needed.</h3>
+              <p className="muted">
+                Assertions support <code>contains</code>,{" "}
+                <code>not-contains</code>, <code>regex</code>, <code>json</code>{" "}
+                and <code>max-length</code>. Each uses a string{" "}
+                <code>value</code>.
+              </p>
+              <div className="callout small">
+                An expected response is context for the judge. Add deterministic
+                assertions or enable a judge to score behavior; otherwise cases
+                can remain unscored.
+              </div>
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={judgeEnabled}
+                  onChange={(e) => setJudgeEnabled(e.target.checked)}
+                />
+                Use a model judge
+              </label>
+              {judgeEnabled && (
+                <>
+                  <Field label="Judge rubric">
+                    <textarea
+                      rows={7}
+                      value={rubric}
+                      onChange={(e) => setRubric(e.target.value)}
+                    />
+                  </Field>
+                  <p className="muted small">
+                    Judge uses the selected workbench model (
+                    {config.model || "not configured"}). Judge calls count
+                    toward the shared execution budget.
+                  </p>
+                </>
+              )}
+              <h4>Verdicts mean different things</h4>
+              <div className="verdict-guide">
+                <p>
+                  <Status value="pass" /> The configured checks passed.
+                </p>
+                <p>
+                  <Status value="fail" /> Execution completed; a check failed.
+                </p>
+                <p>
+                  <Status value="error" /> Infrastructure or execution prevented
+                  scoring.
+                </p>
+                <p>
+                  <Status value="unscored" /> No applicable scoring criteria.
+                </p>
+              </div>
+            </section>
+          </div>
+        ) : step === "Run" ? (
+          <div className="two-column">
+            <section className="card">
+              <h2>
+                {data.suites.find((s) => s.id === suiteId)?.name ||
+                  "Choose a saved suite"}
+              </h2>
+              <p className="muted">
+                A run pins the suite version, graph revision and model
+                configuration. Earlier reports remain unchanged.
+              </p>
+              <div className="readiness">
+                <div>
+                  <span>Cases</span>
+                  <strong>
+                    {data.suites.find((s) => s.id === suiteId)?.cases.length ||
+                      0}
+                  </strong>
+                </div>
+                <div>
+                  <span>Graph revision</span>
+                  <strong>r{graph?.revision}</strong>
+                </div>
+                <div>
+                  <span>Model</span>
+                  <strong>{config.model || "Not selected"}</strong>
+                </div>
+              </div>
+              <Field label="Compare against baseline">
+                <select
+                  value={baselineId}
+                  onChange={(e) => setBaselineId(e.target.value)}
+                >
+                  <option value="">No baseline</option>
+                  {projectReports
+                    .filter((r) => r.status === "completed")
+                    .map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.suite.name} v{r.suite.version} · r{r.graphRevision} ·{" "}
+                        {fmtDate(r.createdAt)}
+                      </option>
+                    ))}
+                </select>
+              </Field>
+              <button
+                className="button primary"
+                disabled={!!busy || !suiteId || dirty}
+                onClick={() =>
+                  act("Starting evaluation", async () => {
+                    const r = await api<EvalReport>(
+                      `/suites/${suiteId}/run`,
+                      "POST",
+                      {
+                        config: requireConfig(),
+                        baselineId: baselineId || undefined,
+                      },
+                    );
+                    setData((d) => ({ ...d, reports: [r, ...d.reports] }));
+                    setReportId(r.id);
+                    setStep("Results");
+                    await refresh();
+                  })
+                }
+              >
+                <Play size={15} /> Run suite
+              </button>
+            </section>
+            <section className="card calm">
+              <CheckCircle2 size={26} />
+              <h2>Keep the failure that taught you something.</h2>
+              <p>
+                Promote a run or red-team finding into a case. Set its expected
+                behavior, then use a baseline to catch the next regression.
+              </p>
+              <button className="button" onClick={() => setStep("Dataset")}>
+                Review dataset
+              </button>
+            </section>
+          </div>
+        ) : (
+          <>
+            <div className="row spread section-header">
+              <select
+                aria-label="Evaluation report"
+                value={reportId}
+                onChange={(e) => setReportId(e.target.value)}
+              >
+                <option value="">Select report</option>
+                {projectReports.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.suite.name} · v{r.suite.version} · {fmtDate(r.createdAt)}{" "}
+                    · {r.status}
+                  </option>
+                ))}
+              </select>
+              {report && <Status value={report.status} />}
+            </div>
+            {!report ? (
+              <Empty
+                icon={CheckCircle2}
+                title="No report selected"
+                action={
+                  <button className="button" onClick={() => setStep("Run")}>
+                    Run a suite
+                  </button>
+                }
+              >
+                Completed and partial results will appear here, with their
+                immutable suite version.
+              </Empty>
+            ) : (
+              <>
+                <div className="summary-strip">
+                  <div>
+                    <span>Suite</span>
+                    <strong>
+                      {report.suite.name} v{report.suite.version}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Graph</span>
+                    <strong>r{report.graphRevision}</strong>
+                  </div>
+                  <div>
+                    <span>Passed</span>
+                    <strong>
+                      {
+                        report.results.filter((r) => r.verdict === "pass")
+                          .length
+                      }{" "}
+                      / {report.results.length}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Regressions</span>
+                    <strong>
+                      {report.results.filter((r) => r.regression).length}
+                    </strong>
+                  </div>
+                </div>
+                <div className="eval-results">
+                  {report.results.map((result) => {
+                    const c = report.suite.cases.find(
+                      (c) => c.id === result.caseId,
+                    );
+                    return (
+                      <section className="card eval-result" key={result.caseId}>
+                        <div className="row spread">
+                          <div className="row">
+                            <Status value={result.verdict} />
+                            {result.regression && (
+                              <span className="severity high">Regression</span>
+                            )}
+                          </div>
+                          <code>{result.caseId}</code>
+                        </div>
+                        <h3>{c?.input || result.caseId}</h3>
+                        <p className="muted">
+                          Expected:{" "}
+                          {c?.expected || "See deterministic assertions"}
+                        </p>
+                        <ul>
+                          {result.reasons.map((r, i) => (
+                            <li key={i}>{r}</li>
+                          ))}
+                        </ul>
+                        {result.runId && (
+                          <button
+                            className="button small"
+                            onClick={() => {
+                              const r = data.runs.find(
+                                (r) => r.id === result.runId,
+                              );
+                              if (r) {
+                                inspectRun(r);
+                                navigate(
+                                  isImported ? "connect" : "build",
+                                  isImported ? "Observe" : "Run & Test",
+                                );
+                              }
+                            }}
+                          >
+                            Inspect case trace <ArrowUpRight size={13} />
+                          </button>
+                        )}
+                      </section>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+  const graphStep =
+    (mode === "build" && ["Review", "Run & Test"].includes(step)) ||
+    (mode === "connect" && ["Map", "Observe"].includes(step)) ||
+    (mode === "models" && step === "Graph Results");
+  const content = booting ? (
+    <div className="loading-page">
+      <Loader2 size={25} className="spin" />
+      <p>Opening your workbench…</p>
+    </div>
+  ) : !project && mode !== "connect" ? (
+    <div className="welcome">
+      <span className="soft-icon">
+        <Workflow size={33} />
+      </span>
+      <span className="eyebrow">CITADEL STUDIO</span>
+      <h1>
+        Build with intent.
+        <br />
+        Understand every step.
+      </h1>
+      <p>
+        A workspace for creating, testing and improving agentic applications.
+        Start with an idea, or bring an application you already have.
+      </p>
+      <div className="row">
+        <button className="button primary" disabled={!!busy} onClick={() => openExample()}>
+          <Play size={16} /> Try with an example
+        </button>
+        <button className="button" onClick={() => setNewModal(true)}>
+          <Plus size={16} /> Create a project
+        </button>
+        <button className="button" onClick={() => navigate("connect")}>
+          Connect existing app <ArrowRight size={15} />
+        </button>
+      </div>
+      <div className="welcome-features">
+        <div>
+          <Blocks />
+          <strong>Design the system</strong>
+          <p>Readable graphs, precise instructions.</p>
+        </div>
+        <div>
+          <FlaskConical />
+          <strong>Test the behavior</strong>
+          <p>Real runs, model comparisons and evals.</p>
+        </div>
+        <div>
+          <Code2 />
+          <strong>Keep control</strong>
+          <p>Your code, credentials and execution.</p>
+        </div>
+      </div>
+    </div>
+  ) : mode === "build" && isImported ? (
+    <div className="page-content">
+      <Empty
+        icon={GitBranch}
+        title="This application is source-owned."
+        action={
+          <div className="row">
+            <button
+              className="button primary"
+              onClick={() => navigate("connect", "Map")}
+            >
+              Open source map <ArrowRight size={14} />
+            </button>
+            <button
+              className="button"
+              disabled={!!busy}
+              onClick={() => setNewModal(true)}
+            >
+              Create a new application
+            </button>
+          </div>
+        }
+      >
+        Use Connect & Debug to inspect the imported graph and observe supported
+        paths. Build generates a new application and does not rewrite your
+        existing repository.
+      </Empty>
+    </div>
+  ) : mode === "build" ? (
+    step === "Align" ? (
+      AlignmentView()
+    ) : step === "Launch" ? (
+      Launch()
+    ) : (
+      GraphWorkspace({ playground: step === "Run & Test" })
+    )
+  ) : mode === "connect" ? (
+    Connect()
+  ) : mode === "redteam" ? (
+    RedTeam()
+  ) : mode === "models" ? (
+    ModelLab()
+  ) : (
+    Evals()
+  );
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <a
+          className="brand"
+          aria-label="Citadel Studio"
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate("build");
+          }}
+        >
+          <span className="brand-mark">
+            <Workflow size={20} />
+          </span>
+          <span>
+            Citadel Studio<span className="brand-caption">AGENT WORKBENCH</span>
+          </span>
+        </a>
+        <div className="workspace-label">
+          PERSONAL WORKSPACE <span className="local-badge">{isHosted ? "PRIVATE" : "LOCAL"}</span>
+        </div>
+        <div className="project-picker">
+          <select
+            aria-label="Current project"
+            disabled={!!busy}
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+          >
+            <option value="">Choose a project</option>
+            {data.projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <button
+            className="icon-button"
+            aria-label="New project"
+            disabled={!!busy}
+            onClick={() => setNewModal(true)}
+          >
+            <Plus size={16} />
+          </button>
+        </div>
+        <button className="sidebar-link portfolio-example-link" aria-label="Try with an example" title="Try with an example" disabled={!!busy} onClick={() => openExample()}>
+          <Play size={16} /><span>Try with an example</span><span className="portfolio-example-badge">Free</span>
+        </button>
+        <div className="nav-label">WORKSPACE</div>
+        <nav className="main-nav" aria-label="Workspace modes">
+          {MODES.map((m) => (
+            <div className="nav-group" key={m.id}>
+              <button
+                aria-label={m.label}
+                title={m.label}
+                disabled={!!busy}
+                className={`nav-item ${mode === m.id ? "active" : ""}`}
+                onClick={() => navigate(m.id)}
+              >
+                <m.icon size={18} />
+                <span>{m.label}</span>
+                {mode === m.id && <ChevronDown size={13} />}
+              </button>
+              {mode === m.id && (
+                <div className="subnav">
+                  {m.steps.map((s, i) => (
+                    <button
+                      key={s}
+                      disabled={!!busy}
+                      className={step === s ? "active" : ""}
+                      onClick={() => setStep(s)}
+                    >
+                      <span className="step-number">{i + 1}</span>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <button
+            className="sidebar-link"
+            aria-label="Manage credentials"
+            title="Manage credentials"
+            onClick={() => setCredentialModal(true)}
+          >
+            <KeyRound size={16} />
+            <span>Credentials</span>
+            <span className="count">
+              {data.credentials.filter((c) => c.valid).length}
+            </span>
+          </button>
+          <div className="theme-switch" role="group" aria-label="Color theme">
+            {[
+              { value: "light", icon: Sun, label: "Light" },
+              { value: "dark", icon: Moon, label: "Dark" },
+              { value: "system", icon: Settings2, label: "System" },
+            ].map((t) => (
+              <button
+                key={t.value}
+                title={t.label}
+                aria-label={`${t.label} theme`}
+                className={theme === t.value ? "active" : ""}
+                onClick={() => setTheme(t.value)}
+              >
+                <t.icon size={14} />
+                <span>{t.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="local-status">
+            <span className="dot" />
+            <span>
+              {isHosted ? "Private hosted workspace" : "Local workspace"}
+            </span>
+            <span className="avatar" aria-label="Your account">{(account.user?.name || account.user?.email || "CS").slice(0, 2).toUpperCase()}</span>
+          </div>
+        </div>
+      </aside>
+      <div className="app-main">
+        <header className="topbar">
+          <div className="breadcrumbs">
+            <strong className="portfolio-header-name">Citadel Studio</strong>
+            <span className="portfolio-breadcrumb-divider">/</span>
+            <span>{activeMode.label}</span>
+            <ChevronRight size={13} />
+            <strong>{step}</strong>
+          </div>
+          <div className="topbar-actions">
+            <span className="portfolio-account-email" title={account.user?.email}>{account.user?.email || "Local fixture"}</span>
+            <ThemeButton theme={theme} setTheme={setTheme} />
+            {account.enabled && <button className="button small" disabled={!!busy} onClick={() => act("Signing out", account.signOut)}>Sign out</button>}
+            <button
+              className="search-trigger"
+              aria-label="Find anything"
+              title="Find anything"
+              disabled={!!busy}
+              onClick={() => setSearchModal(true)}
+            >
+              <Search size={14} />
+              <span>Find anything</span>
+              <kbd>⌘ K</kbd>
+            </button>
+            <span className="privacy-tag">
+              <span className="dot" />{" "}
+              {isHosted ? "Private hosted workspace" : "Local execution"}
+            </span>
+            <button
+              className="icon-button mobile-credential"
+              aria-label="Manage credentials"
+              onClick={() => setCredentialModal(true)}
+            >
+              <KeyRound size={17} />
+            </button>
+          </div>
+        </header>
+        <div className="mobile-project-picker">
+          <select
+            aria-label="Switch project"
+            disabled={!!busy}
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+          >
+            <option value="">Choose a project</option>
+            {data.projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <button
+            className="button small"
+            aria-label="Create new project"
+            disabled={!!busy}
+            onClick={() => setNewModal(true)}
+          >
+            <Plus size={14} /> New
+          </button>
+        </div>
+        {project && (
+          <div className="project-header">
+            <div>
+              <div className="eyebrow">
+                {isImported ? "CONNECTED APPLICATION" : "APPLICATION"}{" "}
+                <span className="version">
+                  r{graph?.revision || project.graph.revision}
+                </span>
+                {dirty && <span className="unsaved">Unsaved</span>}
+              </div>
+              <h2>{project.name}</h2>
+            </div>
+            <div className="project-header-right">
+              {ModelFields({
+                value: config,
+                onChange: setConfig,
+                compact: true,
+              })}
+              <button
+                className="icon-button"
+                aria-label="Configure credentials"
+                title="Configure credentials"
+                onClick={() => setCredentialModal(true)}
+              >
+                <KeyRound size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+        <nav className="mobile-steps" aria-label="Current workflow steps">
+          {activeMode.steps.map((s) => (
+            <button
+              key={s}
+              disabled={!!busy}
+              className={step === s ? "active" : ""}
+              onClick={() => setStep(s)}
+            >
+              {s}
+            </button>
+          ))}
+        </nav>
+        {disconnected && (
+          <div className="connection-banner" role="status">
+            <Loader2 size={14} className="spin" />
+            <span>
+              <strong>Connection interrupted.</strong> Reconnecting to the local
+              service. The last received trace remains visible.
+            </span>
+          </div>
+        )}
+        {updateAvailable && (
+          <div className="connection-banner" role="status">
+            <span>
+              <strong>An app update is ready.</strong>{" "}
+              {dirty
+                ? "Save your graph changes, then reload to use the latest version."
+                : "Reload to use the latest version. Any unsaved form entries will be cleared."}
+            </span>
+            <button
+              className="button small"
+              disabled={dirty}
+              onClick={() => window.location.reload()}
+            >
+              Reload app
+            </button>
+          </div>
+        )}
+        {error && (
+          <div className="error-banner" role="alert">
+            <span>
+              <strong>Couldn’t complete that.</strong> {error}
+            </span>
+            <button
+              className="icon-button"
+              aria-label="Dismiss error"
+              onClick={() => setError("")}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+        {project?.example && <div className="portfolio-example-notice">
+          <p><strong>{cachedExample ? "Cached workflow example." : "Bundled source example."}</strong>{" "}
+            {cachedExample ? "The real scheduler runs prepared responses and records a trace. No model calls or imported repository execution." : "Inspect the source map and code without executing the repository. The cached workflow is a separate runnable manifest."}</p>
+          <div className="row">
+            {cachedExample && <button className="button small" disabled={!!busy} onClick={() => openExample()}>Inspect source example</button>}
+            <button className="button small" disabled={!!busy} onClick={() => openExample(true)}><Play size={13} /> {cachedExample ? "Run again (free)" : "Run cached workflow"}</button>
+          </div>
+        </div>}
+        <main className={`main-content ${graphStep ? "graph-content" : ""}`}>
+          {content}
+        </main>
+        <footer className="app-footer">
+          <span>
+            <span className="dot" />
+            {busy ||
+              (isHosted
+                ? "Your projects and redacted run evidence stay in your workspace"
+                : "Saved graphs and redacted run evidence stay on this device")}
+          </span>
+          <span>
+            {project
+              ? `${project.graph.nodes.length} components · revision ${project.graph.revision}`
+              : "Citadel Studio"}
+            <span className="footer-separator">·</span>
+            {docker ? "Code sandbox ready" : "Built-in tools ready"}
+          </span>
+        </footer>
+      </div>
+      {notice && (
+        <div className="toast" role="status">
+          <CheckCircle2 size={17} />
+          {notice}
+          <button
+            className="icon-button"
+            aria-label="Dismiss notification"
+            onClick={() => setNotice("")}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+      {busy && (
+        <div className="busy-pill" role="status">
+          <Loader2 size={13} className="spin" />
+          {busy}
+        </div>
+      )}
+      {newModal && (
+        <NewProjectModal
+          onClose={() => setNewModal(false)}
+          onCreate={async (name, brief) => {
+            const p = await api<Project>("/projects", "POST", { name, brief });
+            syncProject(p);
+            setNewModal(false);
+            navigate("build", "Align");
+            setNotice(
+              "Project created. Describe the outcome, then draft a plan.",
+            );
+          }}
+        />
+      )}
+      {credentialModal && (
+        <CredentialsModal
+          credentials={data.credentials}
+          localAvailable={data.system.localSecretsAvailable}
+          onClose={() => setCredentialModal(false)}
+          onUpdate={async (c, list) => {
+            await refresh();
+            if (list) setModels((m) => ({ ...m, [c.id]: list }));
+            if (c.valid) {
+              const usable = list ? preferredModel(list) : undefined;
+              setConfig((v) => ({
+                ...v,
+                credentialId: c.id,
+                model: usable?.id || "",
+              }));
+            }
+          }}
+        />
+      )}
+      {sourcePreview && (
+        <Modal
+          title={sourcePreview.source.symbol || "Source code"}
+          kicker="READ-ONLY SOURCE"
+          onClose={() => setSourcePreview(null)}
+          wide
+        >
+          <div className="source-preview-meta">
+            <code>
+              {sourcePreview.source.path}
+              {sourcePreview.source.line ? `:${sourcePreview.source.line}` : ""}
+            </code>
+            <span className="connection-kind">Current source checkout</span>
+          </div>
+          <p className="muted small">
+            Bounded, redacted source excerpt. Recorded runs preserve their graph
+            references; this viewer reads the current connected source.
+          </p>
+          {sourcePreview.error ? (
+            <div className="mapping-error" role="alert">
+              <strong>Unable to read this source</strong>
+              <p>{sourcePreview.error}</p>
+            </div>
+          ) : sourcePreview.content === undefined ? (
+            <div className="source-loading" role="status">
+              <Loader2 size={18} className="spin" />
+              Loading source excerpt…
+            </div>
+          ) : (
+            <>
+              <pre
+                className="source-code-preview"
+                ref={sourceCodeRef}
+                tabIndex={0}
+                aria-label={`Source code from ${sourcePreview.source.path}`}
+              >
+                {sourcePreview.content.split("\n").map((line, index) => {
+                  const number = (sourcePreview.startLine || 1) + index;
+                  return (
+                    <span
+                      className={`source-code-line ${number === sourcePreview.source.line ? "highlighted" : ""}`}
+                      data-line={number}
+                      key={number}
+                    >
+                      <span className="source-line-number" aria-hidden="true">
+                        {number}
+                      </span>
+                      <code>{line || " "}</code>
+                    </span>
+                  );
+                })}
+              </pre>
+              {sourcePreview.truncated && (
+                <p className="muted small">
+                  This file is shown as a bounded excerpt around the selected
+                  reference.
+                </p>
+              )}
+            </>
+          )}
+        </Modal>
+      )}
+      {hiddenModal && (
+        <Modal
+          title="Supporting code, within reach."
+          kicker="HIDDEN NODES"
+          onClose={() => setHiddenModal(false)}
+        >
+          <p className="muted">
+            UI, connections, authentication and instructions remain part of the
+            application. They stay collapsed so the workflow is readable.
+          </p>
+          <div className="resource-list">
+            {graph?.nodes
+              .filter((n) => n.hidden)
+              .map((n) => (
+                <button
+                  key={n.id}
+                  disabled={!!busy}
+                  onClick={() => {
+                    setSelection({ type: "node", id: n.id });
+                    setInspectorTab("Configuration");
+                    setView("design");
+                    setHiddenModal(false);
+                    if (mode === "build") setStep("Review");
+                    else if (mode === "connect") setStep("Map");
+                    else
+                      navigate(
+                        isImported ? "connect" : "build",
+                        isImported ? "Map" : "Review",
+                      );
+                  }}
+                >
+                  <FileCode2 size={19} />
+                  <div>
+                    <strong>{n.label}</strong>
+                    <small>{n.source?.path || n.description || n.role}</small>
+                  </div>
+                  <ChevronRight size={15} />
+                </button>
+              ))}
+          </div>
+          {!graph?.nodes.some((n) => n.hidden) && (
+            <p className="muted">
+              No hidden resources are declared in this graph yet.
+            </p>
+          )}
+          <div className="callout small">
+            Hidden means collapsed, not exempt from policy or tracing. A
+            supporting dependency failure must still appear in the affected
+            execution.
+          </div>
+        </Modal>
+      )}
+      {searchModal && (
+        <Modal
+          title="Find in your application"
+          kicker="QUICK FIND"
+          onClose={() => {
+            setSearchModal(false);
+            setSearch("");
+          }}
+        >
+          <div className="search-field">
+            <Search size={18} />
+            <input
+              autoFocus
+              aria-label="Search nodes or modes"
+              placeholder="Node name, source file, or workspace mode…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="search-results">
+            {MODES.filter((m) =>
+              m.label.toLowerCase().includes(search.toLowerCase()),
+            ).map((m) => (
+              <button
+                key={m.id}
+                disabled={!!busy}
+                onClick={() => {
+                  navigate(m.id);
+                  setSearchModal(false);
+                  setSearch("");
+                }}
+              >
+                <m.icon size={17} />
+                <span>{m.label}</span>
+                <small>WORKSPACE</small>
+              </button>
+            ))}
+            {graph?.nodes
+              .filter((n) =>
+                `${n.label} ${n.description} ${n.source?.path}`
+                  .toLowerCase()
+                  .includes(search.toLowerCase()),
+              )
+              .map((n) => (
+                <button
+                  key={n.id}
+                  disabled={!!busy}
+                  onClick={() => {
+                    setSelection({ type: "node", id: n.id });
+                    setInspectorTab("Configuration");
+                    setView("design");
+                    navigate(
+                      isImported ? "connect" : "build",
+                      isImported ? "Map" : "Review",
+                    );
+                    setSearchModal(false);
+                    setSearch("");
+                  }}
+                >
+                  <FileCode2 size={17} />
+                  <span>
+                    {n.label}
+                    <small>{n.source?.path}</small>
+                  </span>
+                  <small>{n.hidden ? "HIDDEN" : n.role.toUpperCase()}</small>
+                </button>
+              ))}
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function JsonEditor({
+  label,
+  value,
+  disabled,
+  onSave,
+}: {
+  label: string;
+  value: Record<string, unknown>;
+  disabled: boolean;
+  onSave: (value: Record<string, unknown>) => void;
+}) {
+  const [text, setText] = useState(pretty(value)),
+    [invalid, setInvalid] = useState("");
+  useEffect(() => setText(pretty(value)), [JSON.stringify(value)]);
+  return (
+    <Field
+      label={label}
+      hint={invalid || "JSON · changes apply when you leave the editor"}
+    >
+      <textarea
+        className={`code-input ${invalid ? "invalid" : ""}`}
+        rows={6}
+        value={text}
+        disabled={disabled}
+        onChange={(e) => {
+          setText(e.target.value);
+          setInvalid("");
+        }}
+        onBlur={() => {
+          try {
+            const parsed = JSON.parse(text);
+            if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+              throw new Error();
+            if (JSON.stringify(parsed) !== JSON.stringify(value))
+              onSave(parsed);
+            setInvalid("");
+          } catch {
+            setInvalid(
+              "Enter a valid JSON object. The previous value is unchanged.",
+            );
+          }
+        }}
+      />
+    </Field>
+  );
+}
+function NewProjectModal({
+  onClose,
+  onCreate,
+}: {
+  onClose: () => void;
+  onCreate: (name: string, brief: string) => Promise<void>;
+}) {
+  const [name, setName] = useState(""),
+    [brief, setBrief] = useState(""),
+    [pending, setPending] = useState(false),
+    [error, setError] = useState("");
+  return (
+    <Modal
+      title="What are you building?"
+      kicker="NEW PROJECT"
+      onClose={onClose}
+    >
+      <p className="muted">
+        Start with a name and a short goal. You can refine both with the
+        alignment agent.
+      </p>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setPending(true);
+          try {
+            await onCreate(name, brief);
+          } catch (e) {
+            setError((e as Error).message);
+          } finally {
+            setPending(false);
+          }
+        }}
+      >
+        <Field label="Project name">
+          <input
+            autoFocus
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Support research assistant"
+          />
+        </Field>
+        <Field label="What should it do?">
+          <textarea
+            rows={5}
+            value={brief}
+            onChange={(e) => setBrief(e.target.value)}
+            placeholder="Describe the outcome, users and constraints…"
+          />
+        </Field>
+        {error && <p className="form-error">{error}</p>}
+        <div className="modal-footer">
+          <button type="button" className="button" onClick={onClose}>
+            Cancel
+          </button>
+          <button className="button primary" disabled={pending || !name.trim()}>
+            {pending ? (
+              <Loader2 size={15} className="spin" />
+            ) : (
+              <Plus size={15} />
+            )}
+            Create project
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+function CredentialsModal({
+  credentials,
+  localAvailable,
+  onClose,
+  onUpdate,
+}: {
+  credentials: Credential[];
+  localAvailable: boolean;
+  onClose: () => void;
+  onUpdate: (credential: Credential, models?: Model[]) => Promise<void>;
+}) {
+  const [provider, setProvider] = useState<Provider>("gemini"),
+    [label, setLabel] = useState(""),
+    [key, setKey] = useState(""),
+    [pending, setPending] = useState(""),
+    [error, setError] = useState(""),
+    [modelCount, setModelCount] = useState<Record<string, number>>({});
+  async function action(id: string, fn: () => Promise<void>) {
+    setPending(id);
+    setError("");
+    try {
+      await fn();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setPending("");
+    }
+  }
+  async function validate(c: Credential) {
+    const result = await api<{ credential: Credential; models: Model[] }>(
+      `/credentials/${c.id}/validate`,
+      "POST",
+      {},
+    );
+    setModelCount((m) => ({
+      ...m,
+      [c.id]: result.models.filter((m) => m.available && m.text).length,
+    }));
+    await onUpdate(result.credential, result.models);
+    if (!result.credential.valid)
+      throw new Error(
+        result.credential.error || "Credential could not be validated.",
+      );
+  }
+  return (
+    <Modal
+      title="Connect your models."
+      kicker="CREDENTIALS / SERVER-SIDE SESSION"
+      onClose={onClose}
+      wide
+    >
+      <p className="muted">
+        Choose a provider, validate access, then select a compatible model. Keys
+        stay in your server-side session and never enter browser storage or exports.
+      </p>
+      <div className="credential-grid">
+        <section>
+          <h3>Available credentials</h3>
+          {credentials.length ? (
+            <div className="credential-list">
+              {credentials.map((c) => (
+                <div className="credential-item" key={c.id}>
+                  <div className="credential-icon">
+                    <KeyRound size={18} />
+                  </div>
+                  <div>
+                    <strong>{c.label}</strong>
+                    <small>
+                      {c.provider} ·{" "}
+                      {c.source === "session" ? "server session" : c.source === "configured" ? "configured on server" : c.source === "example" ? "prepared example · no key" : "local secret file"}
+                    </small>
+                    <Status value={c.source === "example" ? "cached" : c.source === "configured" ? "configured" : c.valid ? "validated" : "unvalidated"} />
+                    {modelCount[c.id] !== undefined && (
+                      <small>{modelCount[c.id]} available text models</small>
+                    )}
+                    {c.error && <p className="form-error small">{c.error}</p>}
+                  </div>
+                  <button
+                    className="button small"
+                    disabled={!!pending || c.source === "example"}
+                    onClick={() => action(c.id, () => validate(c))}
+                  >
+                    {pending === c.id ? (
+                      <Loader2 size={13} className="spin" />
+                    ) : (
+                      c.source === "example" ? "Prepared" : "Validate"
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="callout">
+              No credentials yet. Add one to use planning agents, execute runs
+              and evaluate results.
+            </div>
+          )}
+          <div className="callout small">
+            The workbench’s planning and review agents use your selected model.
+            Connected applications can have additional runtime requirements;
+            check adapter coverage before running.
+          </div>
+        </section>
+        <section className="credential-add">
+          <h3>Add a provider</h3>
+          <Field label="Provider">
+            <select
+              value={provider}
+              onChange={(e) => setProvider(e.target.value as Provider)}
+            >
+              {PROVIDERS.map((p) => (
+                <option key={p} value={p}>
+                  {p[0].toUpperCase() + p.slice(1)}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Label">
+            <input
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder={`${provider} workspace`}
+            />
+          </Field>
+          <Field
+            label="API key"
+            hint="Held in this server session. Enter a fresh key after the server restarts."
+          >
+            <input
+              type="password"
+              autoComplete="off"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              placeholder="Paste your provider key"
+            />
+          </Field>
+          <button
+            className="button primary"
+            disabled={!!pending || !key.trim()}
+            onClick={() =>
+              action("add", async () => {
+                const c = await api<Credential>("/credentials", "POST", {
+                  provider,
+                  label: label || `${provider} workspace`,
+                  key,
+                });
+                setKey("");
+                await onUpdate(c);
+                await validate(c);
+              })
+            }
+          >
+            {pending === "add" ? (
+              <Loader2 size={14} className="spin" />
+            ) : (
+              <KeyRound size={14} />
+            )}
+            Add & validate
+          </button>
+          {localAvailable && (
+            <>
+              <div className="or-separator">
+                <span>or</span>
+              </div>
+              <button
+                className="button full"
+                disabled={!!pending}
+                onClick={() =>
+                  action("import", async () => {
+                    const c = await api<Credential>(
+                      "/credentials/import",
+                      "POST",
+                      { provider },
+                    );
+                    await onUpdate(c);
+                    await validate(c);
+                  })
+                }
+              >
+                {pending === "import" ? (
+                  <Loader2 size={14} className="spin" />
+                ) : (
+                  <ArrowDownToLine size={14} />
+                )}
+                Import configured local key
+              </button>
+              <small className="muted">
+                The server reads only the selected provider’s configured secret
+                entry.
+              </small>
+            </>
+          )}
+        </section>
+      </div>
+      {error && (
+        <div className="form-error" role="alert">
+          {error}
+        </div>
+      )}
+      <div className="modal-footer">
+        <span className="muted small">
+          Model availability is checked. Capability support can still require
+          runtime validation.
+        </span>
+        <button className="button" onClick={onClose}>
+          Done
+        </button>
+      </div>
+    </Modal>
+  );
+}

@@ -1,0 +1,1082 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "NIST AI RMF for GenAI",
+    "title": "NIST AI RMF for GenAI",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 38,
+    "thesis": "NIST AI RMF for GenAI is practical when learners can apply it to this concrete case: A company needs a repeatable risk process for generative AI systems from design to monitoring. By the end, they should be able to build or review NIST AI RMF GenAI risk register mapped to govern, map, measure, and manage, measure identified risks tied to owners and controls, and catch the failure where risk work becomes a one-time checklist instead of a lifecycle practice."
+  },
+  "learnerProfile": {
+    "level": "advanced",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "NIST AI RMF for GenAI",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": false,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "NIST AI RMF for GenAI: mental map",
+    "caption": "Use Govern, Map, Measure, and Manage to turn GenAI risk into owned evidence and controls.",
+    "oneLineThesis": "The NIST AI RMF helps teams run a repeatable risk loop for GenAI systems: govern the process, map the context, measure risks, and manage controls.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Govern: make risk ownership real",
+        "sub": "Name authority, policies, reviewers, and evidence before risk work begins.",
+        "what": "Govern creates the organizational machinery that makes GenAI safety repeatable instead of heroic.",
+        "relevance": "Define who can approve, block, and revisit GenAI releases.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Name who owns GenAI risk decisions and release authority."
+      },
+      {
+        "id": "n_m2",
+        "label": "Map: describe the system in its real context",
+        "sub": "Identify users, data flows, tools, vendors, harms, misuse, and impacted groups.",
+        "what": "Map turns a broad GenAI feature into a concrete risk surface with boundaries and assumptions.",
+        "relevance": "Map the use case, users, data, tools, and deployment context.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Describe the GenAI system, context, data, and foreseeable misuse."
+      },
+      {
+        "id": "n_m3",
+        "label": "Measure: test risks with evidence",
+        "sub": "Use evals, red-team cases, slice checks, privacy review, and trace sampling.",
+        "what": "Measure converts mapped risks into evidence about likelihood, severity, control effectiveness, and gaps.",
+        "relevance": "Choose measurements for GenAI risks.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Measure mapped risks with evals, red-team cases, and monitoring signals."
+      },
+      {
+        "id": "n_m4",
+        "label": "Manage: choose controls and residual risk",
+        "sub": "Tie mitigations to owners, rollout decisions, monitoring, and incident response.",
+        "what": "Manage is where the team decides which controls reduce risk enough for the intended use.",
+        "relevance": "Select controls for measured GenAI risks.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Choose controls, assign owners, and record residual risk decisions."
+      },
+      {
+        "id": "n_m5",
+        "label": "Run the RMF loop after launch",
+        "sub": "Use monitoring, incidents, and change management to keep the register alive.",
+        "what": "The RMF is a cycle; GenAI risk changes when models, prompts, tools, data, and users change.",
+        "relevance": "Recall the four-function loop.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Keep the GenAI risk register alive as the system changes."
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "conceptual"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Govern: make risk ownership real",
+      "sub": "Name authority, policies, reviewers, and evidence before risk work begins.",
+      "summary": "Govern creates the organizational machinery that makes GenAI safety repeatable instead of heroic.",
+      "objectives": [
+        "Define who can approve, block, and revisit GenAI releases.",
+        "Connect governance to policies, evidence, and incidents.",
+        "Explain why model-only safety review is too narrow."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Govern is the operating system for risk",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a lesson-generation agent cites sources, drafts modules, stores traces, and can call tools. A prompt change improves fluency but increases unsupported claims. Without governance, everyone agrees it is concerning and nobody owns the release decision."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The Govern function names roles, risk appetite, policy stack, review cadence, escalation path, and evidence requirements. For GenAI, this includes content policy, privacy policy, tool-use policy, evaluation policy, vendor review, incident response, and change management."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Product framing: governance decides which risks are acceptable for this use case."
+                  }
+                ],
+                [
+                  {
+                    "text": "Engineering framing: governance becomes gates, logs, evals, approvals, and rollback switches."
+                  }
+                ],
+                [
+                  {
+                    "text": "Review framing: governance gives reviewers authority, not just advisory comments."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Worked artifact: GenAI risk owner map",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Feature: automated lesson enrichment. Owner: learning product lead. Safety reviewer: trust and safety. Security reviewer: platform. Data owner: KB curator. Block authority: release manager when evals or data review fail. Evidence: risk register, eval report, source-citation audit, prompt version, model route, trace sampling plan, and incident playbook."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is intentionally mundane. RMF value comes from making risk work durable enough that the next prompt, model, retrieval, or tool change reruns the right checks."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "RMF governance card"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Govern function",
+          "prompt": "What does Govern add that a one-time eval report does not?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A guarantee that no model will fail.",
+              "correct": false
+            },
+            {
+              "text": "Owners, authority, policy, review cadence, and evidence expectations for future changes.",
+              "correct": true
+            },
+            {
+              "text": "A replacement for privacy and security review.",
+              "correct": false
+            }
+          ],
+          "explanation": "Govern makes the process repeatable and accountable; it does not eliminate risk.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "canon1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Map: describe the system in its real context",
+      "sub": "Identify users, data flows, tools, vendors, harms, misuse, and impacted groups.",
+      "summary": "Map turns a broad GenAI feature into a concrete risk surface with boundaries and assumptions.",
+      "objectives": [
+        "Map the use case, users, data, tools, and deployment context.",
+        "Name foreseeable misuse and affected groups.",
+        "Identify risk sources outside the model."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Map the whole socio-technical system",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A GenAI system is not just a model endpoint. It includes prompts, retrieval sources, memory, user interface, tool permissions, logs, analytics, vendors, reviewers, and users who may misunderstand generated output. Mapping makes those pieces visible before measurement."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For a learning studio, mapped harms include unsupported teaching claims, biased feedback, privacy leakage, unsafe advice, prompt injection through sources, overreliance by learners, and tool actions outside the educational role."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Map dimensions for a lesson agent",
+          "criteria": [
+            "Dimension",
+            "Question",
+            "Example evidence"
+          ],
+          "options": [
+            {
+              "name": "Context",
+              "cells": [
+                {
+                  "criterion": "Dimension",
+                  "text": "Users and setting",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Question",
+                  "text": "Who uses it and what decisions could follow?",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Example evidence",
+                  "text": "learner age range, teacher role, product copy, escalation path",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use during requirements.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Data",
+              "cells": [
+                {
+                  "criterion": "Dimension",
+                  "text": "Prompts, KB, traces, evals",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Question",
+                  "text": "What sensitive or copyrighted material can enter?",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Example evidence",
+                  "text": "data inventory, retention table, redaction policy",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use before ingestion.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Capabilities",
+              "cells": [
+                {
+                  "criterion": "Dimension",
+                  "text": "Tools and outputs",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Question",
+                  "text": "Can the system act, publish, email, browse, or mutate data?",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Example evidence",
+                  "text": "tool manifest, scopes, approval matrix",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use before tool enablement.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Case study: the risk was in retrieval, not the model",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A source note in the KB contains outdated legal language. The model faithfully summarizes it, cites it, and the lesson becomes wrong. A model-only map misses this; a system map includes source freshness, provenance, retrieval filters, citation checks, and curator ownership."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon2",
+        "kb2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Measure: test risks with evidence",
+      "sub": "Use evals, red-team cases, slice checks, privacy review, and trace sampling.",
+      "summary": "Measure converts mapped risks into evidence about likelihood, severity, control effectiveness, and gaps.",
+      "objectives": [
+        "Choose measurements for GenAI risks.",
+        "Separate offline evals from production monitoring.",
+        "Explain why red-team examples must match the mapped context."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Measurements must match the risk",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If the risk is hallucinated citations, measure citation faithfulness and unsupported-claim rate. If the risk is prompt injection from KB notes, test poisoned source chunks. If the risk is privacy leakage, inspect logs, traces, redaction, and vendor data settings. Generic chat quality scores are not enough."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Measurement includes offline evals, adversarial examples, human review, slice checks, telemetry, incident reports, and post-launch monitoring. The evidence should say what the control caught and what it missed."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m3_eval",
+          "kind": "functionalExample",
+          "title": "Worked GenAI risk measurement plan",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Risk: lesson agent invents sources. Test set: 80 prompts across RAG, safety, and infra categories with known KB sources. Metrics: citation coverage, unsupported-claim rate, source freshness, render validation, and reviewer rejection. Red-team set: poisoned notes instructing the model to ignore citations. Pass rule: no critical unsupported claims and citation coverage above the release threshold by category."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Measure the failure mode you mapped, not the metric that is easiest to compute.",
+          "useWhen": "Use a mixed evidence plan when GenAI risks span factuality, privacy, injection, safety, and user reliance.",
+          "avoidWhen": "Avoid passing release based only on a small happy-path demo or an average quality score.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for NIST AI RMF for GenAI: baseline, production design, or advanced optimization."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Manage: choose controls and residual risk",
+      "sub": "Tie mitigations to owners, rollout decisions, monitoring, and incident response.",
+      "summary": "Manage is where the team decides which controls reduce risk enough for the intended use.",
+      "objectives": [
+        "Select controls for measured GenAI risks.",
+        "Document residual risk and owner acceptance.",
+        "Plan rollback and incident response."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Risk register gate check",
+          "language": "python",
+          "code": "risk = {\n    \"id\": \"GENAI-CITE-01\",\n    \"harm\": \"unsupported source claim in lesson\",\n    \"owner\": \"learning-quality\",\n    \"severity\": \"high\",\n    \"controls\": [\"citation_eval\", \"source_provenance\", \"human_review\"],\n    \"evidence\": {\"unsupported_claim_rate\": 0.01, \"critical_failures\": 0},\n    \"residual_risk_accepted_by\": \"release-manager\",\n}\nassert risk[\"owner\"]\nassert risk[\"controls\"]\nassert risk[\"evidence\"][\"critical_failures\"] == 0\nassert risk[\"residual_risk_accepted_by\"]",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This sketch checks the release discipline: a risk must have an owner, controls, evidence, and residual-risk acceptance before promotion."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "What is missing if the register has controls but no owner?",
+            "answer": "No one is accountable for maintaining, reviewing, or changing those controls after release."
+          },
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify an AI-generated RMF plan",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Check that an AI-generated RMF plan uses Govern, Map, Measure, and Manage as functions, not decorative headings. It should name system context, risks, owners, evals, controls, residual risk, monitoring, and update triggers for model, prompt, KB, route, or tool changes."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Does each risk link to evidence rather than vague concern?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does each control have an owner and review cadence?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does the plan say what blocks release?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it include incident learning and change management?"
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Residual risk",
+          "prompt": "What does residual risk mean?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A risk that can be ignored because a model passed one eval.",
+              "correct": false
+            },
+            {
+              "text": "The risk that remains after controls, evidence, and mitigations are applied.",
+              "correct": true
+            },
+            {
+              "text": "A legal guarantee of safety.",
+              "correct": false
+            }
+          ],
+          "explanation": "Managing risk includes deciding what remains and who accepts it.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "canon1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Run the RMF loop after launch",
+      "sub": "Use monitoring, incidents, and change management to keep the register alive.",
+      "summary": "The RMF is a cycle; GenAI risk changes when models, prompts, tools, data, and users change.",
+      "objectives": [
+        "Recall the four-function loop.",
+        "Write a retrieval prompt for RMF risk work.",
+        "Create a capstone risk-register entry."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "conceptual",
+          "title": "Retrieval prompt for the whole lesson",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer this from memory: \"How do I apply NIST AI RMF to a GenAI feature?\" Include Govern roles, Map context and misuse, Measure evals and monitoring, Manage controls and residual risk, then update after incidents or system changes."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: module 2 mapped retrieval and tools as part of the system. The final register must update when those non-model pieces change."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Use the RMF as an operating loop, not a launch poster.",
+          "useWhen": "Use it when a GenAI feature is user-facing, retrieval-grounded, tool-using, safety-sensitive, or costly to get wrong.",
+          "avoidWhen": "Avoid RMF paperwork that is disconnected from code, evals, release gates, monitoring, and incidents.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m5_capstone",
+          "kind": "functionalExample",
+          "title": "Capstone: one GenAI risk-register row",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Pick a GenAI feature. Write one row with risk, affected users, severity, likelihood, context, measurement, controls, owner, residual risk, release gate, monitoring signal, and update trigger. Then explain which RMF function each field supports."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Solo RMF row"
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "canon2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for NIST AI RMF for GenAI: baseline, production design, or advanced optimization."
+    }
+  ],
+  "glossary": {
+    "hallucination": {
+      "id": "hallucination",
+      "label": "Hallucination",
+      "laymanDefinition": "A generated output that appears plausible but is unsupported or false.",
+      "technicalNote": "NIST GenAI risk work treats confabulation as one risk to measure and manage, especially where users may rely on generated claims.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "prompt_injection": {
+      "id": "prompt_injection",
+      "label": "Prompt injection",
+      "laymanDefinition": "A manipulation attempt that turns untrusted text into model instructions.",
+      "technicalNote": "Prompt injection belongs in the RMF risk register when retrieval, tools, or external content can change system behavior.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "guardrail": {
+      "id": "guardrail",
+      "label": "Guardrail",
+      "laymanDefinition": "A control chosen to reduce a named GenAI risk.",
+      "technicalNote": "In RMF work, guardrails must be tied to mapped risks, measured evidence, owners, and review cadence.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "privacy": {
+      "id": "privacy",
+      "label": "Privacy",
+      "laymanDefinition": "The governance of personal and sensitive data across prompts, logs, traces, vendors, and outputs.",
+      "technicalNote": "Privacy is mapped as context, measured through data-flow review, and managed through minimization, redaction, access, retention, and vendor controls.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "owasp": {
+      "id": "owasp",
+      "label": "OWASP",
+      "laymanDefinition": "A practical security lens for LLM application risks.",
+      "technicalNote": "OWASP controls can support the RMF Manage function for prompt injection, excessive agency, and sensitive information disclosure.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Open Worldwide Application Security Project"
+    },
+    "risk_register": {
+      "id": "risk_register",
+      "label": "Risk register",
+      "laymanDefinition": "The working table of risks, context, measurements, controls, owners, and residual risk.",
+      "technicalNote": "For GenAI, the register should cover hallucination, harmful content, data leakage, injection, tool misuse, monitoring, and incident response.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for NIST AI RMF for GenAI",
+    "themes": [
+      {
+        "name": "Release-readiness check",
+        "questions": [
+          {
+            "q": "What decision does NIST AI RMF for GenAI change for this case?",
+            "why": "A good lesson changes how the learner builds, reviews, or ships NIST AI RMF GenAI risk register mapped to govern, map, measure, and manage.",
+            "opts": [
+              "Thin slice",
+              "Production path",
+              "Advanced optimization"
+            ],
+            "rot": "Choose the smallest option that catches: risk work becomes a one-time checklist instead of a lifecycle practice."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct the NIST GenAI risk loop: Govern roles and policy, Map context and harms, Measure with evals and evidence, Manage controls and residual risk, then update the register after incidents or changes."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "NIST AI RMF for GenAI operating path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Govern: make risk ownership real",
+          "sub": "Name authority, policies, reviewers, and evidence before risk work begins.",
+          "what": "Govern creates the organizational machinery that makes GenAI safety repeatable instead of heroic.",
+          "relevance": "Define who can approve, block, and revisit GenAI releases.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Name who owns GenAI risk decisions and release authority."
+        },
+        {
+          "id": "n_m2",
+          "label": "Map: describe the system in its real context",
+          "sub": "Identify users, data flows, tools, vendors, harms, misuse, and impacted groups.",
+          "what": "Map turns a broad GenAI feature into a concrete risk surface with boundaries and assumptions.",
+          "relevance": "Map the use case, users, data, tools, and deployment context.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Describe the GenAI system, context, data, and foreseeable misuse."
+        },
+        {
+          "id": "n_m3",
+          "label": "Measure: test risks with evidence",
+          "sub": "Use evals, red-team cases, slice checks, privacy review, and trace sampling.",
+          "what": "Measure converts mapped risks into evidence about likelihood, severity, control effectiveness, and gaps.",
+          "relevance": "Choose measurements for GenAI risks.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Measure mapped risks with evals, red-team cases, and monitoring signals."
+        },
+        {
+          "id": "n_m4",
+          "label": "Manage: choose controls and residual risk",
+          "sub": "Tie mitigations to owners, rollout decisions, monitoring, and incident response.",
+          "what": "Manage is where the team decides which controls reduce risk enough for the intended use.",
+          "relevance": "Select controls for measured GenAI risks.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Choose controls, assign owners, and record residual risk decisions."
+        },
+        {
+          "id": "n_m5",
+          "label": "Run the RMF loop after launch",
+          "sub": "Use monitoring, incidents, and change management to keep the register alive.",
+          "what": "The RMF is a cycle; GenAI risk changes when models, prompts, tools, data, and users change.",
+          "relevance": "Recall the four-function loop.",
+          "moduleId": "m5",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Keep the GenAI risk register alive as the system changes."
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Govern: make risk ownership real",
+        "detail": "Name authority, policies, reviewers, and evidence before risk work begins."
+      },
+      {
+        "step": 2,
+        "label": "Map: describe the system in its real context",
+        "detail": "Identify users, data flows, tools, vendors, harms, misuse, and impacted groups."
+      },
+      {
+        "step": 3,
+        "label": "Measure: test risks with evidence",
+        "detail": "Use evals, red-team cases, slice checks, privacy review, and trace sampling."
+      },
+      {
+        "step": 4,
+        "label": "Manage: choose controls and residual risk",
+        "detail": "Tie mitigations to owners, rollout decisions, monitoring, and incident response."
+      },
+      {
+        "step": 5,
+        "label": "Run the RMF loop after launch",
+        "detail": "Use monitoring, incidents, and change management to keep the register alive."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_context",
+        "label": "Are Govern roles, authority, policies, and review cadence named?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_evidence",
+        "label": "Does Map describe users, data, context, tools, vendors, and foreseeable misuse?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_controls",
+        "label": "Does Measure include evals, red-team cases, privacy checks, and monitoring signals?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_verify",
+        "label": "Does Manage tie controls to owners, residual risk, rollback, and incidents?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_next",
+        "label": "Can the risk register be updated when prompts, models, tools, or data change?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a one-page release-ready plan for NIST AI RMF GenAI risk register mapped to govern, map, measure, and manage. Include: the user problem, realistic input, mechanism, design choice, runnable or reviewable check, metric (identified risks tied to owners and controls), failure case (risk work becomes a one-time checklist instead of a lifecycle practice), owner, and the next rung after this lesson.",
+      "scopedTo": "NIST AI RMF for GenAI"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI Safety and Governance",
+      "url": "https://doi.org/10.6028/NIST.AI.600-1",
+      "asOfDate": "2026-06-22"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB: Moderation, PII, and Data Governance",
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "asOfDate": "2026-06-22"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "NIST AI Risk Management Framework",
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "asOfDate": "2026-06-23"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "NIST AI 600-1 Generative AI Profile",
+      "url": "https://doi.org/10.6028/NIST.AI.600-1",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

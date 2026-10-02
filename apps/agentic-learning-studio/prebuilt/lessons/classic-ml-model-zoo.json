@@ -1,0 +1,1052 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Classic ML Model Zoo",
+    "title": "Classic ML Model Zoo",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 42,
+    "thesis": "Classic ML Model Zoo is practical when learners can apply it to this concrete case: A churn team must choose a baseline model before trying deep learning. By the end, they should be able to build or review model zoo comparison sheet for logistic regression, trees, and ensembles, measure validated lift over a simple baseline, and catch the failure where a complex model wins the demo but is impossible to debug."
+  },
+  "learnerProfile": {
+    "level": "beginner",
+    "depth": "conceptual",
+    "examples": "functional",
+    "topic": "Classic ML Model Zoo",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Classic ML Model Zoo: mental map",
+    "caption": "Compare classic ML families by the shape of patterns they learn, the data they like, and the failure modes they expose.",
+    "oneLineThesis": "The classic model zoo is a set of useful biases: lines, splits, margins, neighbors, ensembles, and clusters each fit different data stories.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Linear models set the baseline",
+        "sub": "Start with a weighted sum that is easy to inspect.",
+        "what": "Learners get a concrete starting point for model choice.",
+        "relevance": "This prevents skipping simple models that are cheap, stable, and interpretable.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Fit churn risk as a weighted sum before trying flexible models.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Trees split data into readable rules",
+        "sub": "Decision trees model interactions by asking feature questions.",
+        "what": "Learners see a second bias: branching rules instead of weighted sums.",
+        "relevance": "This helps choose trees when interactions matter and auditability is needed.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Split churn cases by billing failures, login recency, and ticket count.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Margins and neighbors use geometry",
+        "sub": "SVMs and k-nearest neighbors reason from distances and boundaries.",
+        "what": "Learners compare geometric model families to lines and trees.",
+        "relevance": "This prevents using distance methods on unscaled or irrelevant features.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Place customers in feature space and classify by boundary or nearby examples.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code a small zoo comparison",
+        "sub": "Validation evidence should choose the family, not the name.",
+        "what": "Learners see the zoo as an experiment table.",
+        "relevance": "This keeps model selection evidence-based.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Compare classic classifiers on one dataset with the same split.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Choose by data shape, constraints, and failure cost",
+        "sub": "The zoo is a decision tool, not a popularity ranking.",
+        "what": "Learners learn when to stop or upgrade.",
+        "relevance": "This prevents needless complexity and mismatched algorithms.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Select the simplest churn model that satisfies metric and review needs.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "contrasts"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "adds geometry"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "adds grouping"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "chooses"
+      }
+    ],
+    "structureType": "comparative"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Linear models set the baseline",
+      "sub": "Start with a weighted sum that is easy to inspect.",
+      "summary": "Linear and logistic models are strong first baselines for many tabular tasks.",
+      "objectives": [
+        "Explain a linear model as weighted evidence.",
+        "Know when linear assumptions help or hurt.",
+        "Use a baseline before complex models."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "A linear model is a transparent scorecard",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a support team wants to predict customer churn from days since last login, ticket count, plan tier, and billing failures. A linear or logistic model treats each feature as weighted evidence. More billing failures may push churn risk up; more recent logins may push it down."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This family is a good baseline because it is fast, explainable, and hard to overfit compared with very flexible models. It struggles when the decision boundary bends sharply or features interact in ways a weighted sum cannot express."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised",
+            "canon_sklearn_user_guide"
+          ],
+          "analogy": "A linear model is a checklist where each item has a weight."
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Worked baseline: churn scorecard",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Score = 0.8*billing_failures + 0.4*ticket_count - 0.6*recent_login + 0.3*enterprise_plan. A customer with two billing failures, three tickets, a recent login, and no enterprise plan gets 0.8*2 + 0.4*3 - 0.6*1 + 0 = 2.2. The exact numbers are learned, but the structure is inspectable."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Linear baseline",
+          "prompt": "Why try a linear/logistic model early?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It can discover arbitrary clusters without labels.",
+              "correct": false
+            },
+            {
+              "text": "It is fast, interpretable, and gives a baseline for validation comparison.",
+              "correct": true
+            },
+            {
+              "text": "It always beats ensembles.",
+              "correct": false
+            }
+          ],
+          "explanation": "Baselines make later complexity justify itself.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_supervised",
+        "canon_sklearn_user_guide"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Trees split data into readable rules",
+      "sub": "Decision trees model interactions by asking feature questions.",
+      "summary": "Tree models capture nonlinear rules but can overfit without constraints.",
+      "objectives": [
+        "Explain a decision tree as recursive splits.",
+        "Name why trees are interpretable and unstable.",
+        "Compare tree rules to linear weights."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Trees learn if-then structure",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A decision tree might first ask whether billing_failures > 0, then whether days_since_login > 14, then whether support_tickets > 2. That makes interactions easy to express: a stale login may matter more when billing also failed."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Trees are readable, handle mixed feature types, and capture nonlinear splits. They can also memorize quirks if grown too deep, so validation depth and pruning matter."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Case study: the readable but brittle tree",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The churn tree reveals a useful business rule: billing failure plus no login for 30 days is high risk. But an unconstrained tree also creates a leaf for a rare legacy plan with two training examples. Validation error rises, warning that the rare leaf is memorization."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised",
+            "kb_neural_backprop"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_supervised",
+        "kb_neural_backprop"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Margins and neighbors use geometry",
+      "sub": "SVMs and k-nearest neighbors reason from distances and boundaries.",
+      "summary": "Geometry-based models care about scaling, distance, and support points.",
+      "objectives": [
+        "Explain SVM margins and nearest-neighbor voting in beginner terms.",
+        "Recognize why feature scaling matters.",
+        "Choose these models for the right data shape."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Some models look at the map of points",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A support-vector machine tries to find a boundary with a wide margin between classes. k-nearest neighbors keeps the training examples and predicts by nearby examples. Both depend heavily on feature scale and distance meaning. If account_value ranges to millions while ticket_count ranges to ten, distance becomes distorted unless features are scaled."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Classic family comparison",
+          "criteria": [
+            "Family",
+            "Best fit",
+            "Common failure"
+          ],
+          "options": [
+            {
+              "name": "Linear/logistic",
+              "cells": [
+                {
+                  "criterion": "Family",
+                  "text": "Linear/logistic",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "strong baseline, sparse or tabular data, interpretability",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Common failure",
+                  "text": "misses curved interactions",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "First supervised baseline.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Decision tree",
+              "cells": [
+                {
+                  "criterion": "Family",
+                  "text": "Decision tree",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "nonlinear splits and readable rules",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Common failure",
+                  "text": "overfits deep rare leaves",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Need interactions and inspectable paths.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "SVM",
+              "cells": [
+                {
+                  "criterion": "Family",
+                  "text": "SVM",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "clear margin in scaled feature space",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Common failure",
+                  "text": "sensitive to scaling and kernel choice",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Medium-sized data with useful geometric boundary.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "k-nearest neighbors",
+              "cells": [
+                {
+                  "criterion": "Family",
+                  "text": "k-nearest neighbors",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "local similarity with meaningful distances",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Common failure",
+                  "text": "slow prediction and noisy dimensions",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Small data where neighbors are meaningful.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_supervised"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code a small zoo comparison",
+      "sub": "Validation evidence should choose the family, not the name.",
+      "summary": "A runnable scikit-learn comparison shows baseline, tree, and neighbor tradeoffs.",
+      "objectives": [
+        "Run a small model-family comparison.",
+        "Predict which family may overfit with high train score.",
+        "Verify AI-generated model zoo code."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 10,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Compare three classic classifiers on one split",
+          "language": "python",
+          "code": "from sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.tree import DecisionTreeClassifier\nfrom sklearn.neighbors import KNeighborsClassifier\n\nX, y = load_iris(return_X_y=True)\nX_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, random_state=7, stratify=y)\n\nmodels = {\n    \"logistic\": make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000)),\n    \"tree_depth_3\": DecisionTreeClassifier(max_depth=3, random_state=7),\n    \"knn_5\": make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=5)),\n}\n\nfor name, model in models.items():\n    model.fit(X_train, y_train)\n    print(name, round(model.score(X_val, y_val), 3))",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The same split and metric make the comparison fair enough for a first pass. More serious work would add cross-validation, leakage checks, calibration, and slice metrics."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict why logistic and kNN are wrapped in StandardScaler but the tree is not.",
+            "answer": "Logistic regression and kNN are sensitive to feature scale. Trees split by thresholds and usually do not need feature scaling in the same way."
+          },
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised",
+            "canon_sklearn_model_selection"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify AI-generated zoo comparisons",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: every model uses the same split; preprocessing is inside a pipeline; distance-based models are scaled; random seeds are fixed for examples; validation, not training score, chooses the candidate; and the report mentions interpretability and prediction cost."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_user_guide"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_supervised",
+        "canon_sklearn_model_selection",
+        "canon_sklearn_user_guide"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Choose by data shape, constraints, and failure cost",
+      "sub": "The zoo is a decision tool, not a popularity ranking.",
+      "summary": "Model choice balances validation performance, interpretability, data size, latency, and maintenance.",
+      "objectives": [
+        "Use a decision matrix for model-family choice.",
+        "Include clustering as unsupervised exploration, not a supervised substitute.",
+        "Write a next-step plan after the first comparison."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Every family carries a bias and an operating cost",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Linear models are inspectable baselines. Trees express rules but can overfit. SVMs and neighbors need meaningful geometry. Ensembles often improve accuracy but reduce simplicity. Clustering belongs in the zoo too: it groups unlabeled data for exploration, anomaly review, and candidate segments, but it does not replace supervised labels for a churn target."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A beginner decision rule: if you have labels and a target, start supervised. If you do not have labels and need to understand structure, use clustering as hypothesis generation. If you need both, cluster first to explore, then label or evaluate before training a supervised model."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_user_guide",
+            "canon_sklearn_clustering"
+          ]
+        },
+        {
+          "id": "m5_cluster_matrix",
+          "kind": "decisionMatrix",
+          "title": "Where clustering fits in the classic zoo",
+          "criteria": [
+            "Family",
+            "Best fit",
+            "Common failure"
+          ],
+          "options": [
+            {
+              "name": "k-means clustering",
+              "cells": [
+                {
+                  "criterion": "Family",
+                  "text": "k-means clustering",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "unlabeled compact groups around centroids",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Common failure",
+                  "text": "forces every point into a cluster even when groups are weak",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Explore unlabeled data or candidate segments.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "DBSCAN-style clustering",
+              "cells": [
+                {
+                  "criterion": "Family",
+                  "text": "DBSCAN-style clustering",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "dense groups plus noise/outliers",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Common failure",
+                  "text": "sensitive to distance scale and density settings",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Find repeated issue pockets with outliers.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Supervised classifier",
+              "cells": [
+                {
+                  "criterion": "Family",
+                  "text": "Supervised classifier",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Best fit",
+                  "text": "known target labels such as churn/no churn",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Common failure",
+                  "text": "learns shortcuts if labels or features leak",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Predict a defined outcome.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_clustering",
+            "canon_sklearn_supervised"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Choose the simplest family that meets validation, interpretability, and deployment constraints.",
+          "useWhen": "Use the zoo when beginning a tabular or small-to-medium ML problem and you need a defensible first shortlist.",
+          "avoidWhen": "Avoid treating model families as a leaderboard; the right choice depends on data shape, metric, failure cost, and maintenance.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_user_guide"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Zoo decision",
+          "prompt": "A linear model and random forest have nearly equal validation performance, but compliance needs explanations. What is the safer first choice?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The random forest because it is always more advanced.",
+              "correct": false
+            },
+            {
+              "text": "The linear model, unless the forest adds enough value to justify lower transparency.",
+              "correct": true
+            },
+            {
+              "text": "Neither; use clustering for labels.",
+              "correct": false
+            }
+          ],
+          "explanation": "Operational constraints are part of model selection.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_supervised"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_user_guide",
+        "canon_sklearn_clustering",
+        "canon_sklearn_supervised"
+      ]
+    }
+  ],
+  "glossary": {
+    "ai": {
+      "id": "ai",
+      "label": "AI",
+      "laymanDefinition": "Software systems that perform tasks associated with human intelligence.",
+      "technicalNote": "In these foundations lessons, AI is the broad field; the concrete mechanisms are models, data, objectives, and evaluation loops.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_supervised"
+      ],
+      "acronymExpansion": "Artificial intelligence"
+    },
+    "ml": {
+      "id": "ml",
+      "label": "ML",
+      "laymanDefinition": "A branch of AI where systems learn patterns from data instead of only following hand-written rules.",
+      "technicalNote": "ML work is defined by training data, features, models, objectives, validation, and deployment constraints.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_supervised"
+      ],
+      "acronymExpansion": "Machine learning"
+    },
+    "model": {
+      "id": "model",
+      "label": "Model",
+      "laymanDefinition": "A learned or configured function that maps inputs to predictions, scores, clusters, or generated outputs.",
+      "technicalNote": "Model choice encodes assumptions such as linearity, distance, tree splits, capacity, or sequential reward.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_supervised"
+      ]
+    },
+    "loss": {
+      "id": "loss",
+      "label": "Loss",
+      "laymanDefinition": "A numerical training signal that measures how wrong a prediction is for a task.",
+      "technicalNote": "Loss drives optimization; it is not the same as product quality, fairness, or final generalization.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_supervised"
+      ]
+    },
+    "generalization": {
+      "id": "generalization",
+      "label": "Generalization",
+      "laymanDefinition": "The ability of a model to perform well on examples it did not train on.",
+      "technicalNote": "Generalization is checked with validation/test data, leakage audits, and slice monitoring.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_supervised"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "A repeatable sequence of data transforms, feature steps, model fitting, and evaluation or inference.",
+      "technicalNote": "Pipelines prevent train/test leakage and keep preprocessing identical between training and production.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_supervised"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Classic ML Model Zoo",
+    "themes": [
+      {
+        "name": "Model-family choice",
+        "questions": [
+          {
+            "q": "Which simple model family should be tried first for this tabular problem, and what failure would make you move on?",
+            "why": "Classic ML is strongest when the learner connects model assumptions to data shape and operational constraints.",
+            "opts": [
+              "Baseline then evidence-based upgrade",
+              "Deep model by default",
+              "Pick the fanciest name"
+            ],
+            "rot": "Start interpretable and cheap, then add flexibility only when validation errors justify it."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct the classic ML zoo by naming linear models, trees, SVMs, nearest neighbors, ensembles, clustering, their assumptions, failure modes, and the validation evidence that chooses among them."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Classic model zoo from baseline to evidence-based choice",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Linear models set the baseline",
+          "sub": "Start with a weighted sum that is easy to inspect.",
+          "what": "Learners get a concrete starting point for model choice.",
+          "relevance": "This prevents skipping simple models that are cheap, stable, and interpretable.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Fit churn risk as a weighted sum before trying flexible models.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Trees split data into readable rules",
+          "sub": "Decision trees model interactions by asking feature questions.",
+          "what": "Learners see a second bias: branching rules instead of weighted sums.",
+          "relevance": "This helps choose trees when interactions matter and auditability is needed.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Split churn cases by billing failures, login recency, and ticket count.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Margins and neighbors use geometry",
+          "sub": "SVMs and k-nearest neighbors reason from distances and boundaries.",
+          "what": "Learners compare geometric model families to lines and trees.",
+          "relevance": "This prevents using distance methods on unscaled or irrelevant features.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Place customers in feature space and classify by boundary or nearby examples.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code a small zoo comparison",
+          "sub": "Validation evidence should choose the family, not the name.",
+          "what": "Learners see the zoo as an experiment table.",
+          "relevance": "This keeps model selection evidence-based.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Compare classic classifiers on one dataset with the same split.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Choose by data shape, constraints, and failure cost",
+          "sub": "The zoo is a decision tool, not a popularity ranking.",
+          "what": "Learners learn when to stop or upgrade.",
+          "relevance": "This prevents needless complexity and mismatched algorithms.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Select the simplest churn model that satisfies metric and review needs.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "baselines"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "branches"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "measures distance"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "selects"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Linear models set the baseline",
+        "detail": "Linear and logistic models are strong first baselines for many tabular tasks."
+      },
+      {
+        "step": 2,
+        "label": "Trees split data into readable rules",
+        "detail": "Tree models capture nonlinear rules but can overfit without constraints."
+      },
+      {
+        "step": 3,
+        "label": "Margins and neighbors use geometry",
+        "detail": "Geometry-based models care about scaling, distance, and support points."
+      },
+      {
+        "step": 4,
+        "label": "Code a small zoo comparison",
+        "detail": "A runnable scikit-learn comparison shows baseline, tree, and neighbor tradeoffs."
+      },
+      {
+        "step": 5,
+        "label": "Choose by data shape, constraints, and failure cost",
+        "detail": "Model choice balances validation performance, interpretability, data size, latency, and maintenance."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Linear models set the baseline\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Code a small zoo comparison\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Choose by data shape, constraints, and failure cost\" define the selection or evaluation gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "For a customer-churn table, compare logistic regression, decision tree, k-nearest neighbors, and random forest. Write what each model assumes, run a small validation comparison, and choose the simplest model that meets the metric and interpretability need. Next rung: add calibration and feature leakage checks.",
+      "scopedTo": "Foundations",
+      "checks": [
+        "At least one simple baseline is included.",
+        "Choice uses validation evidence, not model fashion.",
+        "Interpretability and deployment cost are considered.",
+        "Failure modes match the model family."
+      ]
+    }
+  },
+  "citations": {
+    "canon_sklearn_user_guide": {
+      "id": "canon_sklearn_user_guide",
+      "kind": "canonical",
+      "title": "scikit-learn User Guide",
+      "url": "https://scikit-learn.org/stable/user_guide.html",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_sklearn_supervised": {
+      "id": "canon_sklearn_supervised",
+      "kind": "canonical",
+      "title": "scikit-learn supervised learning guide",
+      "url": "https://scikit-learn.org/stable/supervised_learning.html",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_sklearn_clustering": {
+      "id": "canon_sklearn_clustering",
+      "kind": "canonical",
+      "title": "scikit-learn clustering guide",
+      "url": "https://scikit-learn.org/stable/modules/clustering.html",
+      "asOfDate": "2026-06-23"
+    },
+    "kb_neural_backprop": {
+      "id": "kb_neural_backprop",
+      "kind": "kb",
+      "title": "KB: Neural Networks and Backpropagation",
+      "url": "https://d2l.ai/chapter_multilayer-perceptrons/backprop.html",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_sklearn_model_selection": {
+      "id": "canon_sklearn_model_selection",
+      "kind": "canonical",
+      "title": "scikit-learn model selection",
+      "url": "https://scikit-learn.org/stable/model_selection.html",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

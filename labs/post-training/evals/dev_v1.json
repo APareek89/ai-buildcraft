@@ -1,0 +1,1281 @@
+[
+  {
+    "id": "dv1_a01",
+    "question": "For an Arc 110, how much energy fits in a fully charged battery, in kWh?",
+    "answerable": true,
+    "fact_id": "110_battery_kwh",
+    "expected_value": 2.9,
+    "unit": "kWh",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "casual"
+  },
+  {
+    "id": "dv1_a02",
+    "question": "If I wind an Arc 110 right up, what's its listed maximum speed?",
+    "answerable": true,
+    "fact_id": "110_top_speed_kmph",
+    "expected_value": 72,
+    "unit": "km/h",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "casual"
+  },
+  {
+    "id": "dv1_a03",
+    "question": "Using the ordinary charger, how long is an Arc 110's full recharge meant to take?",
+    "answerable": true,
+    "fact_id": "110_charge_time_hours",
+    "expected_value": 4.5,
+    "unit": "hours",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "casual"
+  },
+  {
+    "id": "dv1_a04",
+    "question": "How much peak power can the Arc 110 motor put out?",
+    "answerable": true,
+    "fact_id": "110_motor_kw",
+    "expected_value": 2.7,
+    "unit": "kW",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "casual"
+  },
+  {
+    "id": "dv1_a05",
+    "question": "What's the Arc 110's kerb wieght, before adding a rider?",
+    "answerable": true,
+    "fact_id": "110_kerb_weight_kg",
+    "expected_value": 108,
+    "unit": "kg",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "typo"
+  },
+  {
+    "id": "dv1_a06",
+    "question": "How many litres of storge are tucked beneath an Arc 110 seat?",
+    "answerable": true,
+    "fact_id": "110_boot_litres",
+    "expected_value": 22,
+    "unit": "litres",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "typo"
+  },
+  {
+    "id": "dv1_a07",
+    "question": "I'm buying a new Arc 110 and comparing cover periods. How many years does its vehicle warranty last?",
+    "answerable": true,
+    "fact_id": "110_warranty_years",
+    "expected_value": 3,
+    "unit": "years",
+    "source_doc": "warranty_policy",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "customer_situation"
+  },
+  {
+    "id": "dv1_a08",
+    "question": "My Arc 110 is about to start daily commuting. At what kilometre spacing must I arrange its regular services?",
+    "answerable": true,
+    "fact_id": "110_service_interval_km",
+    "expected_value": 5000,
+    "unit": "km",
+    "source_doc": "warranty_policy",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "customer_situation"
+  },
+  {
+    "id": "dv1_a09",
+    "question": "Give the listed Mumbai on-road amount, in rupees, for an Arc 110.",
+    "answerable": true,
+    "fact_id": "110_price_mumbai_inr",
+    "expected_value": 109900,
+    "unit": "INR",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "direct"
+  },
+  {
+    "id": "dv1_a10",
+    "question": "State the Arc 110's published on-road total for a purchase in Delhi.",
+    "answerable": true,
+    "fact_id": "110_price_delhi_inr",
+    "expected_value": 104900,
+    "unit": "INR",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "direct"
+  },
+  {
+    "id": "dv1_a11",
+    "question": "On one topped-up battery, how many certified kilometres can a Pulse 125 manage?",
+    "answerable": true,
+    "fact_id": "125_range_km",
+    "expected_value": 118,
+    "unit": "km",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "casual"
+  },
+  {
+    "id": "dv1_a12",
+    "question": "How long am I waiting for a Pulse 125 to finish a full standard-charger recharge?",
+    "answerable": true,
+    "fact_id": "125_charge_time_hours",
+    "expected_value": 3.5,
+    "unit": "hours",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "casual"
+  },
+  {
+    "id": "dv1_a13",
+    "question": "With Meridian's fast charger, how many minutes does a Pulse 125 need to reach eighty percent?",
+    "answerable": true,
+    "fact_id": "125_fast_charge_minutes",
+    "expected_value": 55,
+    "unit": "minutes",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "casual"
+  },
+  {
+    "id": "dv1_a14",
+    "question": "Could you give the Pulse 125's peak moter output in kilowatts?",
+    "answerable": true,
+    "fact_id": "125_motor_kw",
+    "expected_value": 4.2,
+    "unit": "kW",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "typo"
+  },
+  {
+    "id": "dv1_a15",
+    "question": "What's the kerb wieght quoted for the Pulse 125 scooter?",
+    "answerable": true,
+    "fact_id": "125_kerb_weight_kg",
+    "expected_value": 119,
+    "unit": "kg",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "typo"
+  },
+  {
+    "id": "dv1_a16",
+    "question": "I expect to ride a Pulse 125 a lot. What odometer distance caps its battery warranty?",
+    "answerable": true,
+    "fact_id": "125_battery_warranty_km",
+    "expected_value": 60000,
+    "unit": "km",
+    "source_doc": "warranty_policy",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "customer_situation"
+  },
+  {
+    "id": "dv1_a17",
+    "question": "I'm setting maintenance reminders for a Pulse 125. How many kilometres should separate scheduled services?",
+    "answerable": true,
+    "fact_id": "125_service_interval_km",
+    "expected_value": 6000,
+    "unit": "km",
+    "source_doc": "warranty_policy",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "customer_situation"
+  },
+  {
+    "id": "dv1_a18",
+    "question": "What on-road rupee total is published for the Pulse 125 in Mumbai?",
+    "answerable": true,
+    "fact_id": "125_price_mumbai_inr",
+    "expected_value": 139900,
+    "unit": "INR",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "direct"
+  },
+  {
+    "id": "dv1_a19",
+    "question": "Quote the official Bengaluru on-road listing for a Pulse 125.",
+    "answerable": true,
+    "fact_id": "125_price_bengaluru_inr",
+    "expected_value": 136900,
+    "unit": "INR",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "direct"
+  },
+  {
+    "id": "dv1_a20",
+    "question": "Which calendar year marks the introduction of the Pulse 125 model?",
+    "answerable": true,
+    "fact_id": "125_launch_year",
+    "expected_value": 2025,
+    "unit": null,
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "direct"
+  },
+  {
+    "id": "dv1_a21",
+    "question": "How big is the Volt X's energy pack when measured in kilowatt-hours?",
+    "answerable": true,
+    "fact_id": "x_battery_kwh",
+    "expected_value": 4.6,
+    "unit": "kWh",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "casual"
+  },
+  {
+    "id": "dv1_a22",
+    "question": "A full battery in a Volt X gets me what certified distance before the next charge?",
+    "answerable": true,
+    "fact_id": "x_range_km",
+    "expected_value": 152,
+    "unit": "km",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "casual"
+  },
+  {
+    "id": "dv1_a23",
+    "question": "Flat out, what top-speed figure does Meridian publish for the Volt X?",
+    "answerable": true,
+    "fact_id": "x_top_speed_kmph",
+    "expected_value": 104,
+    "unit": "km/h",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "casual"
+  },
+  {
+    "id": "dv1_a24",
+    "question": "How many minutes on Meridian's fast charger bring a Volt X to 80 persent?",
+    "answerable": true,
+    "fact_id": "x_fast_charge_minutes",
+    "expected_value": 40,
+    "unit": "minutes",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "typo"
+  },
+  {
+    "id": "dv1_a25",
+    "question": "I'm choosing space for things under the seat of a Volt X. What is that compartment's capacity in litres?",
+    "answerable": true,
+    "fact_id": "x_boot_litres",
+    "expected_value": 24,
+    "unit": "litres",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "customer_situation"
+  },
+  {
+    "id": "dv1_a26",
+    "question": "Specify the duration in years of the Volt X vehicle warranty.",
+    "answerable": true,
+    "fact_id": "x_warranty_years",
+    "expected_value": 5,
+    "unit": "years",
+    "source_doc": "warranty_policy",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "direct"
+  },
+  {
+    "id": "dv1_a27",
+    "question": "What mileage limit, in kilometres, applies to the Volt X battery warranty?",
+    "answerable": true,
+    "fact_id": "x_battery_warranty_km",
+    "expected_value": 80000,
+    "unit": "km",
+    "source_doc": "warranty_policy",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "direct"
+  },
+  {
+    "id": "dv1_a28",
+    "question": "What is the Volt X's stated on-road charge for Bengaluru buyers?",
+    "answerable": true,
+    "fact_id": "x_price_bengaluru_inr",
+    "expected_value": 181400,
+    "unit": "INR",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "direct"
+  },
+  {
+    "id": "dv1_a29",
+    "question": "Name the rupee amount listed for a Volt X on-road purchase in Delhi.",
+    "answerable": true,
+    "fact_id": "x_price_delhi_inr",
+    "expected_value": 177900,
+    "unit": "INR",
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "direct"
+  },
+  {
+    "id": "dv1_a30",
+    "question": "In which year was the Volt X model first launched?",
+    "answerable": true,
+    "fact_id": "x_launch_year",
+    "expected_value": 2026,
+    "unit": null,
+    "source_doc": "spec_sheet",
+    "set": "dev_v1",
+    "category": "known_fact",
+    "style": "direct"
+  },
+  {
+    "id": "dv1_u01",
+    "question": "What amount does Meridian charge for an authorised battery-capacity diagnostic on an Arc 110?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "price_near_miss",
+    "style": "direct",
+    "near_miss_of": "battery_warranty_km",
+    "absence_check": {
+      "searched_terms": [
+        "diagnostic",
+        "assessment",
+        "assessed",
+        "fee",
+        "charge"
+      ],
+      "term_hits": {
+        "diagnostic": [],
+        "assessment": [],
+        "assessed": [
+          {
+            "source_path": "data/raw/warranty_policy.md",
+            "line": 28,
+            "text": "as assessed by an authorised service centre."
+          }
+        ],
+        "fee": [],
+        "charge": [
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 8,
+            "text": "- Certified range on a full charge: 96 km"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 12,
+            "text": "- Full charge on the standard charger: 4.5 hours"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 8,
+            "text": "- Certified range on a full charge: 118 km"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 12,
+            "text": "- Full charge on the standard charger: 3.5 hours"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 13,
+            "text": "- Fast charging: 55 minutes to 80 percent on the Meridian fast charger"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 8,
+            "text": "- Certified range on a full charge: 152 km"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 12,
+            "text": "- Full charge on the standard charger: 3.0 hours"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 13,
+            "text": "- Fast charging: 40 minutes to 80 percent on the Meridian fast charger"
+          },
+          {
+            "source_path": "data/raw/warranty_policy.md",
+            "line": 23,
+            "text": "non-Meridian charger."
+          }
+        ]
+      },
+      "reason": "An authorised service centre assesses capacity for the battery-defect threshold, but no fee for that assessment or diagnostic test is stated. A warranty criterion does not supply the test's price.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u02",
+    "question": "What per-kWh tariff is published for charging a Pulse 125 at a Meridian fast charger?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "price_near_miss",
+    "style": "direct",
+    "near_miss_of": "fast_charge_minutes",
+    "absence_check": {
+      "searched_terms": [
+        "tariff",
+        "per-kWh",
+        "electricity",
+        "fee",
+        "fast charg"
+      ],
+      "term_hits": {
+        "tariff": [],
+        "per-kWh": [],
+        "electricity": [],
+        "fee": [],
+        "fast charg": [
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 13,
+            "text": "- Fast charging: Not supported on this model"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 13,
+            "text": "- Fast charging: 55 minutes to 80 percent on the Meridian fast charger"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 13,
+            "text": "- Fast charging: 40 minutes to 80 percent on the Meridian fast charger"
+          }
+        ]
+      },
+      "reason": "The Pulse fast-charge duration and supported charger are documented, but no energy tariff, session charge, or charging-service price is given. A charging time does not establish a monetary rate.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u03",
+    "question": "What labour fee does Meridian list for replacing the Volt X motor?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "price_near_miss",
+    "style": "direct",
+    "near_miss_of": "service_interval_km",
+    "absence_check": {
+      "searched_terms": [
+        "labour",
+        "labor",
+        "replacing",
+        "repair",
+        "fee"
+      ],
+      "term_hits": {
+        "labour": [],
+        "labor": [],
+        "replacing": [],
+        "repair": [],
+        "fee": []
+      },
+      "reason": "The warranty gives service intervals and exclusions but no labour tariff, motor-replacement charge, or repair-price schedule. Peak motor power cannot supply a price.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u04",
+    "question": "For an Arc 110 registered in Mumbai, what is the road-tax amount by itself, excluding the rest of the on-road bill?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "price_near_miss",
+    "style": "direct",
+    "near_miss_of": "price_mumbai_inr",
+    "absence_check": {
+      "searched_terms": [
+        "road tax",
+        "tax",
+        "registration",
+        "inclusive"
+      ],
+      "term_hits": {
+        "road tax": [],
+        "tax": [],
+        "registration": [
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 25,
+            "text": "Prices are on-road, inclusive of registration and insurance, and are"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 25,
+            "text": "Prices are on-road, inclusive of registration and insurance, and are"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 25,
+            "text": "Prices are on-road, inclusive of registration and insurance, and are"
+          }
+        ],
+        "inclusive": [
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 25,
+            "text": "Prices are on-road, inclusive of registration and insurance, and are"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 25,
+            "text": "Prices are on-road, inclusive of registration and insurance, and are"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 25,
+            "text": "Prices are on-road, inclusive of registration and insurance, and are"
+          }
+        ]
+      },
+      "reason": "On-road prices include registration and insurance, but no component breakdown or standalone road-tax amount is given. Subtracting an unknown component cannot recover it.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u05",
+    "question": "What separate pre-delivery inspection fee does Meridian list for a Pulse 125?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "price_near_miss",
+    "style": "direct",
+    "near_miss_of": "price_bengaluru_inr",
+    "absence_check": {
+      "searched_terms": [
+        "pre-delivery",
+        "pre delivery",
+        "inspection",
+        "handling",
+        "fee"
+      ],
+      "term_hits": {
+        "pre-delivery": [],
+        "pre delivery": [],
+        "inspection": [],
+        "handling": [],
+        "fee": []
+      },
+      "reason": "The published on-road total includes registration and insurance, but no pre-delivery inspection tariff or separate inspection fee appears. Its existence or amount must not be inferred from a total vehicle price.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u06",
+    "question": "Give me the Volt X on-road quotation for Pune, rather than one of the three listed cities.",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "price_near_miss",
+    "style": "direct",
+    "near_miss_of": "price_delhi_inr",
+    "absence_check": {
+      "searched_terms": [
+        "Pune",
+        "Mumbai",
+        "Bengaluru",
+        "Delhi",
+        "listed cities"
+      ],
+      "term_hits": {
+        "Pune": [],
+        "Mumbai": [
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 21,
+            "text": "- Mumbai: Rs 109,900"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 21,
+            "text": "- Mumbai: Rs 139,900"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 21,
+            "text": "- Mumbai: Rs 184,900"
+          }
+        ],
+        "Bengaluru": [
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 22,
+            "text": "- Bengaluru: Rs 107,400"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 22,
+            "text": "- Bengaluru: Rs 136,900"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 22,
+            "text": "- Bengaluru: Rs 181,400"
+          }
+        ],
+        "Delhi": [
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 23,
+            "text": "- Delhi: Rs 104,900"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 23,
+            "text": "- Delhi: Rs 133,900"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 23,
+            "text": "- Delhi: Rs 177,900"
+          }
+        ],
+        "listed cities": [
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 26,
+            "text": "indicative for the listed cities only."
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 26,
+            "text": "indicative for the listed cities only."
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 26,
+            "text": "indicative for the listed cities only."
+          }
+        ]
+      },
+      "reason": "Only Mumbai, Bengaluru and Delhi have on-road prices. The brand guide prohibits quoting an unlisted city, and no Pune quotation is supplied.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u07",
+    "question": "What fee would buy two additional years of vehicle-warranty cover for an Arc 110?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "price_near_miss",
+    "style": "direct",
+    "near_miss_of": "warranty_years",
+    "absence_check": {
+      "searched_terms": [
+        "extended",
+        "extension",
+        "additional years",
+        "fee"
+      ],
+      "term_hits": {
+        "extended": [],
+        "extension": [],
+        "additional years": [],
+        "fee": []
+      },
+      "reason": "Standard vehicle-warranty periods are stated, but no paid extension product, additional-year price, or extended-warranty fee is described. The question does not assume such a product exists.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u08",
+    "question": "What retail price is listed for a replacement standard charger for the Pulse 125?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "price_near_miss",
+    "style": "direct",
+    "near_miss_of": "charge_time_hours",
+    "absence_check": {
+      "searched_terms": [
+        "replacement",
+        "charger",
+        "retail",
+        "price"
+      ],
+      "term_hits": {
+        "replacement": [],
+        "charger": [
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 12,
+            "text": "- Full charge on the standard charger: 4.5 hours"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 12,
+            "text": "- Full charge on the standard charger: 3.5 hours"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 13,
+            "text": "- Fast charging: 55 minutes to 80 percent on the Meridian fast charger"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 12,
+            "text": "- Full charge on the standard charger: 3.0 hours"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 13,
+            "text": "- Fast charging: 40 minutes to 80 percent on the Meridian fast charger"
+          },
+          {
+            "source_path": "data/raw/warranty_policy.md",
+            "line": 23,
+            "text": "non-Meridian charger."
+          }
+        ],
+        "retail": [],
+        "price": [
+          {
+            "source_path": "data/raw/brand_guide.md",
+            "line": 6,
+            "text": "a range figure upward. Never quote a price for a city we do not list."
+          },
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 25,
+            "text": "Prices are on-road, inclusive of registration and insurance, and are"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 25,
+            "text": "Prices are on-road, inclusive of registration and insurance, and are"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 25,
+            "text": "Prices are on-road, inclusive of registration and insurance, and are"
+          }
+        ]
+      },
+      "reason": "The specification gives charging times and the warranty excludes damage from a non-Meridian charger. Neither supplies a replacement-charger retail price.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u09",
+    "question": "State the Arc 110 battery pack's nominal voltage in volts.",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "spec_near_miss",
+    "style": "direct",
+    "near_miss_of": "battery_kwh",
+    "absence_check": {
+      "searched_terms": [
+        "nominal",
+        "voltage",
+        "volts",
+        "volt",
+        "auxiliary"
+      ],
+      "term_hits": {
+        "nominal": [],
+        "voltage": [],
+        "volts": [],
+        "volt": [
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 1,
+            "text": "# Meridian Volt X — Specification Sheet"
+          },
+          {
+            "source_path": "data/raw/warranty_policy.md",
+            "line": 9,
+            "text": "| Meridian Volt X | 5 years | 80,000 km | 6,000 km |"
+          },
+          {
+            "source_path": "data/raw/warranty_policy.md",
+            "line": 21,
+            "text": "twelve-volt auxiliary battery. It excludes damage from water ingress above"
+          }
+        ],
+        "auxiliary": [
+          {
+            "source_path": "data/raw/warranty_policy.md",
+            "line": 21,
+            "text": "twelve-volt auxiliary battery. It excludes damage from water ingress above"
+          }
+        ]
+      },
+      "reason": "The Arc specification states energy capacity in kWh, not traction-pack voltage. The policy's twelve-volt auxiliary battery is a different battery, and Volt X is a model name.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u10",
+    "question": "How many rider-selectable regenerative-braking levels does a Pulse 125 provide?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "spec_near_miss",
+    "style": "direct",
+    "near_miss_of": "top_speed_kmph",
+    "absence_check": {
+      "searched_terms": [
+        "regenerative",
+        "regen",
+        "braking",
+        "brake",
+        "levels"
+      ],
+      "term_hits": {
+        "regenerative": [],
+        "regen": [],
+        "braking": [],
+        "brake": [
+          {
+            "source_path": "data/raw/warranty_policy.md",
+            "line": 20,
+            "text": "The warranty excludes consumables such as tyres, brake pads and the"
+          }
+        ],
+        "levels": []
+      },
+      "reason": "No regenerative-braking feature or adjustment levels are described. Brake pads occur only as excluded consumables, which does not establish regenerative-braking controls.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u11",
+    "question": "What final-drive reduction ratio is specified for the Volt X powertrain?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "spec_near_miss",
+    "style": "direct",
+    "near_miss_of": "motor_kw",
+    "absence_check": {
+      "searched_terms": [
+        "final drive",
+        "reduction",
+        "ratio",
+        "transmission",
+        "gear"
+      ],
+      "term_hits": {
+        "final drive": [],
+        "reduction": [],
+        "ratio": [
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 25,
+            "text": "Prices are on-road, inclusive of registration and insurance, and are"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 25,
+            "text": "Prices are on-road, inclusive of registration and insurance, and are"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 25,
+            "text": "Prices are on-road, inclusive of registration and insurance, and are"
+          }
+        ],
+        "transmission": [],
+        "gear": []
+      },
+      "reason": "The powertrain lists energy, peak power, certified range and top speed. It gives no final-drive design or reduction ratio, and those listed figures do not determine a ratio.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u12",
+    "question": "What maximum hill-climbing gradient, expressed as a percentage, is specified for the Arc 110?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "spec_near_miss",
+    "style": "direct",
+    "near_miss_of": "motor_kw",
+    "absence_check": {
+      "searched_terms": [
+        "gradient",
+        "hill",
+        "slope",
+        "incline",
+        "climb"
+      ],
+      "term_hits": {
+        "gradient": [],
+        "hill": [],
+        "slope": [],
+        "incline": [],
+        "climb": []
+      },
+      "reason": "Peak motor power, range and top speed are stated, but no rated climbing gradient appears. These figures alone cannot determine a permitted hill slope or a tested gradeability rating.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u13",
+    "question": "At its rated input, how many watts does the Pulse 125 standard charger draw from the mains?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "spec_near_miss",
+    "style": "direct",
+    "near_miss_of": "charge_time_hours",
+    "absence_check": {
+      "searched_terms": [
+        "watts",
+        "wattage",
+        "input power",
+        "mains",
+        "charger"
+      ],
+      "term_hits": {
+        "watts": [],
+        "wattage": [],
+        "input power": [],
+        "mains": [],
+        "charger": [
+          {
+            "source_path": "data/raw/spec_meridian_arc_110.md",
+            "line": 12,
+            "text": "- Full charge on the standard charger: 4.5 hours"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 12,
+            "text": "- Full charge on the standard charger: 3.5 hours"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_pulse_125.md",
+            "line": 13,
+            "text": "- Fast charging: 55 minutes to 80 percent on the Meridian fast charger"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 12,
+            "text": "- Full charge on the standard charger: 3.0 hours"
+          },
+          {
+            "source_path": "data/raw/spec_meridian_volt_x.md",
+            "line": 13,
+            "text": "- Fast charging: 40 minutes to 80 percent on the Meridian fast charger"
+          },
+          {
+            "source_path": "data/raw/warranty_policy.md",
+            "line": 23,
+            "text": "non-Meridian charger."
+          }
+        ]
+      },
+      "reason": "Charging duration is documented, but rated mains input power and charging efficiency are not. Battery energy divided by duration would not establish a rated wall-power specification.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u14",
+    "question": "If I sell a Volt X privately, does the remaining vehicle warranty transfer to the second owner?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "policy_near_miss",
+    "style": "direct",
+    "near_miss_of": "warranty_years",
+    "absence_check": {
+      "searched_terms": [
+        "transfer",
+        "second owner",
+        "ownership",
+        "resale"
+      ],
+      "term_hits": {
+        "transfer": [],
+        "second owner": [],
+        "ownership": [],
+        "resale": []
+      },
+      "reason": "The policy starts coverage on delivery and states periods/exclusions, but contains no ownership-transfer rule. A coverage period alone does not establish transferability.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u15",
+    "question": "After discovering a battery fault on my Arc 110, within how many days must I notify Meridian to preserve a claim?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "policy_near_miss",
+    "style": "direct",
+    "near_miss_of": "battery_warranty_km",
+    "absence_check": {
+      "searched_terms": [
+        "notify",
+        "notification",
+        "deadline",
+        "days",
+        "claim"
+      ],
+      "term_hits": {
+        "notify": [],
+        "notification": [],
+        "deadline": [],
+        "days": [],
+        "claim": [
+          {
+            "source_path": "data/raw/brand_guide.md",
+            "line": 16,
+            "text": "never make a claim about a competitor's product."
+          }
+        ]
+      },
+      "reason": "Battery defect criteria and coverage limits are present, but no fault-notification deadline or claim-filing period is stated. Service mileage intervals are not notice deadlines.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u16",
+    "question": "Would using a Pulse 125 for paid parcel deliveries change its vehicle-warranty eligibility?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "policy_near_miss",
+    "style": "direct",
+    "near_miss_of": "warranty_years",
+    "absence_check": {
+      "searched_terms": [
+        "commercial",
+        "parcel",
+        "courier",
+        "business use",
+        "delivery"
+      ],
+      "term_hits": {
+        "commercial": [],
+        "parcel": [],
+        "courier": [],
+        "business use": [],
+        "delivery": [
+          {
+            "source_path": "data/raw/warranty_policy.md",
+            "line": 12,
+            "text": "The vehicle warranty runs from the date of delivery. The battery warranty"
+          }
+        ]
+      },
+      "reason": "The exclusions name consumables, certain damage, modifications and chargers. They neither permit nor prohibit commercial delivery work. The date-of-delivery clause concerns the warranty start, not delivery employment.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u17",
+    "question": "What is the official appeal process if Meridian rejects a Volt X battery-warranty claim?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "policy_near_miss",
+    "style": "direct",
+    "near_miss_of": "battery_warranty_km",
+    "absence_check": {
+      "searched_terms": [
+        "appeal",
+        "dispute",
+        "escalat",
+        "reject",
+        "claim"
+      ],
+      "term_hits": {
+        "appeal": [],
+        "dispute": [],
+        "escalat": [],
+        "reject": [],
+        "claim": [
+          {
+            "source_path": "data/raw/brand_guide.md",
+            "line": 16,
+            "text": "never make a claim about a competitor's product."
+          }
+        ]
+      },
+      "reason": "An authorised centre assesses battery capacity, but the documents provide no appeal, dispute-escalation, or rejected-claim review process.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u18",
+    "question": "In which year was Meridian Motors legally incorporated as a company?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "out_of_scope",
+    "style": "direct",
+    "near_miss_of": "launch_year",
+    "absence_check": {
+      "searched_terms": [
+        "incorporat",
+        "founded",
+        "established",
+        "company"
+      ],
+      "term_hits": {
+        "incorporat": [],
+        "founded": [],
+        "established": [],
+        "company": []
+      },
+      "reason": "Product launch years are stated, but no incorporation, founding or company-registration date appears. A scooter launch year is not the company's incorporation year.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u19",
+    "question": "What is the postal address of Meridian Motors' registered corporate office?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "out_of_scope",
+    "style": "direct",
+    "near_miss_of": "price_delhi_inr",
+    "absence_check": {
+      "searched_terms": [
+        "registered office",
+        "head office",
+        "headquarters",
+        "postal",
+        "address"
+      ],
+      "term_hits": {
+        "registered office": [],
+        "head office": [],
+        "headquarters": [],
+        "postal": [],
+        "address": []
+      },
+      "reason": "Cities appear as price markets, not corporate addresses. No registered-office address, headquarters location or postal contact is supplied.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  },
+  {
+    "id": "dv1_u20",
+    "question": "Which organisation or person holds the largest ownership stake in Meridian Motors?",
+    "answerable": false,
+    "fact_id": null,
+    "expected_value": null,
+    "unit": null,
+    "source_doc": null,
+    "set": "dev_v1",
+    "category": "out_of_scope",
+    "style": "direct",
+    "near_miss_of": "company",
+    "absence_check": {
+      "searched_terms": [
+        "sharehold",
+        "ownership stake",
+        "largest owner",
+        "founder",
+        "investor"
+      ],
+      "term_hits": {
+        "sharehold": [],
+        "ownership stake": [],
+        "largest owner": [],
+        "founder": [],
+        "investor": []
+      },
+      "reason": "The documents name the brand and its scooter models but contain no shareholders, investors, founders or ownership percentages.",
+      "scope": "All five current data/raw/*.md documents; absence assessed semantically as well as lexically."
+    }
+  }
+]

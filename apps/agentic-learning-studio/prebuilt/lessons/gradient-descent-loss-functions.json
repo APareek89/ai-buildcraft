@@ -1,0 +1,949 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Gradient Descent and Loss Functions",
+    "title": "Gradient Descent and Loss Functions",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 42,
+    "thesis": "Gradient Descent and Loss Functions is practical when learners can apply it to this concrete case: A pricing model improves by following the loss gradient but can overshoot if the learning rate is wrong. By the end, they should be able to build or review loss-and-update worksheet for a tiny regression model, measure loss decreases on held-out examples, and catch the failure where training loss falls while validation loss gets worse."
+  },
+  "learnerProfile": {
+    "level": "beginner",
+    "depth": "conceptual",
+    "examples": "functional",
+    "topic": "Gradient Descent and Loss Functions",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Gradient Descent and Loss Functions: mental map",
+    "caption": "Teach loss and gradient descent by fitting one tiny line: prediction, error, slope, learning rate, update, and curve diagnosis.",
+    "oneLineThesis": "Gradient descent is the feedback loop that turns numerical error into small parameter updates.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Loss turns wrong guesses into a number",
+        "sub": "The model needs a single training signal before it can improve.",
+        "what": "Learners see loss as the model training signal, not an abstract formula.",
+        "relevance": "This prevents treating accuracy or vibes as the update rule.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Calculate squared error for one house-price prediction before changing weights.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Gradient points in the direction that changes loss",
+        "sub": "The slope says how the loss reacts to a small weight change.",
+        "what": "Learners connect the loss number to a directional update.",
+        "relevance": "This prevents random or sign-flipped training updates.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use the rent-model slope to decide whether weight should increase.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Learning rate controls the size of the correction",
+        "sub": "The same gradient can learn slowly, smoothly, or unstably.",
+        "what": "Learners understand the most visible optimizer knob.",
+        "relevance": "This catches training runs that diverge or crawl because the step size is wrong.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Compare tiny, useful, and reckless steps on the same loss slope.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code one update for a tiny line fit",
+        "sub": "A runnable update makes loss, gradient, and learning rate concrete.",
+        "what": "Learners implement the core loop directly.",
+        "relevance": "This removes mystery before optimizers and autodiff enter the picture.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Run one-feature gradient descent and inspect the loss after each epoch.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Loss curves reveal when training goes wrong",
+        "sub": "The curve turns repeated updates into a diagnostic story.",
+        "what": "Learners connect the training loop to model debugging.",
+        "relevance": "This prevents treating every bad metric as a need for a bigger model.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Use curve shapes to choose learning-rate or generalization fixes.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "creates"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "points"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "scales"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "reveals"
+      }
+    ],
+    "structureType": "dependency"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Loss turns wrong guesses into a number",
+      "sub": "The model needs a single training signal before it can improve.",
+      "summary": "A loss function converts prediction mistakes into a scalar objective.",
+      "objectives": [
+        "Explain why training needs a numerical loss.",
+        "Compute squared error on a tiny example.",
+        "Separate loss from product usefulness."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The loss is the complaint the optimizer can hear",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a tiny model predicts apartment rent from square meters. For a 50 m2 apartment with true rent 1000, the current model predicts 800. A human says \"too low\"; the training loop needs a number. Squared error turns the mistake into (800 - 1000)^2 = 40000."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Different tasks use different losses, but the role is the same: convert bad predictions into a number the training algorithm can minimize. The loss is not the whole product goal; it is the signal the model can optimize."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_d2l_backprop",
+            "kb_neural_backprop"
+          ],
+          "analogy": "Loss is a scorecard written in the only language the optimizer understands: numbers."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Worked table: one-feature rent model",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Model: predicted_rent = weight * square_meters. Current weight is 16. For apartments of 40, 50, and 60 m2 with rents 820, 1000, and 1190, predictions are 640, 800, and 960. Errors are -180, -200, and -230. Squared errors are 32400, 40000, and 52900. Mean squared error is 41766.7."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: should the weight go up or down? Since every prediction is too low, the weight should go up."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_d2l_backprop"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Loss role",
+          "prompt": "Why do we compute a loss during training?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "To store the final production model.",
+              "correct": false
+            },
+            {
+              "text": "To turn prediction mistakes into a number the optimizer can reduce.",
+              "correct": true
+            },
+            {
+              "text": "To guarantee the model is fair and useful in every context.",
+              "correct": false
+            }
+          ],
+          "explanation": "Loss is necessary for updates, but it is not the same as full product evaluation.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "kb_neural_backprop"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_d2l_backprop",
+        "kb_neural_backprop"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Gradient points in the direction that changes loss",
+      "sub": "The slope says how the loss reacts to a small weight change.",
+      "summary": "A gradient is the local direction and size of loss sensitivity.",
+      "objectives": [
+        "Explain gradient as a slope of loss with respect to a parameter.",
+        "Use gradient sign to choose update direction.",
+        "Connect gradients to backprop later."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The gradient is a local what-if answer",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A gradient asks: if this weight changed a tiny bit, how would the loss change? For the rent model, predictions are too low. Increasing the weight raises every prediction, so the loss should fall. The gradient carries that direction information."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "In deep networks, backpropagation computes many gradients through many operations. The beginner mental model is still the same: each parameter receives a local blame signal for the current batch."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_d2l_backprop",
+            "kb_neural_backprop"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Two signs, two stories",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If predictions are too low across the batch, the update should raise the weight. If predictions are too high, the update should lower it. If some examples pull in opposite directions, the averaged gradient balances those pressures. This is why noisy data creates noisy updates."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "kb_neural_backprop"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Gradient sign",
+          "prompt": "If every prediction from a positive feature is too low, what direction should the weight usually move?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Down, because loss is already high.",
+              "correct": false
+            },
+            {
+              "text": "Up, so predictions rise and loss can fall.",
+              "correct": true
+            },
+            {
+              "text": "It should be deleted immediately.",
+              "correct": false
+            }
+          ],
+          "explanation": "Gradient sign tells the optimizer which way reduces the current loss locally.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_d2l_backprop"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_d2l_backprop",
+        "kb_neural_backprop"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Learning rate controls the size of the correction",
+      "sub": "The same gradient can learn slowly, smoothly, or unstably.",
+      "summary": "The learning rate scales the update step.",
+      "objectives": [
+        "Explain the update rule in plain language.",
+        "Recognize too-small and too-large learning rates.",
+        "Separate gradient direction from step size."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "A good direction can still take a bad step",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Gradient descent updates a parameter by moving against the gradient, scaled by a learning rate. Small learning rates are cautious and can waste compute. Large learning rates can overshoot the valley and make loss explode. The gradient says direction; the learning rate says how far."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_d2l_backprop",
+            "kb_neural_backprop"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "Learning-rate symptoms",
+          "criteria": [
+            "Symptom",
+            "Likely meaning",
+            "First response"
+          ],
+          "options": [
+            {
+              "name": "Loss falls slowly",
+              "cells": [
+                {
+                  "criterion": "Symptom",
+                  "text": "Loss falls slowly",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Likely meaning",
+                  "text": "learning rate may be too small",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First response",
+                  "text": "try a modestly larger rate or scheduler",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Training improves but wastes compute.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Loss bounces wildly",
+              "cells": [
+                {
+                  "criterion": "Symptom",
+                  "text": "Loss bounces wildly",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Likely meaning",
+                  "text": "step may overshoot useful region",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First response",
+                  "text": "lower learning rate, check scaling",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Training is unstable.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Training loss falls, validation worsens",
+              "cells": [
+                {
+                  "criterion": "Symptom",
+                  "text": "Training loss falls, validation worsens",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Likely meaning",
+                  "text": "overfitting, not just step size",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First response",
+                  "text": "regularization, more data, early stopping",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Generalization is failing.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_d2l_backprop"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_d2l_backprop",
+        "kb_neural_backprop"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code one update for a tiny line fit",
+      "sub": "A runnable update makes loss, gradient, and learning rate concrete.",
+      "summary": "One Python loop shows gradient descent without framework magic.",
+      "objectives": [
+        "Run a dependency-free gradient descent update.",
+        "Predict how changing learning rate affects loss.",
+        "Verify AI-generated training code for correct update order."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 10,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Manual gradient descent for one-feature rent prediction",
+          "language": "python",
+          "code": "xs = [40, 50, 60, 70]\nys = [820, 1000, 1190, 1380]\nw = 10.0\nlr = 0.0001\n\nfor epoch in range(5):\n    preds = [w * x for x in xs]\n    errors = [p - y for p, y in zip(preds, ys)]\n    loss = sum(e * e for e in errors) / len(errors)\n\n    # d/dw mean((w*x - y)^2) = mean(2*x*(w*x - y))\n    grad = sum(2 * x * e for x, e in zip(xs, errors)) / len(xs)\n    w = w - lr * grad\n\n    print(epoch, round(loss, 2), round(w, 4))",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This loop exposes the whole mechanism: predict, compute loss, compute gradient, scale by learning rate, update weight. Frameworks automate the gradient, but they do not change the idea."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict what happens to the weight after the first epoch. Does it go above or below 10?",
+            "answer": "It goes above 10 because all predictions start far below the true rents. The gradient is negative, and w = w - lr * grad increases w."
+          },
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_d2l_backprop",
+            "kb_neural_backprop"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify AI-generated gradient code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: predictions use the current weight before the update; loss is averaged consistently; gradient formula matches the loss; update subtracts the gradient times learning rate; validation examples are not used to compute the gradient; and printed metrics include both loss and weight."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "kb_neural_backprop"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_d2l_backprop",
+        "kb_neural_backprop"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Loss curves reveal when training goes wrong",
+      "sub": "The curve turns repeated updates into a diagnostic story.",
+      "summary": "Training and validation loss curves show convergence, instability, and overfitting.",
+      "objectives": [
+        "Read basic loss-curve shapes.",
+        "Distinguish optimization failure from generalization failure.",
+        "Choose a next action after a bad curve."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The curve is the training loop speaking back",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If training loss does not move, the model may be underpowered, the learning rate may be tiny, or the data/gradient path may be broken. If loss explodes, the learning rate or scaling may be wrong. If training loss falls while validation loss rises, the model is memorizing instead of generalizing."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_d2l_backprop",
+            "kb_neural_backprop"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Debug the curve before changing the model family.",
+          "useWhen": "Use training loss for optimization problems and validation loss for generalization decisions.",
+          "avoidWhen": "Avoid choosing a model only because training loss is low; that can reward memorization.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "kb_neural_backprop"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Curve diagnosis",
+          "prompt": "Training loss falls every epoch but validation loss rises. What is the likely issue?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The gradient formula must be absent.",
+              "correct": false
+            },
+            {
+              "text": "Overfitting or leakage/generalization failure, not lack of optimization progress.",
+              "correct": true
+            },
+            {
+              "text": "The learning rate is definitely zero.",
+              "correct": false
+            }
+          ],
+          "explanation": "Training and validation curves answer different questions.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "kb_neural_backprop"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_d2l_backprop",
+        "kb_neural_backprop"
+      ]
+    }
+  ],
+  "glossary": {
+    "ai": {
+      "id": "ai",
+      "label": "AI",
+      "laymanDefinition": "Software systems that perform tasks associated with human intelligence.",
+      "technicalNote": "In these foundations lessons, AI is the broad field; the concrete mechanisms are models, data, objectives, and evaluation loops.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_d2l_backprop"
+      ],
+      "acronymExpansion": "Artificial intelligence"
+    },
+    "ml": {
+      "id": "ml",
+      "label": "ML",
+      "laymanDefinition": "A branch of AI where systems learn patterns from data instead of only following hand-written rules.",
+      "technicalNote": "ML work is defined by training data, features, models, objectives, validation, and deployment constraints.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_d2l_backprop"
+      ],
+      "acronymExpansion": "Machine learning"
+    },
+    "model": {
+      "id": "model",
+      "label": "Model",
+      "laymanDefinition": "A learned or configured function that maps inputs to predictions, scores, clusters, or generated outputs.",
+      "technicalNote": "Model choice encodes assumptions such as linearity, distance, tree splits, capacity, or sequential reward.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_d2l_backprop"
+      ]
+    },
+    "loss": {
+      "id": "loss",
+      "label": "Loss",
+      "laymanDefinition": "A numerical training signal that measures how wrong a prediction is for a task.",
+      "technicalNote": "Loss drives optimization; it is not the same as product quality, fairness, or final generalization.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_d2l_backprop"
+      ]
+    },
+    "generalization": {
+      "id": "generalization",
+      "label": "Generalization",
+      "laymanDefinition": "The ability of a model to perform well on examples it did not train on.",
+      "technicalNote": "Generalization is checked with validation/test data, leakage audits, and slice monitoring.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_d2l_backprop"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "A repeatable sequence of data transforms, feature steps, model fitting, and evaluation or inference.",
+      "technicalNote": "Pipelines prevent train/test leakage and keep preprocessing identical between training and production.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_d2l_backprop"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Gradient Descent and Loss Functions",
+    "themes": [
+      {
+        "name": "Training loop check",
+        "questions": [
+          {
+            "q": "Which number tells the model how wrong it is, and which direction should the weights move?",
+            "why": "A beginner needs to connect loss, gradient, and learning rate before optimizer names make sense.",
+            "opts": [
+              "Loss plus gradient update",
+              "Accuracy alone",
+              "Random weight changes"
+            ],
+            "rot": "Name the loss first, compute the slope second, and choose a learning rate small enough to learn."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct gradient descent by naming prediction, loss, gradient sign, learning rate, parameter update, repeated batches, and the loss-curve failure that warns the step size is wrong."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Gradient descent path from error number to safer updates",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Loss turns wrong guesses into a number",
+          "sub": "The model needs a single training signal before it can improve.",
+          "what": "Learners see loss as the model training signal, not an abstract formula.",
+          "relevance": "This prevents treating accuracy or vibes as the update rule.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Calculate squared error for one house-price prediction before changing weights.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Gradient points in the direction that changes loss",
+          "sub": "The slope says how the loss reacts to a small weight change.",
+          "what": "Learners connect the loss number to a directional update.",
+          "relevance": "This prevents random or sign-flipped training updates.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use the rent-model slope to decide whether weight should increase.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Learning rate controls the size of the correction",
+          "sub": "The same gradient can learn slowly, smoothly, or unstably.",
+          "what": "Learners understand the most visible optimizer knob.",
+          "relevance": "This catches training runs that diverge or crawl because the step size is wrong.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Compare tiny, useful, and reckless steps on the same loss slope.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code one update for a tiny line fit",
+          "sub": "A runnable update makes loss, gradient, and learning rate concrete.",
+          "what": "Learners implement the core loop directly.",
+          "relevance": "This removes mystery before optimizers and autodiff enter the picture.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Run one-feature gradient descent and inspect the loss after each epoch.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Loss curves reveal when training goes wrong",
+          "sub": "The curve turns repeated updates into a diagnostic story.",
+          "what": "Learners connect the training loop to model debugging.",
+          "relevance": "This prevents treating every bad metric as a need for a bigger model.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Use curve shapes to choose learning-rate or generalization fixes.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "measures"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "differentiates"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "updates"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "monitors"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Loss turns wrong guesses into a number",
+        "detail": "A loss function converts prediction mistakes into a scalar objective."
+      },
+      {
+        "step": 2,
+        "label": "Gradient points in the direction that changes loss",
+        "detail": "A gradient is the local direction and size of loss sensitivity."
+      },
+      {
+        "step": 3,
+        "label": "Learning rate controls the size of the correction",
+        "detail": "The learning rate scales the update step."
+      },
+      {
+        "step": 4,
+        "label": "Code one update for a tiny line fit",
+        "detail": "One Python loop shows gradient descent without framework magic."
+      },
+      {
+        "step": 5,
+        "label": "Loss curves reveal when training goes wrong",
+        "detail": "Training and validation loss curves show convergence, instability, and overfitting."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Loss turns wrong guesses into a number\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Code one update for a tiny line fit\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Loss curves reveal when training goes wrong\" define the learning or evaluation gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Fit a one-feature line to four house-price examples by hand for two update steps. Record prediction, error, squared loss, gradient, learning rate, new weight, and validation loss. Next rung: add a bias term and compare learning rates.",
+      "scopedTo": "Foundations",
+      "checks": [
+        "Loss is computed before the update.",
+        "Gradient sign matches whether predictions are too high or too low.",
+        "Learning rate changes update size, not the target.",
+        "A held-out validation row is not used for fitting."
+      ]
+    }
+  },
+  "citations": {
+    "canon_d2l_backprop": {
+      "id": "canon_d2l_backprop",
+      "kind": "canonical",
+      "title": "Dive into Deep Learning: Backpropagation",
+      "url": "https://d2l.ai/chapter_multilayer-perceptrons/backprop.html",
+      "asOfDate": "2026-06-22"
+    },
+    "kb_neural_backprop": {
+      "id": "kb_neural_backprop",
+      "kind": "kb",
+      "title": "KB: Neural Networks and Backpropagation",
+      "url": "https://d2l.ai/chapter_multilayer-perceptrons/backprop.html",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

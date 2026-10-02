@@ -1,0 +1,279 @@
+<!doctype html>
+<!-- Adapted for standalone use: viewer runtime removed; rendered code-copy and navigation interactions rebound. -->
+
+<html><head><!-- frame-runtime --><!-- /frame-runtime --><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Inside CNNs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap">
+<style>
+/* Layout: sticky rail of block IDs on the left, one reading column on the right; every code block numbers its own lines from 1 so "LLM-06, line 12" is unambiguous. */
+:root{
+  --bg:#f1f3f6; --surface:#ffffff; --fg:#16202b; --muted:#5a6574; --rule:#d8dde5;
+  --accent:#2646c4; --id:#7d5200; --id-bg:#f8ecd2;
+  --code-bg:#f7f8fb; --code-fg:#1a2431; --comment:#6d7889; --ln:#a0a8b4; --math-bg:#eef1fb;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10151c; --surface:#161d26; --fg:#e3e8ef; --muted:#97a1b0; --rule:#2a3340;
+  --accent:#93a8ff; --id:#f1c062; --id-bg:#2d2412;
+  --code-bg:#0c1117; --code-fg:#d9e0e9; --comment:#7c8899; --ln:#525e6e; --math-bg:#1a2233; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10151c; --surface:#161d26; --fg:#e3e8ef; --muted:#97a1b0; --rule:#2a3340;
+  --accent:#93a8ff; --id:#f1c062; --id-bg:#2d2412;
+  --code-bg:#0c1117; --code-fg:#d9e0e9; --comment:#7c8899; --ln:#525e6e; --math-bg:#1a2233; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16.5px;line-height:1.6;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+header.top{display:grid;gap:10px;padding-bottom:22px;border-bottom:1px solid var(--rule);margin-bottom:26px}
+.series{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,5vw,46px);line-height:1.05;margin:0;text-wrap:balance}
+.sub{color:var(--muted);max-width:68ch;margin:0}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--mono);font-size:13px}
+.flow span{background:var(--surface);border:1px solid var(--rule);padding:3px 9px;border-radius:4px}
+.flow i{font-style:normal;color:var(--muted)}
+.blk code,.sub code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);border:1px solid var(--rule);padding:0 4px;border-radius:3px}
+.how{font-size:14px;color:var(--muted)}
+.how b{color:var(--fg)}
+.grid{display:grid;grid-template-columns:230px minmax(0,1fr);gap:40px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);align-self:start;max-height:calc(100vh - 32px);overflow:auto;display:grid;gap:2px;font-size:14px}
+nav.rail a{display:grid;grid-template-columns:62px 1fr;gap:6px;color:var(--fg);text-decoration:none;padding:5px 8px;border-radius:4px;line-height:1.3}
+nav.rail a:hover,nav.rail a:focus-visible{background:var(--surface);outline:none}
+nav.rail a.on{background:var(--id-bg)}
+nav.rail code{font-family:var(--mono);font-size:12px;color:var(--id);font-weight:600}
+main{display:grid;gap:44px;min-width:0}
+section.blk{display:grid;gap:14px;min-width:0;scroll-margin-top:20px}
+.bh{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px}
+.bid{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--id);background:var(--id-bg);padding:3px 10px;border-radius:4px;letter-spacing:.02em}
+h2{font-family:var(--display);font-weight:600;font-size:24px;line-height:1.2;margin:0;text-wrap:balance}
+.blk p{margin:0;max-width:70ch}
+.blk ul{margin:0;padding-left:20px;max-width:70ch;display:grid;gap:4px}
+.key{border-left:3px solid var(--accent);padding:4px 0 4px 14px;max-width:70ch}
+.math{font-family:var(--mono);font-size:14.5px;background:var(--math-bg);padding:12px 16px;border-radius:6px;overflow-x:auto;white-space:pre;line-height:1.7}
+figure.code{margin:0;border:1px solid var(--rule);border-radius:6px;background:var(--code-bg);min-width:0;overflow:hidden}
+figure.code .ch{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:12px;color:var(--muted)}
+figure.code button{font:inherit;color:var(--accent);background:none;border:1px solid var(--rule);border-radius:4px;padding:2px 8px;cursor:pointer}
+figure.code button:focus-visible{outline:2px solid var(--accent)}
+pre{margin:0;padding:10px 0;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.6;color:var(--code-fg)}
+pre .l{display:grid;grid-template-columns:44px max-content;padding-right:16px}
+pre .n{color:var(--ln);text-align:right;padding-right:14px;user-select:none;font-variant-numeric:tabular-nums}
+pre .cm{color:var(--comment)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;font-size:14.5px;min-width:100%}
+th,td{text-align:left;padding:7px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+td{font-variant-numeric:tabular-nums}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--rule);color:var(--muted);font-size:14px}
+@media (max-width:820px){
+  .grid{grid-template-columns:minmax(0,1fr);gap:20px}
+  nav.rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--bg);display:flex;overflow-x:auto;max-height:none;padding-block:8px;border-bottom:1px solid var(--rule)}
+  nav.rail a{display:block;white-space:nowrap}
+  nav.rail a span{display:none}
+}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="series">Part 2 of 4 · Convolutional networks</div>
+  <h1>Inside CNNs</h1>
+  <p class="sub">How a convolution works, how shapes change, and how CNNs connect to transformers.</p>
+  <div class="flow"><span>image (3, H, W)</span><i>→</i><span>conv → norm → ReLU</span><i>→</i><span>pool</span><i>→</i><span>× N</span><i>→</i><span>avg pool</span><i>→</i><span>linear</span><i>→</i><span>class</span></div>
+  <p class="how">Follow along: I say a <b>block ID</b> and a <b>line number</b>. Line numbers restart at 1 in every block.</p>
+</header>
+<div class="grid">
+<nav class="rail" id="rail" aria-label="Blocks"><a href="#CNN-01" class="on"><code>CNN-01</code><span>Why not just an MLP on pixels?</span></a><a href="#CNN-02"><code>CNN-02</code><span>A filter is a neuron that slides</span></a><a href="#CNN-03"><code>CNN-03</code><span>Shapes: kernel, stride, padding</span></a><a href="#CNN-04"><code>CNN-04</code><span>A small CNN, Karpathy style</span></a><a href="#CNN-05"><code>CNN-05</code><span>Receptive field: how far a neuron sees</span></a><a href="#CNN-06"><code>CNN-06</code><span>BatchNorm vs LayerNorm</span></a><a href="#CNN-07"><code>CNN-07</code><span>ResNet block: the residual again</span></a><a href="#CNN-08"><code>CNN-08</code><span>Training loop</span></a><a href="#CNN-09"><code>CNN-09</code><span>Bridge to transformers: ViT</span></a><a href="#CNN-10"><code>CNN-10</code><span>Where convolutions still matter</span></a></nav>
+<main>
+<section class="blk" id="CNN-01">
+<div class="bh"><span class="bid">CNN-01</span><h2>Why not just an MLP on pixels?</h2></div>
+<p>A 224×224 colour image is 150,528 numbers. A linear layer from that to 1,000 neurons already needs 150 million weights, and it learns "cat in top-left" separately from "cat in bottom-right".</p>
+<p>A convolution fixes both with two ideas:</p>
+<ul>
+<li><b>Local:</b> each output looks at a small patch (e.g. 3×3), not the whole image.</li>
+<li><b>Shared:</b> the same small weights slide over every position.</li>
+</ul>
+<figure class="code"><div class="ch"><span>CNN-01 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">mlp  = nn.Linear(3 * 224 * 224, 1000)</span></span>
+<span class="l"><span class="n">2</span><span class="t">conv = nn.Conv2d(3, 64, kernel_size=3, padding=1)</span></span>
+<span class="l"><span class="n">3</span><span class="t">print(sum(p.numel() for p in mlp.parameters()))    <span class="cm"># 150,529,000</span></span></span>
+<span class="l"><span class="n">4</span><span class="t">print(sum(p.numel() for p in conv.parameters()))   <span class="cm"># 1,792  = 64 * (3*3*3) + 64</span></span></span></pre></figure>
+</section>
+
+<section class="blk" id="CNN-02">
+<div class="bh"><span class="bid">CNN-02</span><h2>A filter is a neuron that slides</h2></div>
+<p>Use your linear-layer picture. One filter = one neuron. Its weight vector has <code>C_in × K × K</code> numbers. It takes a dot product with one patch, then slides and does it again. 64 filters = 64 output channels.</p>
+<div class="math">out[o, i, j] = Σ_c Σ_a Σ_b  w[o, c, a, b] · x[c, i+a, j+b]  + bias[o]
+             └── dot product of filter o with the patch at (i, j) ──┘</div>
+<figure class="code"><div class="ch"><span>CNN-02 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">def conv2d_naive(x, w, b, stride=1, pad=0):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    <span class="cm"># x: (C_in, H, W)   w: (C_out, C_in, K, K)   b: (C_out,)</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">    x = F.pad(x, (pad, pad, pad, pad))</span></span>
+<span class="l"><span class="n">4</span><span class="t">    C_out, C_in, K, _ = w.shape</span></span>
+<span class="l"><span class="n">5</span><span class="t">    H_out = (x.shape[1] - K) // stride + 1</span></span>
+<span class="l"><span class="n">6</span><span class="t">    W_out = (x.shape[2] - K) // stride + 1</span></span>
+<span class="l"><span class="n">7</span><span class="t">    out = torch.zeros(C_out, H_out, W_out)</span></span>
+<span class="l"><span class="n">8</span><span class="t">    for o in range(C_out):                       <span class="cm"># each filter -&gt; one output channel</span></span></span>
+<span class="l"><span class="n">9</span><span class="t">        for i in range(H_out):</span></span>
+<span class="l"><span class="n">10</span><span class="t">            for j in range(W_out):</span></span>
+<span class="l"><span class="n">11</span><span class="t">                patch = x[:, i*stride:i*stride+K, j*stride:j*stride+K]   <span class="cm"># (C_in, K, K)</span></span></span>
+<span class="l"><span class="n">12</span><span class="t">                out[o, i, j] = (patch * w[o]).sum() + b[o]               <span class="cm"># same w everywhere</span></span></span>
+<span class="l"><span class="n">13</span><span class="t">    return out</span></span>
+<span class="l"><span class="n">14</span><span class="t"> </span></span>
+<span class="l"><span class="n">15</span><span class="t">x, w, b = torch.randn(3, 8, 8), torch.randn(4, 3, 3, 3), torch.randn(4)</span></span>
+<span class="l"><span class="n">16</span><span class="t">print(torch.allclose(conv2d_naive(x, w, b, pad=1), F.conv2d(x[None], w, b, padding=1)[0], atol=1e-5))  <span class="cm"># True</span></span></span></pre></figure>
+</section>
+
+<section class="blk" id="CNN-03">
+<div class="bh"><span class="bid">CNN-03</span><h2>Shapes: kernel, stride, padding</h2></div>
+<div class="math">H_out = (H + 2·P − K) / S + 1          K = kernel, S = stride, P = padding
+tensor layout: (B, C, H, W)            vs GPT: (B, T, C)</div>
+<figure class="code"><div class="ch"><span>CNN-03 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">x = torch.randn(1, 3, 32, 32)                                <span class="cm"># (B, C, H, W)</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">print(nn.Conv2d(3, 16, 3, padding=1)(x).shape)               <span class="cm"># (1, 16, 32, 32)  same size</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">print(nn.Conv2d(3, 16, 3, stride=2, padding=1)(x).shape)     <span class="cm"># (1, 16, 16, 16)  half size</span></span></span>
+<span class="l"><span class="n">4</span><span class="t">print(nn.Conv2d(3, 16, 5)(x).shape)                          <span class="cm"># (1, 16, 28, 28)  no pad: shrinks</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">print(nn.MaxPool2d(2)(x).shape)                              <span class="cm"># (1, 3, 16, 16)   keep max of each 2x2</span></span></span></pre></figure>
+<p class="key">The usual pattern: space shrinks (32 → 16 → 8) while channels grow (3 → 32 → 64 → 128). Fewer positions, richer description of each.</p>
+</section>
+
+<section class="blk" id="CNN-04">
+<div class="bh"><span class="bid">CNN-04</span><h2>A small CNN, Karpathy style</h2></div>
+<p>For CIFAR-10: 32×32 colour images, 10 classes. Same <code>(logits, loss)</code> return as <code>GPTLanguageModel</code>.</p>
+<figure class="code"><div class="ch"><span>CNN-04 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">class SmallCNN(nn.Module):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    def __init__(self, n_classes=10):</span></span>
+<span class="l"><span class="n">3</span><span class="t">        super().__init__()</span></span>
+<span class="l"><span class="n">4</span><span class="t">        self.features = nn.Sequential(</span></span>
+<span class="l"><span class="n">5</span><span class="t">            nn.Conv2d(3, 32, 3, padding=1), nn.BatchNorm2d(32), nn.ReLU(),     <span class="cm"># (32, 32, 32)</span></span></span>
+<span class="l"><span class="n">6</span><span class="t">            nn.MaxPool2d(2),                                                   <span class="cm"># (32, 16, 16)</span></span></span>
+<span class="l"><span class="n">7</span><span class="t">            nn.Conv2d(32, 64, 3, padding=1), nn.BatchNorm2d(64), nn.ReLU(),    <span class="cm"># (64, 16, 16)</span></span></span>
+<span class="l"><span class="n">8</span><span class="t">            nn.MaxPool2d(2),                                                   <span class="cm"># (64, 8, 8)</span></span></span>
+<span class="l"><span class="n">9</span><span class="t">            nn.Conv2d(64, 128, 3, padding=1), nn.BatchNorm2d(128), nn.ReLU(),  <span class="cm"># (128, 8, 8)</span></span></span>
+<span class="l"><span class="n">10</span><span class="t">        )</span></span>
+<span class="l"><span class="n">11</span><span class="t">        self.pool = nn.AdaptiveAvgPool2d(1)          <span class="cm"># (128, 1, 1) average over space</span></span></span>
+<span class="l"><span class="n">12</span><span class="t">        self.head = nn.Linear(128, n_classes)        <span class="cm"># like lm_head, but 10 classes</span></span></span>
+<span class="l"><span class="n">13</span><span class="t"> </span></span>
+<span class="l"><span class="n">14</span><span class="t">    def forward(self, x, targets=None):              <span class="cm"># x: (B, 3, 32, 32)</span></span></span>
+<span class="l"><span class="n">15</span><span class="t">        x = self.features(x)</span></span>
+<span class="l"><span class="n">16</span><span class="t">        x = self.pool(x).flatten(1)                  <span class="cm"># (B, 128)</span></span></span>
+<span class="l"><span class="n">17</span><span class="t">        logits = self.head(x)                        <span class="cm"># (B, 10)</span></span></span>
+<span class="l"><span class="n">18</span><span class="t">        loss = None if targets is None else F.cross_entropy(logits, targets)</span></span>
+<span class="l"><span class="n">19</span><span class="t">        return logits, loss</span></span></pre></figure>
+</section>
+
+<section class="blk" id="CNN-05">
+<div class="bh"><span class="bid">CNN-05</span><h2>Receptive field: how far a neuron sees</h2></div>
+<p>Each 3×3 layer lets a neuron see 2 more pixels. Each stride-2 step doubles how fast that grows. Deep neurons see large parts of the image, so early layers find edges and later layers find shapes and objects.</p>
+<div class="math">rf ← rf + (K − 1) · jump        jump ← jump · S        (start rf = 1, jump = 1)</div>
+<figure class="code"><div class="ch"><span>CNN-05 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">def receptive_field(layers):                  <span class="cm"># list of (kernel, stride)</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">    rf, jump = 1, 1</span></span>
+<span class="l"><span class="n">3</span><span class="t">    for k, s in layers:</span></span>
+<span class="l"><span class="n">4</span><span class="t">        rf += (k - 1) * jump</span></span>
+<span class="l"><span class="n">5</span><span class="t">        jump *= s</span></span>
+<span class="l"><span class="n">6</span><span class="t">    return rf</span></span>
+<span class="l"><span class="n">7</span><span class="t"> </span></span>
+<span class="l"><span class="n">8</span><span class="t"><span class="cm"># SmallCNN: conv3, pool2, conv3, pool2, conv3</span></span></span>
+<span class="l"><span class="n">9</span><span class="t">print(receptive_field([(3, 1), (2, 2), (3, 1), (2, 2), (3, 1)]))   <span class="cm"># 18 pixels</span></span></span></pre></figure>
+<p class="key">Compare with attention: one attention layer sees every token at once. A CNN builds a wide view slowly, layer by layer.</p>
+</section>
+
+<section class="blk" id="CNN-06">
+<div class="bh"><span class="bid">CNN-06</span><h2>BatchNorm vs LayerNorm</h2></div>
+<p>Same formula, different axes. It decides which numbers share one mean and variance.</p>
+<figure class="code"><div class="ch"><span>CNN-06 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">x = torch.randn(8, 64, 16, 16)                          <span class="cm"># (B, C, H, W)</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">mean = x.mean(dim=(0, 2, 3), keepdim=True)              <span class="cm"># one mean per CHANNEL</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">var  = x.var(dim=(0, 2, 3), keepdim=True, unbiased=False)</span></span>
+<span class="l"><span class="n">4</span><span class="t">y = (x - mean) / (var + 1e-5).sqrt()                    <span class="cm"># then * gamma[c] + beta[c]</span></span></span></pre></figure>
+<div class="tbl"><table>
+<tbody><tr><th></th><th>Averages over</th><th>One stat per</th><th>Used in</th></tr>
+<tr><td>BatchNorm</td><td>batch, H, W</td><td>channel</td><td>CNNs</td></tr>
+<tr><td>LayerNorm / RMSNorm</td><td>features C</td><td>token</td><td>Transformers</td></tr>
+</tbody></table></div>
+<p class="key">BatchNorm depends on other images in the batch, so at test time it uses running averages saved during training. That is why <code>model.eval()</code> matters.</p>
+</section>
+
+<section class="blk" id="CNN-07">
+<div class="bh"><span class="bid">CNN-07</span><h2>ResNet block: the residual again</h2></div>
+<p>Before 2015, very deep CNNs trained worse than shallow ones. ResNet added the same trick as the transformer: add the input back.</p>
+<div class="math">ResNet:  y = ReLU( x + F(x) )
+GPT:     x = x + self.sa(self.ln1(x))</div>
+<figure class="code"><div class="ch"><span>CNN-07 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">class ResBlock(nn.Module):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    def __init__(self, c):</span></span>
+<span class="l"><span class="n">3</span><span class="t">        super().__init__()</span></span>
+<span class="l"><span class="n">4</span><span class="t">        self.conv1 = nn.Conv2d(c, c, 3, padding=1, bias=False)   <span class="cm"># bias not needed before BN</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">        self.bn1 = nn.BatchNorm2d(c)</span></span>
+<span class="l"><span class="n">6</span><span class="t">        self.conv2 = nn.Conv2d(c, c, 3, padding=1, bias=False)</span></span>
+<span class="l"><span class="n">7</span><span class="t">        self.bn2 = nn.BatchNorm2d(c)</span></span>
+<span class="l"><span class="n">8</span><span class="t"> </span></span>
+<span class="l"><span class="n">9</span><span class="t">    def forward(self, x):</span></span>
+<span class="l"><span class="n">10</span><span class="t">        h = F.relu(self.bn1(self.conv1(x)))</span></span>
+<span class="l"><span class="n">11</span><span class="t">        h = self.bn2(self.conv2(h))</span></span>
+<span class="l"><span class="n">12</span><span class="t">        return F.relu(x + h)          <span class="cm"># skip connection: clean gradient path</span></span></span></pre></figure>
+</section>
+
+<section class="blk" id="CNN-08">
+<div class="bh"><span class="bid">CNN-08</span><h2>Training loop</h2></div>
+<p>Same loop as cell 22 of your notebook. New part: data augmentation, which makes free extra data by flipping and shifting images.</p>
+<figure class="code"><div class="ch"><span>CNN-08 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">import torchvision, torchvision.transforms as T</span></span>
+<span class="l"><span class="n">2</span><span class="t"> </span></span>
+<span class="l"><span class="n">3</span><span class="t">tf = T.Compose([T.RandomHorizontalFlip(), T.RandomCrop(32, padding=4), T.ToTensor()])</span></span>
+<span class="l"><span class="n">4</span><span class="t">train = torchvision.datasets.CIFAR10("data", train=True, download=True, transform=tf)</span></span>
+<span class="l"><span class="n">5</span><span class="t">loader = torch.utils.data.DataLoader(train, batch_size=128, shuffle=True)</span></span>
+<span class="l"><span class="n">6</span><span class="t"> </span></span>
+<span class="l"><span class="n">7</span><span class="t">model = SmallCNN().to(device)</span></span>
+<span class="l"><span class="n">8</span><span class="t">opt = torch.optim.AdamW(model.parameters(), lr=3e-3)</span></span>
+<span class="l"><span class="n">9</span><span class="t">for epoch in range(10):</span></span>
+<span class="l"><span class="n">10</span><span class="t">    model.train()</span></span>
+<span class="l"><span class="n">11</span><span class="t">    for xb, yb in loader:</span></span>
+<span class="l"><span class="n">12</span><span class="t">        xb, yb = xb.to(device), yb.to(device)</span></span>
+<span class="l"><span class="n">13</span><span class="t">        logits, loss = model(xb, yb)</span></span>
+<span class="l"><span class="n">14</span><span class="t">        opt.zero_grad(set_to_none=True)</span></span>
+<span class="l"><span class="n">15</span><span class="t">        loss.backward()</span></span>
+<span class="l"><span class="n">16</span><span class="t">        opt.step()</span></span>
+<span class="l"><span class="n">17</span><span class="t">    print(epoch, loss.item())</span></span></pre></figure>
+</section>
+
+<section class="blk" id="CNN-09">
+<div class="bh"><span class="bid">CNN-09</span><h2>Bridge to transformers: ViT</h2></div>
+<p>Vision Transformer: cut the image into 16×16 patches. Each patch becomes one token. Then run normal transformer blocks, with no causal mask. The patch cut is just a conv with kernel = stride = 16.</p>
+<div class="math">224 × 224 image  →  (224/16)² = 196 patches  →  (B, T=196, C=384)</div>
+<figure class="code"><div class="ch"><span>CNN-09 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">patchify = nn.Conv2d(3, 384, kernel_size=16, stride=16)   <span class="cm"># one token per 16x16 patch</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">x = torch.randn(1, 3, 224, 224)</span></span>
+<span class="l"><span class="n">3</span><span class="t">tok = patchify(x)                        <span class="cm"># (1, 384, 14, 14)</span></span></span>
+<span class="l"><span class="n">4</span><span class="t">tok = tok.flatten(2).transpose(1, 2)     <span class="cm"># (1, 196, 384)  = (B, T, C)</span></span></span>
+<span class="l"><span class="n">5</span><span class="t"><span class="cm"># + position embeddings -&gt; Karpathy's Block() x N, with the tril mask removed</span></span></span></pre></figure>
+</section>
+
+<section class="blk" id="CNN-10">
+<div class="bh"><span class="bid">CNN-10</span><h2>Where convolutions still matter</h2></div>
+<div class="tbl"><table>
+<tbody><tr><th>Place</th><th>What the conv does</th><th>Page</th></tr>
+<tr><td>Speech front end</td><td>1D conv over the mel spectrogram, downsamples time</td><td>SP-03</td></tr>
+<tr><td>Vocoders, audio codecs</td><td>Transposed conv upsamples frames back to samples</td><td>SP-07</td></tr>
+<tr><td>Diffusion U-Net</td><td>Down and up convs with skip connections</td><td>DF-05</td></tr>
+<tr><td>VAE in Stable Diffusion</td><td>Compresses images into small latents</td><td>DF-08</td></tr>
+<tr><td>Phones, edge devices</td><td>Cheap, fast vision models</td><td>-</td></tr>
+</tbody></table></div>
+</section>
+
+</main>
+</div>
+<footer>Series: Inside LLMs · Inside CNNs · Inside Speech Models · Inside Diffusion. Code is PyTorch, written in the style of Karpathy's GPT notebook.</footer>
+</div>
+
+<script>
+(function(){
+  document.querySelectorAll('figure.code').forEach(function(fig){
+    var btn=fig.querySelector('button'); if(!btn)return;
+    var src=Array.from(fig.querySelectorAll('.t')).map(function(line){return line.textContent}).join('\n');
+    function selectCode(){var range=document.createRange();range.selectNodeContents(fig.querySelector('pre'));var selected=window.getSelection();selected.removeAllRanges();selected.addRange(range)}
+    btn.addEventListener('click',function(){
+      function done(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy'},1400)}
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(src).then(done,selectCode);else selectCode();
+    });
+  });
+  var rail=document.getElementById('rail'); if(!rail)return;
+  var links=rail.querySelectorAll('a');
+  if('IntersectionObserver' in window){var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){links.forEach(function(link){link.classList.toggle('on',link.getAttribute('href')==='#'+entry.target.id)})}})},{rootMargin:'-20% 0px -70% 0px'});document.querySelectorAll('section.blk').forEach(function(section){observer.observe(section)})}
+})();
+</script>
+
+</body></html>

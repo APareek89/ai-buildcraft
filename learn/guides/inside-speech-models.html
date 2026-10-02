@@ -1,0 +1,274 @@
+<!doctype html>
+<!-- Adapted for standalone use: viewer runtime removed; rendered code-copy and navigation interactions rebound. -->
+
+<html><head><!-- frame-runtime --><!-- /frame-runtime --><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Inside Speech Models</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap">
+<style>
+/* Layout: sticky rail of block IDs on the left, one reading column on the right; every code block numbers its own lines from 1 so "LLM-06, line 12" is unambiguous. */
+:root{
+  --bg:#f1f3f6; --surface:#ffffff; --fg:#16202b; --muted:#5a6574; --rule:#d8dde5;
+  --accent:#2646c4; --id:#7d5200; --id-bg:#f8ecd2;
+  --code-bg:#f7f8fb; --code-fg:#1a2431; --comment:#6d7889; --ln:#a0a8b4; --math-bg:#eef1fb;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10151c; --surface:#161d26; --fg:#e3e8ef; --muted:#97a1b0; --rule:#2a3340;
+  --accent:#93a8ff; --id:#f1c062; --id-bg:#2d2412;
+  --code-bg:#0c1117; --code-fg:#d9e0e9; --comment:#7c8899; --ln:#525e6e; --math-bg:#1a2233; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10151c; --surface:#161d26; --fg:#e3e8ef; --muted:#97a1b0; --rule:#2a3340;
+  --accent:#93a8ff; --id:#f1c062; --id-bg:#2d2412;
+  --code-bg:#0c1117; --code-fg:#d9e0e9; --comment:#7c8899; --ln:#525e6e; --math-bg:#1a2233; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16.5px;line-height:1.6;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+header.top{display:grid;gap:10px;padding-bottom:22px;border-bottom:1px solid var(--rule);margin-bottom:26px}
+.series{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,5vw,46px);line-height:1.05;margin:0;text-wrap:balance}
+.sub{color:var(--muted);max-width:68ch;margin:0}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--mono);font-size:13px}
+.flow span{background:var(--surface);border:1px solid var(--rule);padding:3px 9px;border-radius:4px}
+.flow i{font-style:normal;color:var(--muted)}
+.blk code,.sub code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);border:1px solid var(--rule);padding:0 4px;border-radius:3px}
+.how{font-size:14px;color:var(--muted)}
+.how b{color:var(--fg)}
+.grid{display:grid;grid-template-columns:230px minmax(0,1fr);gap:40px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);align-self:start;max-height:calc(100vh - 32px);overflow:auto;display:grid;gap:2px;font-size:14px}
+nav.rail a{display:grid;grid-template-columns:62px 1fr;gap:6px;color:var(--fg);text-decoration:none;padding:5px 8px;border-radius:4px;line-height:1.3}
+nav.rail a:hover,nav.rail a:focus-visible{background:var(--surface);outline:none}
+nav.rail a.on{background:var(--id-bg)}
+nav.rail code{font-family:var(--mono);font-size:12px;color:var(--id);font-weight:600}
+main{display:grid;gap:44px;min-width:0}
+section.blk{display:grid;gap:14px;min-width:0;scroll-margin-top:20px}
+.bh{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px}
+.bid{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--id);background:var(--id-bg);padding:3px 10px;border-radius:4px;letter-spacing:.02em}
+h2{font-family:var(--display);font-weight:600;font-size:24px;line-height:1.2;margin:0;text-wrap:balance}
+.blk p{margin:0;max-width:70ch}
+.blk ul{margin:0;padding-left:20px;max-width:70ch;display:grid;gap:4px}
+.key{border-left:3px solid var(--accent);padding:4px 0 4px 14px;max-width:70ch}
+.math{font-family:var(--mono);font-size:14.5px;background:var(--math-bg);padding:12px 16px;border-radius:6px;overflow-x:auto;white-space:pre;line-height:1.7}
+figure.code{margin:0;border:1px solid var(--rule);border-radius:6px;background:var(--code-bg);min-width:0;overflow:hidden}
+figure.code .ch{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:12px;color:var(--muted)}
+figure.code button{font:inherit;color:var(--accent);background:none;border:1px solid var(--rule);border-radius:4px;padding:2px 8px;cursor:pointer}
+figure.code button:focus-visible{outline:2px solid var(--accent)}
+pre{margin:0;padding:10px 0;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.6;color:var(--code-fg)}
+pre .l{display:grid;grid-template-columns:44px max-content;padding-right:16px}
+pre .n{color:var(--ln);text-align:right;padding-right:14px;user-select:none;font-variant-numeric:tabular-nums}
+pre .cm{color:var(--comment)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;font-size:14.5px;min-width:100%}
+th,td{text-align:left;padding:7px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+td{font-variant-numeric:tabular-nums}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--rule);color:var(--muted);font-size:14px}
+@media (max-width:820px){
+  .grid{grid-template-columns:minmax(0,1fr);gap:20px}
+  nav.rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--bg);display:flex;overflow-x:auto;max-height:none;padding-block:8px;border-bottom:1px solid var(--rule)}
+  nav.rail a{display:block;white-space:nowrap}
+  nav.rail a span{display:none}
+}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="series">Part 3 of 4 · Speech to text and text to speech</div>
+  <h1>Inside Speech Models</h1>
+  <p class="sub">How audio becomes tokens, how speech-to-text models listen, and how text-to-speech models talk.</p>
+  <div class="flow"><b style="font-family:var(--mono);font-size:12px;color:var(--muted)">STT</b> <span>wave</span><i>→</i><span>mel spectrogram</span><i>→</i><span>encoder</span><i>→</i><span>cross-attention</span><i>→</i><span>decoder</span><i>→</i><span>text</span></div><div class="flow"><b style="font-family:var(--mono);font-size:12px;color:var(--muted)">TTS</b> <span>text</span><i>→</i><span>LM</span><i>→</i><span>audio tokens</span><i>→</i><span>codec decoder</span><i>→</i><span>wave</span></div>
+  <p class="how">Follow along: I say a <b>block ID</b> and a <b>line number</b>. Line numbers restart at 1 in every block.</p>
+</header>
+<div class="grid">
+<nav class="rail" id="rail" aria-label="Blocks"><a href="#SP-01" class=""><code>SP-01</code><span>Audio is just a long list of numbers</span></a><a href="#SP-02" class="on"><code>SP-02</code><span>Mel spectrogram: audio as an image</span></a><a href="#SP-03"><code>SP-03</code><span>Speech-to-text encoder (Whisper style)</span></a><a href="#SP-04"><code>SP-04</code><span>Cross-attention: Q from text, K and V from audio</span></a><a href="#SP-05"><code>SP-05</code><span>The text decoder block</span></a><a href="#SP-06"><code>SP-06</code><span>CTC: speech-to-text without a decoder</span></a><a href="#SP-07"><code>SP-07</code><span>Text-to-speech, classic: text → mel → vocoder</span></a><a href="#SP-08"><code>SP-08</code><span>Modern TTS: audio tokens + a language model</span></a><a href="#SP-09"><code>SP-09</code><span>Voice agent: where the latency goes</span></a></nav>
+<main>
+<section class="blk" id="SP-01">
+<div class="bh"><span class="bid">SP-01</span><h2>Audio is just a long list of numbers</h2></div>
+<p>A microphone measures air pressure many times per second. Speech models usually use 16,000 samples per second.</p>
+<figure class="code"><div class="ch"><span>SP-01 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">sr = 16000                                       <span class="cm"># samples per second</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">t = torch.arange(sr) / sr                        <span class="cm"># 1 second of time stamps</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">wave = 0.5 * torch.sin(2 * torch.pi * 440 * t)   <span class="cm"># a 440 Hz tone, shape (16000,)</span></span></span>
+<span class="l"><span class="n">4</span><span class="t"><span class="cm"># 10 s of speech = 160,000 numbers. Too long for attention (T² cost), so compress first.</span></span></span></pre></figure>
+</section>
+
+<section class="blk" id="SP-02">
+<div class="bh"><span class="bid">SP-02</span><h2>Mel spectrogram: audio as an image</h2></div>
+<p>Cut the wave into short overlapping windows (25 ms, every 10 ms). Find which frequencies are in each window (FFT). Squash frequencies into 80 bands spaced like human hearing (mel). Take the log, because loudness is heard on a log scale.</p>
+<div class="math">frames/sec = sr / hop = 16000 / 160 = 100
+result     = (n_mels, frames) = (80, 100) per second  ← a 1-channel image: frequency × time</div>
+<figure class="code"><div class="ch"><span>SP-02 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">import torchaudio</span></span>
+<span class="l"><span class="n">2</span><span class="t"> </span></span>
+<span class="l"><span class="n">3</span><span class="t">mel = torchaudio.transforms.MelSpectrogram(</span></span>
+<span class="l"><span class="n">4</span><span class="t">    sample_rate=16000, n_fft=400, hop_length=160, n_mels=80)   <span class="cm"># 25 ms window, 10 ms hop</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">spec = mel(wave)                    <span class="cm"># (80, 101)</span></span></span>
+<span class="l"><span class="n">6</span><span class="t">logmel = torch.log(spec + 1e-6)     <span class="cm"># what speech models actually eat</span></span></span></pre></figure>
+<p class="key">From here, speech looks like CNN and transformer work: a 2D grid, or a sequence of 80-number frames. Each frame plays the role of a token embedding.</p>
+</section>
+
+<section class="blk" id="SP-03">
+<div class="bh"><span class="bid">SP-03</span><h2>Speech-to-text encoder (Whisper style)</h2></div>
+<p>Two 1D convs read the mel frames and halve the time steps. Then normal transformer blocks run with <b>no causal mask</b>, because the whole clip is already recorded.</p>
+<div class="math">30 s clip → (80, 3000) mel → conv stride 2 → (1500, d) audio tokens</div>
+<figure class="code"><div class="ch"><span>SP-03 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">class AudioEncoder(nn.Module):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    def __init__(self, n_mels=80, d=384, n_layer=4, n_head=6):</span></span>
+<span class="l"><span class="n">3</span><span class="t">        super().__init__()</span></span>
+<span class="l"><span class="n">4</span><span class="t">        self.conv1 = nn.Conv1d(n_mels, d, 3, padding=1)</span></span>
+<span class="l"><span class="n">5</span><span class="t">        self.conv2 = nn.Conv1d(d, d, 3, stride=2, padding=1)   <span class="cm"># 100 -&gt; 50 frames per second</span></span></span>
+<span class="l"><span class="n">6</span><span class="t">        self.pos = nn.Parameter(torch.zeros(1500, d))           <span class="cm"># 30 s x 50</span></span></span>
+<span class="l"><span class="n">7</span><span class="t">        self.blocks = nn.ModuleList([EncBlock(d, n_head) for _ in range(n_layer)])</span></span>
+<span class="l"><span class="n">8</span><span class="t">        <span class="cm"># EncBlock = Karpathy's Block with the tril mask removed</span></span></span>
+<span class="l"><span class="n">9</span><span class="t"> </span></span>
+<span class="l"><span class="n">10</span><span class="t">    def forward(self, logmel):                  <span class="cm"># (B, 80, 3000)</span></span></span>
+<span class="l"><span class="n">11</span><span class="t">        x = F.gelu(self.conv1(logmel))</span></span>
+<span class="l"><span class="n">12</span><span class="t">        x = F.gelu(self.conv2(x))               <span class="cm"># (B, d, 1500)</span></span></span>
+<span class="l"><span class="n">13</span><span class="t">        x = x.transpose(1, 2) + self.pos        <span class="cm"># (B, 1500, d) = (B, T, C)</span></span></span>
+<span class="l"><span class="n">14</span><span class="t">        for b in self.blocks:</span></span>
+<span class="l"><span class="n">15</span><span class="t">            x = b(x)</span></span>
+<span class="l"><span class="n">16</span><span class="t">        return x                                <span class="cm"># one vector per 20 ms of audio</span></span></span></pre></figure>
+</section>
+
+<section class="blk" id="SP-04">
+<div class="bh"><span class="bid">SP-04</span><h2>Cross-attention: Q from text, K and V from audio</h2></div>
+<p>This is the key new piece. The text decoder asks questions (Q). The audio answers (K and V). It is the same maths as self-attention, but Q and K/V come from different sequences.</p>
+<div class="math">q_i = W_Q · text_i        k_j = W_K · audio_j        v_j = W_V · audio_j
+score is (T_text × T_audio), not square, and no causal mask</div>
+<figure class="code"><div class="ch"><span>SP-04 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">class CrossAttention(nn.Module):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    def __init__(self, d, n_head):</span></span>
+<span class="l"><span class="n">3</span><span class="t">        super().__init__()</span></span>
+<span class="l"><span class="n">4</span><span class="t">        self.n_head = n_head</span></span>
+<span class="l"><span class="n">5</span><span class="t">        self.q = nn.Linear(d, d, bias=False)    <span class="cm"># from TEXT  (decoder)</span></span></span>
+<span class="l"><span class="n">6</span><span class="t">        self.k = nn.Linear(d, d, bias=False)    <span class="cm"># from AUDIO (encoder)</span></span></span>
+<span class="l"><span class="n">7</span><span class="t">        self.v = nn.Linear(d, d, bias=False)    <span class="cm"># from AUDIO (encoder)</span></span></span>
+<span class="l"><span class="n">8</span><span class="t">        self.o = nn.Linear(d, d, bias=False)</span></span>
+<span class="l"><span class="n">9</span><span class="t"> </span></span>
+<span class="l"><span class="n">10</span><span class="t">    def forward(self, x_text, audio):           <span class="cm"># (B, T_text, d), (B, T_audio, d)</span></span></span>
+<span class="l"><span class="n">11</span><span class="t">        B, T, d = x_text.shape</span></span>
+<span class="l"><span class="n">12</span><span class="t">        hs = d // self.n_head</span></span>
+<span class="l"><span class="n">13</span><span class="t">        q = self.q(x_text).view(B, T, self.n_head, hs).transpose(1, 2)</span></span>
+<span class="l"><span class="n">14</span><span class="t">        k = self.k(audio).view(B, -1, self.n_head, hs).transpose(1, 2)</span></span>
+<span class="l"><span class="n">15</span><span class="t">        v = self.v(audio).view(B, -1, self.n_head, hs).transpose(1, 2)</span></span>
+<span class="l"><span class="n">16</span><span class="t">        wei = F.softmax(q @ k.transpose(-2, -1) * hs**-0.5, dim=-1)   <span class="cm"># (B, H, T_text, T_audio)</span></span></span>
+<span class="l"><span class="n">17</span><span class="t">        out = (wei @ v).transpose(1, 2).reshape(B, T, d)</span></span>
+<span class="l"><span class="n">18</span><span class="t">        return self.o(out)</span></span></pre></figure>
+<p class="key">KV cache link: the audio K and V never change while decoding, so they are computed once and reused for every text token. Rows (text queries) are new each step; columns (audio keys) stay fixed.</p>
+</section>
+
+<section class="blk" id="SP-05">
+<div class="bh"><span class="bid">SP-05</span><h2>The text decoder block</h2></div>
+<p>Karpathy's block plus one extra line in the middle.</p>
+<figure class="code"><div class="ch"><span>SP-05 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">class DecBlock(nn.Module):</span></span>
+<span class="l"><span class="n">2</span><span class="t">    def __init__(self, d, n_head):</span></span>
+<span class="l"><span class="n">3</span><span class="t">        super().__init__()</span></span>
+<span class="l"><span class="n">4</span><span class="t">        self.ln1, self.ln2, self.ln3 = nn.LayerNorm(d), nn.LayerNorm(d), nn.LayerNorm(d)</span></span>
+<span class="l"><span class="n">5</span><span class="t">        self.self_attn  = CausalSelfAttention(d, n_head)   <span class="cm"># Karpathy's MultiHeadAttention</span></span></span>
+<span class="l"><span class="n">6</span><span class="t">        self.cross_attn = CrossAttention(d, n_head)        <span class="cm"># SP-04</span></span></span>
+<span class="l"><span class="n">7</span><span class="t">        self.mlp = FeedForward(d)</span></span>
+<span class="l"><span class="n">8</span><span class="t"> </span></span>
+<span class="l"><span class="n">9</span><span class="t">    def forward(self, x, audio):</span></span>
+<span class="l"><span class="n">10</span><span class="t">        x = x + self.self_attn(self.ln1(x))            <span class="cm"># look at earlier text (causal)</span></span></span>
+<span class="l"><span class="n">11</span><span class="t">        x = x + self.cross_attn(self.ln2(x), audio)    <span class="cm"># look at the audio</span></span></span>
+<span class="l"><span class="n">12</span><span class="t">        x = x + self.mlp(self.ln3(x))</span></span>
+<span class="l"><span class="n">13</span><span class="t">        return x</span></span>
+<span class="l"><span class="n">14</span><span class="t"><span class="cm"># decoder output -&gt; lm_head -&gt; next text token, generated like GPT</span></span></span></pre></figure>
+</section>
+
+<section class="blk" id="SP-06">
+<div class="bh"><span class="bid">SP-06</span><h2>CTC: speech-to-text without a decoder</h2></div>
+<p>Simpler and faster option. Encoder only. Predict one letter (or "blank") per audio frame, then clean up.</p>
+<div class="math">frames:  h h _ e _ l l _ l l _ o o
+merge repeats → h _ e _ l _ l _ o      drop blanks → "hello"</div>
+<figure class="code"><div class="ch"><span>SP-06 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">head = nn.Linear(384, vocab_size + 1)                   <span class="cm"># +1 for "blank"</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">log_probs = head(enc_out).log_softmax(-1)               <span class="cm"># (B, T_audio, V+1)</span></span></span>
+<span class="l"><span class="n">3</span><span class="t">loss = F.ctc_loss(log_probs.transpose(0, 1),            <span class="cm"># CTC wants (T, B, V+1)</span></span></span>
+<span class="l"><span class="n">4</span><span class="t">                  targets, in_lens, tgt_lens, blank=vocab_size)</span></span>
+<span class="l"><span class="n">5</span><span class="t"><span class="cm"># CTC loss sums over every frame alignment that collapses to the right text</span></span></span></pre></figure>
+<p class="key">The blank lets the model write a double letter ("ll" in hello) and wait on silence. Good for streaming, since each frame is decided as it arrives.</p>
+</section>
+
+<section class="blk" id="SP-07">
+<div class="bh"><span class="bid">SP-07</span><h2>Text-to-speech, classic: text → mel → vocoder</h2></div>
+<p>Step 1: an acoustic model turns text into a mel spectrogram. Step 2: a vocoder turns mel back into a waveform. The mel threw away phase, so the vocoder must invent it. That is why it is a neural network.</p>
+<div class="math">1 mel frame = 160 samples   →   upsample time by 8 × 4 × 5 = 160
+ConvTranspose1d length:  L_out = (L − 1)·S − 2P + K</div>
+<figure class="code"><div class="ch"><span>SP-07 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">class TinyVocoder(nn.Module):                     <span class="cm"># mel (B, 80, frames) -&gt; wave (B, 1, samples)</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">    def __init__(self, n_mels=80, c=256):</span></span>
+<span class="l"><span class="n">3</span><span class="t">        super().__init__()</span></span>
+<span class="l"><span class="n">4</span><span class="t">        self.pre = nn.Conv1d(n_mels, c, 7, padding=3)</span></span>
+<span class="l"><span class="n">5</span><span class="t">        self.up = nn.Sequential(</span></span>
+<span class="l"><span class="n">6</span><span class="t">            nn.ConvTranspose1d(c, c // 2, 16, stride=8, padding=4), nn.LeakyReLU(0.1),       <span class="cm"># x8</span></span></span>
+<span class="l"><span class="n">7</span><span class="t">            nn.ConvTranspose1d(c // 2, c // 4, 8, stride=4, padding=2), nn.LeakyReLU(0.1),   <span class="cm"># x4</span></span></span>
+<span class="l"><span class="n">8</span><span class="t">            nn.ConvTranspose1d(c // 4, c // 8, 5, stride=5), nn.LeakyReLU(0.1),              <span class="cm"># x5</span></span></span>
+<span class="l"><span class="n">9</span><span class="t">        )</span></span>
+<span class="l"><span class="n">10</span><span class="t">        self.post = nn.Conv1d(c // 8, 1, 7, padding=3)</span></span>
+<span class="l"><span class="n">11</span><span class="t"> </span></span>
+<span class="l"><span class="n">12</span><span class="t">    def forward(self, mel):</span></span>
+<span class="l"><span class="n">13</span><span class="t">        return torch.tanh(self.post(self.up(self.pre(mel))))    <span class="cm"># values in [-1, 1]</span></span></span>
+<span class="l"><span class="n">14</span><span class="t"> </span></span>
+<span class="l"><span class="n">15</span><span class="t">print(TinyVocoder()(torch.randn(1, 80, 100)).shape)   <span class="cm"># (1, 1, 16000): 1 second</span></span></span></pre></figure>
+<p class="key">Real vocoders (HiFi-GAN style) add residual blocks and train with a discriminator (GAN loss) plus a mel loss, so the audio sounds crisp, not muffled.</p>
+</section>
+
+<section class="blk" id="SP-08">
+<div class="bh"><span class="bid">SP-08</span><h2>Modern TTS: audio tokens + a language model</h2></div>
+<p>A neural codec turns audio into discrete tokens, like text tokens. Then a GPT-style model predicts audio tokens from text tokens. The codec decoder turns them back into sound. The codec uses <b>residual vector quantization</b> (RVQ).</p>
+<div class="math">codebook 1: nearest match to z           → token c1
+codebook 2: nearest match to (z − e1)    → token c2      each level fixes what is left
+...        8 codebooks × 1024 entries    → 8 tokens per frame</div>
+<figure class="code"><div class="ch"><span>SP-08 · code</span><button type="button">Copy</button></div><pre><span class="l"><span class="n">1</span><span class="t">def rvq_encode(z, codebooks):                 <span class="cm"># z: (T, d) encoder frames; codebooks: list of (K, d)</span></span></span>
+<span class="l"><span class="n">2</span><span class="t">    codes, residual = [], z</span></span>
+<span class="l"><span class="n">3</span><span class="t">    for cb in codebooks:</span></span>
+<span class="l"><span class="n">4</span><span class="t">        dist = torch.cdist(residual, cb)      <span class="cm"># (T, K) distance to every entry</span></span></span>
+<span class="l"><span class="n">5</span><span class="t">        idx = dist.argmin(-1)                 <span class="cm"># nearest entry -&gt; one integer per frame</span></span></span>
+<span class="l"><span class="n">6</span><span class="t">        codes.append(idx)</span></span>
+<span class="l"><span class="n">7</span><span class="t">        residual = residual - cb[idx]         <span class="cm"># next codebook models the leftover</span></span></span>
+<span class="l"><span class="n">8</span><span class="t">    return torch.stack(codes)                 <span class="cm"># (n_codebooks, T) integer tokens</span></span></span>
+<span class="l"><span class="n">9</span><span class="t"> </span></span>
+<span class="l"><span class="n">10</span><span class="t">def rvq_decode(codes, codebooks):</span></span>
+<span class="l"><span class="n">11</span><span class="t">    return sum(cb[c] for cb, c in zip(codebooks, codes))   <span class="cm"># (T, d) -&gt; codec decoder -&gt; wave</span></span></span></pre></figure>
+<ul>
+<li>Text → LLM → audio tokens → codec decoder → wave. This is how VALL-E-style and many current voice models work.</li>
+<li>Speech-to-speech models put text and audio tokens in one transformer, so they can listen and talk without a separate STT and TTS step.</li>
+</ul>
+</section>
+
+<section class="blk" id="SP-09">
+<div class="bh"><span class="bid">SP-09</span><h2>Voice agent: where the latency goes</h2></div>
+<div class="math">cascade:   mic → VAD/endpoint → STT → LLM → TTS → speaker
+speech LM: mic → one model (audio in, audio out) → speaker</div>
+<div class="tbl"><table>
+<tbody><tr><th>Stage</th><th>What slows it</th><th>Main lever</th></tr>
+<tr><td>Endpointing</td><td>Waiting to be sure the user stopped</td><td>Better turn detection, shorter silence timeout</td></tr>
+<tr><td>STT</td><td>Transcribing after speech ends</td><td>Streaming STT (CTC or chunked encoder)</td></tr>
+<tr><td>LLM</td><td>Time to first token</td><td>Smaller or faster model, prompt caching, KV cache reuse</td></tr>
+<tr><td>TTS</td><td>Time to first audio</td><td>Streaming TTS, start speaking on first sentence</td></tr>
+</tbody></table></div>
+<p class="key">Rule of thumb: stream every stage. No stage should wait for the previous one to fully finish.</p>
+</section>
+
+</main>
+</div>
+<footer>Series: Inside LLMs · Inside CNNs · Inside Speech Models · Inside Diffusion. Code is PyTorch, written in the style of Karpathy's GPT notebook.</footer>
+</div>
+
+<script>
+(function(){
+  document.querySelectorAll('figure.code').forEach(function(fig){
+    var btn=fig.querySelector('button'); if(!btn)return;
+    var src=Array.from(fig.querySelectorAll('.t')).map(function(line){return line.textContent}).join('\n');
+    function selectCode(){var range=document.createRange();range.selectNodeContents(fig.querySelector('pre'));var selected=window.getSelection();selected.removeAllRanges();selected.addRange(range)}
+    btn.addEventListener('click',function(){
+      function done(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy'},1400)}
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(src).then(done,selectCode);else selectCode();
+    });
+  });
+  var rail=document.getElementById('rail'); if(!rail)return;
+  var links=rail.querySelectorAll('a');
+  if('IntersectionObserver' in window){var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){links.forEach(function(link){link.classList.toggle('on',link.getAttribute('href')==='#'+entry.target.id)})}})},{rootMargin:'-20% 0px -70% 0px'});document.querySelectorAll('section.blk').forEach(function(section){observer.observe(section)})}
+})();
+</script>
+
+</body></html>

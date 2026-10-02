@@ -1,0 +1,1029 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Securing Tool-Using Agents",
+    "title": "Securing Tool-Using Agents",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 38,
+    "thesis": "Securing Tool-Using Agents is practical when learners can apply it to this concrete case: A refund agent can call payment and CRM tools, so every action must be authorized and auditable. By the end, they should be able to build or review tool-security policy with least privilege, confirmation, and logging, measure unsafe tool calls blocked before execution, and catch the failure where prompt injection turns a read-only support session into a payment action."
+  },
+  "learnerProfile": {
+    "level": "advanced",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Securing Tool-Using Agents",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": false,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Securing Tool-Using Agents: mental map",
+    "caption": "Inventory capabilities, validate tool calls, scope credentials, sandbox execution, require approvals, and audit side effects.",
+    "oneLineThesis": "Tool-using agents are secure when model intent is mediated by typed APIs, least privilege, sandboxing, approval gates, and durable audit logs.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Inventory capabilities before adding intelligence",
+        "sub": "List every tool, action, permission, data class, side effect, and owner.",
+        "what": "Agent security starts by knowing what the agent can read, change, send, spend, or execute.",
+        "relevance": "Build a tool inventory with capability tiers.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "List every tool capability, data class, side effect, and owner.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Expose narrow typed tools",
+        "sub": "Use schemas, enums, allowlists, and business rules instead of broad raw power.",
+        "what": "Secure agents call purpose-built APIs, not arbitrary shells, browsers, or email tools by default.",
+        "relevance": "Design narrow tool schemas.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Constrain tool calls with schemas, allowlists, and business rules.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Scope credentials and sandbox execution",
+        "sub": "Bind authority server-side and isolate filesystem, network, browser, time, and package access.",
+        "what": "The model should never carry broad secrets; the tool runner should mint narrow authority after policy checks.",
+        "relevance": "Explain scoped credentials and TTLs.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Mint narrow credentials and isolate execution environments by default.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Put approvals and audits on side effects",
+        "sub": "Require explicit human confirmation for external, irreversible, expensive, or sensitive actions.",
+        "what": "Approval gates turn risky model plans into reviewable human decisions before impact.",
+        "relevance": "Write an approval policy check.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Require approvals and audits for side effects that matter.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Operate tools through tests and incident review",
+        "sub": "Close with regression attacks, audit sampling, and a solo capability manifest.",
+        "what": "Tool security must update when tools, credentials, prompts, models, or connectors change.",
+        "relevance": "Recall the secure tool-use loop.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Keep tool policies tested as capabilities and connectors evolve.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Inventory capabilities before adding intelligence",
+      "sub": "List every tool, action, permission, data class, side effect, and owner.",
+      "summary": "Agent security starts by knowing what the agent can read, change, send, spend, or execute.",
+      "objectives": [
+        "Build a tool inventory with capability tiers.",
+        "Explain why read-only can still be sensitive.",
+        "Identify side effects and owners."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Agents fail by acting with too much authority",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: an agent can browse course pages, read local lesson files, update a CMS, email instructors, and run shell commands. A prompt-injected page tells it to publish a fake lesson. Without a capability inventory, the team cannot tell which action should have been impossible."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Inventory each tool by capability tier: read-only, private read, write draft, external send, money movement, code execution, admin, or credential access. Record data classes, side effects, idempotency, owner, approval requirement, sandbox, and audit fields."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Worked artifact: tool inventory row",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Tool: `publish_lesson`. Tier: external write/public publish. Inputs: lesson_id, target_channel, version. Side effect: public content update. Required role: editor. Approval: human confirmation with diff preview. Credential: scoped CMS token, 5-minute TTL. Sandbox: no filesystem access. Audit: user, model, args, approval, result digest, policy version."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Tool capability manifest"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Read-only risk",
+          "prompt": "Why can a read-only tool still be high risk?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Read-only tools always have no security impact.",
+              "correct": false
+            },
+            {
+              "text": "It can expose private data that the model may leak through outputs, logs, or later tool calls.",
+              "correct": true
+            },
+            {
+              "text": "It cannot be used in prompt injection.",
+              "correct": false
+            }
+          ],
+          "explanation": "Confidentiality risk exists even without write side effects.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Expose narrow typed tools",
+      "sub": "Use schemas, enums, allowlists, and business rules instead of broad raw power.",
+      "summary": "Secure agents call purpose-built APIs, not arbitrary shells, browsers, or email tools by default.",
+      "objectives": [
+        "Design narrow tool schemas.",
+        "Explain the difference between tool descriptions and permissions.",
+        "Use OpenAPI or JSON Schema thinking for validation."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "A tool description is not permission",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model sees tool names and descriptions as text. That text can guide planning, but it is not an authorization boundary. The runner must validate arguments, check user permission, enforce business rules, and decide whether approval is required before execution."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Narrow tools reduce blast radius. `create_lesson_draft(lesson_id)` is safer than a general shell command. `send_invoice_reminder(customer_id)` is safer than arbitrary email with free-form recipient and body."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Broad tool to safer workflow",
+          "criteria": [
+            "Broad tool",
+            "Safer shape",
+            "Reason"
+          ],
+          "options": [
+            {
+              "name": "Arbitrary email",
+              "cells": [
+                {
+                  "criterion": "Broad tool",
+                  "text": "recipient, subject, body free-form",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Safer shape",
+                  "text": "approved template plus customer_id and preview approval",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Reason",
+                  "text": "prevents injected recipients and hidden content",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for external sends.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Shell command",
+              "cells": [
+                {
+                  "criterion": "Broad tool",
+                  "text": "any command in repo",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Safer shape",
+                  "text": "named build, test, or validation command with fixed args",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Reason",
+                  "text": "limits file and network impact",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for developer agents.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Browser automation",
+              "cells": [
+                {
+                  "criterion": "Broad tool",
+                  "text": "click anything in logged-in session",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Safer shape",
+                  "text": "domain allowlist, read-only scrape, no purchase or submit actions",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Reason",
+                  "text": "reduces unintended external side effects",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for web tasks.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Case study: retry duplicated a side effect",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "An agent times out after calling a payment-refund tool and retries because the model thinks nothing happened. The customer receives two refunds. Secure tool design marks non-idempotent tools, records request IDs, and forces confirmation or idempotency keys before retry."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Scope credentials and sandbox execution",
+      "sub": "Bind authority server-side and isolate filesystem, network, browser, time, and package access.",
+      "summary": "The model should never carry broad secrets; the tool runner should mint narrow authority after policy checks.",
+      "objectives": [
+        "Explain scoped credentials and TTLs.",
+        "Design filesystem and network sandbox rules.",
+        "Connect prompt injection to sandbox escape risk."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Secrets do not belong in prompts",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "An agent that sees a long-lived API key can leak it by mistake, through injection, through logs, or through a tool result. Instead, the server checks the user and tool policy, then mints a scoped token for the specific action with short lifetime and limited resources."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Sandboxing limits what happens if the model plan, dependency, page, or tool result is malicious. Useful dimensions include filesystem roots, process limits, network egress, timeouts, memory, package installation, browser profile, and environment variables."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m3_policy",
+          "kind": "functionalExample",
+          "title": "Worked sandbox policy for a coding agent",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Filesystem: repo working directory and temp only, no home secrets. Network: package registry and approved docs domains, no arbitrary POST. Process: test and build commands, 10-minute timeout, memory cap. Credentials: none by default; deployment token minted only after human approval. Browser: isolated profile without personal cookies. Audit: command, files touched, network destinations, exit code."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Agent sandbox policy"
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Grant authority at execution time, not planning time.",
+          "useWhen": "Use scoped tokens, sandboxes, and egress rules for tools that read private data, write files, call APIs, browse, or execute code.",
+          "avoidWhen": "Avoid long-lived credentials, unrestricted network, shared browser sessions, or broad filesystem mounts.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Securing Tool-Using Agents: baseline, production design, or advanced optimization."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Put approvals and audits on side effects",
+      "sub": "Require explicit human confirmation for external, irreversible, expensive, or sensitive actions.",
+      "summary": "Approval gates turn risky model plans into reviewable human decisions before impact.",
+      "objectives": [
+        "Write an approval policy check.",
+        "Predict how tool output injection can trigger follow-up actions.",
+        "Verify AI-generated tool security plans."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Tool policy gate sketch",
+          "language": "python",
+          "code": "def authorize_tool(user, call):\n    risky = call[\"external_send\"] or call[\"irreversible\"] or call.get(\"cost\", 0) > 25\n    assert call[\"name\"] in {\"create_draft\", \"publish_lesson\"}\n    assert user[\"role\"] in call[\"allowed_roles\"]\n    if risky:\n        assert call.get(\"human_approval\") == \"confirmed\"\n    return {\"token_scope\": call[\"name\"], \"ttl_seconds\": 300}\ncall = {\n    \"name\": \"publish_lesson\",\n    \"allowed_roles\": [\"editor\"],\n    \"external_send\": True,\n    \"irreversible\": False,\n    \"human_approval\": \"confirmed\",\n}\nprint(authorize_tool({\"role\": \"editor\"}, call))",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This gate validates tool name, user role, risk level, approval, and token scope before execution. Real systems should also validate typed arguments and record an audit event."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "What should happen if an external-send tool lacks human approval?",
+            "answer": "The runner should block or request approval before execution, regardless of how confident the model sounds."
+          },
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify an AI-generated tool-security plan",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Look for a real tool inventory, capability tiers, schemas, authorization, scoped credentials, sandbox dimensions, approval rules, audit logs, idempotency, egress policy, and tests for prompt injection through tool outputs. Weak plans say \"the agent should be careful\" without enforcement."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Permission boundary",
+          "prompt": "Where should final tool authorization happen?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Inside the retrieved web page.",
+              "correct": false
+            },
+            {
+              "text": "In trusted application or tool-runner code after schema and policy checks.",
+              "correct": true
+            },
+            {
+              "text": "Only inside the model natural-language answer.",
+              "correct": false
+            }
+          ],
+          "explanation": "The model can propose; trusted code authorizes and executes.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "kb2"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Operate tools through tests and incident review",
+      "sub": "Close with regression attacks, audit sampling, and a solo capability manifest.",
+      "summary": "Tool security must update when tools, credentials, prompts, models, or connectors change.",
+      "objectives": [
+        "Recall the secure tool-use loop.",
+        "Write a retrieval prompt for agent tool security.",
+        "Create a capstone tool manifest and test."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "conceptual",
+          "title": "Retrieval prompt for the whole lesson",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer this from memory: \"How do I secure a tool-using agent?\" Include inventory, capability tiers, schemas, authorization, scoped credentials, sandboxing, approvals, idempotency, audit logs, injection tests, egress, and incident review."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Re-review security whenever the agent gains a new capability.",
+          "useWhen": "Use full tool security for agents that read private data, write files, browse authenticated sites, call enterprise connectors, send messages, spend money, or run code.",
+          "avoidWhen": "Avoid adding general-purpose tools to production agents without a manifest, policy gate, sandbox, approval model, and audit trail.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m5_capstone",
+          "kind": "functionalExample",
+          "title": "Capstone: secure one tool end to end",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Pick one agent tool. Write its capability tier, schema, allowed roles, credential scope, sandbox needs, approval rule, idempotency key, audit fields, and two attack tests: one direct user injection and one malicious tool-output injection."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Solo tool security manifest"
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "kb2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Securing Tool-Using Agents: baseline, production design, or advanced optimization."
+    }
+  ],
+  "glossary": {
+    "hallucination": {
+      "id": "hallucination",
+      "label": "Hallucination",
+      "laymanDefinition": "A mistaken model claim or plan that may trigger a bad action.",
+      "technicalNote": "Tool security assumes the model can be wrong; validation and policy checks decide whether a proposed action executes.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "prompt_injection": {
+      "id": "prompt_injection",
+      "label": "Prompt injection",
+      "laymanDefinition": "Untrusted text that tries to manipulate tool-using behavior.",
+      "technicalNote": "Tool security treats injection as expected input and enforces policy outside the model.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "guardrail": {
+      "id": "guardrail",
+      "label": "Guardrail",
+      "laymanDefinition": "A tool-boundary control that blocks unsafe or unauthorized actions.",
+      "technicalNote": "Agent guardrails include schemas, capability tiers, scoped credentials, sandboxes, approvals, egress rules, and audit logs.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "privacy": {
+      "id": "privacy",
+      "label": "Privacy",
+      "laymanDefinition": "Protection for data read or moved by tools.",
+      "technicalNote": "Read-only tools can still leak private data, so privacy controls apply to retrieval, files, connectors, logs, and outputs.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "owasp": {
+      "id": "owasp",
+      "label": "OWASP",
+      "laymanDefinition": "A security framework that warns about excessive agency and unsafe plugin/tool design.",
+      "technicalNote": "OWASP risks help prioritize least privilege, sensitive-data controls, and sandboxing for agents.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Open Worldwide Application Security Project"
+    },
+    "risk_register": {
+      "id": "risk_register",
+      "label": "Risk register",
+      "laymanDefinition": "A table of tool risks, capabilities, credentials, controls, owners, and tests.",
+      "technicalNote": "Each high-impact tool should have a risk row and an approval or sandbox policy.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Securing Tool-Using Agents",
+    "themes": [
+      {
+        "name": "Release-readiness check",
+        "questions": [
+          {
+            "q": "What decision does Securing Tool-Using Agents change for this case?",
+            "why": "A good lesson changes how the learner builds, reviews, or ships tool-security policy with least privilege, confirmation, and logging.",
+            "opts": [
+              "Thin slice",
+              "Production path",
+              "Advanced optimization"
+            ],
+            "rot": "Choose the smallest option that catches: prompt injection turns a read-only support session into a payment action."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct secure tool use: inventory capabilities, tier risk, expose narrow tools, validate schemas, authorize users, mint scoped credentials, sandbox execution, require approvals, audit results, and test injection paths."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Securing Tool-Using Agents operating path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Inventory capabilities before adding intelligence",
+          "sub": "List every tool, action, permission, data class, side effect, and owner.",
+          "what": "Agent security starts by knowing what the agent can read, change, send, spend, or execute.",
+          "relevance": "Build a tool inventory with capability tiers.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "List every tool capability, data class, side effect, and owner.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Expose narrow typed tools",
+          "sub": "Use schemas, enums, allowlists, and business rules instead of broad raw power.",
+          "what": "Secure agents call purpose-built APIs, not arbitrary shells, browsers, or email tools by default.",
+          "relevance": "Design narrow tool schemas.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Constrain tool calls with schemas, allowlists, and business rules.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Scope credentials and sandbox execution",
+          "sub": "Bind authority server-side and isolate filesystem, network, browser, time, and package access.",
+          "what": "The model should never carry broad secrets; the tool runner should mint narrow authority after policy checks.",
+          "relevance": "Explain scoped credentials and TTLs.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Mint narrow credentials and isolate execution environments by default.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Put approvals and audits on side effects",
+          "sub": "Require explicit human confirmation for external, irreversible, expensive, or sensitive actions.",
+          "what": "Approval gates turn risky model plans into reviewable human decisions before impact.",
+          "relevance": "Write an approval policy check.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Require approvals and audits for side effects that matter.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Operate tools through tests and incident review",
+          "sub": "Close with regression attacks, audit sampling, and a solo capability manifest.",
+          "what": "Tool security must update when tools, credentials, prompts, models, or connectors change.",
+          "relevance": "Recall the secure tool-use loop.",
+          "moduleId": "m5",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Keep tool policies tested as capabilities and connectors evolve.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Inventory capabilities before adding intelligence",
+        "detail": "List every tool, action, permission, data class, side effect, and owner."
+      },
+      {
+        "step": 2,
+        "label": "Expose narrow typed tools",
+        "detail": "Use schemas, enums, allowlists, and business rules instead of broad raw power."
+      },
+      {
+        "step": 3,
+        "label": "Scope credentials and sandbox execution",
+        "detail": "Bind authority server-side and isolate filesystem, network, browser, time, and package access."
+      },
+      {
+        "step": 4,
+        "label": "Put approvals and audits on side effects",
+        "detail": "Require explicit human confirmation for external, irreversible, expensive, or sensitive actions."
+      },
+      {
+        "step": 5,
+        "label": "Operate tools through tests and incident review",
+        "detail": "Close with regression attacks, audit sampling, and a solo capability manifest."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_context",
+        "label": "Is there a complete tool inventory with capability tiers and data access?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_evidence",
+        "label": "Do tool schemas constrain types, enums, paths, URLs, sizes, and business rules?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_controls",
+        "label": "Are credentials scoped per user, task, tool, and time window?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_verify",
+        "label": "Are filesystem, process, browser, and network sandboxes configured for risky tools?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_next",
+        "label": "Do irreversible, external, expensive, or sensitive actions require human approval and audit logs?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a one-page release-ready plan for tool-security policy with least privilege, confirmation, and logging. Include: the user problem, realistic input, mechanism, design choice, runnable or reviewable check, metric (unsafe tool calls blocked before execution), failure case (prompt injection turns a read-only support session into a payment action), owner, and the next rung after this lesson.",
+      "scopedTo": "Securing Tool-Using Agents"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Agent Tool Security and Sandboxing",
+      "url": "https://genai.owasp.org/llm-top-10/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB: Prompt Injection and OWASP LLM Top 10",
+      "url": "https://genai.owasp.org/llm-top-10/",
+      "asOfDate": "2026-06-22"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Model Context Protocol specification",
+      "url": "https://modelcontextprotocol.io/specification/latest",
+      "asOfDate": "2026-06-23"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "OpenAPI Specification",
+      "url": "https://spec.openapis.org/oas/latest.html",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+%% Blindspot — invite beta, connection modes, consented context, and observed node discovery (takeover synced 2026-07-22)
+%% files: packages/core/src/onboarding.ts, packages/core/src/feedback.ts, apps/gateway/src/scripts/invite.ts, apps/gateway/src/scripts/feedback.ts, apps/gateway/src/manage/feedback.ts, packages/sdk/src/index.ts, apps/gateway/src/manage/workflows.ts, packages/core/src/workflows.ts, packages/db/src/schema.ts, apps/dashboard/app/login/page.tsx, apps/dashboard/app/(app)/workflows/page.tsx, apps/dashboard/app/(app)/connect/page.tsx, apps/dashboard/app/(app)/feedback/page.tsx
+%% granularity: full
+flowchart TD
+  INVITE["Create signed recipient/project signup link<br/>FUNCTION · operator CLI · token in URL fragment<br/>out: secure, expiring invitation"]:::fn
+  SIGNIN["Create workspace + separate recovery/application keys<br/>USER · invite-gated project-key identity, not Supabase Auth<br/>out: signed-in browser + revocable server-only app key"]:::ask
+  INSTALL["Install versioned TypeScript SDK + five environment variables<br/>FUNCTION · metadata + observe-only default<br/>out: deployable application connector"]:::fn
+  APP["Existing agent receives a request<br/>FUNCTION<br/>in: user input · out: application response"]:::term
+  MODE{"BLINDSPOT_ROUTING?<br/>USER · observe_only default or managed"}:::dec
+  KEEP["Application keeps its configured model<br/>FUNCTION · observe-only never asks Blindspot to route"]:::fn
+  RESOLVE["Resolve node model with safe fallback<br/>FUNCTION · POST /v1/workflows/resolve-model<br/>in: workflow, node, fallback · out: approved provider:model"]:::fn
+  RUN["Run application workflow<br/>AGENT + FUNCTION nodes<br/>out: answers, tool results and deterministic decisions"]:::agent
+  SDK["Queue bounded best-effort telemetry for instrumented nodes<br/>FUNCTION · 900KB cap, one retry, terminal flush at request boundary"]:::fn
+  CAP{"Effective capture mode<br/>FUNCTION · stricter of SDK and project<br/>metadata, inputs, or full"}:::dec
+  API["Ingest authenticated span batch<br/>FUNCTION · 1MB request cap, max 100 spans, Zod validation"]:::fn
+  REDACT["Redact credential-shaped fields<br/>FUNCTION · out: consent-bounded safe payload"]:::fn
+  MAP["Upsert workflow, execution and each received node kind<br/>DATA · observed agent, generation, retrieval, tool or function spans only"]:::data
+  GEN{"Node is a model generation?<br/>FUNCTION"}:::dec
+  ROUTE["Create/link environment-scoped Route<br/>FUNCTION · observed model is truth in observe-only<br/>managed route changes only after approval"]:::fn
+  UI["Workflows dashboard<br/>FUNCTION · map shows observed nodes; Routes & Models shows generations only"]:::fn
+  DECL["Declared topology + dev/production coverage<br/>PLANNED · startup manifest is not implemented"]:::term
+  SHARE{"Share product context now?<br/>USER · explicit action only"}:::ask
+  MANIFEST["Store versioned context manifest and hash<br/>DATA · README/design/prompt/architecture selected by app owner"]:::data
+  NONE["No repository content leaves the app<br/>DATA"]:::term
+  FEEDBACK["Submit project-scoped beta feedback<br/>USER · stage, expected, actual and impact<br/>explicit submit · no automatic logs or attachments"]:::ask
+  FDB["Store bounded feedback + show own history<br/>DATA · authenticated project scope<br/>operator reads all only from trusted database CLI"]:::data
+
+  INVITE --> SIGNIN --> INSTALL --> APP --> MODE
+  MODE -- "observe-only" --> KEEP --> RUN
+  MODE -- "managed" --> RESOLVE --> RUN
+  RUN --> SDK --> CAP --> API --> REDACT --> MAP --> GEN
+  GEN -- "yes" --> ROUTE --> UI
+  GEN -- "no" --> UI
+  UI -. "future coverage" .-> DECL
+  UI --> SHARE
+  SHARE -- "consent" --> MANIFEST
+  SHARE -- "not now" --> NONE
+  UI --> FEEDBACK --> FDB
+
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;

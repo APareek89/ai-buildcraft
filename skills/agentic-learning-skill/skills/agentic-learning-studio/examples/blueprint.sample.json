@@ -1,0 +1,409 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Retrieval-Augmented Generation (RAG)",
+    "title": "How RAG Works: Grounding LLMs in Your Own Data",
+    "thesis": "RAG fixes the biggest weakness of language models — confidently making things up — by retrieving real passages from your own documents and answering from them.",
+    "estTotalMinutes": 18,
+    "generatedAt": "2026-06-30"
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Retrieval-Augmented Generation (RAG)",
+    "industry": "customer support",
+    "buildGoal": "a support assistant that answers from our help-center docs",
+    "framework": "Python (LangChain-style pseudocode)",
+    "showTermPopovers": true,
+    "expandAcronymsOnFirstUse": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "readingMode": "vertical",
+    "inferred": false
+  },
+  "mentalMap": {
+    "title": "RAG, end to end",
+    "structureType": "procedural",
+    "entryNodeId": "n1",
+    "oneLineThesis": "Documents become searchable meaning; a question retrieves the right passages; the model answers from them.",
+    "nodes": [
+      { "id": "n1", "order": 1, "label": "Why ground an LLM?", "icon": "❓", "orient": "The hallucination problem RAG was built to solve.", "moduleId": "m1", "emphasis": "spine" },
+      { "id": "n2", "order": 2, "label": "The RAG pipeline", "icon": "🔗", "orient": "Five stages from raw docs to a grounded answer.", "moduleId": "m2", "emphasis": "spine" },
+      { "id": "n3", "order": 3, "label": "Chunk & embed", "icon": "🧩", "orient": "Turn documents into searchable meaning vectors.", "moduleId": "m3", "emphasis": "spine" },
+      { "id": "n4", "order": 4, "label": "Retrieve & generate", "icon": "🎯", "orient": "Find the right passages, then answer from them.", "moduleId": "m4", "emphasis": "spine" },
+      { "id": "n5", "order": 5, "label": "Choose your stack", "icon": "⚖️", "orient": "Pick a vector store and tune retrieval.", "moduleId": "m5", "emphasis": "spine" }
+    ],
+    "edges": [
+      { "from": "n1", "to": "n2" },
+      { "from": "n2", "to": "n3" },
+      { "from": "n3", "to": "n4" },
+      { "from": "n4", "to": "n5" }
+    ]
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "icon": "❓",
+      "title": "Why RAG exists",
+      "sub": "Start here — the problem before the machinery.",
+      "summary": "A language model only knows what it saw in training. Ask it about your internal docs and it will often answer fluently and wrongly. RAG exists to ground answers in retrieved, real text.",
+      "decisionItForces": "Should this question be answered from the model's memory, or from retrieved documents?",
+      "objectives": ["Explain why ungrounded LLMs hallucinate", "Describe what 'grounding' adds", "Recognize when RAG is the right tool"],
+      "termIds": ["rag", "hallucination", "context-window"],
+      "loadState": "full",
+      "citations": ["c1"],
+      "blocks": [
+        {
+          "id": "m1-b1",
+          "kind": "conceptual",
+          "title": "The confidently-wrong problem",
+          "analogy": "An ungrounded LLM is like a smart intern who never says 'I don't know' — they'll answer your billing question with total confidence, inventing the policy.",
+          "termIds": ["hallucination", "rag"],
+          "body": [
+            { "t": "p", "spans": [
+              { "text": "A language model predicts likely text. Ask it something outside its training and it still produces a fluent answer — that is a " },
+              { "text": "hallucination", "term": "hallucination" },
+              { "text": ". " },
+              { "text": "Retrieval-Augmented Generation", "term": "rag", "strong": true },
+              { "text": " fixes this by fetching real passages from your documents and instructing the model to answer only from them." }
+            ] },
+            { "t": "callout", "tone": "warn", "spans": [
+              { "text": "Before reading on, predict: if your help-center changes a refund window from 14 to 30 days, why might a plain (non-RAG) chatbot still say 14?" }
+            ] }
+          ]
+        },
+        {
+          "id": "m1-b2",
+          "kind": "functionalExample",
+          "title": "Support desk, with and without grounding",
+          "termIds": ["rag"],
+          "body": [
+            { "t": "p", "spans": [{ "text": "A customer asks: 'Can I return a sale item?'" }] },
+            { "t": "ul", "items": [
+              [{ "text": "Without RAG: ", "strong": true }, { "text": "the model guesses from generic e-commerce norms — sometimes right, sometimes inventing your policy." }],
+              [{ "text": "With RAG: ", "strong": true }, { "text": "it retrieves your actual 'Sale & clearance returns' article and answers from that exact wording, with a citation." }]
+            ] }
+          ]
+        },
+        {
+          "id": "m1-b3",
+          "kind": "note",
+          "tone": "danger",
+          "termIds": ["rag"],
+          "body": [
+            { "t": "p", "spans": [{ "text": "How this breaks: RAG is only as fresh as its index. If you forget to re-index after a policy change, retrieval returns the OLD passage and the model grounds confidently in stale truth. Re-indexing on publish is part of the system, not an afterthought." }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "icon": "🔗",
+      "title": "The RAG pipeline",
+      "sub": "Now the moving parts that turn docs into grounded answers.",
+      "summary": "RAG is a pipeline: ingest documents, split them into chunks, embed each chunk into a vector, store the vectors, then at query time retrieve the closest chunks and generate an answer from them.",
+      "objectives": ["Name the five stages of a RAG pipeline", "Explain what each stage produces", "See where retrieval meets generation"],
+      "termIds": ["chunking", "embedding", "vector-db", "semantic-search"],
+      "loadState": "full",
+      "citations": ["c1"],
+      "blocks": [
+        {
+          "id": "m2-b1",
+          "kind": "technical",
+          "title": "From document to grounded answer",
+          "termIds": ["chunking", "embedding", "vector-db", "semantic-search"],
+          "body": [
+            { "t": "p", "spans": [
+              { "text": "Two phases share one representation. Offline (indexing): you " },
+              { "text": "chunk", "term": "chunking" },
+              { "text": " documents, turn each chunk into an " },
+              { "text": "embedding", "term": "embedding" },
+              { "text": ", and store them in a " },
+              { "text": "vector database", "term": "vector-db" },
+              { "text": ". Online (query time): you embed the question, run a " },
+              { "text": "semantic search", "term": "semantic-search" },
+              { "text": " for nearby chunks, and pass them to the model as grounding." }
+            ] }
+          ]
+        },
+        {
+          "id": "m2-b2",
+          "kind": "steppedFlow",
+          "title": "Click through the pipeline",
+          "caption": "Each stage's output is the next stage's input.",
+          "steps": [
+            { "icon": "📄", "label": "Ingest", "detail": "Load source documents (help articles, PDFs, tickets) into a normalized text form." },
+            { "icon": "🧩", "label": "Chunk", "detail": "Split each document into passages small enough to embed and retrieve precisely — often 200–500 tokens with slight overlap." },
+            { "icon": "🔢", "label": "Embed", "detail": "Convert each chunk into a vector that captures its meaning, so similar passages sit close together." },
+            { "icon": "🗄️", "label": "Store", "detail": "Write vectors (plus the original text + metadata) into a vector database with an index for fast nearest-neighbor search." },
+            { "icon": "🎯", "label": "Retrieve", "detail": "Embed the user's question, find the top-k closest chunks." },
+            { "icon": "✍️", "label": "Generate", "detail": "Put the retrieved chunks in the prompt and ask the model to answer ONLY from them, with citations." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "icon": "🧩",
+      "title": "Chunking & embeddings",
+      "sub": "The indexing half — make meaning searchable.",
+      "summary": "Retrieval quality is mostly decided here. Chunk too big and you retrieve noise; too small and you lose context. Embeddings place chunks in a space where 'near' means 'similar in meaning'.",
+      "objectives": ["Choose a sensible chunk size", "Explain what an embedding represents", "Read code that builds an index"],
+      "termIds": ["chunking", "embedding", "semantic-search"],
+      "loadState": "full",
+      "citations": ["c2"],
+      "blocks": [
+        {
+          "id": "m3-b1",
+          "kind": "conceptual",
+          "title": "Meaning as coordinates",
+          "analogy": "An embedding is like placing every passage on a map where related ideas are neighbors — 'refund' sits near 'return', far from 'shipping speed'.",
+          "termIds": ["embedding", "semantic-search", "chunking"],
+          "body": [
+            { "t": "p", "spans": [
+              { "text": "An " },
+              { "text": "embedding", "term": "embedding" },
+              { "text": " is a list of numbers positioning a chunk by meaning. " },
+              { "text": "Semantic search", "term": "semantic-search" },
+              { "text": " then ranks chunks by distance to the question's embedding, so it matches on meaning, not just keywords." }
+            ] }
+          ]
+        },
+        {
+          "id": "m3-b2",
+          "kind": "interactiveScatter",
+          "title": "Nearest in meaning",
+          "caption": "Pick a query — its three nearest passages light up. Notice meaning, not exact words, drives closeness.",
+          "points": [
+            { "label": "Refund window", "x": 20, "y": 30, "group": "returns" },
+            { "label": "Return a gift", "x": 28, "y": 22, "group": "returns" },
+            { "label": "Sale items final?", "x": 24, "y": 38, "group": "returns" },
+            { "label": "Track my order", "x": 78, "y": 70, "group": "shipping" },
+            { "label": "Delivery delay", "x": 82, "y": 64, "group": "shipping" },
+            { "label": "Change address", "x": 70, "y": 76, "group": "shipping" }
+          ],
+          "queries": [
+            { "label": "\"money back?\"", "x": 22, "y": 28 },
+            { "label": "\"where is my parcel?\"", "x": 80, "y": 68 }
+          ]
+        },
+        {
+          "id": "m3-b3",
+          "kind": "codeExample",
+          "title": "Build the index",
+          "language": "python",
+          "filePath": "index.py",
+          "code": "from my_rag import load_docs, chunk, embed, VectorStore\n\ndocs = load_docs(\"help_center/\")\nchunks = chunk(docs, size=400, overlap=50)\n\nstore = VectorStore(dim=1536)\nfor c in chunks:\n    store.add(vector=embed(c.text), text=c.text, meta=c.meta)\n\nstore.save(\"help.index\")",
+          "termIds": ["chunking", "embedding"],
+          "predictThenReveal": {
+            "prompt": "What breaks if you set size=4000 with no overlap?",
+            "answer": "Chunks get huge: each retrieved passage carries lots of irrelevant text (lower precision), and a fact split across a boundary can be missed entirely because there is no overlap to capture it."
+          },
+          "syntax": [
+            { "part": "chunk(docs, size=400, overlap=50)", "explains": "Splits documents into ~400-token passages, repeating 50 tokens between neighbors so facts on a boundary aren't lost." },
+            { "part": "embed(c.text)", "explains": "Turns a chunk's text into its meaning-vector." },
+            { "part": "store.add(vector=..., text=..., meta=...)", "explains": "Saves the vector alongside the original text and metadata so retrieval can return readable, citable passages." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "icon": "🎯",
+      "title": "Retrieve & generate",
+      "sub": "The query half — answer from what you found.",
+      "summary": "At query time you embed the question, pull the top-k nearest chunks, and assemble a prompt that tells the model to answer only from those passages. Get this contract right and grounding holds.",
+      "decisionItForces": "How many chunks (k) to retrieve, and whether to re-rank them.",
+      "objectives": ["Assemble a grounded prompt", "Choose a starting value for k", "Decide when re-ranking is worth it"],
+      "termIds": ["top-k", "semantic-search", "context-window", "reranking"],
+      "loadState": "full",
+      "citations": ["c1"],
+      "blocks": [
+        {
+          "id": "m4-b1",
+          "kind": "technical",
+          "title": "The grounding contract",
+          "termIds": ["top-k", "context-window"],
+          "body": [
+            { "t": "p", "spans": [
+              { "text": "Retrieve the " },
+              { "text": "top-k", "term": "top-k" },
+              { "text": " nearest chunks, paste them into the prompt, and instruct: 'Answer only from the context; if it's not there, say you don't know.' Keep k small enough to fit the " },
+              { "text": "context window", "term": "context-window" },
+              { "text": " with room for the answer." }
+            ] }
+          ]
+        },
+        {
+          "id": "m4-b2",
+          "kind": "codeExample",
+          "title": "Retrieve, then answer",
+          "language": "python",
+          "filePath": "answer.py",
+          "code": "store = VectorStore.load(\"help.index\")\n\ndef answer(question):\n    hits = store.search(embed(question), k=4)\n    context = \"\\n---\\n\".join(h.text for h in hits)\n    prompt = (\n        \"Answer ONLY from the context. If absent, say you don't know.\\n\\n\"\n        f\"Context:\\n{context}\\n\\nQuestion: {question}\"\n    )\n    return llm(prompt), [h.meta for h in hits]",
+          "termIds": ["top-k", "semantic-search"],
+          "predictThenReveal": {
+            "prompt": "A user asks something your docs don't cover. With this prompt, what should happen?",
+            "answer": "Retrieval still returns the 4 closest chunks, but none contain the answer — so the instruction 'if absent, say you don't know' should make the model decline instead of inventing one. That refusal is the system working, not failing."
+          }
+        },
+        {
+          "id": "m4-b3",
+          "kind": "decisionCallout",
+          "useWhen": "Top-k retrieval already surfaces the right passage in the first few hits.",
+          "avoidWhen": "The right chunk often ranks 8th–15th — then add a re-ranker to reorder a larger candidate set.",
+          "ruleOfThumb": "Start simple: k=4, no re-ranking. Add re-ranking only when you measure recall problems."
+        }
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "icon": "⚖️",
+      "title": "Choosing your stack",
+      "sub": "Now decide what to actually build on.",
+      "summary": "Vector stores trade off setup, scale, and operational cost. Pick based on where you already are, not hype.",
+      "decisionItForces": "Which vector store to use for the support assistant.",
+      "objectives": ["Compare common vector stores", "Match a store to your constraints", "Justify a default choice"],
+      "termIds": ["vector-db", "semantic-search"],
+      "loadState": "full",
+      "citations": ["c2"],
+      "blocks": [
+        {
+          "id": "m5-b1",
+          "kind": "decisionMatrix",
+          "title": "Vector store, head to head",
+          "criteria": ["Setup effort", "Scales to millions", "Hybrid keyword+vector"],
+          "howToRead": "Green = strength, amber = caveat, red = weak. 'When to choose' is the decisive column.",
+          "options": [
+            {
+              "name": "pgvector (Postgres)",
+              "cells": [
+                { "criterion": "Setup effort", "text": "Reuse your existing Postgres", "rating": "good" },
+                { "criterion": "Scales to millions", "text": "Fine into low millions with an index", "rating": "ok" },
+                { "criterion": "Hybrid keyword+vector", "text": "SQL + vector in one place", "rating": "good" }
+              ],
+              "whenToUse": "You already run Postgres and want one fewer system.",
+              "cost": "Low (existing DB)",
+              "complexity": "Low"
+            },
+            {
+              "name": "FAISS (library)",
+              "cells": [
+                { "criterion": "Setup effort", "text": "Just a library, no server", "rating": "good" },
+                { "criterion": "Scales to millions", "text": "Very fast in-memory", "rating": "good" },
+                { "criterion": "Hybrid keyword+vector", "text": "Vector only; you bolt on keywords", "rating": "bad" }
+              ],
+              "whenToUse": "Prototyping or a read-mostly index you can hold in memory.",
+              "cost": "Free (self-host)",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Pinecone (managed)",
+              "cells": [
+                { "criterion": "Setup effort", "text": "Fully managed API", "rating": "good" },
+                { "criterion": "Scales to millions", "text": "Built for large, live indexes", "rating": "good" },
+                { "criterion": "Hybrid keyword+vector", "text": "Native hybrid search", "rating": "good" }
+              ],
+              "whenToUse": "You want scale + low ops and can pay for a managed service.",
+              "cost": "$$ usage-based",
+              "complexity": "Low"
+            }
+          ]
+        },
+        {
+          "id": "m5-b2",
+          "kind": "knowledgeCheck",
+          "title": "Check your understanding",
+          "intro": "Four quick questions across the lesson. MCQs grade instantly; the written one reveals a model answer to compare.",
+          "questions": [
+            {
+              "id": "q1",
+              "kind": "mcq",
+              "prompt": "What is the main job RAG performs?",
+              "options": [
+                { "text": "Make the model train faster", "correct": false },
+                { "text": "Ground answers in retrieved, real passages", "correct": true },
+                { "text": "Compress documents to save tokens", "correct": false },
+                { "text": "Replace the need for a language model", "correct": false }
+              ],
+              "explanation": "RAG retrieves relevant passages and has the model answer from them, reducing hallucination."
+            },
+            {
+              "id": "q2",
+              "kind": "mcq",
+              "prompt": "Why add overlap between chunks?",
+              "options": [
+                { "text": "To make embeddings smaller", "correct": false },
+                { "text": "So a fact split across a boundary isn't lost", "correct": true },
+                { "text": "To remove duplicate documents", "correct": false }
+              ],
+              "explanation": "Overlap repeats a little text between neighboring chunks so boundary-spanning facts stay retrievable."
+            },
+            {
+              "id": "q3",
+              "kind": "mcq",
+              "prompt": "Your index wasn't refreshed after a policy change. Most likely result?",
+              "options": [
+                { "text": "The model refuses to answer", "correct": false },
+                { "text": "It grounds confidently in the stale passage", "correct": true },
+                { "text": "Retrieval returns nothing at all", "correct": false }
+              ],
+              "explanation": "Retrieval returns the old chunk, so the answer is fluent and wrong — why re-indexing on publish matters."
+            },
+            {
+              "id": "q4",
+              "kind": "freeText",
+              "prompt": "In one sentence, when would you reach for a re-ranker?",
+              "acceptableAnswer": "When the correct passage frequently exists in the candidate set but ranks too low for a small top-k, so re-ordering a larger candidate list surfaces it.",
+              "explanation": "Re-ranking helps recall when the right chunk is retrieved but not near the top."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "glossary": {
+    "rag": { "id": "rag", "label": "RAG", "acronymExpansion": "Retrieval-Augmented Generation", "laymanDefinition": "A pattern where the system first retrieves relevant passages from your documents, then asks the model to answer using them.", "technicalNote": "Decouples knowledge (the index) from reasoning (the model), so you update facts by re-indexing, not re-training." },
+    "hallucination": { "id": "hallucination", "label": "Hallucination", "laymanDefinition": "When a model states something false with full confidence because it is predicting plausible text, not checking facts." },
+    "context-window": { "id": "context-window", "label": "Context window", "laymanDefinition": "The maximum amount of text a model can consider at once — retrieved chunks plus the question plus the answer must fit inside it." },
+    "embedding": { "id": "embedding", "label": "Embedding", "laymanDefinition": "A list of numbers that represents a piece of text by meaning, so similar texts have nearby vectors.", "technicalNote": "Typically produced by an embedding model; similarity is measured by cosine distance or dot product." },
+    "vector-db": { "id": "vector-db", "label": "Vector database", "laymanDefinition": "A store built to save embeddings and find the nearest ones to a query vector quickly.", "technicalNote": "Uses approximate nearest-neighbor indexes (e.g., HNSW) to keep search fast at scale." },
+    "chunking": { "id": "chunking", "label": "Chunking", "laymanDefinition": "Splitting documents into smaller passages so retrieval can return precise, relevant pieces." },
+    "semantic-search": { "id": "semantic-search", "label": "Semantic search", "laymanDefinition": "Searching by meaning rather than exact keywords, by comparing embedding vectors." },
+    "top-k": { "id": "top-k", "label": "Top-k", "laymanDefinition": "The number of nearest passages you retrieve for a query — e.g., k=4 returns the four closest chunks." },
+    "reranking": { "id": "reranking", "label": "Re-ranking", "laymanDefinition": "A second pass that reorders a larger set of retrieved candidates to push the most relevant ones to the top." }
+  },
+  "synthesis": {
+    "recap": [
+      { "t": "p", "spans": [{ "text": "Before scrolling back: from memory, reconstruct the five pipeline stages in order, and say which one most determines retrieval quality." }] }
+    ],
+    "buildOrder": [
+      { "step": 1, "label": "Decide grounding is needed", "detail": "Confirm the answers must come from your own, changing documents." },
+      { "step": 2, "label": "Ingest & chunk", "detail": "Normalize docs; chunk ~400 tokens with overlap." },
+      { "step": 3, "label": "Embed & store", "detail": "Embed chunks; write them to your chosen vector store." },
+      { "step": 4, "label": "Retrieve & generate", "detail": "Top-k search + an answer-only-from-context prompt." },
+      { "step": 5, "label": "Measure & tune", "detail": "Watch recall; adjust chunk size, k, and re-ranking." }
+    ],
+    "checklist": [
+      { "id": "c1", "label": "Memory vs retrieval: is this question grounded in docs?", "fromModuleId": "m1" },
+      { "id": "c2", "label": "Chunk size & overlap chosen for precision vs context", "fromModuleId": "m3" },
+      { "id": "c3", "label": "k and re-ranking decided by measured recall", "fromModuleId": "m4" },
+      { "id": "c4", "label": "Vector store matched to your constraints", "fromModuleId": "m5" }
+    ],
+    "capstone": {
+      "prompt": "Index 20 of your help-center articles, then build answer(question) with k=4 and an answer-only-from-context prompt. Ask it three real customer questions — one it can answer, one with stale info, one it shouldn't know — and verify it cites, corrects, and declines respectively.",
+      "scopedTo": "a support assistant over your help-center docs"
+    }
+  },
+  "citations": {
+    "c1": { "id": "c1", "kind": "canonical", "title": "Lewis et al., Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks (2020)" },
+    "c2": { "id": "c2", "kind": "canonical", "title": "Vector database & embeddings — practitioner overview" }
+  }
+}

@@ -1,0 +1,483 @@
+<!doctype html>
+<!-- Adapted for standalone use: viewer runtime removed; rendered code-copy and navigation interactions rebound. -->
+
+<html><head><!-- frame-runtime --><!-- /frame-runtime --><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>LoRA Training by Hand</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+:root{
+  --bg:#F4F6F8; --card:#FFFFFF; --ink:#1A222C; --ink2:#4B5563; --muted:#75818E; --line:#D8DEE5; --line2:#EEF1F4;
+  --accent:#1F5FBF; --accent-bg:#E8F0FB; --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --grid:#E5E9EE; --chip:#EDF0F3;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#121519; --card:#1B2027; --ink:#E6EAEF; --ink2:#B7C0CA; --muted:#8A96A3; --line:#2C333C; --line2:#232932;
+  --accent:#6FA3F0; --accent-bg:#1E2A3D; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --grid:#262C34; --chip:#242A32;
+}}
+:root[data-theme="dark"]{
+  --bg:#121519; --card:#1B2027; --ink:#E6EAEF; --ink2:#B7C0CA; --muted:#8A96A3; --line:#2C333C; --line2:#232932;
+  --accent:#6FA3F0; --accent-bg:#1E2A3D; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --grid:#262C34; --chip:#242A32;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6}
+.wrap{max-width:1040px;margin:0 auto;padding-block:36px 64px;padding-inline:20px}
+header.top{display:grid;gap:14px;margin-bottom:28px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+h1{font-size:40px;line-height:1.1;margin:0;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:24px;margin:0 0 6px;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+h3{font-size:16px;margin:18px 0 8px;font-weight:600}
+p{margin:0 0 12px}
+.lead{font-size:18px;color:var(--ink2);max-width:66ch}
+.prose{max-width:68ch;color:var(--ink2)}
+.prose strong{color:var(--ink);font-weight:600}
+.spec{display:flex;flex-wrap:wrap;gap:8px 18px;font-family:var(--mono);font-size:13px;color:var(--ink2);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 0}
+.spec span b{color:var(--ink);font-weight:500}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;margin:6px 0 34px}
+nav.toc a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
+nav.toc a:hover,nav.toc a:focus-visible{border-bottom-color:var(--accent);outline:none}
+section{margin:0 0 44px;padding-top:8px;border-top:1px solid var(--line)}
+.stepno{font-family:var(--mono);font-size:13px;color:var(--muted);margin:14px 0 4px}
+.bench{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin:16px 0}
+.bench.flat{background:transparent}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 22px;margin-bottom:14px}
+.ctl{display:grid;gap:4px;font-size:14px;color:var(--ink2)}
+.ctl label{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ctl output,.num{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+input[type=number],select{font:inherit;font-family:var(--mono);font-size:14px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 8px;width:100%}
+input[type=number]{max-width:120px}
+button{font:inherit;font-size:14px;font-weight:500;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.radios{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;color:var(--ink2)}
+.radios label{display:flex;gap:6px;align-items:center;cursor:pointer}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font-weight:500;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-size:13px}
+td{padding:7px 8px;border-bottom:1px solid var(--line2);vertical-align:middle}
+td.num,th.num{text-align:right}
+.tokcell{font-family:var(--mono)}
+.bar{position:relative;height:10px;background:var(--line2);border-radius:3px;overflow:hidden;min-width:120px}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--s1);border-radius:0 3px 3px 0}
+.dbar{position:relative;height:10px;background:var(--line2);border-radius:3px;min-width:140px}
+.dbar em{position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--muted)}
+.dbar i{position:absolute;top:0;bottom:0}
+.dbar i.pos{left:50%;background:var(--s2);border-radius:0 3px 3px 0}
+.dbar i.neg{right:50%;background:var(--s1);border-radius:3px 0 0 3px}
+.readout{display:flex;flex-wrap:wrap;gap:10px 28px;margin:10px 0 4px;font-size:14px;color:var(--ink2)}
+.readout b{font-family:var(--mono);font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.big{font-family:var(--mono);font-size:30px;font-weight:500;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
+.note{font-size:14px;color:var(--ink2);border-left:3px solid var(--accent);padding:2px 0 2px 12px;margin:14px 0 0;max-width:70ch}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--ink2);margin:6px 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+svg text{font-family:var(--sans);font-size:12px;fill:var(--muted)}
+svg .lab{fill:var(--ink);font-weight:500}
+svg .axis{stroke:var(--line);stroke-width:1}
+svg .gridl{stroke:var(--grid);stroke-width:1}
+.chartwrap{overflow-x:auto}
+.mats{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.mat{font-family:var(--mono);font-size:13px}
+.mat .cap{font-family:var(--sans);font-size:13px;color:var(--muted);margin-bottom:6px}
+.mat .g{display:grid;gap:3px}
+.mat .g div{display:grid;grid-auto-flow:column;gap:3px}
+.mat .g span{background:var(--chip);border-radius:4px;padding:5px 4px;text-align:right;font-variant-numeric:tabular-nums}
+.mat .g span.hl{background:var(--accent-bg)}
+.mat input{width:50px;min-width:0;text-align:right;padding:4px 4px;font-size:12px}
+.strip{display:flex;flex-wrap:wrap;gap:5px;font-family:var(--mono);font-size:13px}
+.chipt{border:1px solid var(--line);border-radius:5px;padding:3px 7px;background:var(--chip);color:var(--muted)}
+.chipt.hdr{border-style:dashed}
+.chipt.sc{background:var(--s3);border-color:var(--s3);color:#fff}
+.chipt.end{font-weight:500}
+.cheat td:first-child{font-weight:500;color:var(--ink);white-space:nowrap}
+.cheat td{font-size:13.5px;color:var(--ink2)}
+.small{font-size:13px;color:var(--muted)}
+footer{border-top:1px solid var(--line);padding-top:16px;font-size:14px;color:var(--ink2)}
+@media (max-width:640px){ h1{font-size:32px} .bench{padding:14px} }
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Qwen movie lab · teaching page</div>
+  <h1>LoRA Training by Hand</h1>
+  <p class="lead">One forward pass, one loss, one weight update, one low-rank adapter, one decoding step. Every panel computes with numbers you can change. The defaults reproduce an archived Qwen experiment; its training run has not been reproduced for this edition.</p>
+  <div class="spec">
+    <span>base <b>Qwen3-1.7B-Base</b></span><span>layers <b>28</b></span><span>hidden <b>2048</b></span><span>vocab <b>151,936</b></span>
+    <span>LoRA <b>r 16 · α 32 · q_proj, v_proj</b></span><span>trainable <b>3,211,264 (0.19%)</b></span>
+    <span>CPT <b>lr 5e-5 · 200 updates · 4 windows each</b></span><span>SFT <b>lr 1e-4 · 100 updates · 4 conversations each</b></span>
+  </div>
+</header>
+<nav class="toc" aria-label="Sections">
+  <a href="#s1">1 Forward pass and loss</a><a href="#s2">2 The update</a><a href="#s3">3 LoRA</a><a href="#s4">4 CPT vs SFT labels</a><a href="#s5">5 Batches, accumulation, clipping</a><a href="#s6">6 Learning-rate schedule</a><a href="#s7">7 Decoding</a><a href="#s8">8 Hyperparameter cheat-sheet</a>
+</nav>
+
+<section id="s1">
+  <div class="stepno">Step 1 of 8</div>
+  <h2>Forward pass and loss: five tokens instead of 151,936</h2>
+  <div class="prose">
+    <p>The model reads the tokens so far and produces one number per vocabulary token, the <strong>logit</strong>. Softmax turns the logits into probabilities that sum to one. The <strong>loss</strong> for this position is the negative log of the probability given to the token that actually came next. A loss of 0.7 means the correct token had about 50% probability; a loss of 2.3 means about 10%.</p>
+    <p>The <strong>gradient</strong> with respect to the logits is simply <span class="num">p − onehot(target)</span>: the target's entry is negative, everyone else's is positive. The update subtracts the gradient, so the target logit goes up and every other logit goes down. That is the entire mechanism behind the stop-token story: when <span class="num">&lt;|im_end|&gt;</span> was the label, <span class="num">&lt;|endoftext|&gt;</span> was "everyone else" and got pushed down at every answer ending.</p>
+  </div>
+  <div class="bench">
+    <div class="controls" id="logitCtls"><div class="ctl"><label>logit for <span class="tokcell">The</span> <output id="lo0">1.2</output></label><input type="range" id="lg0" min="-4" max="6" step="0.1" value="1.2"></div><div class="ctl"><label>logit for <span class="tokcell">cat</span> <output id="lo1">2.4</output></label><input type="range" id="lg1" min="-4" max="6" step="0.1" value="2.4"></div><div class="ctl"><label>logit for <span class="tokcell">sat</span> <output id="lo2">0.8</output></label><input type="range" id="lg2" min="-4" max="6" step="0.1" value="0.8"></div><div class="ctl"><label>logit for <span class="tokcell">down</span> <output id="lo3">0.3</output></label><input type="range" id="lg3" min="-4" max="6" step="0.1" value="0.3"></div><div class="ctl"><label>logit for <span class="tokcell">&lt;eos&gt;</span> <output id="lo4">1.9</output></label><input type="range" id="lg4" min="-4" max="6" step="0.1" value="1.9"></div></div>
+    <div class="radios" id="targetRadios" role="radiogroup" aria-label="Target token"><label><input type="radio" name="target" value="0"> target next token: <span class="tokcell">The</span></label><label><input type="radio" name="target" value="1"> target next token: <span class="tokcell">cat</span></label><label><input type="radio" name="target" value="2" checked=""> target next token: <span class="tokcell">sat</span></label><label><input type="radio" name="target" value="3"> target next token: <span class="tokcell">down</span></label><label><input type="radio" name="target" value="4"> target next token: <span class="tokcell">&lt;eos&gt;</span></label></div>
+    <table style="margin-top:12px" aria-label="Forward pass table"><thead><tr><th>token</th><th class="num">logit z</th><th>probability p</th><th class="num">p</th><th>gradient ∂L/∂z = p − y</th><th class="num">value</th></tr></thead><tbody id="fwdBody"><tr><td class="tokcell">The</td><td class="num">1.2</td><td><div class="bar"><i style="width:13.49%"></i></div></td><td class="num">13.5%</td><td><div class="dbar"><em></em><i class="pos" style="width:7.42%"></i></div></td><td class="num">+0.135</td></tr><tr><td class="tokcell">cat</td><td class="num">2.4</td><td><div class="bar"><i style="width:44.80%"></i></div></td><td class="num">44.8%</td><td><div class="dbar"><em></em><i class="pos" style="width:24.63%"></i></div></td><td class="num">+0.448</td></tr><tr style="background:var(--accent-bg)"><td class="tokcell">sat <span class="small">target</span></td><td class="num">0.8</td><td><div class="bar"><i style="width:9.05%"></i></div></td><td class="num">9.0%</td><td><div class="dbar"><em></em><i class="neg" style="width:50.00%"></i></div></td><td class="num">-0.910</td></tr><tr><td class="tokcell">down</td><td class="num">0.3</td><td><div class="bar"><i style="width:5.49%"></i></div></td><td class="num">5.5%</td><td><div class="dbar"><em></em><i class="pos" style="width:3.02%"></i></div></td><td class="num">+0.055</td></tr><tr><td class="tokcell">&lt;eos&gt;</td><td class="num">1.9</td><td><div class="bar"><i style="width:27.17%"></i></div></td><td class="num">27.2%</td><td><div class="dbar"><em></em><i class="pos" style="width:14.94%"></i></div></td><td class="num">+0.272</td></tr></tbody></table>
+    <div class="readout"><span>loss = −ln p(target) = <b id="lossOut">2.403</b> nats</span><span>perplexity = e<sup>loss</sup> = <b id="pplOut">11.06</b></span><span>greedy pick = <b id="argmaxOut">cat</b></span></div>
+    <div class="legend"><span><i style="background:var(--s1)"></i>negative gradient: update raises this logit</span><span><i style="background:var(--s2)"></i>positive gradient: update lowers this logit</span></div>
+  </div>
+  <p class="note">Move the <span class="num">&lt;eos&gt;</span> logit high and choose another target: its gradient becomes the largest positive value in the table. That is how one hundred updates took the Base's stop token from 42.8% down to 0.6% after a finished answer.</p>
+</section>
+
+<section id="s2">
+  <div class="stepno">Step 2 of 8</div>
+  <h2>The update: how far one weight moves per step</h2>
+  <div class="prose">
+    <p>Plain gradient descent moves each weight by <span class="num">learning rate × gradient</span>. AdamW, used in this teaching example, divides the gradient by a running estimate of its own size, so each weight moves by roughly the <strong>learning rate itself</strong> per step, in the direction the gradient has been pointing. A useful bound follows: after N steps no weight has travelled more than about <span class="num">lr × N</span>. The archived CPT example allowed <span class="num">5e-5 × 200 = 0.01</span> per weight; the archived SFT example allowed <span class="num">1e-4 × 100 = 0.01</span>.</p>
+    <p>A change of 0.01 in one weight is invisible. In Qwen a logit is a sum over 2048 hidden dimensions and 28 layers, so thousands of tiny coordinated changes add up. The slider for <strong>weights per logit</strong> imitates that: every one of the k weights receives the same gradient and moves together.</p>
+  </div>
+  <div class="bench">
+    <div class="controls">
+      <div class="ctl"><label>learning rate <output id="lrOut">1e-4</output></label><select id="lrSel"><option value="0.00001">1e-5</option><option value="0.00002">2e-5</option><option value="0.00005">5e-5</option><option value="0.0001" selected="">1e-4</option><option value="0.0002">2e-4</option><option value="0.0005">5e-4</option><option value="0.001">1e-3</option><option value="0.01">1e-2</option></select></div>
+      <div class="ctl"><label>updates N <output id="stepsOut">100</output></label><input type="range" id="steps" min="1" max="1000" step="1" value="100"></div>
+      <div class="ctl"><label>weights per logit k <output id="kOut">1</output></label><input type="range" id="kw" min="0" max="11" step="1" value="0"><span class="small">powers of two up to 2048, the hidden width</span></div>
+      <div class="ctl"><label>weight decay</label><select id="wdSel"><option value="0">0</option><option value="0.01" selected="">0.01 (the archived examples)</option><option value="0.1">0.1</option></select></div>
+    </div>
+    <div class="legend"><span><i style="background:var(--s1)"></i>plain gradient descent</span><span><i style="background:var(--s2)"></i>AdamW</span></div>
+    <div class="chartwrap"><svg id="updChart" width="100%" viewBox="0 0 680 230" role="img" aria-label="Loss over updates for gradient descent and AdamW on the toy problem"><line class="gridl" x1="44" y1="190.0" x2="640" y2="190.0"></line><text x="38" y="194.0" text-anchor="end">0.00</text><line class="gridl" x1="44" y1="146.5" x2="640" y2="146.5"></line><text x="38" y="150.5" text-anchor="end">0.69</text><line class="gridl" x1="44" y1="103.0" x2="640" y2="103.0"></line><text x="38" y="107.0" text-anchor="end">1.38</text><line class="gridl" x1="44" y1="59.5" x2="640" y2="59.5"></line><text x="38" y="63.5" text-anchor="end">2.07</text><line class="gridl" x1="44" y1="16.0" x2="640" y2="16.0"></line><text x="38" y="20.0" text-anchor="end">2.76</text><line class="axis" x1="44" y1="190" x2="640" y2="190"></line><text x="44.0" y="206" text-anchor="middle">0</text><text x="193.0" y="206" text-anchor="middle">25</text><text x="342.0" y="206" text-anchor="middle">50</text><text x="491.0" y="206" text-anchor="middle">75</text><text x="640.0" y="206" text-anchor="middle">100</text><text x="640" y="220" text-anchor="end">update</text><text x="44" y="12">loss (nats)</text><path d="M44.0 38.7 L50.0 38.7 L56.0 38.7 L62.1 38.7 L68.1 38.7 L74.1 38.7 L80.1 38.7 L86.1 38.7 L92.2 38.8 L98.2 38.8 L104.2 38.8 L110.2 38.8 L116.2 38.8 L122.3 38.8 L128.3 38.8 L134.3 38.8 L140.3 38.8 L146.3 38.8 L152.4 38.8 L158.4 38.8 L164.4 38.8 L170.4 38.8 L176.4 38.9 L182.5 38.9 L188.5 38.9 L194.5 38.9 L200.5 38.9 L206.5 38.9 L212.6 38.9 L218.6 38.9 L224.6 38.9 L230.6 38.9 L236.6 38.9 L242.7 38.9 L248.7 38.9 L254.7 38.9 L260.7 39.0 L266.7 39.0 L272.8 39.0 L278.8 39.0 L284.8 39.0 L290.8 39.0 L296.8 39.0 L302.9 39.0 L308.9 39.0 L314.9 39.0 L320.9 39.0 L326.9 39.0 L333.0 39.0 L339.0 39.0 L345.0 39.0 L351.0 39.1 L357.1 39.1 L363.1 39.1 L369.1 39.1 L375.1 39.1 L381.1 39.1 L387.2 39.1 L393.2 39.1 L399.2 39.1 L405.2 39.1 L411.2 39.1 L417.3 39.1 L423.3 39.1 L429.3 39.1 L435.3 39.2 L441.3 39.2 L447.4 39.2 L453.4 39.2 L459.4 39.2 L465.4 39.2 L471.4 39.2 L477.5 39.2 L483.5 39.2 L489.5 39.2 L495.5 39.2 L501.5 39.2 L507.6 39.2 L513.6 39.2 L519.6 39.3 L525.6 39.3 L531.6 39.3 L537.7 39.3 L543.7 39.3 L549.7 39.3 L555.7 39.3 L561.7 39.3 L567.8 39.3 L573.8 39.3 L579.8 39.3 L585.8 39.3 L591.8 39.3 L597.9 39.3 L603.9 39.4 L609.9 39.4 L615.9 39.4 L621.9 39.4 L628.0 39.4 L634.0 39.4 L640.0 39.4" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path><path d="M44.0 38.7 L50.0 38.7 L56.0 38.7 L62.1 38.7 L68.1 38.7 L74.1 38.8 L80.1 38.8 L86.1 38.8 L92.2 38.8 L98.2 38.8 L104.2 38.8 L110.2 38.8 L116.2 38.8 L122.3 38.8 L128.3 38.9 L134.3 38.9 L140.3 38.9 L146.3 38.9 L152.4 38.9 L158.4 38.9 L164.4 38.9 L170.4 38.9 L176.4 38.9 L182.5 39.0 L188.5 39.0 L194.5 39.0 L200.5 39.0 L206.5 39.0 L212.6 39.0 L218.6 39.0 L224.6 39.0 L230.6 39.1 L236.6 39.1 L242.7 39.1 L248.7 39.1 L254.7 39.1 L260.7 39.1 L266.7 39.1 L272.8 39.1 L278.8 39.1 L284.8 39.2 L290.8 39.2 L296.8 39.2 L302.9 39.2 L308.9 39.2 L314.9 39.2 L320.9 39.2 L326.9 39.2 L333.0 39.2 L339.0 39.3 L345.0 39.3 L351.0 39.3 L357.1 39.3 L363.1 39.3 L369.1 39.3 L375.1 39.3 L381.1 39.3 L387.2 39.3 L393.2 39.4 L399.2 39.4 L405.2 39.4 L411.2 39.4 L417.3 39.4 L423.3 39.4 L429.3 39.4 L435.3 39.4 L441.3 39.5 L447.4 39.5 L453.4 39.5 L459.4 39.5 L465.4 39.5 L471.4 39.5 L477.5 39.5 L483.5 39.5 L489.5 39.5 L495.5 39.6 L501.5 39.6 L507.6 39.6 L513.6 39.6 L519.6 39.6 L525.6 39.6 L531.6 39.6 L537.7 39.6 L543.7 39.6 L549.7 39.7 L555.7 39.7 L561.7 39.7 L567.8 39.7 L573.8 39.7 L579.8 39.7 L585.8 39.7 L591.8 39.7 L597.9 39.7 L603.9 39.8 L609.9 39.8 L615.9 39.8 L621.9 39.8 L628.0 39.8 L634.0 39.8 L640.0 39.8" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path><text class="lab" x="644" y="32.6" dominant-baseline="central" style="fill:var(--s1)">GD</text><text class="lab" x="644" y="46.6" dominant-baseline="central" style="fill:var(--s2)">Adam</text></svg></div>
+    <div class="readout"><span>after N updates, AdamW: loss <b id="adLoss">2.385</b>, p(target) <b id="adP">9.2%</b>, p(&lt;eos&gt;) <b id="adPe">27.1%</b></span><span>largest single-weight move <b id="adW">1.00e-2</b> against the bound lr × N = <b id="bound">1.00e-2</b></span></div>
+    <div class="readout"><span>plain descent: loss <b id="sgLoss">2.392</b>, largest move <b id="sgW">9.09e-3</b></span></div>
+  </div>
+  <p class="note">Keep lr at 1e-4 and 100 updates, then raise k to 2048. The same per-weight travel now changes the logits by units, not hundredths. This is why 100 updates were enough to rewrite the answer style of a 1.7 billion parameter model, and why they were nowhere near enough to store thousands of one-off facts: style is a coordinated push in one direction; each fact is its own direction.</p>
+</section>
+
+<section id="s3">
+  <div class="stepno">Step 3 of 8</div>
+  <h2>LoRA: the update is a product of two thin matrices</h2>
+  <div class="prose">
+    <p>A full fine-tune would change every entry of a weight matrix W. LoRA keeps W frozen and adds a correction <span class="num">ΔW = (α / r) · B · A</span>, where A is r × d<sub>in</sub> and B is d<sub>out</sub> × r. Only A and B train. B starts as zeros, so at step 0 the model is exactly the base. During the forward pass the layer computes <span class="num">W·x + (α/r)·B·(A·x)</span>; for inference the two can be merged into one matrix with no extra cost.</p>
+    <p>The rank r caps how many independent directions the correction can contain. Every row of B·A is a multiple of the same r row-vectors of A. Small r is cheap and hard to overfit; it is also why attention-only, rank-16 adapters reshape style easily but store facts poorly.</p>
+  </div>
+  <div class="bench">
+    <h3 style="margin-top:0">Parameter calculator for Qwen3-1.7B</h3>
+    <div class="controls">
+      <div class="ctl"><label>rank r <output id="rOut">16</output></label><input type="range" id="rank" min="0" max="7" step="1" value="4"></div>
+      <div class="ctl"><label>alpha α <output id="aOut">32</output></label><input type="range" id="alpha" min="1" max="256" step="1" value="32"></div>
+      <div class="ctl"><label>target modules</label><div class="radios" id="mods"><label><input type="checkbox" id="mod0" checked=""> <span class="tokcell">q_proj</span> <span class="small">2048→2048</span></label><label><input type="checkbox" id="mod1"> <span class="tokcell">k_proj</span> <span class="small">2048→1024</span></label><label><input type="checkbox" id="mod2" checked=""> <span class="tokcell">v_proj</span> <span class="small">2048→1024</span></label><label><input type="checkbox" id="mod3"> <span class="tokcell">o_proj</span> <span class="small">2048→2048</span></label><label><input type="checkbox" id="mod4"> <span class="tokcell">gate_proj</span> <span class="small">2048→6144</span></label><label><input type="checkbox" id="mod5"> <span class="tokcell">up_proj</span> <span class="small">2048→6144</span></label><label><input type="checkbox" id="mod6"> <span class="tokcell">down_proj</span> <span class="small">6144→2048</span></label></div></div>
+    </div>
+    <div class="readout"><span>trainable parameters <b id="trainOut">3,211,264</b></span><span>share of the 1,720,574,976 base weights <b id="pctOut">0.187%</b></span><span>adapter file in float32 <b id="mbOut">12.8</b> MB</span></div>
+    <div class="readout"><span>scale α / r = <b id="scaleOut">2.00</b></span><span>full fine-tune of the same modules would train <b id="fullOut">176,160,768</b> parameters</span></div>
+    <h3>A rank-1 correction on a 4 × 4 weight</h3>
+    <p class="small">Edit A and B. Each cell of ΔW is B<sub>i</sub> × A<sub>j</sub>, so every row of ΔW is a multiple of A. The real adapter adds sixteen such products per matrix.</p>
+    <div class="mats" id="mats"><div class="mat"><div class="cap">W, frozen 4 × 4</div><div class="g"><div><span>+0.20</span><span>-0.10</span><span>+0.40</span><span>+0.00</span></div><div><span>+0.10</span><span>+0.30</span><span>-0.20</span><span>+0.50</span></div><div><span>-0.30</span><span>+0.20</span><span>+0.10</span><span>+0.10</span></div><div><span>+0.00</span><span>+0.40</span><span>+0.30</span><span>-0.20</span></div></div></div><div class="mat"><div class="cap">A, 1 × 4 (editable)</div><div class="g"><div><input type="number" step="0.5" value="1" data-a="0" aria-label="A 1"><input type="number" step="0.5" value="0" data-a="1" aria-label="A 2"><input type="number" step="0.5" value="-1" data-a="2" aria-label="A 3"><input type="number" step="0.5" value="2" data-a="3" aria-label="A 4"></div></div><div class="cap" style="margin-top:10px">B, 4 × 1 (editable)</div><div class="g"><div><input type="number" step="0.5" value="0.5" data-b="0" aria-label="B 1"></div><div><input type="number" step="0.5" value="-1" data-b="1" aria-label="B 2"></div><div><input type="number" step="0.5" value="0" data-b="2" aria-label="B 3"></div><div><input type="number" step="0.5" value="2" data-b="3" aria-label="B 4"></div></div></div><div class="mat"><div class="cap">ΔW = B · A, rank 1: each row is a multiple of A</div><div class="g"><div><span class="hl">+0.50</span><span class="hl">+0.00</span><span class="hl">-0.50</span><span class="hl">+1.00</span></div><div><span class="hl">-1.00</span><span class="hl">+0.00</span><span class="hl">+1.00</span><span class="hl">-2.00</span></div><div><span class="hl">+0.00</span><span class="hl">+0.00</span><span class="hl">+0.00</span><span class="hl">+0.00</span></div><div><span class="hl">+2.00</span><span class="hl">+0.00</span><span class="hl">-2.00</span><span class="hl">+4.00</span></div></div></div><div class="mat"><div class="cap">W + (α/r) · B · A, the merged weight</div><div class="g"><div><span>+1.20</span><span>-0.10</span><span>-0.60</span><span>+2.00</span></div><div><span>-1.90</span><span>+0.30</span><span>+1.80</span><span>-3.50</span></div><div><span>-0.30</span><span>+0.20</span><span>+0.10</span><span>+0.10</span></div><div><span>+4.00</span><span>+0.40</span><span>-3.70</span><span>+7.80</span></div></div></div></div>
+    <div class="readout" style="margin-top:12px"><button id="zeroB" type="button">Set B to zeros (step 0)</button><button id="restoreB" type="button">Restore B</button><span>toy α / r = <b>2</b></span></div>
+  </div>
+</section>
+
+<section id="s4">
+  <div class="stepno">Step 4 of 8</div>
+  <h2>CPT vs SFT: the same loss, a different mask</h2>
+  <div class="prose">
+    <p>Both stages use exactly the loss and update from steps 1 and 2. The only difference is <strong>which positions count</strong>. Continued pretraining scores every token of the document. Supervised fine-tuning sets the label to −100 for the system text, the user text and the role headers, so only the assistant's answer and its ending token contribute. The prompt still matters: the answer tokens attend to it, so the adapter learns to <em>use</em> the prompt rather than to <em>predict</em> it.</p>
+    <p>The loss for one example is the average over scored positions. In your practice data the ending token is one of about 40 scored tokens per answer, so it carries about 2% of the signal.</p>
+  </div>
+  <div class="bench">
+    <div class="controls">
+      <div class="ctl"><label>stage</label><div class="radios"><label><input type="radio" name="stage" value="sft" checked=""> SFT: assistant only</label><label><input type="radio" name="stage" value="cpt"> CPT: every token</label></div></div>
+      <div class="ctl"><label>assistant ending token</label><div class="radios"><label><input type="radio" name="endtok" value="im_end" checked=""> &lt;|im_end|&gt; (example A)</label><label><input type="radio" name="endtok" value="eot"> &lt;|endoftext|&gt; (example B)</label></div></div>
+    </div>
+    <div class="strip" id="strip" aria-label="Token strip with scored positions highlighted"><span class="chipt hdr">&lt;|im_start|&gt;system</span><span class="chipt">You</span><span class="chipt">answer</span><span class="chipt">movie</span><span class="chipt">questions.</span><span class="chipt">&lt;|im_end|&gt;</span><span class="chipt hdr">&lt;|im_start|&gt;user</span><span class="chipt">Who</span><span class="chipt">directed</span><span class="chipt">Inception?</span><span class="chipt">&lt;|im_end|&gt;</span><span class="chipt hdr">&lt;|im_start|&gt;assistant</span><span class="chipt sc">Christopher</span><span class="chipt sc">Nolan</span><span class="chipt sc">.</span><span class="chipt sc end">&lt;|im_end|&gt;</span></div>
+    <div class="legend" style="margin-top:10px"><span><i style="background:var(--s3)"></i>scored: its prediction is in the loss</span><span><i style="background:var(--chip);border:1px solid var(--line)"></i>label −100: ignored</span><span><i style="background:var(--chip);border:1px dashed var(--line)"></i>role header</span></div>
+    <div class="readout"><span>scored positions <b id="scoredOut">4</b> of <b id="totalOut">16</b></span><span>example loss = (1 / <b id="nOut">4</b>) · Σ −ln p over the scored positions</span><span>the ending token is <b id="endShare">1 of 4 (25%)</b> of the scored signal</span></div>
+  </div>
+  <p class="note">In the Base weights the <span class="num">&lt;|im_end|&gt;</span> row is an untrained placeholder identical to 93 other rows, and the adapter never touches embedding rows. Training toward it lowered <span class="num">&lt;|endoftext|&gt;</span> without making <span class="num">&lt;|im_end|&gt;</span> reachable. Example B switched the ending to the token the Base already knows, and the loop disappeared.</p>
+</section>
+
+<section id="s5">
+  <div class="stepno">Step 5 of 8</div>
+  <h2>Batches, accumulation and clipping</h2>
+  <div class="prose">
+    <p>One update in the archived example sees four examples: micro-batch size 1, accumulated four times. The gradients are added before the optimizer step, so accumulation is a way to get a larger batch with the memory of a small one. The example weights each micro-batch by its share of scored tokens, so a 200-token answer and a 40-token answer contribute per token, not per example.</p>
+    <p><strong>Gradient clipping</strong> measures the length of the whole gradient vector and, if it exceeds 1.0, scales every entry down by the same factor. Your CPT gradients had norms around 0.4 to 1.1 and were mostly untouched. Your SFT gradients had norms of 3 to 4.5 at every step, so every update was scaled to roughly a third before AdamW saw it. With AdamW the effect is mild, because the optimizer normalises by gradient size anyway.</p>
+  </div>
+  <div class="bench">
+    <div class="controls">
+      <div class="ctl"><label>micro-batch 1 tokens <output id="n1Out">40</output></label><input type="range" id="n1" min="5" max="400" step="5" value="40"></div>
+      <div class="ctl"><label>micro-batch 1 mean loss <output id="l1Out">2.0</output></label><input type="range" id="l1" min="0.1" max="4" step="0.1" value="2"></div>
+      <div class="ctl"><label>micro-batch 2 tokens <output id="n2Out">200</output></label><input type="range" id="n2" min="5" max="400" step="5" value="200"></div>
+      <div class="ctl"><label>micro-batch 2 mean loss <output id="l2Out">1.0</output></label><input type="range" id="l2" min="0.1" max="4" step="0.1" value="1"></div>
+    </div>
+    <div class="readout"><span>average of the two means <b id="naive">1.500</b></span><span>token-weighted, what the notebook computes <b id="weighted">1.167</b></span><span>each token of batch 1 weighs <b id="w1">5.00</b>× a token of batch 2 under naive averaging</span></div>
+    <div class="controls" style="margin-top:16px">
+      <div class="ctl"><label>gradient norm before clipping <output id="gnOut">3.5</output></label><input type="range" id="gn" min="0.1" max="8" step="0.1" value="3.5"></div>
+      <div class="ctl"><label>max_grad_norm</label><input type="number" id="clip" min="0.1" max="10" step="0.1" value="1.0"></div>
+    </div>
+    <div class="readout"><span>scale factor applied to every gradient entry <b id="clipOut">0.286</b></span><span>norm after clipping <b id="normAfter">1.00</b></span></div>
+  </div>
+</section>
+
+<section id="s6">
+  <div class="stepno">Step 6 of 8</div>
+  <h2>Learning-rate schedule: warm up, then cool down</h2>
+  <div class="prose">
+    <p>The learning rate is not constant. A short <strong>warmup</strong> lets AdamW's running estimates settle before full-size steps; then the rate decays so the last updates make small corrections instead of overshooting. The example uses a straight-line decay to zero; the command-line trainer uses a cosine curve. Archived SFT example: peak 1e-4, warmup 2 updates, 100 updates, ending at about 1e-6.</p>
+  </div>
+  <div class="bench">
+    <div class="controls">
+      <div class="ctl"><label>peak learning rate</label><select id="peakSel"><option value="0.00005">5e-5 (CPT)</option><option value="0.0001" selected="">1e-4 (SFT)</option><option value="0.0002">2e-4</option></select></div>
+      <div class="ctl"><label>warmup updates <output id="wuOut">2</output></label><input type="range" id="wu" min="0" max="30" step="1" value="2"></div>
+      <div class="ctl"><label>total updates <output id="totOut">100</output></label><input type="range" id="tot" min="20" max="400" step="10" value="100"></div>
+      <div class="ctl"><label>shape</label><div class="radios"><label><input type="radio" name="shape" value="linear" checked=""> linear (notebooks)</label><label><input type="radio" name="shape" value="cosine"> cosine (CLI)</label></div></div>
+    </div>
+    <div class="chartwrap"><svg id="lrChart" width="100%" viewBox="0 0 680 210" role="img" aria-label="Learning rate per update"><line class="gridl" x1="56" y1="170.0" x2="640" y2="170.0"></line><text x="50" y="174.0" text-anchor="end">0.0e+0</text><line class="gridl" x1="56" y1="131.5" x2="640" y2="131.5"></line><text x="50" y="135.5" text-anchor="end">2.5e-5</text><line class="gridl" x1="56" y1="93.0" x2="640" y2="93.0"></line><text x="50" y="97.0" text-anchor="end">5.0e-5</text><line class="gridl" x1="56" y1="54.5" x2="640" y2="54.5"></line><text x="50" y="58.5" text-anchor="end">7.5e-5</text><line class="gridl" x1="56" y1="16.0" x2="640" y2="16.0"></line><text x="50" y="20.0" text-anchor="end">1.0e-4</text><line class="axis" x1="56" y1="170" x2="640" y2="170"></line><text x="56.0" y="186" text-anchor="middle">0</text><text x="202.0" y="186" text-anchor="middle">25</text><text x="348.0" y="186" text-anchor="middle">50</text><text x="494.0" y="186" text-anchor="middle">75</text><text x="640.0" y="186" text-anchor="middle">100</text><text x="640" y="200" text-anchor="end">update</text><text x="56" y="12">learning rate</text><path d="M56.0 93.0 L61.9 16.0 L67.8 16.0 L73.7 17.6 L79.6 19.1 L85.5 20.7 L91.4 22.3 L97.3 23.9 L103.2 25.4 L109.1 27.0 L115.0 28.6 L120.9 30.1 L126.8 31.7 L132.7 33.3 L138.6 34.9 L144.5 36.4 L150.4 38.0 L156.3 39.6 L162.2 41.1 L168.1 42.7 L174.0 44.3 L179.9 45.9 L185.8 47.4 L191.7 49.0 L197.6 50.6 L203.5 52.1 L209.4 53.7 L215.3 55.3 L221.2 56.9 L227.1 58.4 L233.0 60.0 L238.9 61.6 L244.8 63.1 L250.7 64.7 L256.6 66.3 L262.5 67.9 L268.4 69.4 L274.3 71.0 L280.2 72.6 L286.1 74.1 L292.0 75.7 L297.9 77.3 L303.8 78.9 L309.7 80.4 L315.6 82.0 L321.5 83.6 L327.4 85.1 L333.3 86.7 L339.2 88.3 L345.1 89.9 L350.9 91.4 L356.8 93.0 L362.7 94.6 L368.6 96.1 L374.5 97.7 L380.4 99.3 L386.3 100.9 L392.2 102.4 L398.1 104.0 L404.0 105.6 L409.9 107.1 L415.8 108.7 L421.7 110.3 L427.6 111.9 L433.5 113.4 L439.4 115.0 L445.3 116.6 L451.2 118.1 L457.1 119.7 L463.0 121.3 L468.9 122.9 L474.8 124.4 L480.7 126.0 L486.6 127.6 L492.5 129.1 L498.4 130.7 L504.3 132.3 L510.2 133.9 L516.1 135.4 L522.0 137.0 L527.9 138.6 L533.8 140.1 L539.7 141.7 L545.6 143.3 L551.5 144.9 L557.4 146.4 L563.3 148.0 L569.2 149.6 L575.1 151.1 L581.0 152.7 L586.9 154.3 L592.8 155.9 L598.7 157.4 L604.6 159.0 L610.5 160.6 L616.4 162.1 L622.3 163.7 L628.2 165.3 L634.1 166.9 L640.0 168.4" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round"></path></svg></div>
+    <div class="readout"><span>sum of learning rates over the run, the per-weight travel budget <b id="lrSum">5.10e-3</b></span></div>
+  </div>
+</section>
+
+<section id="s7">
+  <div class="stepno">Step 7 of 8</div>
+  <h2>Decoding: how an answer ends</h2>
+  <div class="prose">
+    <p>Inference repeats one forward pass per token. The model outputs probabilities for the next token; a decoding rule picks one; the pick is appended and the loop continues until a <strong>stop token</strong> is produced or <span class="num">max_new_tokens</span> is reached. <strong>Greedy</strong> decoding always takes the highest probability. <strong>Sampling</strong> draws in proportion to the probabilities after dividing the logits by a <strong>temperature</strong>: below 1 sharpens, above 1 flattens. Neither rule can produce a stop token the model has not learned to make likely.</p>
+    <p><span class="num">min_new_tokens</span> exists, and it works by forbidding the stop token for the first N picks. The panel shows what that does: the mass moves to the second-best token, which is how a model that wanted to stop restarts its sentence instead.</p>
+  </div>
+  <div class="bench">
+    <div class="controls">
+      <div class="ctl"><label>temperature <output id="tOut">1.0</output></label><input type="range" id="temp" min="0.1" max="2" step="0.1" value="1"></div>
+      <div class="ctl"><label>&nbsp;</label><label style="justify-content:flex-start;gap:8px"><input type="checkbox" id="forbid"> forbid &lt;eos&gt; for this pick (min_new_tokens)</label></div>
+      <div class="ctl"><label>&nbsp;</label><div><button id="sampleBtn" type="button">Sample one token</button></div></div>
+    </div>
+    <p class="small">Uses the logits from step 1. Greedy pick and sample are computed from the probabilities shown.</p>
+    <table aria-label="Decoding probabilities"><thead><tr><th>token</th><th>probability at this temperature</th><th class="num">p</th></tr></thead><tbody id="decBody"><tr><td class="tokcell">The</td><td><div class="bar"><i style="width:13.49%;"></i></div></td><td class="num">13.5%</td></tr><tr style="background:var(--accent-bg)"><td class="tokcell">cat</td><td><div class="bar"><i style="width:44.80%;"></i></div></td><td class="num">44.8%</td></tr><tr><td class="tokcell">sat</td><td><div class="bar"><i style="width:9.05%;"></i></div></td><td class="num">9.0%</td></tr><tr><td class="tokcell">down</td><td><div class="bar"><i style="width:5.49%;"></i></div></td><td class="num">5.5%</td></tr><tr><td class="tokcell">&lt;eos&gt;</td><td><div class="bar"><i style="width:27.17%;background:var(--s2)"></i></div></td><td class="num">27.2%</td></tr></tbody></table>
+    <div class="readout"><span>greedy picks <b id="greedyOut">cat</b></span><span>last sample <b id="sampleOut">·</b></span><span>samples so far <b id="sampleHist">none yet</b></span></div>
+  </div>
+  <div class="bench flat">
+    <h3 style="margin-top:0">Archived numeric example after the answer "Christopher Nolan."</h3>
+    <p class="small">Top next-token probabilities from a read-only forward pass, greedy decoding. Bars share one scale.</p>
+    <div id="realDists"><div class="mats"><div><div class="cap small" style="margin-bottom:6px">Base, no adapter</div><table><tbody><tr><td class="tokcell" style="padding:4px 6px">&lt;|endoftext|&gt;</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:42.82%;background:var(--s2)"></i></div></td><td class="num" style="padding:4px 6px">42.82%</td></tr><tr><td class="tokcell" style="padding:4px 6px"> Answer</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:1.21%;"></i></div></td><td class="num" style="padding:4px 6px">1.21%</td></tr><tr><td class="tokcell" style="padding:4px 6px">.slf</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:0.94%;"></i></div></td><td class="num" style="padding:4px 6px">0.94%</td></tr><tr><td class="tokcell" style="padding:4px 6px">.RemoveEmptyEntries</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:0.85%;"></i></div></td><td class="num" style="padding:4px 6px">0.85%</td></tr><tr><td class="tokcell" style="padding:4px 6px"> AssemblyDescription</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:0.82%;"></i></div></td><td class="num" style="padding:4px 6px">0.82%</td></tr></tbody></table></div><div><div class="cap small" style="margin-bottom:6px">CPT + SFT trained toward &lt;|im_end|&gt;</div><table><tbody><tr><td class="tokcell" style="padding:4px 6px">气候</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:2.53%;"></i></div></td><td class="num" style="padding:4px 6px">2.53%</td></tr><tr><td class="tokcell" style="padding:4px 6px">依法追究</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:2.13%;"></i></div></td><td class="num" style="padding:4px 6px">2.13%</td></tr><tr><td class="tokcell" style="padding:4px 6px">.Promise</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:1.45%;"></i></div></td><td class="num" style="padding:4px 6px">1.45%</td></tr><tr><td class="tokcell" style="padding:4px 6px"> The</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:1.20%;"></i></div></td><td class="num" style="padding:4px 6px">1.20%</td></tr><tr><td class="tokcell" style="padding:4px 6px"> الاستث</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:0.91%;"></i></div></td><td class="num" style="padding:4px 6px">0.91%</td></tr><tr><td class="tokcell" style="padding:4px 6px">&lt;|endoftext|&gt;</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:0.58%;background:var(--s2)"></i></div></td><td class="num" style="padding:4px 6px">0.58%</td></tr><tr><td class="tokcell" style="padding:4px 6px">&lt;|im_end|&gt;</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:0.00%;background:var(--s2)"></i></div></td><td class="num" style="padding:4px 6px">0.004%</td></tr></tbody></table></div><div><div class="cap small" style="margin-bottom:6px">CPT + SFT trained toward &lt;|endoftext|&gt;</div><table><tbody><tr><td class="tokcell" style="padding:4px 6px">&lt;|endoftext|&gt;</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:98.15%;background:var(--s2)"></i></div></td><td class="num" style="padding:4px 6px">98.15%</td></tr><tr><td class="tokcell" style="padding:4px 6px"> Christopher</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:0.67%;"></i></div></td><td class="num" style="padding:4px 6px">0.67%</td></tr><tr><td class="tokcell" style="padding:4px 6px"> (</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:0.47%;"></i></div></td><td class="num" style="padding:4px 6px">0.47%</td></tr></tbody></table></div></div><div class="legend" style="margin-top:8px"><span><i style="background:var(--s2)"></i>stop tokens</span><span><i style="background:var(--s1)"></i>other tokens</span></div></div>
+  </div>
+</section>
+
+<section id="s8">
+  <div class="stepno">Step 8 of 8</div>
+  <h2>Hyperparameter cheat-sheet</h2>
+  <div class="prose"><p>What each knob does, what goes wrong at either extreme, and what the archived examples used.</p></div>
+  <div class="bench" style="padding:0;overflow-x:auto">
+  <table class="cheat">
+    <thead><tr><th>knob</th><th>what it controls</th><th>too low</th><th>too high</th><th>the archived examples</th></tr></thead>
+    <tbody>
+      <tr><td>learning rate</td><td>size of each AdamW step per weight</td><td>nothing changes in the budget you have</td><td>style overwritten fast, facts still not learned, loss spikes</td><td>CPT 5e-5, SFT 1e-4</td></tr>
+      <tr><td>updates / epochs</td><td>how many times weights move; epochs = passes over the data</td><td>format learned, content not</td><td>memorises the training answers, validation loss rises</td><td>CPT 200 = 6% of a pass; SFT 100 ≈ 1.05 epochs</td></tr>
+      <tr><td>tokens per update</td><td>batch × accumulation × sequence; how much evidence one step averages</td><td>noisy steps, unstable</td><td>fewer updates per token budget, slower learning per token</td><td>CPT ≈ 840, SFT ≈ 190 scored tokens</td></tr>
+      <tr><td>sequence length</td><td>context the model sees and memory attention uses</td><td>answers truncated, no long-range patterns</td><td>memory blows up; padding waste if data is short</td><td>CPT 256, SFT 512</td></tr>
+      <tr><td>LoRA rank r</td><td>independent directions the correction may contain</td><td>cannot fit the task</td><td>more memory, easier overfitting, rarely the bottleneck</td><td>8 then 16</td></tr>
+      <tr><td>alpha α</td><td>scales the correction by α / r</td><td>adapter barely acts</td><td>acts like a higher learning rate</td><td>2 × r in both runs</td></tr>
+      <tr><td>target modules</td><td>which matrices get adapters</td><td>q, v only: style moves, facts do not</td><td>all linear layers: closer to full fine-tune, more memory</td><td>q_proj, v_proj</td></tr>
+      <tr><td>LoRA dropout</td><td>randomly drops adapter inputs during training</td><td>slight overfitting on tiny data</td><td>slower, noisier learning</td><td>0.05</td></tr>
+      <tr><td>weight decay</td><td>shrinks weights toward zero each step</td><td>none</td><td>adapter pulled back toward doing nothing</td><td>0.01, negligible at 100 steps</td></tr>
+      <tr><td>warmup</td><td>steps of rising learning rate</td><td>first steps overshoot</td><td>wasted budget</td><td>2 steps</td></tr>
+      <tr><td>schedule</td><td>how the rate decays</td><td>constant: last steps still jump</td><td>decays too early: run ends before learning</td><td>linear to 0 (notebooks)</td></tr>
+      <tr><td>max_grad_norm</td><td>cap on the gradient vector length</td><td>every step clipped hard</td><td>no protection from spikes</td><td>1.0; SFT clipped every step</td></tr>
+      <tr><td>temperature</td><td>inference only; sharpness of sampling</td><td>greedy-like, repetitive</td><td>random, incoherent</td><td>greedy in all comparisons</td></tr>
+      <tr><td>max / min new tokens</td><td>inference only; hard cap and hard floor on length</td><td>cut off</td><td>floor forces filler</td><td>256 cap, no floor</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer>
+  The simulations and retained numeric examples teach the mechanism. The original experiment notebooks and checkpoint are not bundled with this standalone page.</footer>
+</div>
+
+<script>
+(function(){
+  const TOK = ["The","cat","sat","down","<eos>"];
+  const EOS = 4;
+  let logits = [1.2, 2.4, 0.8, 0.3, 1.9];
+  let target = 2;
+  const $ = (id) => document.getElementById(id);
+  const fmt = (x, d) => Number(x).toFixed(d);
+  function softmax(z){ const m = Math.max(...z); const e = z.map(v => Math.exp(v - m)); const s = e.reduce((a,b)=>a+b,0); return e.map(v => v/s); }
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  /* ---------- step 1 ---------- */
+  const lc = $("logitCtls"); lc.replaceChildren();
+  TOK.forEach((t,i) => {
+    const d = document.createElement("div"); d.className = "ctl";
+    d.innerHTML = '<label>logit for <span class="tokcell">' + esc(t) + '</span> <output id="lo' + i + '">' + fmt(logits[i],1) + '</output></label><input type="range" id="lg' + i + '" min="-4" max="6" step="0.1" value="' + logits[i] + '">';
+    lc.appendChild(d);
+    d.querySelector("input").addEventListener("input", (e) => { logits[i] = parseFloat(e.target.value); $("lo"+i).textContent = fmt(logits[i],1); renderAll(); });
+  });
+  const tr = $("targetRadios"); tr.replaceChildren();
+  TOK.forEach((t,i) => {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="radio" name="target" value="' + i + '"' + (i===target?" checked":"") + '> target next token: <span class="tokcell">' + esc(t) + '</span>';
+    tr.appendChild(l);
+    l.querySelector("input").addEventListener("change", () => { target = i; renderAll(); });
+  });
+  function renderForward(){
+    const p = softmax(logits); const loss = -Math.log(p[target]); const g = p.map((v,i) => v - (i===target?1:0));
+    const maxg = Math.max(...g.map(Math.abs), 1e-9);
+    $("fwdBody").innerHTML = TOK.map((t,i) => {
+      const bar = '<div class="bar"><i style="width:' + fmt(p[i]*100,2) + '%"></i></div>';
+      const w = Math.abs(g[i]) / maxg * 50;
+      const db = '<div class="dbar"><em></em><i class="' + (g[i] >= 0 ? "pos" : "neg") + '" style="width:' + fmt(w,2) + '%"></i></div>';
+      return '<tr' + (i===target?' style="background:var(--accent-bg)"':'') + '><td class="tokcell">' + esc(t) + (i===target?' <span class="small">target</span>':'') + '</td><td class="num">' + fmt(logits[i],1) + '</td><td>' + bar + '</td><td class="num">' + fmt(p[i]*100,1) + '%</td><td>' + db + '</td><td class="num">' + (g[i]>=0?"+":"") + fmt(g[i],3) + '</td></tr>';
+    }).join("");
+    $("lossOut").textContent = fmt(loss,3); $("pplOut").textContent = fmt(Math.exp(loss),2);
+    let am = 0; p.forEach((v,i)=>{ if(v>p[am]) am=i; }); $("argmaxOut").textContent = TOK[am];
+  }
+
+  /* ---------- step 2 ---------- */
+  function simulate(opt, lr, steps, k, wd){
+    const w = [0,0,0,0,0], m = [0,0,0,0,0], v = [0,0,0,0,0]; const b1 = 0.9, b2 = 0.999, eps = 1e-8;
+    const hist = []; let last = null;
+    for (let s = 1; s <= steps; s++){
+      const z = logits.map((z0,i) => z0 + k * w[i]); const p = softmax(z); const L = -Math.log(p[target]);
+      hist.push(L); last = {L, pt: p[target], pe: p[EOS]};
+      const g = p.map((pi,i) => pi - (i===target?1:0));
+      for (let i = 0; i < 5; i++){
+        if (opt === "sgd"){ w[i] -= lr * g[i]; }
+        else { m[i] = b1*m[i] + (1-b1)*g[i]; v[i] = b2*v[i] + (1-b2)*g[i]*g[i]; const mh = m[i]/(1-Math.pow(b1,s)); const vh = v[i]/(1-Math.pow(b2,s)); w[i] -= lr * (mh/(Math.sqrt(vh)+eps) + wd*w[i]); }
+      }
+    }
+    const zf = logits.map((z0,i) => z0 + k * w[i]); const pf = softmax(zf);
+    return {hist, w, final: {L: -Math.log(pf[target]), pt: pf[target], pe: pf[EOS]}, maxw: Math.max(...w.map(Math.abs))};
+  }
+  function linePath(vals, x0, x1, y0, y1, ymax){
+    const n = vals.length; if (!n) return "";
+    return vals.map((v,i) => { const x = x0 + (n===1?0:(x1-x0)*i/(n-1)); const y = y1 - (y1-y0)*Math.min(v,ymax)/ymax; return (i?"L":"M") + fmt(x,1) + " " + fmt(y,1); }).join(" ");
+  }
+  function renderUpdate(){
+    const lr = parseFloat($("lrSel").value); const steps = parseInt($("steps").value,10); const k = Math.pow(2, parseInt($("kw").value,10)); const wd = parseFloat($("wdSel").value);
+    $("lrOut").textContent = $("lrSel").options[$("lrSel").selectedIndex].text; $("stepsOut").textContent = steps; $("kOut").textContent = k;
+    const sg = simulate("sgd", lr, steps, k, 0); const ad = simulate("adam", lr, steps, k, wd);
+    const ymax = Math.max(0.5, ...sg.hist, ...ad.hist) * 1.15;
+    const x0 = 44, x1 = 640, y0 = 16, y1 = 190;
+    let s = '';
+    for (let i = 0; i <= 4; i++){ const y = y1 - (y1-y0)*i/4; s += '<line class="gridl" x1="' + x0 + '" y1="' + fmt(y,1) + '" x2="' + x1 + '" y2="' + fmt(y,1) + '"/><text x="' + (x0-6) + '" y="' + fmt(y+4,1) + '" text-anchor="end">' + fmt(ymax*i/4,2) + '</text>'; }
+    s += '<line class="axis" x1="' + x0 + '" y1="' + y1 + '" x2="' + x1 + '" y2="' + y1 + '"/>';
+    [0,0.25,0.5,0.75,1].forEach(f => { const x = x0 + (x1-x0)*f; s += '<text x="' + fmt(x,1) + '" y="' + (y1+16) + '" text-anchor="middle">' + Math.round(steps*f) + '</text>'; });
+    s += '<text x="' + x1 + '" y="' + (y1+30) + '" text-anchor="end">update</text><text x="' + x0 + '" y="' + (y0-4) + '">loss (nats)</text>';
+    s += '<path d="' + linePath(sg.hist,x0,x1,y0,y1,ymax) + '" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    s += '<path d="' + linePath(ad.hist,x0,x1,y0,y1,ymax) + '" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    const yl = (v) => fmt(y1 - (y1-y0)*Math.min(v,ymax)/ymax, 1);
+    let ySg = parseFloat(yl(sg.hist[sg.hist.length-1])), yAd = parseFloat(yl(ad.hist[ad.hist.length-1]));
+    if (Math.abs(ySg - yAd) < 14){ const mid = (ySg + yAd) / 2; ySg = mid - 7; yAd = mid + 7; }
+    s += '<text class="lab" x="' + (x1+4) + '" y="' + fmt(ySg,1) + '" dominant-baseline="central" style="fill:var(--s1)">GD</text>';
+    s += '<text class="lab" x="' + (x1+4) + '" y="' + fmt(yAd,1) + '" dominant-baseline="central" style="fill:var(--s2)">Adam</text>';
+    $("updChart").innerHTML = s;
+    $("adLoss").textContent = fmt(ad.final.L,3); $("adP").textContent = fmt(ad.final.pt*100,1) + "%"; $("adPe").textContent = fmt(ad.final.pe*100,1) + "%";
+    $("adW").textContent = ad.maxw.toExponential(2); $("bound").textContent = (lr*steps).toExponential(2);
+    $("sgLoss").textContent = fmt(sg.final.L,3); $("sgW").textContent = sg.maxw.toExponential(2);
+  }
+  ["lrSel","steps","kw","wdSel"].forEach(id => $(id).addEventListener("input", renderUpdate));
+
+  /* ---------- step 3 ---------- */
+  const MODS = [["q_proj",2048,2048,true],["k_proj",2048,1024,false],["v_proj",2048,1024,true],["o_proj",2048,2048,false],["gate_proj",2048,6144,false],["up_proj",2048,6144,false],["down_proj",6144,2048,false]];
+  const RANKS = [1,2,4,8,16,32,64,128];
+  const modsEl = $("mods"); modsEl.replaceChildren();
+  MODS.forEach((m,i) => { const l = document.createElement("label"); l.innerHTML = '<input type="checkbox" id="mod' + i + '"' + (m[3]?" checked":"") + '> <span class="tokcell">' + m[0] + '</span> <span class="small">' + m[1] + '→' + m[2] + '</span>'; modsEl.appendChild(l); l.querySelector("input").addEventListener("change", renderLora); });
+  const W = [[0.20,-0.10,0.40,0.00],[0.10,0.30,-0.20,0.50],[-0.30,0.20,0.10,0.10],[0.00,0.40,0.30,-0.20]];
+  let A = [1,0,-1,2], B = [0.5,-1,0,2]; const Bsaved = B.slice();
+  function matHTML(cap, rows, hl){ return '<div class="mat"><div class="cap">' + cap + '</div><div class="g">' + rows.map(r => '<div>' + r.map(v => '<span' + (hl?' class="hl"':'') + '>' + (v>=0?"+":"") + fmt(v,2) + '</span>').join("") + '</div>').join("") + '</div></div>'; }
+  function renderLora(){
+    const r = RANKS[parseInt($("rank").value,10)]; const a = parseInt($("alpha").value,10);
+    $("rOut").textContent = r; $("aOut").textContent = a;
+    let train = 0, full = 0;
+    MODS.forEach((m,i) => { if ($("mod"+i).checked){ train += 28 * r * (m[1] + m[2]); full += 28 * m[1] * m[2]; } });
+    $("trainOut").textContent = train.toLocaleString("en-US"); $("pctOut").textContent = fmt(train/1720574976*100,3) + "%";
+    $("mbOut").textContent = fmt(train*4/1e6,1); $("scaleOut").textContent = fmt(a/r,2); $("fullOut").textContent = full.toLocaleString("en-US");
+    const scale = 2; const dW = B.map(bi => A.map(aj => bi*aj)); const merged = W.map((row,i) => row.map((v,j) => v + scale*dW[i][j]));
+    let html = matHTML("W, frozen 4 × 4", W, false);
+    html += '<div class="mat"><div class="cap">A, 1 × 4 (editable)</div><div class="g"><div>' + A.map((v,j) => '<input type="number" step="0.5" value="' + v + '" data-a="' + j + '" aria-label="A ' + (j+1) + '">').join("") + '</div></div><div class="cap" style="margin-top:10px">B, 4 × 1 (editable)</div><div class="g">' + B.map((v,i) => '<div><input type="number" step="0.5" value="' + v + '" data-b="' + i + '" aria-label="B ' + (i+1) + '"></div>').join("") + '</div></div>';
+    html += matHTML("ΔW = B · A, rank 1: each row is a multiple of A", dW, true);
+    html += matHTML("W + (α/r) · B · A, the merged weight", merged, false);
+    $("mats").innerHTML = html;
+    $("mats").querySelectorAll("input[data-a]").forEach(inp => inp.addEventListener("change", e => { const v = parseFloat(e.target.value); if (Number.isFinite(v)){ A[parseInt(e.target.dataset.a,10)] = v; renderLora(); } }));
+    $("mats").querySelectorAll("input[data-b]").forEach(inp => inp.addEventListener("change", e => { const v = parseFloat(e.target.value); if (Number.isFinite(v)){ B[parseInt(e.target.dataset.b,10)] = v; renderLora(); } }));
+  }
+  $("rank").addEventListener("input", renderLora); $("alpha").addEventListener("input", renderLora);
+  $("zeroB").addEventListener("click", () => { B = [0,0,0,0]; renderLora(); });
+  $("restoreB").addEventListener("click", () => { B = Bsaved.slice(); renderLora(); });
+
+  /* ---------- step 4 ---------- */
+  const CONV = [
+    {k:"hdr", t:"<|im_start|>system"}, {k:"body", role:"system", t:"You answer movie questions."}, {k:"end", role:"system", t:"<|im_end|>"},
+    {k:"hdr", t:"<|im_start|>user"}, {k:"body", role:"user", t:"Who directed Inception?"}, {k:"end", role:"user", t:"<|im_end|>"},
+    {k:"hdr", t:"<|im_start|>assistant"}, {k:"body", role:"assistant", t:"Christopher Nolan ."}, {k:"end", role:"assistant", t:"END"}
+  ];
+  function renderStrip(){
+    const stage = document.querySelector('input[name="stage"]:checked').value; const endtok = document.querySelector('input[name="endtok"]:checked').value;
+    let scored = 0, total = 0, html = "";
+    CONV.forEach(c => {
+      const words = c.k === "body" ? c.t.split(" ") : [c.t === "END" ? (endtok === "eot" ? "<|endoftext|>" : "<|im_end|>") : c.t];
+      words.forEach(wd => {
+        total++;
+        const sc = stage === "cpt" ? true : (c.role === "assistant" && c.k !== "hdr");
+        if (sc) scored++;
+        html += '<span class="chipt' + (c.k==="hdr"?" hdr":"") + (sc?" sc":"") + (c.k==="end"&&c.role==="assistant"?" end":"") + '">' + esc(wd) + '</span>';
+      });
+    });
+    $("strip").innerHTML = html; $("scoredOut").textContent = scored; $("totalOut").textContent = total; $("nOut").textContent = scored;
+    $("endShare").textContent = "1 of " + scored + " (" + fmt(100/scored,0) + "%)";
+  }
+  document.querySelectorAll('input[name="stage"],input[name="endtok"]').forEach(r => r.addEventListener("change", renderStrip));
+
+  /* ---------- step 5 ---------- */
+  function renderAccum(){
+    const n1 = +$("n1").value, l1 = +$("l1").value, n2 = +$("n2").value, l2 = +$("l2").value;
+    $("n1Out").textContent = n1; $("l1Out").textContent = fmt(l1,1); $("n2Out").textContent = n2; $("l2Out").textContent = fmt(l2,1);
+    $("naive").textContent = fmt((l1+l2)/2,3); $("weighted").textContent = fmt((n1*l1+n2*l2)/(n1+n2),3); $("w1").textContent = fmt(n2/n1,2);
+    const gn = +$("gn").value; const clip = Math.max(0.1, parseFloat($("clip").value) || 1); $("gnOut").textContent = fmt(gn,1);
+    const f = Math.min(1, clip/gn); $("clipOut").textContent = fmt(f,3); $("normAfter").textContent = fmt(gn*f,2);
+  }
+  ["n1","l1","n2","l2","gn","clip"].forEach(id => $(id).addEventListener("input", renderAccum));
+
+  /* ---------- step 6 ---------- */
+  function lrAt(i, peak, wu, tot, shape){
+    if (wu && i < wu) return peak * (i+1)/wu;
+    if (shape === "linear") return peak * Math.max(0, (tot - i) / Math.max(1, tot - wu));
+    const prog = (i - wu) / Math.max(1, tot - wu); return peak * 0.5 * (1 + Math.cos(Math.PI * Math.min(1, Math.max(0, prog))));
+  }
+  function renderLR(){
+    const peak = parseFloat($("peakSel").value), wu = +$("wu").value, tot = +$("tot").value, shape = document.querySelector('input[name="shape"]:checked').value;
+    $("wuOut").textContent = wu; $("totOut").textContent = tot;
+    const vals = []; let sum = 0; for (let i = 0; i < tot; i++){ const v = lrAt(i, peak, wu, tot, shape); vals.push(v); sum += v; }
+    const x0 = 56, x1 = 640, y0 = 16, y1 = 170; let s = '';
+    for (let i = 0; i <= 4; i++){ const y = y1 - (y1-y0)*i/4; s += '<line class="gridl" x1="' + x0 + '" y1="' + fmt(y,1) + '" x2="' + x1 + '" y2="' + fmt(y,1) + '"/><text x="' + (x0-6) + '" y="' + fmt(y+4,1) + '" text-anchor="end">' + (peak*i/4).toExponential(1) + '</text>'; }
+    s += '<line class="axis" x1="' + x0 + '" y1="' + y1 + '" x2="' + x1 + '" y2="' + y1 + '"/>';
+    [0,0.25,0.5,0.75,1].forEach(f => { const x = x0 + (x1-x0)*f; s += '<text x="' + fmt(x,1) + '" y="' + (y1+16) + '" text-anchor="middle">' + Math.round(tot*f) + '</text>'; });
+    s += '<text x="' + x1 + '" y="' + (y1+30) + '" text-anchor="end">update</text><text x="' + x0 + '" y="' + (y0-4) + '">learning rate</text>';
+    s += '<path d="' + linePath(vals,x0,x1,y0,y1,peak) + '" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round"/>';
+    $("lrChart").innerHTML = s; $("lrSum").textContent = sum.toExponential(2);
+  }
+  ["peakSel","wu","tot"].forEach(id => $(id).addEventListener("input", renderLR)); document.querySelectorAll('input[name="shape"]').forEach(r => r.addEventListener("change", renderLR));
+
+  /* ---------- step 7 ---------- */
+  const samples = [];
+  function decodeProbs(){
+    const T = parseFloat($("temp").value); const forbid = $("forbid").checked;
+    let z = logits.map(v => v / T); if (forbid) z = z.map((v,i) => i===EOS ? -Infinity : v);
+    return softmax(z.map(v => Number.isFinite(v) ? v : -1e9));
+  }
+  function renderDecode(){
+    const T = parseFloat($("temp").value); $("tOut").textContent = fmt(T,1);
+    const p = decodeProbs(); let am = 0; p.forEach((v,i)=>{ if (v>p[am]) am=i; });
+    $("decBody").innerHTML = TOK.map((t,i) => '<tr' + (i===am?' style="background:var(--accent-bg)"':'') + '><td class="tokcell">' + esc(t) + (i===EOS && $("forbid").checked ? ' <span class="small">forbidden</span>' : '') + '</td><td><div class="bar"><i style="width:' + fmt(p[i]*100,2) + '%;' + (i===EOS?'background:var(--s2)':'') + '"></i></div></td><td class="num">' + fmt(p[i]*100,1) + '%</td></tr>').join("");
+    $("greedyOut").textContent = TOK[am];
+    $("sampleHist").textContent = samples.length ? samples.slice(-12).join(" ") : "none yet";
+  }
+  $("temp").addEventListener("input", renderDecode); $("forbid").addEventListener("change", renderDecode);
+  $("sampleBtn").addEventListener("click", () => { const p = decodeProbs(); let u = Math.random(), pick = TOK.length-1; for (let i = 0; i < p.length; i++){ u -= p[i]; if (u <= 0){ pick = i; break; } } samples.push(TOK[pick]); $("sampleOut").textContent = TOK[pick]; renderDecode(); });
+
+  const REAL = [
+    {name:"Base, no adapter", rows:[["<|endoftext|>",42.82],[" Answer",1.21],[".slf",0.94],[".RemoveEmptyEntries",0.85],[" AssemblyDescription",0.82]]},
+    {name:"CPT + SFT trained toward <|im_end|>", rows:[["气候",2.53],["依法追究",2.13],[".Promise",1.45],[" The",1.20],[" الاستث",0.91],["<|endoftext|>",0.58],["<|im_end|>",0.004]]},
+    {name:"CPT + SFT trained toward <|endoftext|>", rows:[["<|endoftext|>",98.15],[" Christopher",0.67],[" (",0.47]]}
+  ];
+  $("realDists").innerHTML = '<div class="mats">' + REAL.map(d => '<div><div class="cap small" style="margin-bottom:6px">' + esc(d.name) + '</div><table><tbody>' + d.rows.map(r => '<tr><td class="tokcell" style="padding:4px 6px">' + esc(r[0]) + '</td><td style="padding:4px 6px"><div class="bar" style="min-width:80px"><i style="width:' + fmt(r[1],2) + '%;' + (r[0]==="<|endoftext|>"||r[0]==="<|im_end|>"?'background:var(--s2)':'') + '"></i></div></td><td class="num" style="padding:4px 6px">' + (r[1] < 0.01 ? "0.004%" : fmt(r[1],2) + "%") + '</td></tr>').join("") + '</tbody></table></div>').join("") + '</div><div class="legend" style="margin-top:8px"><span><i style="background:var(--s2)"></i>stop tokens</span><span><i style="background:var(--s1)"></i>other tokens</span></div>';
+
+  function renderAll(){ renderForward(); renderUpdate(); renderDecode(); }
+  renderAll(); renderLora(); renderStrip(); renderAccum(); renderLR();
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,512 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Architecture Flow</title>
+<style>
+ body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:1100px;margin:0 auto;padding:24px 20px 80px;color:#1f2937;background:#fafafa}
+ h1{border-bottom:2px solid #e5e7eb;padding-bottom:8px}
+ h2{margin-top:36px;border-top:1px solid #e5e7eb;padding-top:18px;color:#111827}
+ pre.mermaid{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:14px 0 28px;overflow:auto;text-align:center}
+ .hint{position:sticky;top:0;background:#fff8e1;border:1px solid #f0d264;border-radius:6px;padding:8px 12px;font-size:13px;color:#5a4a00;margin-bottom:16px}
+ .mermaid svg{max-width:100%;height:auto}
+</style></head><body>
+<div class="hint">Tip: use Ctrl/Cmd + scroll or browser zoom to enlarge a diagram.</div>
+<h1>Architecture Flow</h1>
+<h2>Blindspot — master flow: Connect -&gt; Observe -&gt; Eval -&gt; Recommend -&gt; Approve -&gt; Apply (takeover reviewed 2026-07-22)</h2>
+<pre class="mermaid">%% Blindspot — master flow: Connect -&gt; Observe -&gt; Eval -&gt; Recommend -&gt; Approve -&gt; Apply (takeover reviewed 2026-07-22)
+%% files: packages/sdk/src/index.ts, packages/core/src/eval/planner.ts, packages/core/src/eval/runner.ts, packages/core/src/recommend.ts, packages/core/src/drift.ts
+%% granularity: master
+flowchart TD
+  A["Existing agent handles a user request&lt;br/&gt;ENTRY · app keeps its own prompts, tools and deterministic code"]:::term
+  MODE{"Connection mode?&lt;br/&gt;USER · observe-only is default"}:::dec
+  OBS["Observe instrumented calls and executed node kinds&lt;br/&gt;FUNCTION · SDK sends consent-bounded spans&lt;br/&gt;out: observed workflow map + generation Routes"]:::fn
+  TOPO["Declared topology + environment coverage&lt;br/&gt;PLANNED · not current runtime truth"]:::term
+  MAN["Resolve generation node to approved model&lt;br/&gt;FUNCTION · managed SDK or OpenAI-compatible gateway&lt;br/&gt;out: concrete provider:model"]:::fn
+  LIVE["Run the real application workflow&lt;br/&gt;AGENT + FUNCTION nodes&lt;br/&gt;out: answer, spans, usage, errors and latency"]:::agent
+  GOLD["Create versioned golden set&lt;br/&gt;USER · upload, documents, explicitly shared context, or consented live traces"]:::ask
+  EST["Choose compatible models + execution mode; calculate budget&lt;br/&gt;FUNCTION · exact full/sample disclosure · no provider calls"]:::fn
+  CONF{"Confirm exact paid plan?&lt;br/&gt;USER"}:::ask
+  EVAL["Execute authorized examples and judge visible criteria&lt;br/&gt;AGENT · candidate + JUDGE_MODEL&lt;br/&gt;DATA · per-example evidence and criterion-mean score"]:::agent
+  GRADE{"Evidence grade?&lt;br/&gt;FUNCTION"}:::dec
+  SCREEN["Model-only screening result&lt;br/&gt;DATA · shortlist/issues only · cannot recommend production switch"]:::term
+  POLICY{"Replay evidence complete and candidate passes bar with proven benefit?&lt;br/&gt;FUNCTION"}:::dec
+  REC["Create evidence-backed Recommendation&lt;br/&gt;DATA · Approvals inbox · live app unchanged"]:::data
+  DECIDE{"Approve or reject?&lt;br/&gt;USER"}:::ask
+  APPLY{"Connection is managed?&lt;br/&gt;FUNCTION"}:::dec
+  SWITCH["Apply approved route model&lt;br/&gt;FUNCTION · transactional stale-baseline check + audit log"]:::fn
+  ROLLOUT["Mark awaiting app rollout&lt;br/&gt;DATA · observe-only never claims the app changed"]:::term
+  DRIFT["Monitor live operational signals + replay-grade golden scores&lt;br/&gt;FUNCTION · simulations stay quarantined from evidence"]:::fn
+  NOOP["Keep current model and visible issues&lt;br/&gt;DATA"]:::term
+
+  A --&gt; MODE
+  MODE -- "observe-only" --&gt; OBS --&gt; LIVE
+  MODE -- "managed" --&gt; MAN --&gt; LIVE
+  LIVE --&gt; GOLD --&gt; EST --&gt; CONF
+  CONF -- "revise" --&gt; EST
+  CONF -- "confirm" --&gt; EVAL --&gt; GRADE
+  GRADE -- "model-only" --&gt; SCREEN
+  GRADE -- "workflow replay" --&gt; POLICY
+  POLICY -- "no" --&gt; NOOP
+  POLICY -- "yes" --&gt; REC --&gt; DECIDE
+  DECIDE -- "reject" --&gt; NOOP
+  DECIDE -- "approve" --&gt; APPLY
+  APPLY -- "yes" --&gt; SWITCH --&gt; DRIFT
+  APPLY -- "no" --&gt; ROLLOUT --&gt; DRIFT
+  DRIFT -. "new evidence" .-&gt; POLICY
+  OBS -. "future manifest" .-&gt; TOPO
+
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+</pre>
+<h2>Blindspot — BUILD DECISIONS LOG (not a runtime flow)</h2>
+<pre class="mermaid">%% Blindspot — BUILD DECISIONS LOG (not a runtime flow)
+%% Records WHAT was chosen at each phase and WHY. Hosted-beta + takeover sync: 2026-07-22.
+%% files: Blindspot-PRD.md, Handoff.MD, packages/core/src/model-registry.ts, packages/core/src/eval/queue.ts, packages/core/src/recommend.ts, apps/dashboard/package.json
+%% granularity: summary
+flowchart TD
+  P0["Phase 0 · Monorepo skeleton — DONE"]:::done
+  P0c["pnpm + Turborepo · Hono gateway · tsx dev · internal packages export raw .ts&lt;br/&gt;WHY: one toolchain, no dev build step, instant HMR; Hono is tiny and edge-portable so the&lt;br/&gt;gateway can later run as N stateless instances (PRD §8)"]:::why
+  P0d["Worker: BullMQ on Redis, runs in-process for local dev until Phase 8&lt;br/&gt;WHY: keep the queue interface from day one so nothing changes later, but no second process to run yet"]:::why
+
+  P05["Phase 0.5 · Postgres schema — DONE"]:::done
+  P05c["Drizzle pg-core · uuid PKs · jsonb for policy_json + evidence_json · pgEnum for statuses&lt;br/&gt;WHY: typed SQL where one schema file drives BOTH migrations and TS types; jsonb keeps&lt;br/&gt;policy/evidence flexible without a migration per tweak"]:::why
+  P05d["Zod lives in packages/shared as the SINGLE source of truth; db imports the inferred types&lt;br/&gt;WHY: gateway validates requests + db shapes rows from the SAME definitions (no drift)"]:::why
+  P05e["Added api_keys (hash + shown-once prefix) beyond §9&lt;br/&gt;WHY: the gateway must map an incoming bs_live_ key → project; never store raw keys"]:::why
+
+  P1["Phase 1 · Gateway routing + adapters + trace — DONE"]:::done
+  P1a["OpenAI-compatible POST /v1/chat/completions; model = route:name&lt;br/&gt;WHY: users just repoint base_url + swap the model string — zero SDK change to adopt (PRD §4)"]:::why
+  P1b["Auth: bs_live_ key → sha256 hash lookup → project; raw key shown once at bootstrap&lt;br/&gt;WHY: a leaked DB never exposes usable keys; standard API-key hygiene"]:::why
+  P1c["BYO provider keys AES-256-GCM at rest; decrypted in-memory per call only&lt;br/&gt;WHY: PRD §5 non-negotiable — user controls spend, zero markup, keys never logged"]:::why
+  P1d["Adapters via Vercel AI SDK v4 — anthropic/openai/google/groq native, HF via OpenAI-compatible baseURL&lt;br/&gt;WHY: one interface for every provider (PRD stack); adding a provider = one switch case"]:::why
+  P1e["Auto-create route from traffic, seed default model as first candidate; NEVER switch an existing&lt;br/&gt;route's live model here&lt;br/&gt;WHY: routes appear automatically (PRD §4 step 2); swaps are approval-gated only (§3)"]:::why
+  P1f["Trace every call: cost (cents) · latency · output&lt;br/&gt;WHY: this is the Observe step; every later eval/drig decision reads these rows (PRD §6)"]:::why
+
+  P2["Phase 2 · Golden sets (upload + agent) — DONE"]:::done
+  P2a["New @blindspot/core package holds domain services (golden, later eval/policy)&lt;br/&gt;WHY: gateway + worker + dashboard all reuse ONE implementation, no logic in HTTP handlers"]:::why
+  P2b["Seed two ways: upload CSV/JSONL (csv-parse + Zod) OR Golden Set Agent via generateObject&lt;br/&gt;WHY: PRD §7 upload-optional — schema-validated agent output means no brittle JSON parsing"]:::why
+  P2c["Versioned sets (nextVersion), full CRUD, promote-a-trace; grow-from-production deferred&lt;br/&gt;WHY: score history stays comparable across versions; curate is the human-in-the-loop control"]:::why
+
+  P3["Phase 3 · Eval engine (LLM-as-judge) — DONE"]:::done
+  P3a["judgeOutput via generateObject (schema-validated verdict); runEval scores every active&lt;br/&gt;golden example then persists an eval_runs row&lt;br/&gt;WHY: reproducible, structured scores; the aggregate row is what policy + drift read"]:::why
+  P3b["enqueueEval: BLINDSPOT_EVAL_MODE=inline explicitly bypasses Redis; otherwise BullMQ&lt;br/&gt;when REDIS_URL is set, inline when absent&lt;br/&gt;WHY: local work can pause Redis without changing production queue wiring"]:::why
+
+  P4["Phase 4 · Recommendations + approvals — DONE"]:::done
+  P4a["Policy = cheapest candidate with latest score &gt;= bar AND cheaper than live; emits a&lt;br/&gt;Recommendation with evidence (scores + cost/latency deltas)&lt;br/&gt;WHY: PRD §3 — evidence-backed proposal, dedup pending recs per target"]:::why
+  P4b["Approve applies only on managed connections; observe-only becomes awaiting rollout;&lt;br/&gt;Reject stores status + reason; auto_approve remains managed-only and default OFF&lt;br/&gt;WHY: Blindspot must not claim it changed a model still owned by the application"]:::why
+  P4c["Phase 7C closed the evidence gap: every evaluated example stores candidate output,&lt;br/&gt;score, criteria, reasoning, issues, latency and candidate/judge cost&lt;br/&gt;WHY: Recommendations and route debugging must show the proof, not only an average"]:::done
+
+  P3fix["🐞 FIX (found via live smoke test): eval scores were ~0.15 because the Golden Set Agent&lt;br/&gt;emitted BARE passages; runEval sent them with no instruction so candidates never did the task&lt;br/&gt;WHY the fix: golden inputs must be SELF-CONTAINED prompts (instruction embedded) — matches a&lt;br/&gt;real app call / promoted trace. After fix: 8B 0.16 → 0.89, and an approved swap flipped the live model"]:::why
+
+  P5["Phase 5 · Drift + CI gate — DONE"]:::done
+  P5a["Drift lanes: operational signals are collected (threshold alerts Phase 8), consented live semantic is planned,&lt;br/&gt;and comparable workflow-replay golden eval is active; simulations are quarantined&lt;br/&gt;WHY: synthetic demo numbers must never become customer decisions"]:::why
+  P5b["Legacy paid drift + CI endpoints return 409 until Phase 8 can consume an approved queued plan&lt;br/&gt;WHY: a second endpoint must never bypass Phase 7C spend authorization"]:::why
+
+  DONE["✅ Historical backend loop VERIFIED LIVE end-to-end; current evidence rules are stricter:&lt;br/&gt;model-only runs shortlist, while production Recommendations require complete protected workflow replay"]:::done
+  P7["Phase 7 · Dashboard (Next.js §10) — DONE"]:::done
+  P7A["Phase 7A · Connect + Observe — DONE"]:::done
+  P7Aa["Observe-only TypeScript SDK + authenticated batch ingestion; metadata-only default&lt;br/&gt;WHY: connect an existing agent without forcing it through Blindspot routing or retaining content"]:::why
+  P7Ab["Observed workflow/node hierarchy links generation nodes to existing Routes; user selects workflows&lt;br/&gt;WHY: ingest proves executed instrumentation, not unobserved static topology or permission to change"]:::why
+  P7Ac["Claude Sonnet 4.6 vs Haiku 4.5 first; HF + Fireworks adapters remain pluggable&lt;br/&gt;WHY: prove the end-to-end decision with gstpilot before widening the catalog"]:::why
+  P7B["Phase 7B · Registry + Compatibility — DONE"]:::done
+  P7Ba["Read-only provider catalog sync stores project-scoped account availability + normalized&lt;br/&gt;capabilities; listing consumes zero inference tokens&lt;br/&gt;WHY: expose only models the user's own account can actually access"]:::why
+  P7Bb["Observed node requirements deterministically gate Sonnet/Haiku; excluded models carry reasons&lt;br/&gt;WHY: technical fit permits an experiment, while quality and spend remain separate later gates"]:::why
+  P7Bc["Adding a compatible candidate does not run an eval or change live_model&lt;br/&gt;WHY: Phase 7C must estimate cost and obtain explicit spend approval before paid work"]:::why
+  P7C["Phase 7C · Quality + Experiment — BUILT + DEPLOYED"]:::done
+  P7Ca["Immutable 30-minute eval plan: full estimate or disclosed SHA-seeded stratified sample;&lt;br/&gt;selected + omitted cases, calls, cost, safety and confidence shown before confirm&lt;br/&gt;WHY: the user owns eval spend and must know exactly what a smaller budget changes"]:::why
+  P7Cb["Confirmation locks the plan once; every real eval requires its route/model/example authorization;&lt;br/&gt;per-example evidence is persisted immediately and incomplete runs cannot recommend&lt;br/&gt;WHY: budget, retry safety and evidence integrity are server-enforced, not UI conventions"]:::why
+  P7Cc["Local mode runs inline with Redis bypassed; Phase 8 owns queued plan handoff, crash recovery,&lt;br/&gt;rate limits, observability and plan-aware CI/drift jobs&lt;br/&gt;WHY: preserve the approved scale architecture without depending on Redis for this prototype"]:::why
+  QA["2026-07-18 · Power Coding QA hardening&lt;br/&gt;Recommendations now require complete same-plan live + candidate evidence; unknown price cannot auto-approve;&lt;br/&gt;critical/high dependency advisories removed without changing the approved stack"]:::done
+  P7D["Phase 7D · Truthful evidence loop — BUILT + DEPLOYED 2026-07-22&lt;br/&gt;observe-only vs managed, protected replay, visible criterion mean, evidence table,&lt;br/&gt;consent-aware golden wizard, real drift lanes and revocable gateway keys"]:::done
+  AUTH["Hosted beta access — BUILT + QA&lt;br/&gt;signed invite, separate recovery/application keys, one secure project-key session&lt;br/&gt;WHY: smooth private beta now; Supabase human identity remains an explicit future decision"]:::done
+  GAP["Next product truth gap&lt;br/&gt;declared topology + dev/production coverage + deterministic node instrumentation&lt;br/&gt;WHY: observed node count must never be mistaken for the complete source workflow"]:::wip
+
+  P0 --&gt; P0c --&gt; P0d --&gt; P05
+  P05 --&gt; P05c --&gt; P05d --&gt; P05e --&gt; P1
+  P1 --&gt; P1a --&gt; P1b --&gt; P1c --&gt; P1d --&gt; P1e --&gt; P1f --&gt; P2
+  P2 --&gt; P2a --&gt; P2b --&gt; P2c --&gt; P3
+  P3 --&gt; P3a --&gt; P3b --&gt; P3fix --&gt; P4
+  P4 --&gt; P4a --&gt; P4b --&gt; P4c --&gt; P5
+  P5 --&gt; P5a --&gt; P5b --&gt; DONE --&gt; P7 --&gt; P7A --&gt; P7Aa --&gt; P7Ab --&gt; P7Ac --&gt; P7B --&gt; P7Ba --&gt; P7Bb --&gt; P7Bc --&gt; P7C --&gt; P7Ca --&gt; P7Cb --&gt; P7Cc --&gt; QA --&gt; P7D --&gt; AUTH --&gt; GAP
+
+  classDef done fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef wip fill:#fef9c3,stroke:#ca8a04,color:#3f2d00;
+  classDef todo fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef why fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+</pre>
+<h2>Blindspot — golden-set lifecycle: explicit source -&gt; configure -&gt; review -&gt; run (takeover reviewed 2026-07-22)</h2>
+<pre class="mermaid">%% Blindspot — golden-set lifecycle: explicit source -&gt; configure -&gt; review -&gt; run (takeover reviewed 2026-07-22)
+%% files: apps/gateway/src/manage/golden.ts, packages/core/src/golden/agent.ts, packages/core/src/golden/service.ts, packages/core/src/golden/upload.ts, apps/dashboard/app/(app)/golden-sets/[route]/GoldenManager.tsx
+%% granularity: full
+flowchart TD
+  S{"Choose source&lt;br/&gt;USER"}:::dec
+  U["Read structured dataset&lt;br/&gt;FUNCTION · CSV, JSON or JSONL&lt;br/&gt;in: file/paste · out: candidate rows"]:::fn
+  DOC["Read selected context documents&lt;br/&gt;FUNCTION · Markdown or text&lt;br/&gt;out: bounded context for generation"]:::fn
+  CTX["Load explicitly shared app manifest&lt;br/&gt;DATA · product brief, prompts, architecture and selected documents"]:::data
+  LIVE{"Use retained live inputs?&lt;br/&gt;USER · separate consent; metadata-only cannot provide content"}:::ask
+  UV["Validate preview rows&lt;br/&gt;FUNCTION · Zod&lt;br/&gt;out: examples or row-level error"]:::fn
+  AG["Generate diverse draft examples&lt;br/&gt;AGENT · GOLDEN_MODEL or JUDGE_MODEL&lt;br/&gt;in: task + consented bounded context · out: inputs, references and rubrics"]:::agent
+  AV["Schema-validate generated object&lt;br/&gt;FUNCTION · Zod GeneratedGolden"]:::fn
+  REVIEW{"Review source, consent and example count; publish?&lt;br/&gt;USER"}:::ask
+  NV["Lock parent Route + allocate next version&lt;br/&gt;FUNCTION · serialized max version plus one"]:::fn
+  STORE["Insert version and examples&lt;br/&gt;DATA · golden_sets + golden_examples"]:::data
+  CUR["Curate examples&lt;br/&gt;FUNCTION · add, edit, delete, label, activate and version"]:::fn
+  PT["Promote same-route production trace&lt;br/&gt;FUNCTION · only retained content; user reviews result"]:::fn
+  RUN["Continue to budgeted experiment&lt;br/&gt;FUNCTION · no provider calls before estimate + confirmation"]:::term
+  GROW["Planned suggested-additions queue&lt;br/&gt;AGENT proposes uncertain, drifted and diverse live cases&lt;br/&gt;USER accepts, edits or rejects"]:::term
+
+  S -- "dataset" --&gt; U --&gt; UV --&gt; REVIEW
+  S -- "documents" --&gt; DOC --&gt; AG
+  S -- "connected context" --&gt; CTX --&gt; AG
+  S -- "live traces" --&gt; LIVE
+  LIVE -- "consent and content available" --&gt; AG
+  LIVE -- "no" --&gt; S
+  AG --&gt; AV --&gt; REVIEW
+  REVIEW -- "revise" --&gt; S
+  REVIEW -- "publish" --&gt; NV --&gt; STORE --&gt; CUR --&gt; RUN
+  STORE --&gt; PT --&gt; CUR
+  STORE -. "future growth" .-&gt; GROW -.-&gt; CUR
+
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+</pre>
+<h2>Blindspot — eval + recommend: screening evidence is not production evidence (takeover reviewed 2026-07-22)</h2>
+<pre class="mermaid">%% Blindspot — eval + recommend: screening evidence is not production evidence (takeover reviewed 2026-07-22)
+%% files: apps/gateway/src/manage/eval.ts, packages/core/src/eval/planner.ts, packages/core/src/eval/runner.ts, packages/core/src/recommend.ts
+%% granularity: full
+flowchart TD
+  T["Select technically eligible models, execution mode and USD cap&lt;br/&gt;USER"]:::ask
+  EST["Conservative full estimate&lt;br/&gt;FUNCTION · candidate + judge ceilings · zero provider calls"]:::fn
+  FIT{"Cap covers all active examples?&lt;br/&gt;FUNCTION"}:::dec
+  SAMPLE["Deterministic stratified sample&lt;br/&gt;FUNCTION · must-pass, known-failure, edge, representative"]:::fn
+  PLAN["Persist immutable 30-minute plan&lt;br/&gt;DATA · exact cases, strata, seed, calls, costs, execution mode"]:::data
+  OK{"Confirm disclosed plan?&lt;br/&gt;USER"}:::ask
+  LOCK["Lock + consume plan once&lt;br/&gt;FUNCTION · ownership, eligibility and example-hash checks"]:::fn
+  MODE{"Execution mode?&lt;br/&gt;FUNCTION · fixed by authorized plan"}:::dec
+  DIRECT["Call candidate model directly&lt;br/&gt;AGENT · candidate model&lt;br/&gt;in: self-contained golden input · out: output + usage"]:::agent
+  SAFE["Validate replay destination&lt;br/&gt;FUNCTION · HTTPS, public DNS, no redirects, 90s and 2MB caps"]:::fn
+  REPLAY["Call protected app callback with temporary model override&lt;br/&gt;FUNCTION · app runs real prompt, retrieval, tools and gates&lt;br/&gt;out: target-node output + usage + executed=true"]:::fn
+  JUDGE["Judge output against reference and rubric&lt;br/&gt;AGENT · JUDGE_MODEL&lt;br/&gt;out: per-criterion scores + reasoning"]:::agent
+  MEAN["Compute visible equal-weight criterion mean&lt;br/&gt;FUNCTION · legacy overall only when no criteria exist"]:::fn
+  ROW["Persist input, expected output, candidate output, score and issues&lt;br/&gt;DATA · eval_example_results"]:::data
+  AGG["Aggregate run score, cost, latency and failures&lt;br/&gt;DATA · eval_runs + eval_plans"]:::data
+  GRADE{"Workflow-replay evidence complete for live and candidate?&lt;br/&gt;FUNCTION"}:::dec
+  SHORT["Screening result only&lt;br/&gt;DATA · show issues and shortlist · no production Recommendation"]:::term
+  VALUE{"Candidate meets route bar and proves policy benefit?&lt;br/&gt;FUNCTION · verified comparable price for cost claims"}:::dec
+  REC["Create evidence-backed Recommendation&lt;br/&gt;DATA · pending by default"]:::data
+  APPROVE{"Approve or reject?&lt;br/&gt;USER"}:::ask
+  KIND{"Workflow integration mode?&lt;br/&gt;FUNCTION"}:::dec
+  APPLY["Apply approved model to managed route&lt;br/&gt;FUNCTION · stale-baseline check + audit log"]:::fn
+  WAIT["Approved · awaiting application rollout&lt;br/&gt;DATA · observe-only route unchanged"]:::term
+  STOP["No Recommendation; retain visible evidence&lt;br/&gt;DATA"]:::term
+
+  T --&gt; EST --&gt; FIT
+  FIT -- "yes" --&gt; PLAN
+  FIT -- "no" --&gt; SAMPLE --&gt; PLAN
+  PLAN --&gt; OK
+  OK -- "revise" --&gt; T
+  OK -- "confirm" --&gt; LOCK --&gt; MODE
+  MODE -- "model-only" --&gt; DIRECT --&gt; JUDGE
+  MODE -- "workflow replay" --&gt; SAFE --&gt; REPLAY --&gt; JUDGE
+  JUDGE --&gt; MEAN --&gt; ROW --&gt; AGG --&gt; GRADE
+  GRADE -- "no" --&gt; SHORT
+  GRADE -- "yes" --&gt; VALUE
+  VALUE -- "no" --&gt; STOP
+  VALUE -- "yes" --&gt; REC --&gt; APPROVE
+  APPROVE -- "reject" --&gt; STOP
+  APPROVE -- "approve" --&gt; KIND
+  KIND -- "managed" --&gt; APPLY
+  KIND -- "observe-only" --&gt; WAIT
+
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+</pre>
+<h2>Blindspot — three drift lanes with simulations quarantined from evidence (takeover reviewed 2026-07-22)</h2>
+<pre class="mermaid">%% Blindspot — three drift lanes with simulations quarantined from evidence (takeover reviewed 2026-07-22)
+%% files: packages/core/src/drift.ts, packages/core/src/eval/runner.ts, apps/gateway/src/manage/drift.ts, apps/dashboard/app/(app)/drift/page.tsx
+%% granularity: full
+flowchart TD
+  SPAN["Production workflow spans&lt;br/&gt;DATA · model/version, errors, tokens, latency, permitted content"]:::data
+  OPS["Store live operational signals&lt;br/&gt;FUNCTION · error, latency, usage and unexpected model-version changes&lt;br/&gt;automated threshold alerts remain Phase 8"]:::fn
+  CAP{"Full content capture and semantic-judge budget authorized?&lt;br/&gt;USER + FUNCTION"}:::dec
+  SEM["Planned live semantic sampling&lt;br/&gt;AGENT · JUDGE_MODEL&lt;br/&gt;in: consented live cases · out: quality trend"]:::agent
+  GOLD["Completed authorized golden eval&lt;br/&gt;DATA · workflow-replay run on the live model"]:::data
+  PREV["Load prior comparable live-model score&lt;br/&gt;FUNCTION · same route and golden version"]:::fn
+  CMP{"New criterion-mean score below previous score minus margin?&lt;br/&gt;FUNCTION · margin default 0.05"}:::dec
+  EVENT["Record real drift event&lt;br/&gt;DATA · source is live_traffic, provider_version or golden_eval"]:::data
+  ALT{"Complete replay evidence has a passing alternative?&lt;br/&gt;FUNCTION"}:::dec
+  REC["Create drift Recommendation with evidence&lt;br/&gt;DATA · Approvals inbox · no silent revert"]:::data
+  ONLY["Keep drift event visible; no safe alternative yet&lt;br/&gt;DATA"]:::term
+  CLEAR["No evidence-backed quality drift&lt;br/&gt;DATA"]:::term
+  SIM["Developer simulation&lt;br/&gt;FUNCTION · source=simulation, action=none"]:::fn
+  QUAR["Quarantined demo event&lt;br/&gt;DATA · excluded from overview, history, eval runs and Recommendations"]:::term
+
+  SPAN --&gt; OPS --&gt; CAP
+  CAP -- "yes" --&gt; SEM --&gt; EVENT
+  CAP -- "no" --&gt; CLEAR
+  GOLD --&gt; PREV --&gt; CMP
+  CMP -- "no" --&gt; CLEAR
+  CMP -- "yes" --&gt; EVENT --&gt; ALT
+  ALT -- "yes" --&gt; REC
+  ALT -- "no" --&gt; ONLY
+  SIM --&gt; QUAR
+
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+</pre>
+<h2>Blindspot — dashboard + management API. Hosted invite/project-key signup + session QA synced 2026-07-22.</h2>
+<pre class="mermaid">%% Blindspot — dashboard + management API. Hosted invite/project-key signup + session QA synced 2026-07-22.
+%% Management keeps bs_key server-only; invite signup is the explicit shown-once key-delivery boundary.
+%% files: apps/dashboard/lib/api.ts, apps/dashboard/lib/request-origin.ts, apps/dashboard/app/logout/route.ts, apps/dashboard/app/signup/SignupFlow.tsx, apps/dashboard/app/signup/session/route.ts, apps/dashboard/app/(app)/settings/SettingsView.tsx, apps/dashboard/app/(app)/routes/[name]/evals/page.tsx, apps/gateway/src/public/signup.ts, apps/gateway/src/manage/keys.ts, apps/gateway/src/manage/workflows.ts, packages/core/src/signup.ts
+%% granularity: full
+flowchart TD
+  U["Browser (client components)&lt;br/&gt;ENTRY · forms, toggles, drawers"]:::term
+  L{"Signed in?&lt;br/&gt;FUNCTION · httpOnly cookie bs_key present"}:::dec
+  SI["Current beta sign-in-with-project-key screen&lt;br/&gt;FUNCTION · exact origin or browser-proven same-origin form&lt;br/&gt;validates via GET /v1/me · sets httpOnly cookie · not Supabase Auth"]:::fn
+  IV["Issue invite link&lt;br/&gt;FUNCTION · HMAC-signs email + project + expiry&lt;br/&gt;out: shown-once URL-fragment token"]:::fn
+  SU["Signup screen&lt;br/&gt;USER · confirms locked email/project&lt;br/&gt;out: same-origin creation request"]:::ask
+  VG["Public signup gate&lt;br/&gt;FUNCTION · signature + expiry + size checks&lt;br/&gt;out: verified claims"]:::fn
+  AK["Atomic project creation&lt;br/&gt;FUNCTION · pair lock + metadata default + 5-minute lost-response retry&lt;br/&gt;out: recovery key + application key"]:::fn
+  SK["Save keys and continue&lt;br/&gt;USER · recovery to password manager, app env copied&lt;br/&gt;out: signed-in Connect handoff"]:::ask
+  LO["Explicit sign out&lt;br/&gt;USER · same-origin POST navigation only&lt;br/&gt;out: bs_key cleared; GET/prefetch harmless"]:::ask
+  SC["Next.js server (RSC + server actions)&lt;br/&gt;FUNCTION · reads bs_key from cookie, never exposes it"]:::fn
+  API["Typed client lib/api.ts&lt;br/&gt;FUNCTION · Bearer bs_live_ key · fetch no-store"]:::fn
+  MW["Gateway auth&lt;br/&gt;FUNCTION · requireProject · key hash to project_id"]:::fn
+
+  subgraph MGMT["/v1 management surface (thin Hono handlers, logic in @blindspot/core)"]
+    ME["meta: /me /overview /settings&lt;br/&gt;FUNCTION · KPIs, cost-vs-quality, activity"]:::fn
+    RT["routes: GET/PATCH /routes[/:name]&lt;br/&gt;FUNCTION · policy + auto_approve, candidate pool"]:::fn
+    TR["traces: GET /traces&lt;br/&gt;FUNCTION · paginated, tenant-scoped"]:::fn
+    DR["drift: GET /drift-events&lt;br/&gt;FUNCTION · timeline linked to recs"]:::fn
+    KG["keys: POST/GET/DELETE /keys&lt;br/&gt;FUNCTION · mint shown-once, list prefixes, revoke&lt;br/&gt;final key protected from lockout"]:::fn
+    KP["provider-keys: GET/PUT/DELETE&lt;br/&gt;FUNCTION · AES-256-GCM · value NEVER returned"]:::fn
+    EV["eval-plans: estimate / inspect / confirm&lt;br/&gt;FUNCTION · paid legacy endpoint closed"]:::fn
+    EE["eval-evidence&lt;br/&gt;FUNCTION · per-example outputs, criteria, issues and reported cost"]:::fn
+    WF["workflows/context/replay&lt;br/&gt;FUNCTION · all node kinds, explicit context consent, encrypted callback secret"]:::fn
+  end
+
+  CORE["@blindspot/core services&lt;br/&gt;FUNCTION · every query scoped by project_id (tenant guard)"]:::fn
+  DB["Postgres (schema: blindspot)&lt;br/&gt;DATA · routes, eval_runs, recommendations, golden_*, traces, keys"]:::data
+  REUSE["Reused loop endpoints&lt;br/&gt;FUNCTION · golden CRUD, candidates+eval, approve/reject, drift-check, gate"]:::fn
+  DEC{"User decision on a Recommendation&lt;br/&gt;USER · approve / reject (evidence drawer)"}:::ask
+
+  U --&gt; L
+  L -- "no" --&gt; SI --&gt; SC
+  L -- "yes" --&gt; SC
+  IV --&gt; SU --&gt; VG --&gt; AK --&gt; SK --&gt; SC
+  U -. "Sign out" .-&gt; LO --&gt; SI
+  SC --&gt; API --&gt; MW
+  MW --&gt; ME
+  MW --&gt; RT
+  MW --&gt; TR
+  MW --&gt; DR
+  MW --&gt; KG
+  MW --&gt; KP
+  MW --&gt; EV
+  MW --&gt; EE
+  MW --&gt; WF
+  MW --&gt; REUSE
+  ME --&gt; CORE
+  RT --&gt; CORE
+  TR --&gt; CORE
+  DR --&gt; CORE
+  KG --&gt; CORE
+  KP --&gt; CORE
+  EV --&gt; CORE
+  EE --&gt; CORE
+  WF --&gt; CORE
+  REUSE --&gt; CORE
+  CORE --&gt; DB
+  AK --&gt; DB
+  U -.-&gt; DEC
+  DEC -.-&gt; REUSE
+
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+</pre>
+<h2>Blindspot — invite beta, connection modes, consented context, and observed node discovery (takeover synced 2026-07-22)</h2>
+<pre class="mermaid">%% Blindspot — invite beta, connection modes, consented context, and observed node discovery (takeover synced 2026-07-22)
+%% files: packages/core/src/onboarding.ts, packages/core/src/feedback.ts, apps/gateway/src/scripts/invite.ts, apps/gateway/src/scripts/feedback.ts, apps/gateway/src/manage/feedback.ts, packages/sdk/src/index.ts, apps/gateway/src/manage/workflows.ts, packages/core/src/workflows.ts, packages/db/src/schema.ts, apps/dashboard/app/login/page.tsx, apps/dashboard/app/(app)/workflows/page.tsx, apps/dashboard/app/(app)/connect/page.tsx, apps/dashboard/app/(app)/feedback/page.tsx
+%% granularity: full
+flowchart TD
+  INVITE["Create signed recipient/project signup link&lt;br/&gt;FUNCTION · operator CLI · token in URL fragment&lt;br/&gt;out: secure, expiring invitation"]:::fn
+  SIGNIN["Create workspace + separate recovery/application keys&lt;br/&gt;USER · invite-gated project-key identity, not Supabase Auth&lt;br/&gt;out: signed-in browser + revocable server-only app key"]:::ask
+  INSTALL["Install versioned TypeScript SDK + five environment variables&lt;br/&gt;FUNCTION · metadata + observe-only default&lt;br/&gt;out: deployable application connector"]:::fn
+  APP["Existing agent receives a request&lt;br/&gt;FUNCTION&lt;br/&gt;in: user input · out: application response"]:::term
+  MODE{"BLINDSPOT_ROUTING?&lt;br/&gt;USER · observe_only default or managed"}:::dec
+  KEEP["Application keeps its configured model&lt;br/&gt;FUNCTION · observe-only never asks Blindspot to route"]:::fn
+  RESOLVE["Resolve node model with safe fallback&lt;br/&gt;FUNCTION · POST /v1/workflows/resolve-model&lt;br/&gt;in: workflow, node, fallback · out: approved provider:model"]:::fn
+  RUN["Run application workflow&lt;br/&gt;AGENT + FUNCTION nodes&lt;br/&gt;out: answers, tool results and deterministic decisions"]:::agent
+  SDK["Queue bounded best-effort telemetry for instrumented nodes&lt;br/&gt;FUNCTION · 900KB cap, one retry, terminal flush at request boundary"]:::fn
+  CAP{"Effective capture mode&lt;br/&gt;FUNCTION · stricter of SDK and project&lt;br/&gt;metadata, inputs, or full"}:::dec
+  API["Ingest authenticated span batch&lt;br/&gt;FUNCTION · 1MB request cap, max 100 spans, Zod validation"]:::fn
+  REDACT["Redact credential-shaped fields&lt;br/&gt;FUNCTION · out: consent-bounded safe payload"]:::fn
+  MAP["Upsert workflow, execution and each received node kind&lt;br/&gt;DATA · observed agent, generation, retrieval, tool or function spans only"]:::data
+  GEN{"Node is a model generation?&lt;br/&gt;FUNCTION"}:::dec
+  ROUTE["Create/link environment-scoped Route&lt;br/&gt;FUNCTION · observed model is truth in observe-only&lt;br/&gt;managed route changes only after approval"]:::fn
+  UI["Workflows dashboard&lt;br/&gt;FUNCTION · map shows observed nodes; Routes &amp; Models shows generations only"]:::fn
+  DECL["Declared topology + dev/production coverage&lt;br/&gt;PLANNED · startup manifest is not implemented"]:::term
+  SHARE{"Share product context now?&lt;br/&gt;USER · explicit action only"}:::ask
+  MANIFEST["Store versioned context manifest and hash&lt;br/&gt;DATA · README/design/prompt/architecture selected by app owner"]:::data
+  NONE["No repository content leaves the app&lt;br/&gt;DATA"]:::term
+  FEEDBACK["Submit project-scoped beta feedback&lt;br/&gt;USER · stage, expected, actual and impact&lt;br/&gt;explicit submit · no automatic logs or attachments"]:::ask
+  FDB["Store bounded feedback + show own history&lt;br/&gt;DATA · authenticated project scope&lt;br/&gt;operator reads all only from trusted database CLI"]:::data
+
+  INVITE --&gt; SIGNIN --&gt; INSTALL --&gt; APP --&gt; MODE
+  MODE -- "observe-only" --&gt; KEEP --&gt; RUN
+  MODE -- "managed" --&gt; RESOLVE --&gt; RUN
+  RUN --&gt; SDK --&gt; CAP --&gt; API --&gt; REDACT --&gt; MAP --&gt; GEN
+  GEN -- "yes" --&gt; ROUTE --&gt; UI
+  GEN -- "no" --&gt; UI
+  UI -. "future coverage" .-&gt; DECL
+  UI --&gt; SHARE
+  SHARE -- "consent" --&gt; MANIFEST
+  SHARE -- "not now" --&gt; NONE
+  UI --&gt; FEEDBACK --&gt; FDB
+
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+</pre>
+<h2>Blindspot — provider registry + node compatibility gate (Phase 7B; takeover reviewed 2026-07-22)</h2>
+<pre class="mermaid">%% Blindspot — provider registry + node compatibility gate (Phase 7B; takeover reviewed 2026-07-22)
+%% files: packages/providers/src/registry.ts, packages/core/src/model-registry.ts, apps/gateway/src/manage/model-registry.ts, packages/db/src/schema.ts, apps/dashboard/app/(app)/settings/SettingsView.tsx, apps/dashboard/app/(app)/routes/[name]/RouteDetailView.tsx
+%% granularity: full
+flowchart TD
+  SYNC["Sync models&lt;br/&gt;USER · chooses provider"]:::ask
+  AUTH["Authenticate project&lt;br/&gt;FUNCTION · bs_live key hash"]:::fn
+  KEY{"Encrypted BYO provider key exists?&lt;br/&gt;FUNCTION"}:::dec
+  DECRYPT["Decrypt key in memory&lt;br/&gt;FUNCTION · AES-256-GCM"]:::fn
+  CATALOG["List account-visible models&lt;br/&gt;FUNCTION · provider read-only endpoint&lt;br/&gt;bounded timeout + 5 MB response · zero inference tokens"]:::fn
+  VALIDATE["Validate catalog with Zod&lt;br/&gt;FUNCTION&lt;br/&gt;normalize capabilities + availability + pricing"]:::fn
+  REG["Upsert account-scoped registry&lt;br/&gt;DATA · model_registry&lt;br/&gt;unseen prior rows become unavailable"]:::data
+  REQ["Strictest currently observed/supplied node requirements&lt;br/&gt;DATA · workflow_nodes.requirements_json&lt;br/&gt;unseen branches are not inferred"]:::data
+  SELECT{"Workflow selected for optimization?&lt;br/&gt;USER · default false"}:::ask
+  ALLOW["Prototype allowlist&lt;br/&gt;FUNCTION · Claude Sonnet 4.6 + Haiku 4.5"]:::fn
+  ACCESS{"Provider key + account access verified?&lt;br/&gt;FUNCTION"}:::dec
+  MATCH{"Modalities, tools, structured output,&lt;br/&gt;streaming, system messages and context fit?&lt;br/&gt;FUNCTION · deterministic"}:::dec
+  ELIGIBLE["Eligible model&lt;br/&gt;DATA · technical pass + price/capability evidence"]:::data
+  EXCLUDED["Excluded model with exact reasons&lt;br/&gt;DATA · needs key, needs verification or incompatible"]:::data
+  ADD["Add experiment candidate&lt;br/&gt;USER"]:::ask
+  GUARD["Re-run server-side compatibility gate&lt;br/&gt;FUNCTION · arbitrary raw refs rejected"]:::fn
+  POOL["Candidate stored; back-test not started&lt;br/&gt;DATA · candidates&lt;br/&gt;zero eval spend · live_model unchanged"]:::data
+  QUALITY["Phase 7C BUILT: estimate + exact disclosed sample + confirmation&lt;br/&gt;then per-example golden-set quality evidence"]:::term
+  APPROVAL["Workflow-replay Recommendation only&lt;br/&gt;USER approves; managed applies, observe-only awaits rollout"]:::term
+  OBSERVE["Remain observe-only&lt;br/&gt;DATA · no experiment or route change"]:::term
+  FAIL["Return sanitized sync error&lt;br/&gt;FUNCTION · no secret/provider body exposed"]:::term
+
+  SYNC --&gt; AUTH --&gt; KEY
+  KEY -- "no" --&gt; FAIL
+  KEY -- "yes" --&gt; DECRYPT --&gt; CATALOG --&gt; VALIDATE --&gt; REG
+  CATALOG -.-&gt;|"timeout, HTTP, size or shape failure"| FAIL
+  REG --&gt; ACCESS
+  REQ --&gt; SELECT
+  SELECT -- "no" --&gt; OBSERVE
+  SELECT -- "yes" --&gt; ALLOW --&gt; ACCESS
+  ACCESS -- "no" --&gt; EXCLUDED
+  ACCESS -- "yes" --&gt; MATCH
+  MATCH -- "no or unknown" --&gt; EXCLUDED
+  MATCH -- "yes" --&gt; ELIGIBLE --&gt; ADD --&gt; GUARD --&gt; POOL --&gt; QUALITY --&gt; APPROVAL
+
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+</pre>
+<h2>Blindspot — immutable eval spend authorization with explicit execution grade (takeover reviewed 2026-07-22)</h2>
+<pre class="mermaid">%% Blindspot — immutable eval spend authorization with explicit execution grade (takeover reviewed 2026-07-22)
+%% files: packages/core/src/eval/cost.ts, packages/core/src/eval/planner.ts, packages/core/src/eval/runner.ts, packages/db/src/schema.ts, apps/dashboard/app/(app)/routes/[name]/RouteDetailView.tsx
+%% granularity: full
+flowchart TD
+  PICK["Choose eligible models, execution grade and maximum USD spend&lt;br/&gt;USER"]:::ask
+  ELIG["Re-check selected workflow, registry, candidates and replay readiness&lt;br/&gt;FUNCTION"]:::fn
+  LOAD["Load latest versioned golden set&lt;br/&gt;DATA · active golden_examples"]:::data
+  PRICE["Estimate candidate + judge calls&lt;br/&gt;FUNCTION · bounded inputs/outputs + safety factor"]:::fn
+  FULL{"Budget covers every case?&lt;br/&gt;FUNCTION"}:::dec
+  SAMPLE["Choose reproducible strata&lt;br/&gt;FUNCTION · must-pass, known-failure, edge, representative · stable SHA seed"]:::fn
+  DRAFT["Store immutable plan for 30 minutes&lt;br/&gt;DATA · execution mode, examples/hash, calls, costs and confidence"]:::data
+  REVIEW{"Confirm this exact plan?&lt;br/&gt;USER"}:::ask
+  FRESH{"Examples, model eligibility, replay config and key access still valid?&lt;br/&gt;FUNCTION"}:::dec
+  LOCK["Lock + single-use transition&lt;br/&gt;FUNCTION · draft to running"]:::fn
+  REFRESH["409 · calculate a fresh estimate&lt;br/&gt;FUNCTION · no provider spend"]:::term
+  LOOP["For each authorized model and example&lt;br/&gt;FUNCTION · pre-check the per-model cap"]:::fn
+  EXEC{"Authorized execution mode?&lt;br/&gt;FUNCTION"}:::dec
+  DIRECT["Model-only candidate call&lt;br/&gt;AGENT · selected model&lt;br/&gt;out: screening output"]:::agent
+  REPLAY["Protected application replay&lt;br/&gt;FUNCTION · temporary model override&lt;br/&gt;out: actual target-node output after real app context"]:::fn
+  JUDGE["Score visible criteria&lt;br/&gt;AGENT · JUDGE_MODEL&lt;br/&gt;out: per-criterion scores + reasoning"]:::agent
+  MEAN["Equal-weight criterion mean&lt;br/&gt;FUNCTION · transparent score formula"]:::fn
+  EVID["Persist evidence immediately&lt;br/&gt;DATA · input/reference/output, issues, usage, costs and errors"]:::data
+  DONE{"All selected examples finished within the authorization?&lt;br/&gt;FUNCTION"}:::dec
+  SCREEN["Show model-only shortlist and issues&lt;br/&gt;DATA · cannot recommend a production switch"]:::term
+  REC["Workflow-replay evidence may enter policy&lt;br/&gt;DATA · Recommendation remains approval-gated"]:::data
+  WARN["Keep partial evidence/issues; no Recommendation&lt;br/&gt;DATA"]:::term
+
+  PICK --&gt; ELIG --&gt; LOAD --&gt; PRICE --&gt; FULL
+  FULL -- "yes" --&gt; DRAFT
+  FULL -- "no" --&gt; SAMPLE --&gt; DRAFT
+  DRAFT --&gt; REVIEW
+  REVIEW -- "revise" --&gt; PICK
+  REVIEW -- "confirm" --&gt; FRESH
+  FRESH -- "no" --&gt; REFRESH
+  FRESH -- "yes" --&gt; LOCK --&gt; LOOP --&gt; EXEC
+  EXEC -- "model-only" --&gt; DIRECT --&gt; JUDGE
+  EXEC -- "workflow replay" --&gt; REPLAY --&gt; JUDGE
+  JUDGE --&gt; MEAN --&gt; EVID --&gt; DONE
+  DONE -- "no" --&gt; WARN
+  DONE -- "yes, model-only" --&gt; SCREEN
+  DONE -- "yes, replay" --&gt; REC
+
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+</pre>
+<h2>granularity: master</h2>
+<pre class="mermaid">%% granularity: master
+%% files: packages/core/src/metrics.ts, packages/core/src/execution-feedback.ts, apps/gateway/src/manage/monitor.ts, apps/dashboard/app/(app)/monitor/page.tsx
+flowchart TD
+  SPANS["workflow_spans / workflow_executions&lt;br/&gt;DATA · already ingested"]:::data
+  FB["execution_feedback&lt;br/&gt;DATA · SDK feedback()"]:::data
+  MET["getWorkflowMetrics&lt;br/&gt;FUNCTION · window + previous-period + node filter + trend"]:::fn
+  API["GET /v1/metrics&lt;br/&gt;FUNCTION · Bearer project key"]:::fn
+  UI["/monitor screen&lt;br/&gt;USER · scorecards + trend"]:::term
+  APP["Connected app&lt;br/&gt;AGENT · posts 👍/👎"]:::agent
+  APP --&gt; FB
+  SPANS --&gt; MET
+  FB --&gt; MET
+  MET --&gt; API --&gt; UI
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+</pre>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+mermaid.initialize({ startOnLoad:false, securityLevel:"loose", theme:"base",
+  themeVariables:{ fontFamily:"-apple-system, Segoe UI, Roboto, sans-serif", fontSize:"14px" } });
+await mermaid.run({ querySelector:"pre.mermaid" });
+</script>
+</body></html>

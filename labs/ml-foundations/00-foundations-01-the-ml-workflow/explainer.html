@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The ML workflow — ML Hands-on Lab</title><style>
+:root{--ink:#24302f;--muted:#64706e;--paper:#fbfaf7;--card:#ffffff;--accent:#176b66;--line:#dce4e0;--code:#17201f}
+*{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.72 Georgia,'Times New Roman',serif}
+main{max-width:72ch;margin:0 auto;padding:4rem 1.4rem 7rem} h1,h2,h3{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.18;color:#172321}
+h1{font-size:clamp(2.25rem,7vw,4.5rem);letter-spacing:-.04em;margin:.2rem 0 1rem} h2{font-size:1.55rem;margin-top:3.6rem;padding-top:1rem;border-top:1px solid var(--line)}
+h3{font-size:1.05rem;margin-top:2rem} p,li{max-width:68ch} a{color:var(--accent);text-decoration-thickness:.08em;text-underline-offset:.18em}
+.eyebrow{font:700 .78rem/1.2 ui-sans-serif,-apple-system,sans-serif;text-transform:uppercase;letter-spacing:.13em;color:var(--accent)}
+.lede{font-size:1.28rem;line-height:1.55;color:#344441}.micro,.callout{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);padding:1rem 1.2rem;border-radius:.4rem}
+.equation{overflow-x:auto;background:#eef4f1;padding:.8rem 1rem;border-radius:.4rem}.terms{color:#3f514e}.figure{margin:2rem 0}.figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:.55rem;background:white}.caption{font-size:.92rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-family:ui-sans-serif,-apple-system,sans-serif;font-size:.92rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:.75rem .5rem}th{color:var(--accent)}
+pre{background:var(--code);color:#edf4f1;padding:1rem;overflow:auto;border-radius:.45rem;font-size:.85rem;line-height:1.55}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.steps li{margin:.7rem 0}.links{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:2rem}.button{font-family:ui-sans-serif,-apple-system,sans-serif;background:var(--accent);color:white;padding:.62rem .9rem;border-radius:.35rem;text-decoration:none}.button.secondary{background:white;color:var(--accent);border:1px solid var(--accent)}
+@media(max-width:620px){main{padding-top:2rem}body{font-size:16px}table{display:block;overflow-x:auto}}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script>window.MathJax={tex:{inlineMath:[["\(","\)"]],displayMath:[["\[","\]"]]}};</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" onload="hljs.highlightAll()"></script>
+</head><body><main><p class="eyebrow">ML Hands-on Lab · Foundations</p><h1>The ML workflow</h1><section><h2>1. The one-sentence version</h2><p class="lede">You separate learning, choosing, and final checking so that your performance estimate describes new cases rather than your memory of old ones.</p></section>
+    <section><h2>2. The intuition</h2><p>Imagine preparing for an exam. Training questions teach you. Validation questions tell you which study method is working. The sealed test tells you how well that finished method transfers. If you keep opening the sealed test and changing your method, it is no longer a test.</p>
+    <div class="micro"><h3>A five-row example</h3><p>You have outcomes <code>[0, 1, 0, 1, 1]</code>. Use rows 1–3 to train, row 4 to choose between two models, and row 5 once at the end. Model A gets row 4 right; you select it. Model A also gets row 5 right, so final accuracy is <strong>1/1</strong>. That estimate is noisy, but honest. If you tried ten models until one got row 5 right, <strong>1/1</strong> would describe your search, not future performance.</p><p>Now add a field recorded after the outcome: <code>[0.01, 1.00, 0.02, 0.99, 1.01]</code>. Thresholding it at 0.5 gets <strong>5/5</strong>. The arithmetic is real; the prediction claim is not.</p></div></section>
+    <section><h2>3. The maths in plain English</h2><p class="equation">\[\hat R_{test}(f)=\frac{1}{n_{test}}\sum_{i=1}^{n_{test}} L(y_i,f(x_i))\]</p><p class="terms"><strong>\(f\)</strong> is the frozen model. <strong>\(x_i\)</strong> is a test input. <strong>\(y_i\)</strong> is its answer. <strong>\(L\)</strong> assigns a cost, such as 1 for a wrong class and 0 for a correct one. Averaging gives estimated future risk. More independent test rows reduce uncertainty; repeatedly adapting \(f\) to this average makes it optimistically biased.</p><p class="equation">\[\text{accuracy}=\frac{TP+TN}{TP+TN+FP+FN}\]</p><p>Each symbol is a count: true positives and true negatives are correct; false positives and false negatives are mistakes. Accuracy gets larger when either kind of correct decision grows, but it says nothing about whether your features will exist in production.</p></section>
+    <section><h2>4. What the model is actually doing during training</h2><ol class="steps"><li>Freeze a test set before fitting transformations or models.</li><li>Fit preprocessing and model parameters using training rows only.</li><li>Use validation results to choose features, capacity, thresholds, or other settings.</li><li>Freeze that entire procedure.</li><li>Evaluate once on test. Report the split rule alongside the score.</li><li>Before deployment, audit when every input is created. A clean random split cannot repair a future-only feature.</li></ol></section>
+    <section><h2>5. The knobs</h2><table><tr><th>Knob</th><th>Too low</th><th>Too high</th></tr><tr><td>Test fraction</td><td>The final estimate jumps around.</td><td>Too little data remains for learning.</td></tr><tr><td>Validation reuse</td><td>You may make poorly informed choices.</td><td>You overfit choices to validation.</td></tr><tr><td>Stratification</td><td>Rare classes may vanish from a split.</td><td>Not really a degree knob; use it when class balance matters.</td></tr><tr><td>Grouping or time gap</td><td>Related or future information crosses the boundary.</td><td>The estimate may be conservative and training data shrinks.</td></tr></table></section>
+    <section><h2>6. Assumptions and failure modes</h2><p>Your test rows must resemble the cases you care about and be independent enough to count as new evidence. Random splitting fails when the same person, device, household, or future time period appears on both sides. Target leakage fails more quietly: a field can be present in every historical row yet unavailable at decision time. Repeated test peeking creates selection bias even without a leaked column.</p>
+    <figure class="figure"><img src="key_figure.png" alt="Honest, leaked random-test, and leaked production performance"><figcaption class="caption">The notebook creates this figure from actual fits. The leaked feature wins a random split and loses its advantage when deployment removes the shortcut.</figcaption></figure></section>
+    <section><h2>7. Code</h2><h3>Minimal version</h3><pre><code class="language-python">from sklearn.model_selection import train_test_split
+X_dev, X_test, y_dev, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=0, stratify=y
+)
+X_train, X_val, y_train, y_val = train_test_split(
+    X_dev, y_dev, test_size=0.25, random_state=0, stratify=y_dev
+)
+model.fit(X_train, y_train)
+print(model.score(X_val, y_val))</code></pre><h3>Realistic version</h3><pre><code class="language-python">from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipe = Pipeline([
+    ("scale", StandardScaler()),
+    ("model", LogisticRegression(max_iter=1000, random_state=0)),
+])
+pipe.fit(X_train, y_train)
+# Make choices on validation; open test only after the procedure is frozen.
+validation_score = pipe.score(X_val, y_val)
+test_score = pipe.score(X_test, y_test)</code></pre></section>
+    <section><h2>8. Where it's actually used</h2><ul><li>Credit underwriting, where application-time fields must be separated from later repayment records.</li><li>Hospital readmission models, where notes written after discharge cannot predict discharge-time risk.</li><li>Fraud systems, where time-based testing prevents future chargebacks from leaking backward.</li><li>Recommendation systems, where one user's later clicks must not enter an earlier training window.</li><li>Manufacturing inspection, where batches or machines need grouped splits to avoid near-duplicate leakage.</li></ul></section>
+    <section><h2>9. How it relates to its neighbours</h2><p>Cross-validation repeats the training/validation idea to use limited development data efficiently; it does not eliminate the need for a final untouched test. Time-series backtesting and group cross-validation specialize the boundary for dependent rows. Leakage is often confused with overfitting: overfitting learns noise in legitimate training inputs, while leakage learns information that should not be available at all.</p></section>
+    <section><h2>10. Links</h2><div class="links"><a class="button" href="notebook.ipynb">Run the notebook</a><a class="button secondary" href="../index.html">Back to the lab index</a></div></section></main></body></html>

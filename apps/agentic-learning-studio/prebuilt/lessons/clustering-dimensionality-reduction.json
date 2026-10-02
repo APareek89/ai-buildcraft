@@ -1,0 +1,998 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Clustering and Dimensionality Reduction",
+    "title": "Clustering and Dimensionality Reduction",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Clustering and Dimensionality Reduction is practical when learners can apply it to this concrete case: A support team wants to discover ticket themes without labels and visualize them for ops review. By the end, they should be able to build or review clustering workflow with embeddings, projection, and cluster naming checks, measure cluster coherence judged by reviewers, and catch the failure where a pretty 2D plot creates fake confidence about weak clusters."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Clustering and Dimensionality Reduction",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Clustering and Dimensionality Reduction: mental map",
+    "caption": "Explore unlabeled data with k-means, DBSCAN, PCA, and UMAP while separating visual structure from validated meaning.",
+    "oneLineThesis": "Clustering and dimensionality reduction are exploratory tools whose outputs need assumptions, checks, and human interpretation.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Unlabeled data still needs a question",
+        "sub": "Clustering without a decision becomes decorative geometry.",
+        "what": "Learners anchor exploration in a product question.",
+        "relevance": "This prevents pretty plots from masquerading as answers.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Start with support-ticket exploration goals before choosing algorithms.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "k-means assumes compact round-ish groups",
+        "sub": "Centroids work best when distance to a center is meaningful.",
+        "what": "Learners understand a common clustering assumption.",
+        "relevance": "This avoids using k-means on arbitrary shapes or unscaled features.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Cluster ticket embeddings around centroids and inspect the assumptions.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "DBSCAN finds dense regions and noise",
+        "sub": "Density clustering can reject outliers instead of forcing every point into a group.",
+        "what": "Learners see a different unsupervised assumption.",
+        "relevance": "This helps when not every ticket belongs in a neat centroid cluster.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use density to find repeated issue pockets and leave outliers unassigned.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "PCA and UMAP make structure inspectable",
+        "sub": "Dimensionality reduction creates views, not proof.",
+        "what": "Learners treat projections as inspection tools with assumptions.",
+        "relevance": "This prevents overclaiming from a persuasive 2D plot.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Project high-dimensional ticket vectors and inspect local structure carefully.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Cluster labels need validation and human meaning",
+        "sub": "The output becomes useful only when it changes a decision.",
+        "what": "Learners close exploration with evidence and action.",
+        "relevance": "This prevents unsupervised artifacts from becoming product truth.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Name, review, and test ticket clusters before using them in routing.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "frames"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "contrasts"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "projects"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "validates"
+      }
+    ],
+    "structureType": "conceptual"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Unlabeled data still needs a question",
+      "sub": "Clustering without a decision becomes decorative geometry.",
+      "summary": "Unsupervised learning should begin with a use case and validation plan.",
+      "objectives": [
+        "Define a concrete unsupervised question.",
+        "Explain why cluster IDs are not ground truth.",
+        "Choose features or embeddings deliberately."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Clusters are hypotheses about structure",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a support team has 20,000 unlabeled tickets and wants to discover recurring issue types for routing. There are no labels yet. Clustering can suggest groups, but the group numbers are not facts until people inspect examples and connect them to action."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The first decision is the representation: raw counts, engineered features, or embeddings. The second is the distance meaning. If distance does not match the product question, the clusters will look scientific while being useless."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_clustering",
+            "kb_embeddings_vectors"
+          ],
+          "analogy": "A cluster is a sticky note on a messy wall, not the wall itself."
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Worked exploration brief",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Question: can we find ticket themes that deserve new routing queues? Data: ticket-title embeddings plus metadata for language and product. Check: sample 20 tickets per cluster, name the theme, estimate purity, and test whether routing would reduce resolution time."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "kb_embeddings_vectors",
+            "canon_sklearn_clustering"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Cluster meaning",
+          "prompt": "What should you treat a cluster label as at first?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A verified customer segment by definition.",
+              "correct": false
+            },
+            {
+              "text": "A hypothesis to inspect and validate.",
+              "correct": true
+            },
+            {
+              "text": "A supervised target label with no review needed.",
+              "correct": false
+            }
+          ],
+          "explanation": "Unsupervised outputs need interpretation and checks.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_clustering"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_clustering",
+        "kb_embeddings_vectors"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "k-means assumes compact round-ish groups",
+      "sub": "Centroids work best when distance to a center is meaningful.",
+      "summary": "k-means partitions data around centroids and needs k chosen carefully.",
+      "objectives": [
+        "Explain k-means using centroids.",
+        "Name when k-means fails.",
+        "Choose k with evidence rather than default habit."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "k-means draws groups around centers",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "k-means chooses k centroids, assigns each point to the nearest centroid, then moves centroids to the average of assigned points. It works best when clusters are roughly compact and similar in scale. It struggles with long curved shapes, very different densities, and strong outliers."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_clustering",
+            "kb_embeddings_vectors"
+          ]
+        },
+        {
+          "id": "m2_worked",
+          "kind": "functionalExample",
+          "title": "Worked k-means ticket clusters",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "With k=4, sampled clusters look like billing failures, login issues, cancellation questions, and miscellaneous. The first three are useful; the fourth is a warning that k may be too small, representation may be weak, or the data contains many rare themes."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_clustering"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_clustering",
+        "kb_embeddings_vectors"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "DBSCAN finds dense regions and noise",
+      "sub": "Density clustering can reject outliers instead of forcing every point into a group.",
+      "summary": "DBSCAN groups dense neighborhoods and labels sparse points as noise.",
+      "objectives": [
+        "Explain epsilon, min_samples, and noise in plain language.",
+        "Compare DBSCAN with k-means.",
+        "Recognize density-sensitivity failure modes."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Not every point deserves a cluster",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "DBSCAN asks whether a point has enough neighbors within a radius. Dense regions become clusters; isolated points become noise. This is useful when you expect repeated issue pockets plus unusual one-off tickets. It is sensitive to scaling and radius choice."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_clustering",
+            "kb_embeddings_vectors"
+          ]
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "k-means vs DBSCAN",
+          "criteria": [
+            "Algorithm",
+            "Assumption",
+            "Watch out"
+          ],
+          "options": [
+            {
+              "name": "k-means",
+              "cells": [
+                {
+                  "criterion": "Algorithm",
+                  "text": "k-means",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Assumption",
+                  "text": "compact groups around centroids",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Watch out",
+                  "text": "must choose k; outliers get forced into clusters",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "You expect roughly balanced compact groups.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "DBSCAN",
+              "cells": [
+                {
+                  "criterion": "Algorithm",
+                  "text": "DBSCAN",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Assumption",
+                  "text": "clusters are dense neighborhoods separated by sparse regions",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Watch out",
+                  "text": "epsilon/min_samples sensitive; varying densities are hard",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "You expect noise and irregular cluster counts.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_clustering"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_clustering",
+        "kb_embeddings_vectors"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "PCA and UMAP make structure inspectable",
+      "sub": "Dimensionality reduction creates views, not proof.",
+      "summary": "PCA gives linear components; UMAP creates nonlinear low-dimensional embeddings.",
+      "objectives": [
+        "Distinguish PCA and UMAP.",
+        "Run a tiny PCA plus clustering example.",
+        "Verify AI-generated unsupervised analysis."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 10,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "PCA plus k-means on a built-in dataset",
+          "language": "python",
+          "code": "from sklearn.datasets import load_iris\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.decomposition import PCA\nfrom sklearn.cluster import KMeans\n\nX, _ = load_iris(return_X_y=True)\nX_scaled = StandardScaler().fit_transform(X)\npoints_2d = PCA(n_components=2, random_state=7).fit_transform(X_scaled)\nlabels = KMeans(n_clusters=3, random_state=7, n_init='auto').fit_predict(X_scaled)\n\nprint(points_2d[:3].round(2).tolist())\nprint(labels[:10].tolist())",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This code projects data for inspection but clusters in the scaled original feature space. In real ticket work, inspect examples from each cluster before assigning meaning."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict why the code clusters X_scaled rather than points_2d.",
+            "answer": "The 2D PCA view loses information. It is useful for inspection, but clustering the richer scaled features usually preserves more signal."
+          },
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_decomposition",
+            "canon_sklearn_clustering"
+          ]
+        },
+        {
+          "id": "m4_umap",
+          "kind": "conceptual",
+          "title": "UMAP preserves local neighborhoods for exploratory maps",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "PCA is linear: it finds directions of maximum variance. UMAP is nonlinear: it tries to preserve local neighborhood relationships when projecting high-dimensional data into two or three dimensions. That makes UMAP useful for visual exploration of embeddings, but the map depends on settings such as n_neighbors, min_dist, metric, and random seed."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Failure mode: a UMAP plot can create visually separated islands even when business meaning is weak. Treat island labels as hypotheses, inspect examples, rerun with different seeds/settings, and never use 2D distance as proof of category truth."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_umap_docs",
+            "kb_embeddings_vectors"
+          ]
+        },
+        {
+          "id": "m4_pca_umap_matrix",
+          "kind": "decisionMatrix",
+          "title": "PCA vs UMAP for inspection",
+          "criteria": [
+            "Method",
+            "What it preserves",
+            "Watch out"
+          ],
+          "options": [
+            {
+              "name": "PCA",
+              "cells": [
+                {
+                  "criterion": "Method",
+                  "text": "PCA",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it preserves",
+                  "text": "linear directions of high variance",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Watch out",
+                  "text": "may miss curved local neighborhoods",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Fast baseline, compression, or linear structure.",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "UMAP",
+              "cells": [
+                {
+                  "criterion": "Method",
+                  "text": "UMAP",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "What it preserves",
+                  "text": "local neighborhood structure in a nonlinear map",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Watch out",
+                  "text": "settings and randomness can change visual clusters",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Embedding exploration and local-neighborhood visualization.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_decomposition",
+            "canon_umap_docs"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify AI-generated clustering notebooks",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: features are scaled when distance matters; k or epsilon choice is justified; projection method and parameters are recorded; cluster samples are inspected; stability is checked across seeds or samples; and plots are not treated as proof of business categories."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_clustering",
+            "canon_umap_docs"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_decomposition",
+        "canon_sklearn_clustering",
+        "canon_umap_docs",
+        "kb_embeddings_vectors"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Cluster labels need validation and human meaning",
+      "sub": "The output becomes useful only when it changes a decision.",
+      "summary": "Unsupervised exploration ends with review, stability checks, and downstream tests.",
+      "objectives": [
+        "Define validation for unlabeled structure.",
+        "Avoid using cluster IDs as target labels too quickly.",
+        "Plan the next supervised or routing experiment."
+      ],
+      "termIds": [
+        "ai",
+        "ml",
+        "model",
+        "loss",
+        "generalization"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "A cluster earns a name by surviving inspection",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Useful validation includes sample review, stability across random seeds, sensitivity to scaling, agreement with known metadata, and downstream utility. If a cluster called \"billing\" does not reduce routing time or improve labeling consistency, the name may be decorative."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_clustering",
+            "canon_umap_docs"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Use clustering to generate hypotheses; use review and downstream metrics to accept them.",
+          "useWhen": "Use it when labels are absent and you need exploration, routing candidates, anomaly pockets, or dataset understanding.",
+          "avoidWhen": "Avoid using cluster IDs as ground truth without inspection, stability checks, and a decision they improve.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_sklearn_clustering"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Cluster validation",
+          "prompt": "What is the safest next step after discovering a visually distinct cluster?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Immediately use the cluster number as a legal category.",
+              "correct": false
+            },
+            {
+              "text": "Inspect examples, test stability, and connect the cluster to a useful action.",
+              "correct": true
+            },
+            {
+              "text": "Assume the 2D plot proves a real-world group.",
+              "correct": false
+            }
+          ],
+          "explanation": "Unsupervised results need human and downstream validation.",
+          "termIds": [
+            "ai",
+            "ml",
+            "model",
+            "loss",
+            "generalization"
+          ],
+          "sources": [
+            "canon_umap_docs"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_sklearn_clustering",
+        "canon_umap_docs"
+      ]
+    }
+  ],
+  "glossary": {
+    "ai": {
+      "id": "ai",
+      "label": "AI",
+      "laymanDefinition": "Software systems that perform tasks associated with human intelligence.",
+      "technicalNote": "In these foundations lessons, AI is the broad field; the concrete mechanisms are models, data, objectives, and evaluation loops.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_clustering"
+      ],
+      "acronymExpansion": "Artificial intelligence"
+    },
+    "ml": {
+      "id": "ml",
+      "label": "ML",
+      "laymanDefinition": "A branch of AI where systems learn patterns from data instead of only following hand-written rules.",
+      "technicalNote": "ML work is defined by training data, features, models, objectives, validation, and deployment constraints.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_clustering"
+      ],
+      "acronymExpansion": "Machine learning"
+    },
+    "model": {
+      "id": "model",
+      "label": "Model",
+      "laymanDefinition": "A learned or configured function that maps inputs to predictions, scores, clusters, or generated outputs.",
+      "technicalNote": "Model choice encodes assumptions such as linearity, distance, tree splits, capacity, or sequential reward.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_clustering"
+      ]
+    },
+    "loss": {
+      "id": "loss",
+      "label": "Loss",
+      "laymanDefinition": "A numerical training signal that measures how wrong a prediction is for a task.",
+      "technicalNote": "Loss drives optimization; it is not the same as product quality, fairness, or final generalization.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_clustering"
+      ]
+    },
+    "generalization": {
+      "id": "generalization",
+      "label": "Generalization",
+      "laymanDefinition": "The ability of a model to perform well on examples it did not train on.",
+      "technicalNote": "Generalization is checked with validation/test data, leakage audits, and slice monitoring.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_clustering"
+      ]
+    },
+    "pipeline": {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "laymanDefinition": "A repeatable sequence of data transforms, feature steps, model fitting, and evaluation or inference.",
+      "technicalNote": "Pipelines prevent train/test leakage and keep preprocessing identical between training and production.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_sklearn_clustering"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Clustering and Dimensionality Reduction",
+    "themes": [
+      {
+        "name": "Exploration plan",
+        "questions": [
+          {
+            "q": "What question should the unsupervised view answer, and how will you check whether it is useful?",
+            "why": "Clusters and 2D maps are persuasive even when they are artifacts of scale, density, or projection settings.",
+            "opts": [
+              "Question plus validation plan",
+              "Pretty plot only",
+              "Use cluster ID as truth"
+            ],
+            "rot": "Treat clusters as hypotheses until stability, labels, and domain review support them."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct unsupervised exploration by naming the question, scaling, k-means assumptions, DBSCAN density and noise, PCA components, UMAP visualization, and validation checks for cluster meaning."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Unsupervised exploration path from question to checked structure",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Unlabeled data still needs a question",
+          "sub": "Clustering without a decision becomes decorative geometry.",
+          "what": "Learners anchor exploration in a product question.",
+          "relevance": "This prevents pretty plots from masquerading as answers.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Start with support-ticket exploration goals before choosing algorithms.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "k-means assumes compact round-ish groups",
+          "sub": "Centroids work best when distance to a center is meaningful.",
+          "what": "Learners understand a common clustering assumption.",
+          "relevance": "This avoids using k-means on arbitrary shapes or unscaled features.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Cluster ticket embeddings around centroids and inspect the assumptions.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "DBSCAN finds dense regions and noise",
+          "sub": "Density clustering can reject outliers instead of forcing every point into a group.",
+          "what": "Learners see a different unsupervised assumption.",
+          "relevance": "This helps when not every ticket belongs in a neat centroid cluster.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use density to find repeated issue pockets and leave outliers unassigned.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "PCA and UMAP make structure inspectable",
+          "sub": "Dimensionality reduction creates views, not proof.",
+          "what": "Learners treat projections as inspection tools with assumptions.",
+          "relevance": "This prevents overclaiming from a persuasive 2D plot.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Project high-dimensional ticket vectors and inspect local structure carefully.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Cluster labels need validation and human meaning",
+          "sub": "The output becomes useful only when it changes a decision.",
+          "what": "Learners close exploration with evidence and action.",
+          "relevance": "This prevents unsupervised artifacts from becoming product truth.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Name, review, and test ticket clusters before using them in routing.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "asks"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "clusters"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "projects"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "checks"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Unlabeled data still needs a question",
+        "detail": "Unsupervised learning should begin with a use case and validation plan."
+      },
+      {
+        "step": 2,
+        "label": "k-means assumes compact round-ish groups",
+        "detail": "k-means partitions data around centroids and needs k chosen carefully."
+      },
+      {
+        "step": 3,
+        "label": "DBSCAN finds dense regions and noise",
+        "detail": "DBSCAN groups dense neighborhoods and labels sparse points as noise."
+      },
+      {
+        "step": 4,
+        "label": "PCA and UMAP make structure inspectable",
+        "detail": "PCA gives linear components; UMAP creates nonlinear low-dimensional embeddings."
+      },
+      {
+        "step": 5,
+        "label": "Cluster labels need validation and human meaning",
+        "detail": "Unsupervised exploration ends with review, stability checks, and downstream tests."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Unlabeled data still needs a question\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"PCA and UMAP make structure inspectable\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Cluster labels need validation and human meaning\" define the selection or evaluation gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Explore 1000 support tickets using embeddings. Scale features, try k-means and DBSCAN, make a PCA or UMAP view, inspect cluster examples, measure stability, and write what each cluster hypothesis means. Next rung: turn useful clusters into labeling or routing experiments.",
+      "scopedTo": "Foundations",
+      "checks": [
+        "The question is explicit before clustering.",
+        "Scaling and distance choice are documented.",
+        "Cluster labels are treated as hypotheses.",
+        "Projection plots are not overinterpreted."
+      ]
+    }
+  },
+  "citations": {
+    "canon_sklearn_clustering": {
+      "id": "canon_sklearn_clustering",
+      "kind": "canonical",
+      "title": "scikit-learn clustering guide",
+      "url": "https://scikit-learn.org/stable/modules/clustering.html",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_sklearn_decomposition": {
+      "id": "canon_sklearn_decomposition",
+      "kind": "canonical",
+      "title": "scikit-learn decomposition guide",
+      "url": "https://scikit-learn.org/stable/modules/decomposition.html",
+      "asOfDate": "2026-06-23"
+    },
+    "canon_umap_docs": {
+      "id": "canon_umap_docs",
+      "kind": "canonical",
+      "title": "UMAP documentation",
+      "url": "https://umap-learn.readthedocs.io/",
+      "asOfDate": "2026-06-23"
+    },
+    "kb_embeddings_vectors": {
+      "id": "kb_embeddings_vectors",
+      "kind": "kb",
+      "title": "KB: Embeddings and Vector Representations",
+      "url": "https://www.sbert.net/examples/sentence_transformer/applications/semantic-search/README.html",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

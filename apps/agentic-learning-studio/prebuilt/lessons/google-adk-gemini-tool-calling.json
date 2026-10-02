@@ -1,0 +1,1278 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Google ADK and Gemini Tool Calling",
+    "title": "Google ADK and Gemini Tool Calling",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Google ADK and Gemini Tool Calling is practical when learners can apply it to this concrete case: A Gemini-based assistant schedules meetings and reads docs through approved tools. By the end, they should be able to build or review Google ADK tool-calling contract with schemas and review gates, measure valid tool calls with required arguments, and catch the failure where the model invents a tool argument that the backend never accepts."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Google ADK and Gemini Tool Calling",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Google ADK and Gemini Tool Calling: mental map",
+    "caption": "Use Google ADK and Gemini tool calling by separating model-selected function calls, ADK agents/tools, session state, and deterministic workflow control.",
+    "oneLineThesis": "Gemini function calling supplies structured tool requests; ADK wraps that into agents, tools, sessions, and workflow patterns that still need host-side execution policy.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Gemini function calling returns structured action requests",
+        "sub": "The model selects a function and arguments; your code executes.",
+        "what": "Learners understand Gemini function calling as structured intent.",
+        "relevance": "This prevents treating model-produced calls as already authorized actions.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Start with the boundary between model output and real tool execution.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "ADK LlmAgent packages model, instruction, and tools",
+        "sub": "An ADK agent gives tool calling a reusable product wrapper.",
+        "what": "Learners map ADK agent objects to product behavior.",
+        "relevance": "This distinguishes direct Gemini API calls from ADK agent runtime structure.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use LlmAgent when instructions, tools, and sessions belong together.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Session state and workflows add control",
+        "sub": "ADK can carry state and compose deterministic agent workflows.",
+        "what": "Learners understand ADK session state and workflow patterns.",
+        "relevance": "State and loops can create subtle bugs without stop rules and ownership.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use state templating and workflow agents deliberately, not as memory magic.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Code a narrow FunctionTool-style agent",
+        "sub": "A small example should expose tool arguments and policy.",
+        "what": "Learners write a concrete ADK/Gemini-style tool example.",
+        "relevance": "Runnable-looking examples make the model/runtime boundary tangible.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Build the toy path so tool selection and execution are inspectable.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Evaluate tool calls, not just final replies",
+        "sub": "ADK/Gemini apps need traces, malformed-argument tests, and policy checks.",
+        "what": "Learners define production checks for ADK tool use.",
+        "relevance": "A final answer can hide wrong tool selection or unsafe arguments.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Review events, tool args, session state, and final answer together.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Gemini function calling returns structured action requests",
+      "sub": "The model selects a function and arguments; your code executes.",
+      "summary": "Function calling bridges natural language to application code.",
+      "objectives": [
+        "Define Gemini function calling.",
+        "Separate function declaration from executor.",
+        "Name validation and approval responsibilities."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The model proposes; the runtime disposes",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a user asks “Schedule a project review with Maya tomorrow.” Gemini function calling can return a structured request such as `schedule_meeting(attendees, time)`, but the app must validate calendar access, time zone, conflicts, and approval."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Official Gemini docs frame function calling as connecting models to external tools and APIs. The model determines when to call a function and supplies parameters; client code performs the real action."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Never execute a function call before validating arguments and user authority."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ],
+          "analogy": "Function calling is a filled-out work order, not the work itself."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Worked function call boundary",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The model may return a meeting function with attendee and time fields. The app parses the call, validates required fields, checks policy, then either executes or asks the user to confirm."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If the model invents an attendee email or vague time, the app should request clarification rather than guessing."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Declare function name, description, and parameters."
+                  }
+                ],
+                [
+                  {
+                    "text": "Let Gemini propose a call when user intent matches."
+                  }
+                ],
+                [
+                  {
+                    "text": "Validate arguments and authority in application code."
+                  }
+                ],
+                [
+                  {
+                    "text": "Return tool result as context for final response."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Function-call boundary",
+          "prompt": "Who should execute the real calendar API call?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The model weights directly.",
+              "correct": false
+            },
+            {
+              "text": "Application code after validation and policy checks.",
+              "correct": true
+            },
+            {
+              "text": "The function description by itself.",
+              "correct": false
+            }
+          ],
+          "explanation": "Function calling returns structured intent; the runtime owns execution.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "canon3",
+        "canon4",
+        "canon5",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "ADK LlmAgent packages model, instruction, and tools",
+      "sub": "An ADK agent gives tool calling a reusable product wrapper.",
+      "summary": "ADK turns a model-plus-tools pattern into an agent object.",
+      "objectives": [
+        "Name LlmAgent fields such as model, instruction, description, and tools.",
+        "Explain FunctionTool wrapping.",
+        "Recognize when ADK is useful."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "LlmAgent is the named tool-using worker",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Google ADK docs show `LlmAgent` configured with a model, name, description, instruction, and tools. Python can accept a native function directly as a tool, while other languages may use explicit FunctionTool wrappers or annotations."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The LLM uses tool names, descriptions, docstrings, and parameter schemas to decide which tool to call. That means tool naming and docstrings are behavioral design, not decoration."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "A tool description should say when not to use the tool as clearly as when to use it."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ],
+          "analogy": "An ADK LlmAgent is a job role plus a tool belt."
+        },
+        {
+          "id": "m2_worked",
+          "kind": "functionalExample",
+          "title": "Case study: capital-city demo grows into product agent",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A simple agent answers capital-city questions with a function. In a product setting, the same pattern becomes a support agent with tools for KB search, ticket lookup, and draft reply creation."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The risk rises with tools: a search tool is low risk; a ticket update tool needs policy and approval."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Define a focused agent instruction."
+                  }
+                ],
+                [
+                  {
+                    "text": "Attach narrow tools with typed parameters."
+                  }
+                ],
+                [
+                  {
+                    "text": "Run sample prompts that should and should not call tools."
+                  }
+                ],
+                [
+                  {
+                    "text": "Inspect tool call arguments before execution."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "ADK object",
+          "prompt": "What does an ADK LlmAgent combine?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only a database index.",
+              "correct": false
+            },
+            {
+              "text": "Model, name/description, instruction, and available tools.",
+              "correct": true
+            },
+            {
+              "text": "Only a CSS layout.",
+              "correct": false
+            }
+          ],
+          "explanation": "The agent object packages model behavior and tool access.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "canon3",
+        "canon4",
+        "canon5",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Session state and workflows add control",
+      "sub": "ADK can carry state and compose deterministic agent workflows.",
+      "summary": "ADK state and workflows are application control surfaces.",
+      "objectives": [
+        "Explain session.state injection into instructions.",
+        "Compare LlmAgent, AgentTool, Sequential/Parallel/Loop patterns.",
+        "Set termination conditions for loops."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "State is explicit context, not hidden intuition",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "ADK session state can be injected into LlmAgent instructions with template keys such as `{topic}`. This is powerful for context-aware behavior, but values should be controlled product state, not random transcript leftovers."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "ADK also documents workflow-style agents such as sequential, parallel, and loop patterns. Loop workflows need explicit termination mechanisms or max iterations."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "For every state key used in instructions, name who writes it and when it expires."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ],
+          "analogy": "Session state is a labeled control panel, not a junk drawer."
+        },
+        {
+          "id": "m3_matrix",
+          "kind": "decisionMatrix",
+          "title": "ADK control choices",
+          "criteria": [
+            "Choice",
+            "Use when",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Direct function call",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Single model request with declared functions.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "One-shot tool use is enough.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "App owns more orchestration.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for small integrations.",
+              "cost": "Low",
+              "complexity": "Low"
+            },
+            {
+              "name": "LlmAgent with tools",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Reusable agent with instructions and tools.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Behavior and toolset repeat across sessions.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Tool descriptions shape behavior.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for product agents.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Workflow/multi-agent pattern",
+              "cells": [
+                {
+                  "criterion": "Choice",
+                  "text": "Sequential, parallel, loop, or delegated agents.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Control flow has real structure.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Loops need termination and eval.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use after simple agent is insufficient.",
+              "cost": "Medium",
+              "complexity": "High"
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "State ownership",
+          "prompt": "What should you know before injecting `{topic}` into an ADK instruction?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The color of the terminal.",
+              "correct": false
+            },
+            {
+              "text": "Who wrote `session.state[\"topic\"]`, why it is trusted, and when it expires.",
+              "correct": true
+            },
+            {
+              "text": "Whether the model can see all user files by default.",
+              "correct": false
+            }
+          ],
+          "explanation": "State injection affects model behavior and needs ownership.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "canon3",
+        "canon4",
+        "canon5",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Code a narrow FunctionTool-style agent",
+      "sub": "A small example should expose tool arguments and policy.",
+      "summary": "The useful example validates the call before the side effect.",
+      "objectives": [
+        "Declare a simple tool function.",
+        "Attach it to an agent.",
+        "Predict tool output and validation behavior."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Tool functions should stay small and typed",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For teaching, use a harmless function such as looking up a capital or checking availability. For product work, wrap side effects in policy and approval."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from structured outputs, schemas help shape arguments but do not prove intent. Keep executor validation close to the function."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Add one malformed argument test before adding more tools."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Minimal ADK LlmAgent with a function tool",
+          "language": "python",
+          "code": "from google.adk.agents import LlmAgent\n\ndef get_capital_city(country: str) -> str:\n    \"\"\"Retrieves the capital city for a supported country.\"\"\"\n    capitals = {\"france\": \"Paris\", \"japan\": \"Tokyo\", \"canada\": \"Ottawa\"}\n    return capitals.get(country.lower(), f\"Unknown country: {country}\")\n\ncapital_agent = LlmAgent(\n    model=\"gemini-flash-latest\",\n    name=\"capital_agent\",\n    description=\"Answers capital-city questions for supported countries.\",\n    instruction=\"Use the tool for capital-city lookups. Do not invent unsupported capitals.\",\n    tools=[get_capital_city],\n)\n\n# In a real app, inspect the tool call and result in the ADK event stream.\nprint(get_capital_city(\"Japan\"))",
+          "explanation": "The function is harmless and typed. A real ADK run would let the agent request it, while the application inspects events and tool results.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict the printed output.",
+            "answer": "It prints `Tokyo` because the function lowercases the country and finds `japan` in the dictionary."
+          },
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Tool example",
+          "prompt": "Why is this lookup safer than a calendar-scheduling tool?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It has no function name.",
+              "correct": false
+            },
+            {
+              "text": "It has no external side effect and uses a small local mapping.",
+              "correct": true
+            },
+            {
+              "text": "It bypasses all argument validation.",
+              "correct": false
+            }
+          ],
+          "explanation": "Risk depends on side effects and authority.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "canon3",
+        "canon4",
+        "canon5",
+        "kb10"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Evaluate tool calls, not just final replies",
+      "sub": "ADK/Gemini apps need traces, malformed-argument tests, and policy checks.",
+      "summary": "Tool-calling quality lives in the call trace.",
+      "objectives": [
+        "Test tool selection and no-call cases.",
+        "Assert validation and approval behavior.",
+        "Monitor session state and loop termination."
+      ],
+      "termIds": [
+        "framework",
+        "graph",
+        "checkpoint",
+        "handoff",
+        "sdk",
+        "orchestration"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The tool trace is the evidence",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For Gemini function calling and ADK agents, evaluation should inspect whether the model chose the right tool, produced valid arguments, handled tool errors, respected session state, and avoided tools when it should answer directly."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For side effects, test approval gates and idempotency. For workflows, test loop termination and state updates. For integrations, date-stamp API assumptions because ADK versions and supported languages can evolve."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Include a prompt that looks like a tool request but lacks required details. The agent should ask for clarification."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output from Google ADK/Gemini tool calling",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review the event or tool trace with the final answer."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The selected function/tool matched the user intent and description."
+                  }
+                ],
+                [
+                  {
+                    "text": "Arguments passed schema and application policy before execution."
+                  }
+                ],
+                [
+                  {
+                    "text": "Session state used in instructions had a trusted writer and lifetime."
+                  }
+                ],
+                [
+                  {
+                    "text": "Side-effecting tools required approval or safe idempotency."
+                  }
+                ],
+                [
+                  {
+                    "text": "Loop or multi-agent workflows had explicit termination and eval cases."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Tool-call eval",
+          "prompt": "What should a malformed scheduling request trigger?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "A guessed time and automatic booking.",
+              "correct": false
+            },
+            {
+              "text": "Clarification or validation failure before any calendar side effect.",
+              "correct": true
+            },
+            {
+              "text": "Deletion of the tool schema.",
+              "correct": false
+            }
+          ],
+          "explanation": "The runtime should not execute vague or invalid tool calls.",
+          "termIds": [
+            "framework",
+            "graph",
+            "checkpoint",
+            "handoff",
+            "sdk",
+            "orchestration"
+          ],
+          "sources": [
+            "canon3",
+            "canon4",
+            "canon5",
+            "kb10"
+          ]
+        }
+      ],
+      "citations": [
+        "canon3",
+        "canon4",
+        "canon5",
+        "kb10"
+      ]
+    }
+  ],
+  "glossary": {
+    "framework": {
+      "id": "framework",
+      "label": "Framework",
+      "laymanDefinition": "A library or platform that provides agent building blocks and conventions.",
+      "technicalNote": "Framework choice affects state handling, tools, tracing, deployment model, ecosystem fit, and how much control the application keeps.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "graph": {
+      "id": "graph",
+      "label": "Graph",
+      "laymanDefinition": "A workflow shape where nodes and edges define how work moves between steps.",
+      "technicalNote": "Graph-based agents make branching, retries, checkpoints, and human review more explicit than a single loose loop.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "checkpoint": {
+      "id": "checkpoint",
+      "label": "Checkpoint",
+      "laymanDefinition": "A saved workflow state that lets execution resume or be inspected later.",
+      "technicalNote": "Checkpoints are essential for durable agents because retries, approvals, and debugging need the exact state at a step boundary.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "handoff": {
+      "id": "handoff",
+      "label": "Handoff",
+      "laymanDefinition": "Passing work from one agent, tool, or human role to another.",
+      "technicalNote": "Handoffs need a typed payload, ownership transfer, stop condition, and audit trail so context does not vanish between actors.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "sdk": {
+      "id": "sdk",
+      "label": "SDK",
+      "laymanDefinition": "A software development kit with APIs and helpers for building applications.",
+      "technicalNote": "Agent SDKs encode assumptions about models, tools, sessions, tracing, and deployment, so evaluate those assumptions against the product architecture.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Software development kit"
+    },
+    "orchestration": {
+      "id": "orchestration",
+      "label": "Orchestration",
+      "laymanDefinition": "Coordinating steps, agents, tools, state, and decisions in a workflow.",
+      "technicalNote": "Orchestration owns sequencing, parallelism, retries, timeouts, approvals, and failure visibility across the agent system.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Google ADK and Gemini Tool Calling",
+    "themes": [
+      {
+        "name": "Google ADK tool design",
+        "questions": [
+          {
+            "q": "Should this Gemini app use direct function calling or an ADK agent workflow?",
+            "why": "Direct function calling is simpler for one tool; ADK helps when agents, sessions, tools, and workflows become product structure.",
+            "opts": [
+              "Direct Gemini function calling",
+              "ADK LlmAgent with FunctionTool",
+              "ADK workflow or multi-agent pattern"
+            ],
+            "rot": "Start with direct function calling for one step; move to ADK when session state, tools, agent delegation, or workflow control matter."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct Google ADK by naming Gemini function calling, FunctionTool, LlmAgent, session state, AgentTool, workflow agents, and host execution policy."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Google ADK path from Gemini function call to agent workflow",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Gemini function calling returns structured action requests",
+          "sub": "The model selects a function and arguments; your code executes.",
+          "what": "Learners understand Gemini function calling as structured intent.",
+          "relevance": "This prevents treating model-produced calls as already authorized actions.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Start with the boundary between model output and real tool execution.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "ADK LlmAgent packages model, instruction, and tools",
+          "sub": "An ADK agent gives tool calling a reusable product wrapper.",
+          "what": "Learners map ADK agent objects to product behavior.",
+          "relevance": "This distinguishes direct Gemini API calls from ADK agent runtime structure.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use LlmAgent when instructions, tools, and sessions belong together.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Session state and workflows add control",
+          "sub": "ADK can carry state and compose deterministic agent workflows.",
+          "what": "Learners understand ADK session state and workflow patterns.",
+          "relevance": "State and loops can create subtle bugs without stop rules and ownership.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use state templating and workflow agents deliberately, not as memory magic.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Code a narrow FunctionTool-style agent",
+          "sub": "A small example should expose tool arguments and policy.",
+          "what": "Learners write a concrete ADK/Gemini-style tool example.",
+          "relevance": "Runnable-looking examples make the model/runtime boundary tangible.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Build the toy path so tool selection and execution are inspectable.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Evaluate tool calls, not just final replies",
+          "sub": "ADK/Gemini apps need traces, malformed-argument tests, and policy checks.",
+          "what": "Learners define production checks for ADK tool use.",
+          "relevance": "A final answer can hide wrong tool selection or unsafe arguments.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Review events, tool args, session state, and final answer together.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Gemini function calling returns structured action requests",
+        "detail": "Function calling bridges natural language to application code."
+      },
+      {
+        "step": 2,
+        "label": "ADK LlmAgent packages model, instruction, and tools",
+        "detail": "ADK turns a model-plus-tools pattern into an agent object."
+      },
+      {
+        "step": 3,
+        "label": "Session state and workflows add control",
+        "detail": "ADK state and workflows are application control surfaces."
+      },
+      {
+        "step": 4,
+        "label": "Code a narrow FunctionTool-style agent",
+        "detail": "The useful example validates the call before the side effect."
+      },
+      {
+        "step": 5,
+        "label": "Evaluate tool calls, not just final replies",
+        "detail": "Tool-calling quality lives in the call trace."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_fit",
+        "label": "Can you justify the fit described in \"Gemini function calling returns structured action requests\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_impl",
+        "label": "Can you inspect the implementation surface in \"Code a narrow FunctionTool-style agent\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Evaluate tool calls, not just final replies\" define production checks?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Build a small Gemini/ADK design for a calendar assistant: one function declaration, one LlmAgent, session state key, approval rule before scheduling, and a test for malformed arguments. Next rung: compare ADK workflows with LangGraph.",
+      "scopedTo": "Google ADK and Gemini Tool Calling"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: AI Model Ecosystem and Tool Selection",
+      "url": "https://platform.openai.com/docs",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "LangGraph documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://langchain-ai.github.io/langgraph/",
+      "asOfDate": "2026-06-20"
+    },
+    "canon3": {
+      "id": "canon3",
+      "kind": "canonical",
+      "title": "Google ADK LlmAgent docs",
+      "url": "https://google.github.io/adk-docs/agents/llm-agents/",
+      "asOfDate": "2026-06-23"
+    },
+    "canon4": {
+      "id": "canon4",
+      "kind": "canonical",
+      "title": "Gemini API function calling docs",
+      "url": "https://ai.google.dev/gemini-api/docs/function-calling",
+      "asOfDate": "2026-06-23"
+    },
+    "canon5": {
+      "id": "canon5",
+      "kind": "canonical",
+      "title": "Google ADK custom and function tools",
+      "url": "https://google.github.io/adk-docs/tools-custom/",
+      "asOfDate": "2026-06-23"
+    },
+    "kb10": {
+      "id": "kb10",
+      "kind": "kb",
+      "title": "KB: Tool and Plugin Standards",
+      "url": "https://spec.openapis.org/oas/latest.html",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

@@ -1,0 +1,1054 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "How Large Language Models Work",
+    "title": "How Large Language Models Work",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 44,
+    "thesis": "A large language model works by tokenizing visible text, building contextual vectors with transformer attention, scoring possible next tokens, and decoding one token at a time until the response stops."
+  },
+  "learnerProfile": {
+    "level": "beginner",
+    "depth": "conceptual",
+    "examples": "functional",
+    "topic": "How Large Language Models Work",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "How LLMs Work — from text to next token",
+    "caption": "Each step explains one mechanism a beginner needs before debugging model behavior.",
+    "oneLineThesis": "An LLM repeatedly turns visible tokens into next-token probabilities; everything else is packaging, decoding, and validation around that loop.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Text becomes tokens",
+        "sub": "Build the simplest useful picture of How Large Language Models Work.",
+        "what": "Tokenization is the boundary where human text becomes model input IDs.",
+        "relevance": "It explains why long prompts, code, and non-English text can consume context unexpectedly.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "How raw text is split into model-specific pieces before any reasoning happens.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Tokens enter context",
+        "sub": "See the moving parts and how they interact.",
+        "what": "Embeddings and context windows are the model’s visible workspace.",
+        "relevance": "They explain why missing or truncated evidence cannot influence the answer.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "How token vectors and the context window define what the model can use.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Attention mixes evidence",
+        "sub": "Make the choices that change quality, cost, or risk.",
+        "what": "Attention builds contextual token states from the visible sequence.",
+        "relevance": "It explains why wording and position change model behavior.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "How transformer layers let each position use nearby and distant token information.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Logits become words",
+        "sub": "Connect the concept to a small practical artifact.",
+        "what": "Decoding turns raw scores into the next visible token.",
+        "relevance": "It explains variability, repetition, and why low temperature is not truth.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "How next-token scores, temperature, and sampling produce the response stream.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Fluent can be false",
+        "sub": "Use active recall and a decision checklist to make it stick.",
+        "what": "Failure modes follow directly from the prediction loop.",
+        "relevance": "It tells learners what to check before trusting an answer.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Why next-token prediction can sound confident without grounding or validation.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "dependency",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Text becomes tokens",
+      "sub": "Start with the boundary between human text and model input.",
+      "summary": "A model does not see words; it sees token IDs produced by a tokenizer. This module makes tokenization concrete before introducing any transformer machinery.",
+      "objectives": [
+        "Explain why tokens are not the same as words.",
+        "Predict why code, tables, or multilingual text can fill context quickly.",
+        "Use tokenization to debug a prompt that unexpectedly truncates."
+      ],
+      "termIds": [
+        "llm",
+        "token",
+        "context_window"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The model reads token IDs, not sentences",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A large language model begins with a tokenizer. The tokenizer maps text into token IDs, and the model operates on those IDs. Some tokens are whole words, some are word pieces, and some are whitespace or punctuation."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a product manager asks why a long support ticket ignored the JSON instruction at the top. The first check is not “is the model smart?” It is “what tokens actually reached the model?”"
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Before reading on, predict: which usually costs more tokens, a short English sentence or a dense code snippet with punctuation and indentation?"
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "llm",
+            "token",
+            "context_window"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ],
+          "analogy": "Tokenization is like cutting a document into puzzle pieces before handing it to a reader; odd cuts change what fits in the box."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Worked token budget: the refund ticket",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Imagine a prompt with system rules, a 4,000-word support ticket, and a JSON schema at the top. The model can only condition on the packed context window."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "The app builds the prompt: rules first, ticket second, schema third."
+                  }
+                ],
+                [
+                  {
+                    "text": "The tokenizer splits the ticket, timestamps, invoice IDs, and quoted emails into many small pieces."
+                  }
+                ],
+                [
+                  {
+                    "text": "If the request is over budget, the packer drops or summarizes older content."
+                  }
+                ],
+                [
+                  {
+                    "text": "If the schema is dropped or buried, the model may answer fluently but miss the required shape."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The fix is mechanical: measure token budget, keep durable instructions near the final task, and validate the output rather than trusting the prose."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "token",
+            "context_window",
+            "schema"
+          ],
+          "sources": [
+            "kb1",
+            "canon2"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check tokenization",
+          "prompt": "Why can a prompt lose an important instruction even when the user pasted it?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Because LLMs ignore all instructions before user text.",
+              "correct": false
+            },
+            {
+              "text": "Because the instruction may be outside the packed context or buried behind too many tokens.",
+              "correct": true
+            },
+            {
+              "text": "Because tokenization converts every word into a fixed one-word token.",
+              "correct": false
+            }
+          ],
+          "explanation": "The model only conditions on what fits in the current token window; token boundaries and packing decide what survives.",
+          "termIds": [
+            "token",
+            "context_window"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Embeddings and the context window",
+      "sub": "After text is tokenized, the model embeds only the visible tokens.",
+      "summary": "Token IDs become vectors, and the context window is the model’s working input, not durable memory.",
+      "objectives": [
+        "Describe what an embedding does at inference time.",
+        "Distinguish context from memory or knowledge.",
+        "Spot when missing context explains a bad answer."
+      ],
+      "termIds": [
+        "embedding",
+        "context_window",
+        "llm"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Token IDs become vectors in a limited workspace",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Each token ID is mapped to a learned vector before transformer layers process it. The vector itself is not a fact database. It is the starting representation the network will update using surrounding context."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The context window is the visible workspace for one request. If a customer policy, tool result, or schema is not in that workspace, the model cannot directly attend to it."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Recall from module 1: if a schema disappears from the packed prompt, what kind of failure should you expect?"
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "embedding",
+            "context_window",
+            "llm"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "analogy": "Embeddings are like name tags that give each token a starting position before the room starts a discussion."
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Case study: the missing policy paragraph",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A support assistant answers: “Refunds after 35 days are allowed.” The real policy says refunds must arrive within 30 days, but that paragraph was summarized away."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "What did not fail: the model produced fluent text."
+                  }
+                ],
+                [
+                  {
+                    "text": "What failed: the relevant evidence was absent from the context window."
+                  }
+                ],
+                [
+                  {
+                    "text": "Decision: fix packing or retrieval before changing model temperature or fine-tuning."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "context_window",
+            "llm"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check context",
+          "prompt": "What is the safest interpretation of “the model forgot the policy”?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The model deleted the policy from its weights.",
+              "correct": false
+            },
+            {
+              "text": "The policy probably was not in the current context, or it was compressed badly.",
+              "correct": true
+            },
+            {
+              "text": "The tokenizer refused to encode policy text.",
+              "correct": false
+            }
+          ],
+          "explanation": "For a single request, “forgetting” usually means missing, stale, or poorly packed context.",
+          "termIds": [
+            "context_window"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Attention builds contextual states",
+      "sub": "Visible token vectors then exchange information through attention layers.",
+      "summary": "Attention lets token positions weight other visible positions, creating context-aware states used for prediction.",
+      "objectives": [
+        "Explain attention without mystifying it.",
+        "Connect position and wording to model behavior.",
+        "Predict why long contexts can still miss the salient fact."
+      ],
+      "termIds": [
+        "attention",
+        "token",
+        "context_window"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Attention asks which visible tokens matter now",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Inside transformer layers, each token position compares with other visible positions. Attention weights decide how much information to mix from those positions into the current state."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is why the same fact can matter more or less depending on where it appears, how clearly it is labeled, and what the current token is trying to predict."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Attention is powerful, but it is not a guarantee of faithful evidence use. It can connect tokens; it cannot make absent evidence present."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "attention",
+            "token",
+            "context_window"
+          ],
+          "sources": [
+            "kb2"
+          ],
+          "analogy": "Attention is like highlighting parts of an open notebook while writing the next word; closed pages cannot be highlighted."
+        },
+        {
+          "id": "m3_flow",
+          "kind": "steppedFlow",
+          "title": "One prediction pass through the model",
+          "caption": "Click through the mechanism that turns visible tokens into a next-token state.",
+          "steps": [
+            {
+              "label": "Embed tokens",
+              "detail": "Token IDs become vectors."
+            },
+            {
+              "label": "Compare positions",
+              "detail": "Queries and keys produce attention scores."
+            },
+            {
+              "label": "Mix values",
+              "detail": "Weighted values update each token state."
+            },
+            {
+              "label": "Project logits",
+              "detail": "The final state scores possible next tokens."
+            }
+          ],
+          "termIds": [
+            "embedding",
+            "attention",
+            "logits"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check attention",
+          "prompt": "What can attention do?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It can retrieve facts that were never sent to the model.",
+              "correct": false
+            },
+            {
+              "text": "It can weight and mix information from visible tokens when building contextual states.",
+              "correct": true
+            },
+            {
+              "text": "It can prove that the model used the best evidence faithfully.",
+              "correct": false
+            }
+          ],
+          "explanation": "Attention works over visible context; it does not guarantee truth or retrieval.",
+          "termIds": [
+            "attention",
+            "context_window"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Logits, sampling, and stopping",
+      "sub": "The contextual state becomes scores, and decoding chooses the next token.",
+      "summary": "The model scores possible next tokens; decoding settings choose one and repeat the loop.",
+      "objectives": [
+        "Define logits and decoding in plain language.",
+        "Explain what temperature changes and what it does not.",
+        "Read a tiny next-token loop as runnable code."
+      ],
+      "termIds": [
+        "logits",
+        "temperature",
+        "token",
+        "llm"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Generation is a loop, not a paragraph lookup",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "At each step, the model projects its final token state into logits: raw scores for every token in the vocabulary. Decoding converts those scores into the next token, appends it, and runs the process again."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Temperature and top-p change how the model chooses among likely continuations. Lower temperature can reduce variety, but it does not verify facts or enforce a schema by itself."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "logits",
+            "temperature",
+            "token"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ],
+          "analogy": "Decoding is like choosing the next tile from a weighted bag, placing it, then recalculating the bag for the next move."
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Predict a tiny decoder",
+          "language": "python",
+          "code": "vocab = [\"refund\", \"invoice\", \"banana\"]\nlogits = {\"refund\": 5.0, \"invoice\": 3.0, \"banana\": -2.0}\n\ndef greedy_next(logits):\n    return max(logits, key=logits.get)\n\nprint(greedy_next(logits))\nlogits[\"invoice\"] = 6.0\nprint(greedy_next(logits))",
+          "explain": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Run this as a tiny model of the mechanism. The point is to predict behavior before trusting the output."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the two printed tokens before revealing.",
+            "answer": "It prints:\nrefund\ninvoice\n\nGreedy decoding picks the highest-scoring token each time. Real sampling can be less deterministic, but it still starts from next-token scores."
+          },
+          "syntax": [
+            {
+              "part": "input data",
+              "explains": "The small concrete case the example operates on."
+            },
+            {
+              "part": "decision rule",
+              "explains": "The line or function that turns the inputs into behavior."
+            },
+            {
+              "part": "print(...)",
+              "explains": "A visible result so you can check your prediction."
+            }
+          ],
+          "termIds": [
+            "logits",
+            "token"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "note",
+          "title": "How to verify an AI-generated LLM explanation",
+          "tone": "info",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When an AI explains LLMs or writes a toy decoder, check the mechanism rather than the polish."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Does it show tokenization before attention and decoding?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it distinguish context from durable memory?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does it say temperature changes randomness, not truth?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Does any code actually compute a visible next-token decision?"
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "token",
+            "attention",
+            "temperature"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Why fluent answers can be wrong",
+      "sub": "Finally connect the mechanism to hallucination, truncation, and validation.",
+      "summary": "A next-token model can produce fluent unsupported text, especially when evidence is missing or decoding rewards plausible continuation.",
+      "objectives": [
+        "Name topic-specific failure modes of LLM generation.",
+        "Choose the right fix for missing facts versus malformed output.",
+        "Reconstruct the full mechanism from memory."
+      ],
+      "termIds": [
+        "llm",
+        "context_window",
+        "schema",
+        "tool_call"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_fail",
+          "kind": "conceptual",
+          "title": "How the mechanism breaks in practice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Fluency is a product of the next-token objective. It is not proof that the answer is grounded. A model can continue in a plausible style even when context is stale, missing, or ambiguous."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Unsupported claims: the model fills gaps with likely continuations."
+                  }
+                ],
+                [
+                  {
+                    "text": "Hidden truncation: the instruction or source was outside the packed context."
+                  }
+                ],
+                [
+                  {
+                    "text": "Schema drift: the response sounds right but violates required fields."
+                  }
+                ],
+                [
+                  {
+                    "text": "False confidence: low temperature makes wording steadier, not more factual."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "llm",
+            "context_window",
+            "schema"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ],
+          "analogy": "A fluent LLM answer is like a well-spoken witness; you still need evidence."
+        },
+        {
+          "id": "m5_completion",
+          "kind": "functionalExample",
+          "title": "Completion problem: choose the fix",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A JSON extraction prompt fails on long support tickets. The output is prose, not JSON, and the answer includes a policy not present in the ticket."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "If the schema is missing from context: repack the prompt and validate output."
+                  }
+                ],
+                [
+                  {
+                    "text": "If the policy is missing: use retrieval or a tool, not fine-tuning."
+                  }
+                ],
+                [
+                  {
+                    "text": "If JSON is malformed: use structured outputs plus a validator."
+                  }
+                ],
+                [
+                  {
+                    "text": "If the answer is unsupported: require citations or claim-level checks."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "context_window",
+            "schema",
+            "tool_call"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ],
+          "personalizedFor": "Agentic Learning Studio course library"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Check the full mechanism",
+          "prompt": "Which statement best summarizes how an LLM works?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "It retrieves complete answers from a database inside the model.",
+              "correct": false
+            },
+            {
+              "text": "It predicts one token at a time from visible context, then repeats until stopping.",
+              "correct": true
+            },
+            {
+              "text": "It checks every claim against the internet before responding.",
+              "correct": false
+            }
+          ],
+          "explanation": "The core interface is next-token prediction conditioned on packed context; grounding and validation must be added around it.",
+          "termIds": [
+            "llm",
+            "token",
+            "context_window"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1"
+      ]
+    }
+  ],
+  "glossary": {
+    "llm": {
+      "id": "llm",
+      "label": "LLM",
+      "laymanDefinition": "A language model that predicts and generates token sequences from context.",
+      "technicalNote": "LLM behavior depends on training data, tokenization, context, decoding, alignment, system instructions, and the application wrapper.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Large language model"
+    },
+    "token": {
+      "id": "token",
+      "label": "Token",
+      "laymanDefinition": "A unit of text, code, punctuation, or whitespace that the model reads and generates.",
+      "technicalNote": "Token boundaries determine context usage, cost, latency, truncation behavior, and how the model represents text internally.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "context_window": {
+      "id": "context_window",
+      "label": "Context window",
+      "laymanDefinition": "The limited set of input and generated tokens available to the model at one time.",
+      "technicalNote": "Context windows constrain what evidence, instructions, conversation state, and tool results can influence the next output.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "prompt": {
+      "id": "prompt",
+      "label": "Prompt",
+      "laymanDefinition": "The instructions, user request, examples, and context sent to the model.",
+      "technicalNote": "Prompts are release artifacts when they shape behavior, tool use, output schema, safety handling, or evaluation results.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "schema": {
+      "id": "schema",
+      "label": "Schema",
+      "laymanDefinition": "A machine-readable contract for fields, types, required values, and allowed shapes.",
+      "technicalNote": "Schemas make model outputs and tool calls checkable, but they still need validation, refusal handling, and regression tests.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "tool_call": {
+      "id": "tool_call",
+      "label": "Tool call",
+      "laymanDefinition": "A structured request from the model to use an external capability.",
+      "technicalNote": "Tool calls should be parsed, authorized, validated, traced, and executed by trusted code rather than by free-form text.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "embedding": {
+      "id": "embedding",
+      "label": "Embedding",
+      "laymanDefinition": "A learned vector representation of a token or text item.",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "attention": {
+      "id": "attention",
+      "label": "Attention",
+      "laymanDefinition": "The transformer operation that lets token positions weight information from other positions.",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "logits": {
+      "id": "logits",
+      "label": "Logits",
+      "laymanDefinition": "Raw model scores over possible next tokens before decoding.",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "temperature": {
+      "id": "temperature",
+      "label": "Temperature",
+      "laymanDefinition": "A generation setting that sharpens or flattens next-token probabilities.",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts",
+    "themes": [
+      {
+        "name": "Adoption check",
+        "questions": [
+          {
+            "q": "What decision does How Large Language Models Work change in your build?",
+            "why": "A lesson is useful only when it changes what you do next.",
+            "opts": [
+              "Use now",
+              "Prototype first",
+              "Defer"
+            ],
+            "rot": "Prefer the smallest testable version."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct the LLM loop: text becomes tokens, tokens become vectors, attention builds contextual states, logits score next tokens, and decoding repeats. Then name two reasons a fluent answer can still be wrong."
+          }
+        ]
+      }
+    ],
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Text becomes tokens",
+        "detail": "Start with the boundary between human text and model input."
+      },
+      {
+        "step": 2,
+        "label": "Embeddings and the context window",
+        "detail": "After text is tokenized, the model embeds only the visible tokens."
+      },
+      {
+        "step": 3,
+        "label": "Attention builds contextual states",
+        "detail": "Visible token vectors then exchange information through attention layers."
+      },
+      {
+        "step": 4,
+        "label": "Logits, sampling, and stopping",
+        "detail": "The contextual state becomes scores, and decoding chooses the next token."
+      },
+      {
+        "step": 5,
+        "label": "Why fluent answers can be wrong",
+        "detail": "Finally connect the mechanism to hallucination, truncation, and validation."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_1",
+        "label": "Can I identify the tokenizer and approximate token budget?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_2",
+        "label": "Is the needed evidence inside the current context?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_3",
+        "label": "Do decoding settings match the task risk?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_4",
+        "label": "Can every factual claim be grounded outside model fluency?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_5",
+        "label": "What should I learn next: prompting, RAG, or tool use?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Take a long customer request that asks for JSON. Mark the likely token-heavy sections, move the schema near the final instruction, set a validation rule, and explain why the model might still produce prose instead of valid JSON. Next rung: learn structured outputs and RAG grounding.",
+      "scopedTo": "How Large Language Models Work"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "How LLMs Work",
+      "url": "https://huggingface.co/docs/transformers/en/llm_tutorial",
+      "asOfDate": "2026-06-22"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "Transformers, Attention, and KV Cache",
+      "url": "https://huggingface.co/docs/transformers/en/kv_cache",
+      "asOfDate": "2026-06-22"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Hugging Face text generation docs",
+      "url": "https://huggingface.co/docs/transformers/en/main_classes/text_generation",
+      "asOfDate": "2026-06-22"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Hugging Face tokenizers docs",
+      "url": "https://huggingface.co/docs/tokenizers/index",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

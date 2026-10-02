@@ -1,0 +1,983 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "RAG Evaluation Metrics",
+    "title": "RAG Evaluation Metrics",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "RAG Evaluation Metrics is practical when learners can apply it to this concrete case: A docs-search assistant returns confident answers and the team needs metrics that separate retrieval from generation. By the end, they should be able to build or review RAG metric rubric for context recall, precision, faithfulness, and answer relevance, measure faithfulness and context recall by question type, and catch the failure where a single accuracy score hides whether retrieval or generation failed."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "RAG Evaluation Metrics",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "RAG Evaluation Metrics: mental map",
+    "caption": "Separate RAG evaluation into retrieval arrival, context usefulness, answer faithfulness, citation support, and slice-level decisions.",
+    "oneLineThesis": "RAG metrics are useful when they diagnose which part failed: evidence retrieval, context selection, answer generation, or citation support.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Retrieval metrics ask whether evidence arrived",
+        "sub": "Before judging answers, check the top-k context.",
+        "what": "Learners start RAG evaluation at the evidence boundary.",
+        "relevance": "This prevents prompt tuning when the retriever never found the right source.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Measure whether the right refund-policy evidence reaches top-k.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Context precision asks how much retrieved text helps",
+        "sub": "High recall can still drown the prompt in distracting chunks.",
+        "what": "Learners see that retrieving more evidence can reduce answer quality.",
+        "relevance": "This prevents over-wide top-k settings from masking rank and noise problems.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Balance useful refund evidence against distracting policy chunks.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Faithfulness and answer relevance judge generation",
+        "sub": "Once evidence is present, check whether the answer uses it correctly.",
+        "what": "Learners connect Ragas-style metrics to the answer-generation stage.",
+        "relevance": "This catches unsupported synthesis even when retrieval succeeded.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Judge whether the final answer follows the retrieved refund policy.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Citation quality ties claims to specific sources",
+        "sub": "Users need to inspect support, not just receive a confidence score.",
+        "what": "Learners implement a small metric report they can run locally.",
+        "relevance": "This catches answers that are plausible but not auditable.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Code a small RAG metric report for source IDs and citations.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Slice dashboards prevent aggregate deception",
+        "sub": "Averages hide the queries that hurt users most.",
+        "what": "Learners turn metrics into operational decisions.",
+        "relevance": "This prevents a high average from hiding policy or long-tail failures.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Close with slice thresholds and failure ownership for RAG releases.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "precedes"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "conditions"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "supports"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "hides inside"
+      }
+    ],
+    "structureType": "dependency"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Retrieval metrics ask whether evidence arrived",
+      "sub": "Before judging answers, check the top-k context.",
+      "summary": "Hit rate, recall@k, MRR, and nDCG diagnose the search layer.",
+      "objectives": [
+        "Explain retrieval metrics with a concrete docs-assistant case.",
+        "Distinguish source-based evaluation from answer evaluation.",
+        "Use negative cases where no evidence should be retrieved."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "If evidence is absent, the generator is guessing",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a docs assistant answers a refund-policy question with a confident but wrong paragraph. The model might be hallucinating, or the retriever might have missed the policy page. Retrieval metrics answer the first question: did the needed evidence arrive in the context window?"
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use hit rate or recall@k when each query has expected source IDs. Use MRR or nDCG when rank matters. A source found at rank 20 is not useful if the prompt only includes top 5."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_retrieval_eval",
+            "canon_ragas_metrics",
+            "kb_rag_fundamentals"
+          ],
+          "analogy": "Retrieval metrics check whether the ingredients reached the counter before judging the meal."
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Worked retrieval row: refund cutoff question",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Query: \"Can I get a refund after 45 days?\" Expected source: refunds.md#45. Retriever returns top five: shipping.md#12, cancellation.md#7, refunds.md#45, pricing.md#2, support.md#9. hit@5 is true, reciprocal rank is 1/3, and hit@2 is false. The answer may still fail later, but the retrieval diagnosis is specific."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_retrieval_eval"
+          ]
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Retrieval first",
+          "prompt": "Why measure retrieval before faithfulness?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Because retrieval metrics prove the answer is well written.",
+              "correct": false
+            },
+            {
+              "text": "Because an answer cannot be grounded in evidence that never arrived.",
+              "correct": true
+            },
+            {
+              "text": "Because top-k ranking never changes.",
+              "correct": false
+            }
+          ],
+          "explanation": "Separate retrieval diagnosis from generation diagnosis.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_retrieval_eval"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_retrieval_eval",
+        "canon_ragas_metrics",
+        "kb_rag_fundamentals"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Context precision asks how much retrieved text helps",
+      "sub": "High recall can still drown the prompt in distracting chunks.",
+      "summary": "Context precision catches noisy retrieval that crowds out useful evidence.",
+      "objectives": [
+        "Explain precision versus recall in RAG context.",
+        "Identify chunking and reranking failures from noisy context.",
+        "Choose a top-k that matches the prompt budget."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Recall finds the needle; precision removes hay",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A retriever can include the right refund chunk and still fail the user by surrounding it with irrelevant shipping, pricing, and cancellation chunks. Context precision asks how much of the supplied context actually helps answer the question."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "In practice, this points to chunk boundaries, metadata filters, hybrid weighting, and reranking. If context recall is high but precision is low, do not immediately change the model prompt. Inspect what the retriever packed into the prompt."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_retrieval_eval",
+            "canon_ragas_metrics"
+          ]
+        },
+        {
+          "id": "m2_worked",
+          "kind": "functionalExample",
+          "title": "Two rankings with the same hit rate",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Ranking A puts refunds.md#45 first, followed by related cancellation policy. Ranking B puts refunds.md#45 fifth after four generic support chunks. Both have hit@5=true, but Ranking A is more likely to produce a faithful answer within a limited prompt budget."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_retrieval_eval"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Retrieval metric diagnosis",
+          "criteria": [
+            "Metric pattern",
+            "Likely cause",
+            "First fix"
+          ],
+          "options": [
+            {
+              "name": "Low recall, low precision",
+              "cells": [
+                {
+                  "criterion": "Metric pattern",
+                  "text": "Low recall, low precision",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Likely cause",
+                  "text": "query/index mismatch",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First fix",
+                  "text": "embedding model, metadata, or corpus coverage",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Expected sources are absent.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "High recall, low precision",
+              "cells": [
+                {
+                  "criterion": "Metric pattern",
+                  "text": "High recall, low precision",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Likely cause",
+                  "text": "too much noisy context",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First fix",
+                  "text": "reranker, filters, chunking, top-k",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Right source appears with many distractors.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "High precision, low recall",
+              "cells": [
+                {
+                  "criterion": "Metric pattern",
+                  "text": "High precision, low recall",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Likely cause",
+                  "text": "narrow matching",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "First fix",
+                  "text": "hybrid search or query expansion",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Returned chunks are good but incomplete.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_retrieval_eval"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_retrieval_eval",
+        "canon_ragas_metrics"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Faithfulness and answer relevance judge generation",
+      "sub": "Once evidence is present, check whether the answer uses it correctly.",
+      "summary": "Answer metrics evaluate grounded synthesis, not retrieval alone.",
+      "objectives": [
+        "Define faithfulness and answer relevance in RAG.",
+        "Avoid mixing retrieval misses with generation failures.",
+        "Use judge metrics with spot checks and versioned rubrics."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Faithfulness is about support; relevance is about answering the question",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Ragas-style metrics include signals such as faithfulness, context precision, context recall, and response relevancy. Faithfulness asks whether the answer claims are supported by retrieved context. Answer relevance asks whether the answer addresses the user question instead of merely repeating context."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Keep the stage boundary clear. If the right source is absent, faithfulness may punish the answer, but the actionable fix begins in retrieval. If the source is present and the answer invents a refund exception, the fix is prompting, output constraints, or model behavior."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_ragas_metrics",
+            "kb_retrieval_eval",
+            "kb_eval_frameworks"
+          ]
+        },
+        {
+          "id": "m3_case",
+          "kind": "functionalExample",
+          "title": "Case study: faithful but incomplete",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The assistant says: \"Refunds are automatic only within 30 days.\" That is faithful to the context, but it does not answer whether a 45-day customer can escalate. A relevance check or task-completion rubric should catch the missing escalation guidance."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_ragas_metrics",
+            "kb_retrieval_eval"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_ragas_metrics",
+        "kb_retrieval_eval",
+        "kb_eval_frameworks"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Citation quality ties claims to specific sources",
+      "sub": "Users need to inspect support, not just receive a confidence score.",
+      "summary": "Citation checks make RAG answers auditable claim by claim.",
+      "objectives": [
+        "Compute simple retrieval and citation-support metrics.",
+        "Predict how missing citations affect the report.",
+        "Verify AI-generated RAG eval code for source alignment."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Tiny RAG eval report for source and citation support",
+          "language": "python",
+          "code": "cases = [\n    {\n        \"id\": \"refund_45_days\",\n        \"expected_sources\": {\"refunds.md#45\"},\n        \"retrieved\": [\"shipping.md#12\", \"refunds.md#45\", \"support.md#9\"],\n        \"answer_citations\": {\"refunds.md#45\"},\n        \"claims_supported\": 3,\n        \"claims_total\": 3,\n    },\n    {\n        \"id\": \"enterprise_sla\",\n        \"expected_sources\": {\"enterprise-sla.md#2\"},\n        \"retrieved\": [\"pricing.md#1\", \"support.md#9\"],\n        \"answer_citations\": set(),\n        \"claims_supported\": 1,\n        \"claims_total\": 3,\n    },\n]\n\nfor case in cases:\n    retrieved = set(case[\"retrieved\"])\n    recall_at_3 = bool(case[\"expected_sources\"] & retrieved)\n    citation_support = case[\"expected_sources\"] <= case[\"answer_citations\"]\n    faithfulness = case[\"claims_supported\"] / case[\"claims_total\"]\n    print(case[\"id\"], {\n        \"recall_at_3\": recall_at_3,\n        \"citation_support\": citation_support,\n        \"faithfulness\": round(faithfulness, 2),\n    })",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is intentionally small. It separates retrieval success, citation support, and claim support so the fix is diagnosable."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the report for enterprise_sla. Which metric points to retrieval failure?",
+            "answer": "enterprise_sla has recall_at_3 false because enterprise-sla.md#2 is absent from retrieved sources. citation_support is also false, and faithfulness is 0.33, but retrieval is the first failure to investigate."
+          },
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_retrieval_eval",
+            "canon_ragas_metrics"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify AI-generated RAG metric code",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: expected sources are explicit; retrieved source IDs come from the real retriever; top-k matches production prompt packing; answer citations are compared to source IDs, not titles; negative cases expect no sufficient evidence; and aggregate scores can be broken down by slice."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_retrieval_eval"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_retrieval_eval",
+        "canon_ragas_metrics"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Slice dashboards prevent aggregate deception",
+      "sub": "Averages hide the queries that hurt users most.",
+      "summary": "RAG evals become release gates when metrics are sliced by task, source, and risk.",
+      "objectives": [
+        "Explain why aggregate RAG metrics can mislead.",
+        "Define slices for docs, policy, freshness, and no-answer cases.",
+        "Set thresholds that route fixes to retrieval or generation owners."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "A passing average can hide a dangerous slice",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A docs assistant can score 0.89 overall while failing every policy question updated last week. Slice by topic, source type, freshness, language, user intent, and negative no-evidence cases. Track retrieval metrics and answer metrics separately in each slice."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Policy slice: stricter citation and refusal threshold."
+                  }
+                ],
+                [
+                  {
+                    "text": "Freshness slice: expected source must match current version."
+                  }
+                ],
+                [
+                  {
+                    "text": "No-evidence slice: correct answer is insufficient evidence."
+                  }
+                ],
+                [
+                  {
+                    "text": "Long-tail slice: inspect manually before trusting aggregate scores."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_retrieval_eval",
+            "canon_ragas_metrics"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Use RAG metrics as diagnostics, not a single trophy score.",
+          "useWhen": "Use them before changing embeddings, chunking, rerankers, prompt packing, or model settings, and whenever an index is rebuilt.",
+          "avoidWhen": "Avoid optimizing one aggregate score while ignoring no-answer cases, stale ground truth, judge variance, or category regressions.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_retrieval_eval"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Metric decision",
+          "prompt": "A RAG system has high overall faithfulness but fails no-evidence questions. What should the team do?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Declare the release safe because the average is high.",
+              "correct": false
+            },
+            {
+              "text": "Add a no-evidence slice with refusal/citation thresholds and inspect retrieval behavior.",
+              "correct": true
+            },
+            {
+              "text": "Only rewrite the UI copy.",
+              "correct": false
+            }
+          ],
+          "explanation": "Slices reveal failures that averages can hide.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_retrieval_eval"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_retrieval_eval",
+        "canon_ragas_metrics"
+      ]
+    }
+  ],
+  "glossary": {
+    "eval": {
+      "id": "eval",
+      "label": "Eval",
+      "laymanDefinition": "A repeatable test of model or system behavior against expected criteria.",
+      "technicalNote": "In these lessons, evals are release evidence: they combine cases, assertions, scores, and review rules.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_retrieval_eval"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A structured record of one run, including spans, inputs, outputs, metadata, and scores.",
+      "technicalNote": "Traces make failures diagnosable by showing which retrieval, model, tool, or scoring step produced the result.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_retrieval_eval"
+      ]
+    },
+    "dataset": {
+      "id": "dataset",
+      "label": "Dataset",
+      "laymanDefinition": "A curated set of examples used for evaluation, debugging, or regression checks.",
+      "technicalNote": "A useful eval dataset stores inputs, expected behavior, metadata slices, and source or rubric references.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_retrieval_eval"
+      ]
+    },
+    "judge": {
+      "id": "judge",
+      "label": "LLM-as-judge",
+      "laymanDefinition": "An LLM used to grade or compare outputs with a rubric.",
+      "technicalNote": "LLM judges are semantic scorers, not final authority; their prompts, model, thresholds, and spot checks must be versioned.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_retrieval_eval"
+      ],
+      "acronymExpansion": "Large language model as judge"
+    },
+    "regression": {
+      "id": "regression",
+      "label": "Regression",
+      "laymanDefinition": "A previously working behavior that breaks after a prompt, model, data, or code change.",
+      "technicalNote": "Regression testing protects known capabilities and safety boundaries while allowing harmless wording variation.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_retrieval_eval"
+      ]
+    },
+    "rubric": {
+      "id": "rubric",
+      "label": "Rubric",
+      "laymanDefinition": "A scoring guide that states what a good answer or run must demonstrate.",
+      "technicalNote": "Rubrics make qualitative judgment reviewable by naming criteria, severity, examples, and thresholds.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_retrieval_eval"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for RAG Evaluation Metrics",
+    "themes": [
+      {
+        "name": "Metric selection",
+        "questions": [
+          {
+            "q": "Which metric identifies the failing part of this RAG answer?",
+            "why": "A low-quality answer may come from missing evidence, noisy context, unfaithful synthesis, weak citations, or a bad slice average.",
+            "opts": [
+              "Diagnostic metric by stage",
+              "One overall quality score",
+              "Manual vibes only"
+            ],
+            "rot": "Measure retrieval and generation separately before optimizing prompts or embeddings."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: explain RAG metrics by reconstructing hit rate or recall@k, context precision, faithfulness, answer relevance, citation support, negative cases, and slice-level thresholds."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "RAG metric path from evidence arrival to slice decision",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Retrieval metrics ask whether evidence arrived",
+          "sub": "Before judging answers, check the top-k context.",
+          "what": "Learners start RAG evaluation at the evidence boundary.",
+          "relevance": "This prevents prompt tuning when the retriever never found the right source.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Measure whether the right refund-policy evidence reaches top-k.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Context precision asks how much retrieved text helps",
+          "sub": "High recall can still drown the prompt in distracting chunks.",
+          "what": "Learners see that retrieving more evidence can reduce answer quality.",
+          "relevance": "This prevents over-wide top-k settings from masking rank and noise problems.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Balance useful refund evidence against distracting policy chunks.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Faithfulness and answer relevance judge generation",
+          "sub": "Once evidence is present, check whether the answer uses it correctly.",
+          "what": "Learners connect Ragas-style metrics to the answer-generation stage.",
+          "relevance": "This catches unsupported synthesis even when retrieval succeeded.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Judge whether the final answer follows the retrieved refund policy.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Citation quality ties claims to specific sources",
+          "sub": "Users need to inspect support, not just receive a confidence score.",
+          "what": "Learners implement a small metric report they can run locally.",
+          "relevance": "This catches answers that are plausible but not auditable.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Code a small RAG metric report for source IDs and citations.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Slice dashboards prevent aggregate deception",
+          "sub": "Averages hide the queries that hurt users most.",
+          "what": "Learners turn metrics into operational decisions.",
+          "relevance": "This prevents a high average from hiding policy or long-tail failures.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Close with slice thresholds and failure ownership for RAG releases.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "retrieves"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "filters"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "grounds"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "segments"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Retrieval metrics ask whether evidence arrived",
+        "detail": "Hit rate, recall@k, MRR, and nDCG diagnose the search layer."
+      },
+      {
+        "step": 2,
+        "label": "Context precision asks how much retrieved text helps",
+        "detail": "Context precision catches noisy retrieval that crowds out useful evidence."
+      },
+      {
+        "step": 3,
+        "label": "Faithfulness and answer relevance judge generation",
+        "detail": "Answer metrics evaluate grounded synthesis, not retrieval alone."
+      },
+      {
+        "step": 4,
+        "label": "Citation quality ties claims to specific sources",
+        "detail": "Citation checks make RAG answers auditable claim by claim."
+      },
+      {
+        "step": 5,
+        "label": "Slice dashboards prevent aggregate deception",
+        "detail": "RAG evals become release gates when metrics are sliced by task, source, and risk."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Retrieval metrics ask whether evidence arrived\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Citation quality ties claims to specific sources\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Slice dashboards prevent aggregate deception\" define the release or production gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Build a 12-case RAG eval sheet for a docs assistant. Include expected source IDs, negative no-evidence cases, top-k retrieval output, context precision, faithfulness, citation support, and slice pass rates. Next rung: add Ragas or another evaluator and compare with manual review.",
+      "scopedTo": "RAG evaluation",
+      "checks": [
+        "Retrieval and answer metrics are separate.",
+        "Negative cases expect insufficient evidence.",
+        "Citations are checked against source IDs.",
+        "Slices reveal regressions hidden by averages."
+      ]
+    }
+  },
+  "citations": {
+    "canon_ragas_metrics": {
+      "id": "canon_ragas_metrics",
+      "kind": "canonical",
+      "title": "Ragas available metrics",
+      "url": "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb_retrieval_eval": {
+      "id": "kb_retrieval_eval",
+      "kind": "kb",
+      "title": "KB: Retrieval Evaluation",
+      "url": "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb_rag_fundamentals": {
+      "id": "kb_rag_fundamentals",
+      "kind": "kb",
+      "title": "KB: RAG Fundamentals",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "asOfDate": "2026-06-22"
+    },
+    "kb_eval_frameworks": {
+      "id": "kb_eval_frameworks",
+      "kind": "kb",
+      "title": "KB: Eval Frameworks",
+      "url": "https://www.promptfoo.dev/docs/intro/",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

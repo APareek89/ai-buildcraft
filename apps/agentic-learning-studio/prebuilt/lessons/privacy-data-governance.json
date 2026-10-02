@@ -1,0 +1,1015 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Privacy and Data Governance",
+    "title": "Privacy and Data Governance",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Privacy and Data Governance is practical when learners can apply it to this concrete case: A support assistant handles account details and must minimize, retain, and delete data correctly. By the end, they should be able to build or review privacy data-flow map with collection, retention, and deletion rules, measure sensitive fields handled according to policy, and catch the failure where logs keep personal data long after the user request is resolved."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Privacy and Data Governance",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Privacy and Data Governance: mental map",
+    "caption": "Inventory data across prompts, retrieval, logs, traces, vendors, and deletion workflows.",
+    "oneLineThesis": "Privacy governance makes data minimization operational across every place an AI system stores, sends, derives, or observes user content.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Map every data surface",
+        "sub": "Inventory what enters prompts, vector stores, logs, traces, evals, vendors, and support tools.",
+        "what": "Privacy work starts by finding all copies and derived forms of user or source data.",
+        "relevance": "Build a data inventory for an AI workflow.",
+        "moduleId": "m1",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Inventory prompts, traces, embeddings, vendors, and support data paths."
+      },
+      {
+        "id": "n_m2",
+        "label": "Classify and minimize before persistence",
+        "sub": "Decide what should never be collected, what must be redacted, and what can be stored.",
+        "what": "The strongest privacy control is not collecting or retaining sensitive data unnecessarily.",
+        "relevance": "Classify AI workflow data by sensitivity.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Classify data and remove sensitive fields before model or log persistence."
+      },
+      {
+        "id": "n_m3",
+        "label": "Govern vendors, access, and retention",
+        "sub": "Control who can see raw data, where it goes, and how long it survives.",
+        "what": "AI privacy governance lives in vendor settings, access controls, retention tables, and audit events.",
+        "relevance": "Design retention by data class.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Control vendor transfer, access rights, retention, and audit trails."
+      },
+      {
+        "id": "n_m4",
+        "label": "Make privacy checks runnable",
+        "sub": "Add a small policy gate for secrets, PII actions, and audit logging.",
+        "what": "A privacy policy becomes real when model calls and persistence paths enforce it.",
+        "relevance": "Write a simple data-handling gate.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Enforce minimization, redaction, and audit logging in the workflow."
+      },
+      {
+        "id": "n_m5",
+        "label": "Run privacy as change management",
+        "sub": "Close with a data inventory capstone and ongoing review triggers.",
+        "what": "Privacy governance must update when data sources, vendors, logs, memory, or product purpose changes.",
+        "relevance": "Recall the privacy governance loop.",
+        "moduleId": "m5",
+        "layer": "Path",
+        "emphasis": "spine",
+        "orient": "Keep the data inventory current as the AI system changes."
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "conceptual"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Map every data surface",
+      "sub": "Inventory what enters prompts, vector stores, logs, traces, evals, vendors, and support tools.",
+      "summary": "Privacy work starts by finding all copies and derived forms of user or source data.",
+      "objectives": [
+        "Build a data inventory for an AI workflow.",
+        "Explain why embeddings and traces are governance surfaces.",
+        "Separate collection from storage and vendor transfer."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The breach surface is often the log",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a learner pastes a transcript containing names, grades, and health context into a lesson coach. The app sends it to a model, stores a trace, embeds a summary for memory, logs an error, and later includes the example in an eval set. Privacy review must follow all of those copies."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A data inventory names each surface: user input, uploaded files, retrieval chunks, embeddings, model request, model output, trace, analytics event, support ticket, eval dataset, cache, vendor system, and deletion workflow."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Worked artifact: data inventory row",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Field: learner free-text prompt. Classification: personal data possible, credentials possible, minors data possible depending on deployment. Use: generate coaching response. Stored: trace metadata by default; raw text only with explicit debug mode and redaction. Vendor: approved model route only. Retention: 30 days for raw debug traces, aggregate metrics longer. Deletion: trace, cache, memory, and vector derivatives included."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Privacy inventory"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Inventory gap",
+          "prompt": "Which item is easy to forget in AI privacy reviews?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The visible chat response only.",
+              "correct": false
+            },
+            {
+              "text": "Embeddings, traces, caches, and eval examples derived from the original prompt.",
+              "correct": true
+            },
+            {
+              "text": "The product logo.",
+              "correct": false
+            }
+          ],
+          "explanation": "Derived data can still expose or reconstruct sensitive content and needs governance.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Classify and minimize before persistence",
+      "sub": "Decide what should never be collected, what must be redacted, and what can be stored.",
+      "summary": "The strongest privacy control is not collecting or retaining sensitive data unnecessarily.",
+      "objectives": [
+        "Classify AI workflow data by sensitivity.",
+        "Use minimization and redaction before logging.",
+        "Explain moderation and PII controls as separate but related."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Do not make redaction your only plan",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "PII detection is useful but imperfect. Privacy governance should first ask whether the data is needed at all. If a lesson coach does not need phone numbers, credentials, exact birth dates, or medical details, block or redact them before storage and avoid sending them to vendors unnecessarily."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Moderation classifies content risk; PII controls classify personal data; governance decides retention, access, consent, deletion, and review authority. Treat them as related layers, not one magic filter."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Data class to handling rule",
+          "criteria": [
+            "Class",
+            "Handling rule",
+            "Review trigger"
+          ],
+          "options": [
+            {
+              "name": "Public source",
+              "cells": [
+                {
+                  "criterion": "Class",
+                  "text": "Approved public KB note",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Handling rule",
+                  "text": "store provenance, license, and freshness metadata",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Review trigger",
+                  "text": "copyright, stale source, takedown request",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for retrieval corpora.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Learner personal data",
+              "cells": [
+                {
+                  "criterion": "Class",
+                  "text": "Names, education records, private context",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Handling rule",
+                  "text": "minimize, redact before logs, restrict access, short retention",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Review trigger",
+                  "text": "school deployment, minors, support access",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for user prompts and traces.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Secret or credential",
+              "cells": [
+                {
+                  "criterion": "Class",
+                  "text": "API keys, passwords, tokens",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Handling rule",
+                  "text": "block, do not send to model, rotate if exposed",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Review trigger",
+                  "text": "any detection or attempted tool use",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use at ingress and logs.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Case study: vector store deletion gap",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A school deletes a document containing student names. The source file disappears, but chunks and embeddings remain in the retrieval index. The app can still surface the content indirectly. A real deletion workflow must remove source, chunks, embeddings, cache entries, and trace references according to policy."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Govern vendors, access, and retention",
+      "sub": "Control who can see raw data, where it goes, and how long it survives.",
+      "summary": "AI privacy governance lives in vendor settings, access controls, retention tables, and audit events.",
+      "objectives": [
+        "Design retention by data class.",
+        "Explain vendor and access review.",
+        "Tie policy versions to audit logs."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Every copy needs an owner and timer",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A model request may leave your infrastructure; a trace may be readable by engineers; an eval set may be shared with contractors; a vector store may outlive the source. Privacy governance assigns owners, access levels, retention periods, and deletion procedures to each copy."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Vendor review should cover data-use settings, retention, subprocessors, region, logging, support access, model training use, incident notification, and deletion support. The product should log policy version and redaction action so later reviewers know what happened."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m3_policy",
+          "kind": "functionalExample",
+          "title": "Worked retention and access rule",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Raw learner prompts: store only when debug sampling is enabled, redact obvious PII and secrets, retain 30 days, access limited to trust-and-safety reviewers. Trace metadata: retain 180 days for reliability and cost monitoring. Aggregated quality metrics: retain longer without raw text. Vector memory: disabled for school tenants unless explicit agreement covers purpose, retention, and deletion."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Retention policy"
+        },
+        {
+          "id": "m3_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Prefer metadata and aggregates when raw text is not necessary.",
+          "useWhen": "Use raw content capture only for clear debugging, safety review, or user-support purposes with access and retention limits.",
+          "avoidWhen": "Avoid broad trace access, indefinite prompt retention, or vendor routing that conflicts with data classification.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1",
+        "kb2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Privacy and Data Governance: baseline, production design, or advanced optimization."
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Make privacy checks runnable",
+      "sub": "Add a small policy gate for secrets, PII actions, and audit logging.",
+      "summary": "A privacy policy becomes real when model calls and persistence paths enforce it.",
+      "objectives": [
+        "Write a simple data-handling gate.",
+        "Predict why raw traces create risk.",
+        "Verify AI-generated privacy plans for deletion and derived data."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Prompt handling gate sketch",
+          "language": "python",
+          "code": "def handle_prompt(text, tenant_policy):\n    if \"sk-\" in text or \"password=\" in text.lower():\n        return {\"action\": \"block\", \"reason\": \"possible secret\"}\n    redacted = text.replace(\"student@example.com\", \"[email]\")\n    audit = {\n        \"policy\": tenant_policy,\n        \"pii_action\": \"redacted\" if redacted != text else \"none\",\n        \"store_raw\": False,\n    }\n    return {\"action\": \"send_to_model\", \"text\": redacted, \"audit\": audit}\nprint(handle_prompt(\"email student@example.com\", \"school-privacy-v2\"))",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This is deliberately simple. It demonstrates the control points: block secrets, redact before model calls or logs, and record the policy action for later review."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Why is `store_raw` false by default?",
+            "answer": "Raw prompts can contain sensitive personal data, so default metadata logging is safer unless a justified debug or review workflow exists."
+          },
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify an AI-generated data governance plan",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Check that generated plans include a data inventory, classification, minimization, retention, deletion, access control, vendor routing, raw-trace policy, vector-store deletion, eval-set governance, and incident review. Reject plans that say \"we redact PII\" without explaining when, where, and how failures are handled."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "canon1"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Derived data",
+          "prompt": "Why should embeddings be included in deletion workflows?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "They are always anonymous by definition.",
+              "correct": false
+            },
+            {
+              "text": "They are derived from source content and may still reveal or retrieve sensitive information.",
+              "correct": true
+            },
+            {
+              "text": "They cannot be linked to documents.",
+              "correct": false
+            }
+          ],
+          "explanation": "Derived AI data can preserve sensitive meaning and must follow governance rules.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        }
+      ],
+      "citations": [
+        "kb1",
+        "canon1"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Run privacy as change management",
+      "sub": "Close with a data inventory capstone and ongoing review triggers.",
+      "summary": "Privacy governance must update when data sources, vendors, logs, memory, or product purpose changes.",
+      "objectives": [
+        "Recall the privacy governance loop.",
+        "Write a retrieval prompt for future reviews.",
+        "Create a capstone data inventory."
+      ],
+      "termIds": [
+        "guardrail",
+        "hallucination",
+        "owasp",
+        "privacy",
+        "prompt_injection",
+        "risk_register"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_recall",
+          "kind": "conceptual",
+          "title": "Retrieval prompt for the whole lesson",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Answer this from memory: \"How do I govern data in an AI workflow?\" Include inventory, classification, minimization, redaction, vendor review, access, retention, deletion, traces, embeddings, evals, audit logs, and incident review."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Treat data governance as infrastructure, not policy prose.",
+          "useWhen": "Use formal governance when prompts, documents, traces, embeddings, or tools may contain personal, confidential, regulated, or learner-sensitive data.",
+          "avoidWhen": "Avoid launching memory, analytics, or eval reuse features before deletion and access rules are defined.",
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1",
+            "kb2"
+          ]
+        },
+        {
+          "id": "m5_capstone",
+          "kind": "functionalExample",
+          "title": "Capstone: create a data surface map",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Pick one AI feature. Draw a table with every data surface, sensitivity class, purpose, vendor, storage location, retention, access group, deletion path, and audit event. Then choose one surface to minimize or eliminate before launch."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "guardrail",
+            "hallucination",
+            "owasp",
+            "privacy",
+            "prompt_injection",
+            "risk_register"
+          ],
+          "sources": [
+            "kb1"
+          ],
+          "personalizedFor": "Solo data map"
+        }
+      ],
+      "citations": [
+        "kb1",
+        "kb2"
+      ],
+      "decisionItForces": "Choose the right level of rigor for Privacy and Data Governance: baseline, production design, or advanced optimization."
+    }
+  ],
+  "glossary": {
+    "hallucination": {
+      "id": "hallucination",
+      "label": "Hallucination",
+      "laymanDefinition": "An unsupported generated claim.",
+      "technicalNote": "Privacy harm can occur when a hallucination invents personal facts or exposes inferred sensitive attributes.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "prompt_injection": {
+      "id": "prompt_injection",
+      "label": "Prompt injection",
+      "laymanDefinition": "An attack that can attempt to extract or move sensitive data.",
+      "technicalNote": "Injection defenses are part of privacy governance when untrusted text can trigger disclosure through model output or tools.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "guardrail": {
+      "id": "guardrail",
+      "label": "Guardrail",
+      "laymanDefinition": "A data-control rule enforced in product or infrastructure.",
+      "technicalNote": "Privacy guardrails include minimization, redaction, access control, retention, vendor routing, deletion, and audit logs.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "privacy": {
+      "id": "privacy",
+      "label": "Privacy",
+      "laymanDefinition": "The practice of limiting, protecting, and governing personal or sensitive data.",
+      "technicalNote": "In AI systems, privacy applies to prompts, files, embeddings, logs, traces, eval sets, vendor calls, and support tooling.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "owasp": {
+      "id": "owasp",
+      "label": "OWASP",
+      "laymanDefinition": "A security lens that includes sensitive information disclosure.",
+      "technicalNote": "OWASP complements privacy governance by highlighting prompt, output, plugin, and vector-store leakage paths.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Open Worldwide Application Security Project"
+    },
+    "risk_register": {
+      "id": "risk_register",
+      "label": "Risk register",
+      "laymanDefinition": "A record of privacy risks, controls, owners, and residual exposure.",
+      "technicalNote": "Data inventory findings should feed the risk register with retention, access, vendor, and deletion decisions.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Privacy and Data Governance",
+    "themes": [
+      {
+        "name": "Release-readiness check",
+        "questions": [
+          {
+            "q": "What decision does Privacy and Data Governance change for this case?",
+            "why": "A good lesson changes how the learner builds, reviews, or ships privacy data-flow map with collection, retention, and deletion rules.",
+            "opts": [
+              "Thin slice",
+              "Production path",
+              "Advanced optimization"
+            ],
+            "rot": "Choose the smallest option that catches: logs keep personal data long after the user request is resolved."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "From memory, reconstruct AI privacy governance: inventory data, classify sensitivity, minimize before prompts and logs, control vendor and access paths, define retention and deletion, audit actions, and review incidents."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Privacy and Data Governance operating path",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Map every data surface",
+          "sub": "Inventory what enters prompts, vector stores, logs, traces, evals, vendors, and support tools.",
+          "what": "Privacy work starts by finding all copies and derived forms of user or source data.",
+          "relevance": "Build a data inventory for an AI workflow.",
+          "moduleId": "m1",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Inventory prompts, traces, embeddings, vendors, and support data paths."
+        },
+        {
+          "id": "n_m2",
+          "label": "Classify and minimize before persistence",
+          "sub": "Decide what should never be collected, what must be redacted, and what can be stored.",
+          "what": "The strongest privacy control is not collecting or retaining sensitive data unnecessarily.",
+          "relevance": "Classify AI workflow data by sensitivity.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Classify data and remove sensitive fields before model or log persistence."
+        },
+        {
+          "id": "n_m3",
+          "label": "Govern vendors, access, and retention",
+          "sub": "Control who can see raw data, where it goes, and how long it survives.",
+          "what": "AI privacy governance lives in vendor settings, access controls, retention tables, and audit events.",
+          "relevance": "Design retention by data class.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Control vendor transfer, access rights, retention, and audit trails."
+        },
+        {
+          "id": "n_m4",
+          "label": "Make privacy checks runnable",
+          "sub": "Add a small policy gate for secrets, PII actions, and audit logging.",
+          "what": "A privacy policy becomes real when model calls and persistence paths enforce it.",
+          "relevance": "Write a simple data-handling gate.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Enforce minimization, redaction, and audit logging in the workflow."
+        },
+        {
+          "id": "n_m5",
+          "label": "Run privacy as change management",
+          "sub": "Close with a data inventory capstone and ongoing review triggers.",
+          "what": "Privacy governance must update when data sources, vendors, logs, memory, or product purpose changes.",
+          "relevance": "Recall the privacy governance loop.",
+          "moduleId": "m5",
+          "layer": "Path",
+          "emphasis": "spine",
+          "orient": "Keep the data inventory current as the AI system changes."
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "then"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Map every data surface",
+        "detail": "Inventory what enters prompts, vector stores, logs, traces, evals, vendors, and support tools."
+      },
+      {
+        "step": 2,
+        "label": "Classify and minimize before persistence",
+        "detail": "Decide what should never be collected, what must be redacted, and what can be stored."
+      },
+      {
+        "step": 3,
+        "label": "Govern vendors, access, and retention",
+        "detail": "Control who can see raw data, where it goes, and how long it survives."
+      },
+      {
+        "step": 4,
+        "label": "Make privacy checks runnable",
+        "detail": "Add a small policy gate for secrets, PII actions, and audit logging."
+      },
+      {
+        "step": 5,
+        "label": "Run privacy as change management",
+        "detail": "Close with a data inventory capstone and ongoing review triggers."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_context",
+        "label": "Is there a data inventory covering prompts, files, embeddings, logs, traces, evals, and vendors?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_evidence",
+        "label": "Are collection, use, retention, deletion, and access rules defined per data class?",
+        "fromModuleId": "m2"
+      },
+      {
+        "id": "chk_controls",
+        "label": "Does the system minimize sensitive data before model calls and persistence?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_verify",
+        "label": "Are vector stores and derived data included in deletion workflows?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_next",
+        "label": "Can an incident reviewer reconstruct policy version and data handling actions?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create a one-page release-ready plan for privacy data-flow map with collection, retention, and deletion rules. Include: the user problem, realistic input, mechanism, design choice, runnable or reviewable check, metric (sensitive fields handled according to policy), failure case (logs keep personal data long after the user request is resolved), owner, and the next rung after this lesson.",
+      "scopedTo": "Privacy and Data Governance"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Moderation, PII, and Data Governance",
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "asOfDate": "2026-06-22"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB: AI Safety and Governance",
+      "url": "https://doi.org/10.6028/NIST.AI.600-1",
+      "asOfDate": "2026-06-22"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "NIST AI Risk Management Framework",
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "asOfDate": "2026-06-23"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "NIST AI 600-1 Generative AI Profile",
+      "url": "https://doi.org/10.6028/NIST.AI.600-1",
+      "asOfDate": "2026-06-23"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+%% granularity: master
+%% files: app/main.py, app/auth.py, app/db.py, app/runs.py, app/execution.py, app/examples.py, app/graph.py, app/lenses.py, app/tools.py, app/upload_storage.py, app/usage.py
+flowchart TD
+    UI["Account UI · Inter / Roboto Mono / Lucide<br/>Owner-scoped preferences · BYOK in page memory"] --> AUTH["Boundary: revocable cookie + signed CSRF<br/>Owner from server session; legacy session_id ignored"]
+    AUTH --> PG[("PostgreSQL<br/>users / sessions / conversations / messages / runs / usage")]
+    AUTH --> MODE{"Server-owned execution context"}
+    MODE -->|"Prepared example"| FIX["Immutable authored replies<br/>Explicit cached trace · no model or network tool"]
+    MODE -->|"New research"| PAID["Provider budget reservation<br/>Configured OpenAI / explicit BYOK<br/>No automatic provider retries"]
+    AUTH --> EX["Upload extraction · bounded bytes and formats"]
+    EX --> S3[("Private versioned S3 originals<br/>Owner + exact version + SHA-256")]
+    FIX --> RUN["Detached council task · one worker<br/>Registry + durable event replay"]
+    PAID --> RUN
+    EX --> RUN
+    PG -->|"Owned history: last12messages"| RUN
+    RUN -. "SSE viewer can detach/rejoin;15s heartbeat" .-> UI
+    RUN --> A0["AGENT Scout · intake brief"]
+    A0 --> A1["AGENT Astra · analysis<br/>Live-only public web search/fetch"]
+    A0 --> LP["AGENT lens prep · parallel with draft<br/>Core expert reviewers only<br/>Router + composer; failure degrades to ordinary review"]
+    KB[("Bundled strategy frameworks<br/>Imported into app database") ] --> LP
+    A1 --> ST{"Dynamic ordered review stages<br/>Vera / Cleo / up to3 custom agents"}
+    LP --> ST
+    ST --> RV["Reviewer: feedback then Astra revision<br/>Transformer: replaces current analysis<br/>Expert prompt enforced server-side"]
+    RV -->|"Next stage"| ST
+    ST -->|"Complete"| FIN["Final report + complete trace<br/>Explicit Stop persists partial output"]
+    FIN --> PG
+    FIN --> UI
+    UI --> XP["Authenticated report export<br/>Typst PDF with fpdf fallback / PPTX<br/>Mermaid rasterization uses XMLSerializer"]

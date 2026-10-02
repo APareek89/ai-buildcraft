@@ -1,0 +1,1210 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Human-in-the-loop Agents",
+    "title": "Human-in-the-loop Agents",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Human-in-the-loop Agents is practical when learners can apply it to this concrete case: A healthcare intake agent drafts answers but escalates risky medical and billing decisions to staff. By the end, they should be able to build or review human-review routing policy with approval and override paths, measure correct escalation rate, and catch the failure where the agent treats a judgment call as an automatic action."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Human-in-the-loop Agents",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Human-in-the-loop Agents: mental map",
+    "caption": "Add human review where judgment, authority, or correction changes the outcome, then resume the agent with a recorded decision.",
+    "oneLineThesis": "Human-in-the-loop agents work when the human sees a specific decision packet and the runtime can safely resume from it.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Humans own judgment and authority",
+        "sub": "Use review for decisions the model should not own alone.",
+        "what": "Learners decide which parts require human control.",
+        "relevance": "This prevents both over-automation and pointless human rubber-stamping.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Separate expert judgment from routine model/tool execution.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Choose interruption points deliberately",
+        "sub": "Interrupts should occur before irreversible or expensive actions.",
+        "what": "Learners position HITL gates in agent control flow.",
+        "relevance": "Late review can be useless after the harmful action already happened.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Place review gates where state is complete but side effects have not fired.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Present review packets, not raw traces",
+        "sub": "Humans need compact evidence and concrete choices.",
+        "what": "Learners design useful human review UX.",
+        "relevance": "Dumping a full trace makes review slow and error-prone.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Summarize the artifact, risk, evidence, and proposed action.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Resume safely after approval or correction",
+        "sub": "Human input becomes state, not a side conversation.",
+        "what": "Learners implement resume behavior after review.",
+        "relevance": "Bad resume logic can ignore corrections or duplicate actions.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Apply the decision deterministically and avoid repeating prior side effects.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Measure review burden and missed escapes",
+        "sub": "HITL quality includes latency, load, and safety coverage.",
+        "what": "Learners evaluate HITL gates, not just final answers.",
+        "relevance": "Too much review slows users; too little misses dangerous actions.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Treat human review as a product workflow with metrics.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "procedural"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Humans own judgment and authority",
+      "sub": "Use review for decisions the model should not own alone.",
+      "summary": "Human review should protect meaningful decisions.",
+      "objectives": [
+        "Name reasons to put humans in the loop.",
+        "Distinguish approval, correction, and escalation.",
+        "Avoid review theater."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "A human is not a decorative checkpoint",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: an agent drafts a public lesson from internal KB notes. The model can assemble a draft, but a human must approve copyright-sensitive citations and product claims before publication."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Humans are useful for authority, ambiguity, taste, policy exceptions, and high-impact side effects. They are not useful if the packet lacks evidence or if approval is required so often that reviewers stop reading."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If the reviewer cannot change the outcome, remove or redesign the checkpoint."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ],
+          "analogy": "A good review gate is a decision desk, not a turnstile."
+        },
+        {
+          "id": "m1_worked",
+          "kind": "functionalExample",
+          "title": "Case study: publish approval for lesson content",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The agent prepares a lesson, source list, known weak claims, and validation status. The reviewer can approve, request changes, or reject. The decision becomes part of the run state."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The human is not asked to inspect hidden reasoning. They inspect the artifact, evidence, and concrete risks."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Identify the risky decision."
+                  }
+                ],
+                [
+                  {
+                    "text": "Prepare the artifact and evidence."
+                  }
+                ],
+                [
+                  {
+                    "text": "Offer approve, edit/request changes, reject, or escalate."
+                  }
+                ],
+                [
+                  {
+                    "text": "Record reviewer, time, and rationale."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Review purpose",
+          "prompt": "Which decision is most appropriate for human review?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Counting tokens in a prompt.",
+              "correct": false
+            },
+            {
+              "text": "Approving a customer-facing email that changes an account setting.",
+              "correct": true
+            },
+            {
+              "text": "Parsing a JSON object with a schema validator.",
+              "correct": false
+            }
+          ],
+          "explanation": "Humans should guard judgment and authority, while deterministic checks handle mechanical validation.",
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb6",
+        "kb7",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Choose interruption points deliberately",
+      "sub": "Interrupts should occur before irreversible or expensive actions.",
+      "summary": "The best interrupt is just before commitment.",
+      "objectives": [
+        "Place approval before side effects.",
+        "Use interrupts for uncertainty and policy exceptions.",
+        "Set timeouts and fallback states."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Timing determines whether review can help",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Interrupt too early and the human lacks context. Interrupt too late and the action is already done. The ideal point is after the agent gathers evidence and proposes a concrete action, before the external side effect."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "LangGraph-style interrupts and durable workflow signals are useful because they persist state while waiting for human input and resume with the decision."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every interrupt should have a timeout, owner, and safe default."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ],
+          "analogy": "Review should happen while the door is unlocked, not after it has slammed shut."
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "HITL trigger choices",
+          "criteria": [
+            "Trigger",
+            "Use when",
+            "Risk"
+          ],
+          "options": [
+            {
+              "name": "Before side effect",
+              "cells": [
+                {
+                  "criterion": "Trigger",
+                  "text": "Approval before send, publish, delete, refund.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Action is external or hard to undo.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Reviewer fatigue if too broad.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for high-impact actions.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "On uncertainty",
+              "cells": [
+                {
+                  "criterion": "Trigger",
+                  "text": "Model or evaluator detects missing evidence or ambiguity.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Human judgment improves quality.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Bad uncertainty detection misses cases.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use for nuanced tasks.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "After completion only",
+              "cells": [
+                {
+                  "criterion": "Trigger",
+                  "text": "Sampled audit after action.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Use when",
+                  "text": "Actions are reversible or low risk.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Risk",
+                  "text": "Cannot prevent harm.",
+                  "rating": "bad"
+                }
+              ],
+              "whenToUse": "Use as monitoring, not safety gate.",
+              "cost": "Low",
+              "complexity": "Low"
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Interrupt placement",
+          "prompt": "Where should review happen before publishing generated content?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "After the content is already public.",
+              "correct": false
+            },
+            {
+              "text": "After evidence and draft are ready, before the publish action runs.",
+              "correct": true
+            },
+            {
+              "text": "Before the agent knows the topic.",
+              "correct": false
+            }
+          ],
+          "explanation": "Review needs enough context and must still be able to prevent the side effect.",
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb6",
+        "kb7",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Present review packets, not raw traces",
+      "sub": "Humans need compact evidence and concrete choices.",
+      "summary": "The packet is the interface between agent and human.",
+      "objectives": [
+        "Build a review packet with exact action details.",
+        "Include evidence and model uncertainty.",
+        "Avoid asking reviewers to infer hidden state."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "A review packet should answer “what am I approving?”",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A useful packet includes the proposed action, arguments, artifact preview, supporting sources, policy reason for review, alternatives, and consequences of approve/edit/reject. It should hide irrelevant trace noise but link to full trace for audit."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The packet should not ask the human to approve hidden chain-of-thought. It should show observable evidence and concrete outputs."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "A reviewer should be able to decide in under a minute for routine cases."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ],
+          "analogy": "The review packet is an airport boarding pass: compact, specific, and linked to the full record."
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Worked packet: approve a tool call",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For an email-send tool, the packet shows recipient, subject, body, source evidence, customer ID, risk tier, and the exact send button. It also offers edit, reject, and escalate."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If the body cites a policy, the cited source is included. If evidence is missing, the packet should recommend reject or request changes."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "State the proposed action and exact arguments."
+                  }
+                ],
+                [
+                  {
+                    "text": "Show artifact preview and supporting evidence."
+                  }
+                ],
+                [
+                  {
+                    "text": "Name why review is required."
+                  }
+                ],
+                [
+                  {
+                    "text": "Offer explicit decision options and record rationale."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Packet design",
+          "prompt": "What should be included in an approval packet for a database update?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only “the model wants to update the database.”",
+              "correct": false
+            },
+            {
+              "text": "The exact record, field changes, reason, evidence, risk, and approve/edit/reject options.",
+              "correct": true
+            },
+            {
+              "text": "Only the model provider name.",
+              "correct": false
+            }
+          ],
+          "explanation": "Specific context lets humans exercise real authority.",
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb6",
+        "kb7",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Resume safely after approval or correction",
+      "sub": "Human input becomes state, not a side conversation.",
+      "summary": "The agent should continue from the reviewed decision point.",
+      "objectives": [
+        "Represent approve, edit, reject, and escalate.",
+        "Persist reviewer decisions.",
+        "Predict state after correction."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "The human decision is an event in the run",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "After review, the runtime should resume with a structured decision: approved, rejected, edited arguments, requested changes, or escalation. The model may synthesize the next step, but application code applies the decision."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Spaced recall: from durable workflows, side effects before an interrupt must be idempotent or avoided. Otherwise resume can duplicate work."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Never ask the model to remember an approval from chat text alone; store it in run state."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Approval resume state machine",
+          "language": "python",
+          "code": "state = {\"status\": \"awaiting_review\", \"draft\": \"Send refund note\", \"approved\": None}\n\ndef resume(state, decision):\n    if state[\"status\"] != \"awaiting_review\":\n        raise ValueError(\"not waiting for review\")\n    if decision[\"type\"] == \"approve\":\n        return {**state, \"status\": \"ready_to_send\", \"approved\": True, \"reviewer\": decision[\"reviewer\"]}\n    if decision[\"type\"] == \"edit\":\n        return {**state, \"status\": \"needs_revision\", \"draft\": decision[\"draft\"], \"approved\": False}\n    if decision[\"type\"] == \"reject\":\n        return {**state, \"status\": \"cancelled\", \"approved\": False}\n    return {**state, \"status\": \"escalated\", \"approved\": False}\n\nprint(resume(state, {\"type\": \"edit\", \"draft\": \"Ask finance to review first\", \"reviewer\": \"pm\"}))",
+          "explanation": "The decision changes structured state. Sending or publishing would happen only after the state reaches the approved branch.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict the status after the edit decision.",
+            "answer": "The status becomes `needs_revision`, the draft is replaced, and the run is not approved."
+          },
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Resume logic",
+          "prompt": "Why store approval as structured state instead of only chat text?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Structured state prevents all model mistakes.",
+              "correct": false
+            },
+            {
+              "text": "The runtime can deterministically branch, audit, and avoid repeating side effects.",
+              "correct": true
+            },
+            {
+              "text": "Chat text cannot be displayed to humans.",
+              "correct": false
+            }
+          ],
+          "explanation": "Structured decisions make review enforceable by code.",
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb6",
+        "kb7",
+        "kb4"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Measure review burden and missed escapes",
+      "sub": "HITL quality includes latency, load, and safety coverage.",
+      "summary": "Human-in-the-loop systems need operating metrics.",
+      "objectives": [
+        "Track approval latency and reviewer load.",
+        "Measure false positives and false negatives.",
+        "Feed incidents back into triggers."
+      ],
+      "termIds": [
+        "agent",
+        "tool",
+        "state",
+        "sandbox"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Review gates need calibration",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Track how often the agent asks for review, how long reviewers take, how often they edit or reject, and which risky actions bypassed review. These numbers tell you whether the gate is useful or noisy."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Reviewers need escalation paths and sampled audits. High-severity cases may require two-person approval; low-risk repetitive cases may move to deterministic checks after evidence accumulates."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "If reviewers approve 99% without edits, inspect whether the packet is too broad, too weak, or no longer needed."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ]
+        },
+        {
+          "id": "m5_checklist",
+          "kind": "functionalExample",
+          "title": "Verify AI output after human review",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use this checklist on runs that included a human decision."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "The review packet showed exact action, artifact, evidence, and risk."
+                  }
+                ],
+                [
+                  {
+                    "text": "The decision was stored with reviewer, time, rationale, and any edits."
+                  }
+                ],
+                [
+                  {
+                    "text": "The resumed run followed the human decision rather than re-deciding it."
+                  }
+                ],
+                [
+                  {
+                    "text": "No irreversible side effect occurred before required approval."
+                  }
+                ],
+                [
+                  {
+                    "text": "Metrics track review latency, edit/reject rate, and missed-policy incidents."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Calibration signal",
+          "prompt": "What does a high approval rate with no edits suggest?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The system no longer needs audit logs.",
+              "correct": false
+            },
+            {
+              "text": "The review gate may be too broad, too low-value, or the packet may not reveal useful risks.",
+              "correct": true
+            },
+            {
+              "text": "All future actions should skip policy checks.",
+              "correct": false
+            }
+          ],
+          "explanation": "Review gates should be calibrated with evidence, not assumed useful forever.",
+          "termIds": [
+            "agent",
+            "tool",
+            "state",
+            "sandbox"
+          ],
+          "sources": [
+            "kb6",
+            "kb7",
+            "kb4"
+          ]
+        }
+      ],
+      "citations": [
+        "kb6",
+        "kb7",
+        "kb4"
+      ]
+    }
+  ],
+  "glossary": {
+    "agent": {
+      "id": "agent",
+      "label": "Agent",
+      "laymanDefinition": "A software loop that plans, observes results, and may use tools to pursue a goal.",
+      "technicalNote": "Agent designs need explicit loop boundaries, stop conditions, permissions, state contracts, and evaluation surfaces before autonomy is useful.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "tool": {
+      "id": "tool",
+      "label": "Tool",
+      "laymanDefinition": "An external capability the model can request, such as search, code execution, retrieval, or a business API.",
+      "technicalNote": "Tools require schemas, authorization, error handling, audit logs, and tests because natural-language intent is not execution permission.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "state": {
+      "id": "state",
+      "label": "State",
+      "laymanDefinition": "The working information carried between steps of an agent workflow.",
+      "technicalNote": "State should separate durable facts, transient scratch work, approvals, tool results, and failure metadata so retries and handoffs remain understandable.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "memory": {
+      "id": "memory",
+      "label": "Memory",
+      "laymanDefinition": "Information saved across turns or sessions for future use.",
+      "technicalNote": "Agent memory needs scope, freshness, deletion, privacy controls, and evaluation so saved context helps rather than silently steering behavior.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    },
+    "mcp": {
+      "id": "mcp",
+      "label": "MCP",
+      "laymanDefinition": "A protocol for exposing tools and context to models and agent clients.",
+      "technicalNote": "MCP-style integrations still need capability design, trust boundaries, lifecycle handling, and authorization around each exposed server.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ],
+      "acronymExpansion": "Model Context Protocol"
+    },
+    "sandbox": {
+      "id": "sandbox",
+      "label": "Sandbox",
+      "laymanDefinition": "An isolated environment that limits what agent actions can reach or change.",
+      "technicalNote": "Sandboxing should constrain files, network, processes, credentials, browser sessions, time, and side effects according to the task risk.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb1"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Human-in-the-loop Agents",
+    "themes": [
+      {
+        "name": "Human review placement",
+        "questions": [
+          {
+            "q": "Where does a human decision reduce risk or improve quality enough to justify interruption?",
+            "why": "Human review is costly; it should guard judgment, authority, and ambiguous evidence rather than rubber-stamp every step.",
+            "opts": [
+              "Targeted interrupt with review packet",
+              "Review every model token",
+              "No review for side effects"
+            ],
+            "rot": "Interrupt at high-impact decisions with exact context, options, and recorded rationale."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: explain HITL by naming review trigger, packet, options, approval/correction, resume state, audit, and reviewer-load metrics."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Human-in-the-loop path from decision point to resumed run",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Humans own judgment and authority",
+          "sub": "Use review for decisions the model should not own alone.",
+          "what": "Learners decide which parts require human control.",
+          "relevance": "This prevents both over-automation and pointless human rubber-stamping.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Separate expert judgment from routine model/tool execution.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Choose interruption points deliberately",
+          "sub": "Interrupts should occur before irreversible or expensive actions.",
+          "what": "Learners position HITL gates in agent control flow.",
+          "relevance": "Late review can be useless after the harmful action already happened.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Place review gates where state is complete but side effects have not fired.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Present review packets, not raw traces",
+          "sub": "Humans need compact evidence and concrete choices.",
+          "what": "Learners design useful human review UX.",
+          "relevance": "Dumping a full trace makes review slow and error-prone.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Summarize the artifact, risk, evidence, and proposed action.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Resume safely after approval or correction",
+          "sub": "Human input becomes state, not a side conversation.",
+          "what": "Learners implement resume behavior after review.",
+          "relevance": "Bad resume logic can ignore corrections or duplicate actions.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Apply the decision deterministically and avoid repeating prior side effects.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Measure review burden and missed escapes",
+          "sub": "HITL quality includes latency, load, and safety coverage.",
+          "what": "Learners evaluate HITL gates, not just final answers.",
+          "relevance": "Too much review slows users; too little misses dangerous actions.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Treat human review as a product workflow with metrics.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "enables"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Humans own judgment and authority",
+        "detail": "Human review should protect meaningful decisions."
+      },
+      {
+        "step": 2,
+        "label": "Choose interruption points deliberately",
+        "detail": "The best interrupt is just before commitment."
+      },
+      {
+        "step": 3,
+        "label": "Present review packets, not raw traces",
+        "detail": "The packet is the interface between agent and human."
+      },
+      {
+        "step": 4,
+        "label": "Resume safely after approval or correction",
+        "detail": "The agent should continue from the reviewed decision point."
+      },
+      {
+        "step": 5,
+        "label": "Measure review burden and missed escapes",
+        "detail": "Human-in-the-loop systems need operating metrics."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete problem in \"Humans own judgment and authority\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_boundary",
+        "label": "Did \"Present review packets, not raw traces\" define the right boundary or decision?",
+        "fromModuleId": "m3"
+      },
+      {
+        "id": "chk_release",
+        "label": "Does \"Measure review burden and missed escapes\" provide a reviewable release gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Design a human approval point for an agent that can publish lesson content. Include trigger, exact review packet, approve/edit/reject actions, resume behavior, audit fields, timeout, and reviewer burden metric. Next rung: durable workflows with interrupts.",
+      "scopedTo": "Human-in-the-loop Agents"
+    }
+  },
+  "citations": {
+    "kb1": {
+      "id": "kb1",
+      "kind": "kb",
+      "title": "KB: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "kb2": {
+      "id": "kb2",
+      "kind": "kb",
+      "title": "KB support: Agentic Systems Overview",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "asOfDate": "2026-06-19"
+    },
+    "canon1": {
+      "id": "canon1",
+      "kind": "canonical",
+      "title": "Model Context Protocol docs",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-20"
+    },
+    "canon2": {
+      "id": "canon2",
+      "kind": "canonical",
+      "title": "Official documentation",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+      "asOfDate": "2026-06-20"
+    },
+    "kb6": {
+      "id": "kb6",
+      "kind": "kb",
+      "title": "KB: Agent Loop, ReAct, Planning, and Reflection",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "asOfDate": "2026-06-22"
+    },
+    "kb7": {
+      "id": "kb7",
+      "kind": "kb",
+      "title": "KB: LangGraph",
+      "url": "https://docs.langchain.com/oss/python/langgraph/overview",
+      "asOfDate": "2026-06-22"
+    },
+    "kb4": {
+      "id": "kb4",
+      "kind": "kb",
+      "title": "KB: Agent Tool Security and Sandboxing",
+      "url": "https://genai.owasp.org/llm-top-10/",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

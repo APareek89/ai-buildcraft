@@ -1,0 +1,905 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Serve a Local LLM with Ollama",
+    "title": "Serve a Local LLM with Ollama",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 42,
+    "thesis": "Serve a Local LLM with Ollama is practical when learners can apply it to this concrete case: A privacy-sensitive redaction assistant must run locally on developer laptops with Ollama. By the end, they should be able to build or review local serving runbook with model choice, prompt, and verification steps, measure redaction accuracy on private sample files, and catch the failure where a local model silently truncates long documents."
+  },
+  "learnerProfile": {
+    "level": "beginner",
+    "depth": "conceptual",
+    "examples": "functional_code",
+    "topic": "Serve a Local LLM with Ollama",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Serve a Local LLM with Ollama: mental map",
+    "caption": "Build a local Ollama-backed app slice: choose target behavior, pull model, create Modelfile, call API, and harden local limits.",
+    "oneLineThesis": "Serving a local LLM with Ollama is complete when the app has a tested local endpoint, stable model recipe, and honest production boundary.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Define the local model slice before installing",
+        "sub": "Choose the one local workflow the build must prove.",
+        "what": "Learners place Ollama in the local-serving landscape.",
+        "relevance": "This prevents treating a laptop demo as a production serving plan.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Anchor Ollama in a private local tutoring prototype, not a GPU fleet.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Pull a model and verify the local API",
+        "sub": "The developer loop is pull, run, call, inspect, repeat.",
+        "what": "Learners understand the operational pieces they will touch.",
+        "relevance": "This catches failures where the app assumes a model is running but it is not.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Walk from model pull to a localhost chat call.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Create a Modelfile for stable behavior",
+        "sub": "A Modelfile makes system prompts and parameters repeatable.",
+        "what": "Learners make local behavior reproducible.",
+        "relevance": "This prevents demos that depend on hidden notebook state.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Package a concise tutoring persona with context and license notes.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Call the local model from a tiny app",
+        "sub": "The smallest app call should check model, latency, and output shape.",
+        "what": "Learners implement the integration path.",
+        "relevance": "This makes local serving testable.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Send one chat request and assert the local response shape.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Harden the local demo without pretending it is production",
+        "sub": "Local success does not prove production readiness.",
+        "what": "Learners leave with realistic deployment boundaries.",
+        "relevance": "This prevents local demos from overpromising scale and governance.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Decide whether the lesson app remains local or moves to production serving.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "hardens"
+      }
+    ],
+    "structureType": "procedural",
+    "entryNodeId": "n_m1"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Define the local model slice before installing",
+      "sub": "Choose the one local workflow the build must prove.",
+      "summary": "A good Ollama build starts with one runnable app path and an acceptance test.",
+      "objectives": [
+        "Explain what Ollama owns.",
+        "Choose a local use case.",
+        "Name limits before production."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "Local model serving has a different job",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a teacher wants a private demo that drafts lesson explanations without sending prompts to a hosted API. Ollama is useful because a learner can pull a model, run it locally, and call a simple HTTP API on localhost."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The KB verdict is clear: Ollama is best for local development, demos, and privacy-sensitive prototypes; it is not the default for high-concurrency production serving with autoscaling, tenant policy, and detailed routing."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_ollama",
+            "canon_ollama_api"
+          ],
+          "analogy": "Ollama is a workbench model server, not a factory loading dock."
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Worked target: local lesson explainer",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The worked artifact is a campus helpdesk assistant that must answer from a local Ollama endpoint during a privacy review. It loads the selected model, streams a short answer, records the model tag and latency, and returns a clear setup message if the endpoint is missing. The negative test disconnects Ollama and confirms the service fails closed instead of routing the student question to an external provider."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_ollama"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Ollama fit",
+          "prompt": "What is Ollama strongest for?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "High-concurrency multi-tenant GPU fleets by default.",
+              "correct": false
+            },
+            {
+              "text": "Local development, demos, and privacy-sensitive prototypes.",
+              "correct": true
+            },
+            {
+              "text": "Replacing evaluation and monitoring.",
+              "correct": false
+            }
+          ],
+          "explanation": "Ollama optimizes local ergonomics, not full production operations.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_ollama"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_ollama",
+        "canon_ollama_api"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Pull a model and verify the local API",
+      "sub": "The developer loop is pull, run, call, inspect, repeat.",
+      "summary": "Ollama manages local model availability and exposes chat/generate endpoints.",
+      "objectives": [
+        "Name the CLI lifecycle.",
+        "Explain local cache and server role.",
+        "Parse streaming API responses."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "The model has to exist locally before your app can call it",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Ollama commands such as pull, run, show, ps, and create manage local model artifacts and active sessions. The local server exposes HTTP endpoints for chat, generate, embeddings, and model management. Streaming JSON is convenient, but clients must parse it deliberately."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_ollama",
+            "canon_ollama_api"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Ollama moving parts",
+          "criteria": [
+            "Part",
+            "Role",
+            "Failure to watch"
+          ],
+          "options": [
+            {
+              "name": "Model cache",
+              "cells": [
+                {
+                  "criterion": "Part",
+                  "text": "Model cache",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Role",
+                  "text": "keeps pulled artifacts local",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure to watch",
+                  "text": "missing model or wrong tag",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Before first run.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Local server",
+              "cells": [
+                {
+                  "criterion": "Part",
+                  "text": "Local server",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Role",
+                  "text": "serves chat/generate over HTTP",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure to watch",
+                  "text": "port unavailable or service stopped",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "App integration.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Streaming API",
+              "cells": [
+                {
+                  "criterion": "Part",
+                  "text": "Streaming API",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Role",
+                  "text": "returns incremental JSON chunks",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure to watch",
+                  "text": "client treats chunks as one JSON object",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Interactive UI.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_ollama_api"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_ollama",
+        "canon_ollama_api"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Create a Modelfile for stable behavior",
+      "sub": "A Modelfile makes system prompts and parameters repeatable.",
+      "summary": "Custom local models should record base model, prompt template, and context settings.",
+      "objectives": [
+        "Explain Modelfile role.",
+        "Set system prompt and context deliberately.",
+        "Recognize license and memory risks."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "A Modelfile is a local model recipe",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A Modelfile can define the base model, system prompt, prompt template, parameters such as context length, adapters, and license metadata. It gives the local demo a stable contract instead of relying on one-off CLI flags."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_ollama_modelfile",
+            "kb_ollama"
+          ]
+        },
+        {
+          "id": "m3_file",
+          "kind": "functionalExample",
+          "title": "Worked Modelfile for a local tutor",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "FROM llama3.1\nPARAMETER num_ctx 8192\nSYSTEM You are a concise tutor for agentic AI concepts. Explain with one example and one check question.\n\nReview: num_ctx increases memory use, and the base model license still controls allowed use."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_ollama_modelfile",
+            "kb_ollama"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_ollama_modelfile",
+        "kb_ollama"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Call the local model from a tiny app",
+      "sub": "The smallest app call should check model, latency, and output shape.",
+      "summary": "A smoke test proves the endpoint works before UI polish.",
+      "objectives": [
+        "Run a local API call shape.",
+        "Predict failure when stream handling is wrong.",
+        "Verify AI-generated Ollama integration."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Ollama local chat smoke test",
+          "language": "python",
+          "code": "import requests, time\n\npayload = {\n    \"model\": \"llama3.1\",\n    \"stream\": False,\n    \"messages\": [{\"role\": \"user\", \"content\": \"Explain KV cache in one paragraph.\"}],\n}\nstart = time.time()\nresp = requests.post(\"http://localhost:11434/api/chat\", json=payload, timeout=60)\nresp.raise_for_status()\ndata = resp.json()\nlatency = time.time() - start\n\nassert \"message\" in data and \"content\" in data[\"message\"]\nprint({\"latency_s\": round(latency, 2), \"preview\": data[\"message\"][\"content\"][:80]})",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This smoke test disables streaming so the response is easy to assert. A streaming UI can be added after the basic endpoint contract is proven."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "What likely breaks if stream stays true but the client still calls resp.json() once?",
+            "answer": "The endpoint can return newline-delimited streaming JSON chunks, so treating the whole response as one JSON object can fail or lose partial-output handling."
+          },
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_ollama_api",
+            "kb_ollama"
+          ]
+        },
+        {
+          "id": "m4_verify",
+          "kind": "conceptual",
+          "title": "Verify Ollama app integrations",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Checklist: model tag exists locally; service URL is configurable; streaming and non-streaming modes are parsed correctly; latency is logged; prompt data stays local; and the app fails clearly when the model is missing."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "canon_ollama_api"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_ollama_api",
+        "kb_ollama"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Harden the local demo without pretending it is production",
+      "sub": "Local success does not prove production readiness.",
+      "summary": "Ollama should hand off to gateways or serving runtimes when concurrency, policy, and reliability matter.",
+      "objectives": [
+        "Name production gaps.",
+        "Compare Ollama with vLLM and hosted APIs.",
+        "Define local-demo release gates."
+      ],
+      "termIds": [
+        "prototype",
+        "retriever",
+        "validator",
+        "trace",
+        "deployment"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The local demo has honest limits",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Local performance depends on model size, quantization, VRAM, and offload behavior. Ollama does not automatically provide multi-user auth, budgets, audit logs, autoscaling, or production routing. For many users, move behind a gateway, hosted API, vLLM, or another serving stack."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_ollama"
+          ]
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Use Ollama to learn, prototype, and demo locally; graduate when concurrency, governance, or reliability become requirements.",
+          "useWhen": "Use it for offline demos, private prototypes, classroom exercises, and local fallback experiments.",
+          "avoidWhen": "Avoid presenting a laptop-local model as production infrastructure without auth, monitoring, rate limits, evaluation, and license review.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_ollama"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Graduation signal",
+          "prompt": "When should an Ollama prototype move to another serving plan?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "As soon as the first local response works.",
+              "correct": false
+            },
+            {
+              "text": "When multiple users, auth, budgets, high concurrency, or reliability SLAs matter.",
+              "correct": true
+            },
+            {
+              "text": "Never; local serving is always enough.",
+              "correct": false
+            }
+          ],
+          "explanation": "Production needs more than a localhost endpoint.",
+          "termIds": [
+            "prototype",
+            "retriever",
+            "validator",
+            "trace",
+            "deployment"
+          ],
+          "sources": [
+            "kb_ollama"
+          ]
+        }
+      ],
+      "citations": [
+        "kb_ollama"
+      ]
+    }
+  ],
+  "glossary": {
+    "prototype": {
+      "id": "prototype",
+      "label": "Prototype",
+      "laymanDefinition": "A narrow runnable slice that proves one infrastructure behavior.",
+      "technicalNote": "A good prototype includes setup, smoke test, failure mode, and migration boundary.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_ollama"
+      ]
+    },
+    "retriever": {
+      "id": "retriever",
+      "label": "Retriever",
+      "laymanDefinition": "A component that fetches context or records for a request.",
+      "technicalNote": "Serving lessons track retrievers because retrieval shape affects latency, cost, and quality.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_ollama"
+      ]
+    },
+    "validator": {
+      "id": "validator",
+      "label": "Validator",
+      "laymanDefinition": "A check that enforces output, request, or deployment contracts.",
+      "technicalNote": "Validators protect schemas, health checks, citations, policy gates, and readiness criteria.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_ollama"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A structured record of one request or job through serving components.",
+      "technicalNote": "Traces reveal queue time, model call latency, token counts, errors, and release metadata.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_ollama"
+      ]
+    },
+    "deployment": {
+      "id": "deployment",
+      "label": "Deployment",
+      "laymanDefinition": "A versioned runtime configuration exposed to users or systems.",
+      "technicalNote": "A deployment includes model, serving flags, hardware, API contract, monitoring, rollback, and ownership.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_ollama"
+      ]
+    },
+    "acceptance_test": {
+      "id": "acceptance_test",
+      "label": "Acceptance test",
+      "laymanDefinition": "A test that proves the build meets its release contract.",
+      "technicalNote": "Acceptance tests should cover smoke behavior, failure modes, metrics, and rollback expectations.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb_ollama"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Serve a Local LLM with Ollama",
+    "themes": [
+      {
+        "name": "Build acceptance",
+        "questions": [
+          {
+            "q": "What local app behavior proves the Ollama integration works end to end?",
+            "why": "A build project needs a runnable slice, not just a successful model pull.",
+            "opts": [
+              "Local app smoke test with fallback",
+              "Model pulled only",
+              "Production promise"
+            ],
+            "rot": "Prove one local request path, then document limits and graduation criteria."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: rebuild the Ollama project by naming target behavior, pulled model, Modelfile, API call, streaming choice, latency log, missing-model error, and production graduation criteria."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Ollama build path from local target to hardened demo",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Define the local model slice before installing",
+          "sub": "Choose the one local workflow the build must prove.",
+          "what": "Learners place Ollama in the local-serving landscape.",
+          "relevance": "This prevents treating a laptop demo as a production serving plan.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Anchor Ollama in a private local tutoring prototype, not a GPU fleet.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Pull a model and verify the local API",
+          "sub": "The developer loop is pull, run, call, inspect, repeat.",
+          "what": "Learners understand the operational pieces they will touch.",
+          "relevance": "This catches failures where the app assumes a model is running but it is not.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Walk from model pull to a localhost chat call.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Create a Modelfile for stable behavior",
+          "sub": "A Modelfile makes system prompts and parameters repeatable.",
+          "what": "Learners make local behavior reproducible.",
+          "relevance": "This prevents demos that depend on hidden notebook state.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Package a concise tutoring persona with context and license notes.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Call the local model from a tiny app",
+          "sub": "The smallest app call should check model, latency, and output shape.",
+          "what": "Learners implement the integration path.",
+          "relevance": "This makes local serving testable.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Send one chat request and assert the local response shape.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Harden the local demo without pretending it is production",
+          "sub": "Local success does not prove production readiness.",
+          "what": "Learners leave with realistic deployment boundaries.",
+          "relevance": "This prevents local demos from overpromising scale and governance.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Decide whether the lesson app remains local or moves to production serving.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "then"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "hardens"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Define the local model slice before installing",
+        "detail": "A good Ollama build starts with one runnable app path and an acceptance test."
+      },
+      {
+        "step": 2,
+        "label": "Pull a model and verify the local API",
+        "detail": "Ollama manages local model availability and exposes chat/generate endpoints."
+      },
+      {
+        "step": 3,
+        "label": "Create a Modelfile for stable behavior",
+        "detail": "Custom local models should record base model, prompt template, and context settings."
+      },
+      {
+        "step": 4,
+        "label": "Call the local model from a tiny app",
+        "detail": "A smoke test proves the endpoint works before UI polish."
+      },
+      {
+        "step": 5,
+        "label": "Harden the local demo without pretending it is production",
+        "detail": "Ollama should hand off to gateways or serving runtimes when concurrency, policy, and reliability matter."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"Define the local model slice before installing\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Call the local model from a tiny app\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Harden the local demo without pretending it is production\" define the production or release gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Build a local app that calls Ollama for one lesson explanation. Include pull/run instructions, Modelfile, non-streaming smoke test, streaming UI note, latency logging, and a clear migration note for production. Next rung: add provider abstraction.",
+      "scopedTo": "Build Projects",
+      "checks": [
+        "Runnable local API path exists.",
+        "Modelfile is versioned.",
+        "Client handles missing model/service.",
+        "Production limits are documented."
+      ]
+    }
+  },
+  "citations": {
+    "kb_ollama": {
+      "id": "kb_ollama",
+      "kind": "kb",
+      "title": "KB: Ollama",
+      "url": "https://github.com/ollama/ollama",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_ollama_api": {
+      "id": "canon_ollama_api",
+      "kind": "canonical",
+      "title": "Ollama API reference",
+      "url": "https://docs.ollama.com/api",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_ollama_modelfile": {
+      "id": "canon_ollama_modelfile",
+      "kind": "canonical",
+      "title": "Ollama Modelfile reference",
+      "url": "https://docs.ollama.com/modelfile",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

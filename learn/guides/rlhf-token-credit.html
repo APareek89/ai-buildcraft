@@ -1,0 +1,255 @@
+<!doctype html>
+<!-- Adapted for standalone use: viewer runtime removed; rendered code-copy and navigation interactions rebound. -->
+
+<html><head><!-- frame-runtime --><!-- /frame-runtime --><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>RLHF Token Credit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;800&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap">
+<style>
+:root{
+  --bg:#f5f6f9; --card:#ffffff; --ink:#1a1f2e; --muted:#5c6378; --line:#dfe2ea;
+  --accent:#4a4fd1; --accent-soft:#e8e9fb; --up:#1f8a55; --up-soft:#e2f4ea;
+  --down:#c2412d; --down-soft:#fbe7e3; --code:#eef0f5;
+  --sans:"Figtree",system-ui,-apple-system,Segoe UI,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;--bg:#12141c;--card:#1b1e29;--ink:#e6e8f0;--muted:#9aa0b4;--line:#2d3142;
+  --accent:#8e92ff;--accent-soft:#262a4a;--up:#4cc98a;--up-soft:#173327;--down:#f07a64;--down-soft:#3a1f1a;--code:#232735;}}
+:root[data-theme="dark"]{
+  color-scheme:dark;--bg:#12141c;--card:#1b1e29;--ink:#e6e8f0;--muted:#9aa0b4;--line:#2d3142;
+  --accent:#8e92ff;--accent-soft:#262a4a;--up:#4cc98a;--up-soft:#173327;--down:#f07a64;--down-soft:#3a1f1a;--code:#232735;}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:28px 16px 60px;display:flex;flex-direction:column;gap:22px}
+h1{font-size:28px;font-weight:800;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:18px;font-weight:800;margin:0 0 10px;text-wrap:balance}
+p{margin:0;max-width:65ch}
+.sub{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.pipeline{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.pipeline span.s{background:var(--accent-soft);color:var(--accent);padding:4px 10px;border-radius:6px;font-weight:600}
+.pipeline span.a{color:var(--muted)}
+.tokens{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tok{border:1px solid var(--line);border-radius:6px;padding:6px 9px;cursor:pointer;background:var(--card);font-family:var(--mono);font-size:13px;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px}
+.tok small{font-size:10px;color:var(--muted)}
+.tok.pos{background:var(--up-soft);border-color:var(--up)}
+.tok.neg{background:var(--down-soft);border-color:var(--down)}
+.tok.sel{outline:2px solid var(--accent);outline-offset:1px}
+.tok:focus-visible{outline:2px solid var(--accent)}
+.reward{margin-top:10px;display:inline-flex;gap:8px;align-items:center;font-size:13px;padding:6px 10px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.ctrl label{display:flex;justify-content:space-between;font-size:13px;font-weight:600}
+.ctrl input{width:100%;accent-color:var(--accent)}
+.ctrl .hint{font-size:12px;color:var(--muted)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+button{font-family:var(--sans);font-weight:600;font-size:14px;border-radius:7px;padding:8px 14px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:13px}
+th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+tr.sel td{background:var(--accent-soft)}
+tbody tr{cursor:pointer}
+.u{color:var(--up);font-weight:600}.d{color:var(--down);font-weight:600}
+.bars{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;height:150px;align-items:stretch;margin-top:6px}
+.bcol{display:flex;flex-direction:column;align-items:center;font-size:10px;color:var(--muted);font-family:var(--mono)}
+.btrack{flex:1;width:100%;position:relative}
+.btrack::after{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px solid var(--line)}
+.bar{position:absolute;left:18%;right:18%;border-radius:3px}
+.work{display:grid;grid-template-columns:1fr;gap:6px;font-family:var(--mono);font-size:13px}
+.work div{padding:6px 10px;border-radius:6px;background:var(--code)}
+.work b{color:var(--accent)}
+pre{background:var(--code);border-radius:8px;padding:14px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.5;margin:0}
+.c{color:var(--muted)}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+@media (prefers-reduced-motion:no-preference){.bar,.tok{transition:all .35s ease}}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:6px">
+    <h1>How one reward reaches ten tokens</h1>
+    <p class="sub">The reward model scores the whole answer once. This page shows how that one number becomes a push up or down on each token, then a weight update.</p>
+  </header>
+
+  <section class="card">
+    <div class="lbl">Flow</div>
+    <div class="pipeline" style="margin-top:8px">
+      <span class="s">Reward R (1 number)</span><span class="a">→</span>
+      <span class="s">Critic V per token</span><span class="a">→</span>
+      <span class="s">Surprise δ per token</span><span class="a">→</span>
+      <span class="s">Advantage A per token</span><span class="a">→</span>
+      <span class="s">Loss = −A · log p</span><span class="a">→</span>
+      <span class="s">Backprop</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="lbl">Prompt: "Why is the sky blue?"</div>
+    <div class="tokens" id="tokens"><button class="tok pos " data-i="0" aria-label="Sunlight">Sunlight<small>p 0.62</small></button><button class="tok pos sel" data-i="1" aria-label="scatters">scatters<small>p 0.20</small></button><button class="tok pos " data-i="2" aria-label="off">off<small>p 0.71</small></button><button class="tok pos " data-i="3" aria-label="air">air<small>p 0.88</small></button><button class="tok pos " data-i="4" aria-label="molecules">molecules<small>p 0.93</small></button><button class="tok pos " data-i="5" aria-label="and">and<small>p 0.55</small></button><button class="tok pos " data-i="6" aria-label="blue">blue<small>p 0.34</small></button><button class="tok pos " data-i="7" aria-label="scatters">scatters<small>p 0.47</small></button><button class="tok pos " data-i="8" aria-label="the">the<small>p 0.81</small></button><button class="tok pos " data-i="9" aria-label="most">most<small>p 0.66</small></button></div>
+    <div class="reward">Reward model score for full answer: <span class="mono" id="rOut">7.0</span></div>
+    <p class="sub" style="margin-top:8px;font-size:13px">Small number under each word = probability the model gave that word. Green = will go up. Red = will go down. Tap a word for its full calculation.</p>
+  </section>
+
+  <section class="card ctrls">
+    <div class="ctrl">
+      <label for="rew">Reward R <span class="mono" id="rewV">7.0</span></label>
+      <input type="range" id="rew" min="0" max="10" step="0.1" value="7">
+      <div class="hint">Given only at the last token.</div>
+    </div>
+    <div class="ctrl">
+      <label for="lam">λ (lambda) <span class="mono" id="lamV">0.90</span></label>
+      <input type="range" id="lam" min="0" max="1" step="0.05" value="0.9">
+      <div class="hint">0 = look 1 step ahead. 1 = look to the end.</div>
+    </div>
+    <div class="ctrl">
+      <label for="lr">Learning rate <span class="mono" id="lrV">0.50</span></label>
+      <input type="range" id="lr" min="0.05" max="2" step="0.05" value="0.5">
+      <div class="hint">Size of the step (exaggerated here).</div>
+    </div>
+    <div class="btns">
+      <button id="step">Apply 1 update</button>
+      <button id="reset" class="ghost">Reset</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Advantage per token</h2>
+    <p class="sub" style="font-size:13px">Above line = better than critic expected. Below = worse. Only this shape matters, not the raw score.</p>
+    <div class="bars" id="bars"><div class="bcol"><span>+1.39</span><div class="btrack"><div class="bar" style="background:var(--up);bottom:50%;height:50%"></div></div><span>1</span></div><div class="bcol"><span>+1.10</span><div class="btrack"><div class="bar" style="background:var(--up);bottom:50%;height:39.53822442949671%"></div></div><span>2</span></div><div class="bcol"><span>+1.33</span><div class="btrack"><div class="bar" style="background:var(--up);bottom:50%;height:47.935693258733295%"></div></div><span>3</span></div><div class="bcol"><span>+0.92</span><div class="btrack"><div class="bar" style="background:var(--up);bottom:50%;height:33.240217491019%"></div></div><span>4</span></div><div class="bcol"><span>+0.47</span><div class="btrack"><div class="bar" style="background:var(--up);bottom:50%;height:16.911911082447574%"></div></div><span>5</span></div><div class="bcol"><span>+0.74</span><div class="btrack"><div class="bar" style="background:var(--up);bottom:50%;height:26.799677876860063%"></div></div><span>6</span></div><div class="bcol"><span>+0.27</span><div class="btrack"><div class="bar" style="background:var(--up);bottom:50%;height:9.7557559556043%"></div></div><span>7</span></div><div class="bcol"><span>+0.52</span><div class="btrack"><div class="bar" style="background:var(--up);bottom:50%;height:18.848394402589722%"></div></div><span>8</span></div><div class="bcol"><span>+0.47</span><div class="btrack"><div class="bar" style="background:var(--up);bottom:50%;height:16.93832766580722%"></div></div><span>9</span></div><div class="bcol"><span>+0.30</span><div class="btrack"><div class="bar" style="background:var(--up);bottom:50%;height:10.811698510089707%"></div></div><span>10</span></div></div>
+  </section>
+
+  <section class="card">
+    <h2>Worked calculation: <span id="wTitle" class="mono">token 2 "scatters"</span></h2>
+    <div class="work" id="work">
+   <div>1. Probability p = <b>0.20</b> → log p = ln(0.20) = <b>-1.61</b></div>
+   <div>2. Critic before = 5.4, after = 5.3, reward here r = 0.0</div>
+   <div>3. δ = 0.0 + 5.3 − 5.4 = <b>-0.10</b></div>
+   <div>4. A = 1.00×-0.10 + 0.90×+0.50 + 0.81×+0.50 + 0.73×-0.20 + … = <b>+1.10</b></div>
+   <div>5. Loss = −A × log p = −(+1.10) × (-1.61) = <b>+1.77</b></div>
+   <div>6. Gradient on logit = −A×(1−p) = <b>-0.878</b> → logit moves +0.439</div>
+   <div>7. New p = <b>0.28</b> <span class="u">↑ more likely next time</span></div></div>
+  </section>
+
+  <section class="card">
+    <h2>Full table</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>#</th><th>Token</th><th>p</th><th>log p</th><th>V (before)</th><th>r</th><th>δ</th><th>A</th><th>Loss −A·log p</th><th>New p</th></tr></thead>
+        <tbody id="tbody"><tr class="" data-i="0"><td>1</td><td class="mono">Sunlight</td><td class="mono">0.62</td><td class="mono">-0.48</td><td class="mono">5.0</td><td class="mono">0.0</td><td class="mono">+0.40</td><td class="mono u">+1.39</td><td class="mono">+0.66</td><td class="mono u">0.68 ↑</td></tr><tr class="sel" data-i="1"><td>2</td><td class="mono">scatters</td><td class="mono">0.20</td><td class="mono">-1.61</td><td class="mono">5.4</td><td class="mono">0.0</td><td class="mono">-0.10</td><td class="mono u">+1.10</td><td class="mono">+1.77</td><td class="mono u">0.28 ↑</td></tr><tr class="" data-i="2"><td>3</td><td class="mono">off</td><td class="mono">0.71</td><td class="mono">-0.34</td><td class="mono">5.3</td><td class="mono">0.0</td><td class="mono">+0.50</td><td class="mono u">+1.33</td><td class="mono">+0.46</td><td class="mono u">0.75 ↑</td></tr><tr class="" data-i="3"><td>4</td><td class="mono">air</td><td class="mono">0.88</td><td class="mono">-0.13</td><td class="mono">5.8</td><td class="mono">0.0</td><td class="mono">+0.50</td><td class="mono u">+0.92</td><td class="mono">+0.12</td><td class="mono u">0.89 ↑</td></tr><tr class="" data-i="4"><td>5</td><td class="mono">molecules</td><td class="mono">0.93</td><td class="mono">-0.07</td><td class="mono">6.3</td><td class="mono">0.0</td><td class="mono">-0.20</td><td class="mono u">+0.47</td><td class="mono">+0.03</td><td class="mono u">0.93 ↑</td></tr><tr class="" data-i="5"><td>6</td><td class="mono">and</td><td class="mono">0.55</td><td class="mono">-0.60</td><td class="mono">6.1</td><td class="mono">0.0</td><td class="mono">+0.50</td><td class="mono u">+0.74</td><td class="mono">+0.44</td><td class="mono u">0.59 ↑</td></tr><tr class="" data-i="6"><td>7</td><td class="mono">blue</td><td class="mono">0.34</td><td class="mono">-1.08</td><td class="mono">6.6</td><td class="mono">0.0</td><td class="mono">-0.20</td><td class="mono u">+0.27</td><td class="mono">+0.29</td><td class="mono u">0.36 ↑</td></tr><tr class="" data-i="7"><td>8</td><td class="mono">scatters</td><td class="mono">0.47</td><td class="mono">-0.76</td><td class="mono">6.4</td><td class="mono">0.0</td><td class="mono">+0.10</td><td class="mono u">+0.52</td><td class="mono">+0.39</td><td class="mono u">0.50 ↑</td></tr><tr class="" data-i="8"><td>9</td><td class="mono">the</td><td class="mono">0.81</td><td class="mono">-0.21</td><td class="mono">6.5</td><td class="mono">0.0</td><td class="mono">+0.20</td><td class="mono u">+0.47</td><td class="mono">+0.10</td><td class="mono u">0.82 ↑</td></tr><tr class="" data-i="9"><td>10</td><td class="mono">most</td><td class="mono">0.66</td><td class="mono">-0.42</td><td class="mono">6.7</td><td class="mono">7.0</td><td class="mono">+0.30</td><td class="mono u">+0.30</td><td class="mono">+0.12</td><td class="mono u">0.67 ↑</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Formulas</h2>
+    <div class="work">
+      <div>r<sub>t</sub> = 0 for tokens 1–9, r<sub>10</sub> = R</div>
+      <div>δ<sub>t</sub> = r<sub>t</sub> + V<sub>t+1</sub> − V<sub>t</sub> &nbsp;<span class="c">(did things look better after this token?)</span></div>
+      <div>A<sub>t</sub> = δ<sub>t</sub> + λ·δ<sub>t+1</sub> + λ²·δ<sub>t+2</sub> + … &nbsp;<span class="c">(GAE)</span></div>
+      <div>Loss = −Σ A<sub>t</sub> · log p<sub>t</sub> &nbsp;<span class="c">(A is a constant, no gradient)</span></div>
+      <div>∂Loss/∂logit<sub>t</sub> = −A<sub>t</sub>·(1 − p<sub>t</sub>) &nbsp;<span class="c">(chosen token's logit)</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Same thing in PyTorch</h2>
+<pre><span class="c"># logits: [10, vocab] from the policy model
+# ids:    [10] tokens it actually generated
+# values: [10] critic output V_t, R: float from reward model</span>
+logp = torch.log_softmax(logits, -1)
+logp = logp.gather(-1, ids[:, None]).squeeze(-1)   <span class="c"># log p of chosen tokens</span>
+
+rewards = torch.zeros(10); rewards[-1] = R          <span class="c"># reward only at the end</span>
+next_v  = torch.cat([values[1:], torch.zeros(1)])   <span class="c"># V after last token = 0</span>
+delta   = rewards + next_v - values                 <span class="c"># surprise per token</span>
+
+adv, run = torch.zeros(10), 0.0
+for t in reversed(range(10)):                       <span class="c"># GAE, back to front</span>
+    run = delta[t] + lam * run
+    adv[t] = run
+adv = adv.detach()                                  <span class="c"># reward is NOT differentiated</span>
+
+policy_loss = -(adv * logp).mean()                  <span class="c"># weighted cross-entropy</span>
+value_loss  = ((values - (adv + values).detach())**2).mean()  <span class="c"># train critic</span>
+(policy_loss + 0.5 * value_loss).backward()        <span class="c"># same backprop as SFT</span>
+optimizer.step()</pre>
+  </section>
+
+  <section class="card">
+    <h2>Key points</h2>
+    <ul>
+      <li>SFT: loss = −log p(correct token). RL: loss = −A · log p(chosen token). Same backprop.</li>
+      <li>log p is negative, and A can be + or −. That is what sets the direction, not the raw reward.</li>
+      <li>Critic turns one end score into a per-token "better or worse than expected".</li>
+      <li>Left out here for clarity: KL penalty, PPO clipping, advantage normalisation, γ discount (set to 1).</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const TOK=["Sunlight","scatters","off","air","molecules","and","blue","scatters","the","most"];
+const P0=[0.62,0.20,0.71,0.88,0.93,0.55,0.34,0.47,0.81,0.66];
+const V=[5.0,5.4,5.3,5.8,6.3,6.1,6.6,6.4,6.5,6.7];
+let P=P0.slice(), sel=1, steps=0;
+const $=id=>document.getElementById(id);
+const f=(x,n=2)=>(x>=0?"+":"")+x.toFixed(n);
+const g=(x,n=2)=>x.toFixed(n);
+
+function calc(){
+  const R=+$("rew").value, lam=+$("lam").value, lr=+$("lr").value;
+  const r=TOK.map((_,i)=>i===9?R:0);
+  const d=V.map((v,i)=>r[i]+(i<9?V[i+1]:0)-v);
+  const A=new Array(10); let run=0;
+  for(let i=9;i>=0;i--){run=d[i]+lam*run;A[i]=run;}
+  const rows=TOK.map((t,i)=>{
+    const p=P[i], lp=Math.log(p), loss=-A[i]*lp;
+    const dz=lr*A[i]*(1-p);                // logit step = -lr * dLoss/dz
+    const np=p*Math.exp(dz)/(p*Math.exp(dz)+1-p);
+    return {t,p,lp,v:V[i],r:r[i],d:d[i],a:A[i],loss,dz,np};
+  });
+  return {R,lam,lr,rows};
+}
+
+function render(){
+  const {R,lam,lr,rows}=calc();
+  $("rewV").textContent=g(R,1); $("rOut").textContent=g(R,1);
+  $("lamV").textContent=g(lam); $("lrV").textContent=g(lr);
+
+  $("tokens").innerHTML=rows.map((x,i)=>`<button class="tok ${x.a>=0?'pos':'neg'} ${i===sel?'sel':''}" data-i="${i}" aria-label="${x.t}">${x.t}<small>p ${g(x.p)}</small></button>`).join("");
+
+  const m=Math.max(0.5,...rows.map(x=>Math.abs(x.a)));
+  $("bars").innerHTML=rows.map((x,i)=>{
+    const h=Math.abs(x.a)/m*50;
+    const pos=x.a>=0;
+    return `<div class="bcol"><span>${f(x.a)}</span><div class="btrack"><div class="bar" style="background:var(${pos?'--up':'--down'});${pos?`bottom:50%`:`top:50%`};height:${h}%"></div></div><span>${i+1}</span></div>`;
+  }).join("");
+
+  $("tbody").innerHTML=rows.map((x,i)=>`<tr class="${i===sel?'sel':''}" data-i="${i}"><td>${i+1}</td><td class="mono">${x.t}</td><td class="mono">${g(x.p)}</td><td class="mono">${g(x.lp)}</td><td class="mono">${g(x.v,1)}</td><td class="mono">${g(x.r,1)}</td><td class="mono">${f(x.d)}</td><td class="mono ${x.a>=0?'u':'d'}">${f(x.a)}</td><td class="mono">${f(x.loss)}</td><td class="mono ${x.np>=x.p?'u':'d'}">${g(x.np)} ${x.np>=x.p?'↑':'↓'}</td></tr>`).join("");
+
+  const x=rows[sel], vn=sel<9?V[sel+1]:0;
+  const terms=[];for(let k=sel;k<10;k++)terms.push(`${g(Math.pow(lam,k-sel))}×${f(rows[k].d)}`);
+  $("wTitle").textContent=`token ${sel+1} "${x.t}"`;
+  $("work").innerHTML=`
+   <div>1. Probability p = <b>${g(x.p)}</b> → log p = ln(${g(x.p)}) = <b>${g(x.lp)}</b></div>
+   <div>2. Critic before = ${g(x.v,1)}, after = ${sel<9?g(vn,1):"0 (end)"}, reward here r = ${g(x.r,1)}</div>
+   <div>3. δ = ${g(x.r,1)} + ${g(vn,1)} − ${g(x.v,1)} = <b>${f(x.d)}</b></div>
+   <div>4. A = ${terms.slice(0,4).join(" + ")}${terms.length>4?" + …":""} = <b>${f(x.a)}</b></div>
+   <div>5. Loss = −A × log p = −(${f(x.a)}) × (${g(x.lp)}) = <b>${f(x.loss)}</b></div>
+   <div>6. Gradient on logit = −A×(1−p) = <b>${f(-x.a*(1-x.p),3)}</b> → logit moves ${f(x.dz,3)}</div>
+   <div>7. New p = <b>${g(x.np)}</b> ${x.np>=x.p?'<span class="u">↑ more likely next time</span>':'<span class="d">↓ less likely next time</span>'}</div>`;
+}
+
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-i]"); if(t){sel=+t.dataset.i;render();}
+});
+["rew","lam","lr"].forEach(id=>$(id).addEventListener("input",render));
+$("step").addEventListener("click",()=>{P=calc().rows.map(x=>x.np);steps++;$("step").textContent=`Apply 1 update (${steps} done)`;render();});
+$("reset").addEventListener("click",()=>{P=P0.slice();steps=0;$("step").textContent="Apply 1 update";render();});
+render();
+</script>
+
+</body></html>

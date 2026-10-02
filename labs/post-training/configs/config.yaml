@@ -1,0 +1,69 @@
+# Post-training lab configuration.
+# Every notebook reads from here so experiments stay comparable.
+
+model:
+  # Hugging Face model ID, downloaded once by notebooks/00a_download_models.ipynb.
+  hf_id: Qwen/Qwen2.5-0.5B-Instruct
+  # Local folder for that download, relative to the project root.
+  # Override with the environment variable PTL_BASE_MODEL_PATH to reuse a copy elsewhere.
+  base_path: models/Qwen2.5-0.5B-Instruct
+  name: Qwen2.5-0.5B-Instruct
+  # Optional larger base for one comparison. Downloads only if you run that cell.
+  larger_base: Qwen/Qwen2.5-1.5B-Instruct
+
+device:
+  torch: auto         # auto = cuda, then Apple mps, then cpu. Tested on Apple mps only.
+  dtype: float32      # fp32 is the tested precision; MPS is unreliable with bf16 on some ops
+
+seeds:
+  split: 42
+  train: 42
+
+data:
+  n_answerable_eval: 45
+  n_unanswerable_eval: 15
+  eval_fraction_heldout: 0.4
+
+generation:
+  gemini_model: gemini-flash-latest   # verified 26 Sep 2026
+  max_output_tokens: 1024
+  temperature: 0.9                 # higher for synthetic DIVERSITY
+  judge_temperature: 0.0           # zero for judging, always
+
+training:
+  lora:
+    r: 16
+    alpha: 32
+    dropout: 0.05
+    target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  cpt:
+    epochs: 2
+    lr: 0.0002
+    batch_size: 2
+    grad_accum: 4
+    max_seq_len: 512
+  sft:
+    epochs: 3
+    lr: 0.0002
+    batch_size: 2
+    grad_accum: 4
+    max_seq_len: 512
+  dpo:
+    beta: 0.1          # the KL leash. Raise it to stay closer to the reference model
+    epochs: 1
+    lr: 0.000005       # DPO needs a much smaller LR than SFT
+    batch_size: 1
+    grad_accum: 8
+    max_length: 512
+    truncation_mode: keep_start   # TRL 1.14 dropped max_prompt_length
+    loss_type: sigmoid # the original DPO loss
+
+inference:
+  max_new_tokens: 160
+  temperature: 0.0     # deterministic for evaluation
+
+eval_sets:
+  default: dev_v1
+  sets:
+    dev:    {path: evals/dev.json,    n: 36, note: "original dev set; 9 unanswerable"}
+    dev_v1: {path: evals/dev_v1.json, n: 50, note: "30 answerable / 20 unanswerable incl. near-miss refusals; authored 2026-09-30; dev-informed"}

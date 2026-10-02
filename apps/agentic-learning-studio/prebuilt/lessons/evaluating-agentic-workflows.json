@@ -1,0 +1,1224 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Evaluating Agentic Workflows",
+    "title": "Evaluating Agentic Workflows",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 38,
+    "thesis": "Evaluating Agentic Workflows is practical when learners can apply it to this concrete case: A multi-step ticket agent must be judged on tool choices, state updates, and final answer quality. By the end, they should be able to build or review agent workflow evaluation trace with step-level assertions, measure task success with correct intermediate actions, and catch the failure where the final answer looks right while the agent took unsafe or wasteful steps."
+  },
+  "learnerProfile": {
+    "level": "advanced",
+    "depth": "conceptual_technical",
+    "examples": "functional",
+    "topic": "Evaluating Agentic Workflows",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": false,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Evaluating Agentic Workflows: mental map",
+    "caption": "Evaluate agentic workflows by final success, trace behavior, tool safety, retrieval, cost, and recovery rather than final prose alone.",
+    "oneLineThesis": "Agent workflow evaluation must score the path because tool calls, retries, approvals, and retrieval can fail while the final answer sounds fine.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "Final text is only one output",
+        "sub": "The workflow path can be wrong even when prose is polished.",
+        "what": "Learners define agent success as trace plus final output.",
+        "relevance": "This catches unsafe or wasteful paths hidden behind helpful language.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Inspect tool calls, retrieval, approvals, and stops alongside the answer.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Hard assertions guard contracts",
+        "sub": "Some failures should block immediately.",
+        "what": "Learners split hard gates from soft scores.",
+        "relevance": "This makes safety and integration failures non-negotiable.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Assert schemas, allowed tools, approvals, and timeouts deterministically.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Fixtures make agent runs repeatable",
+        "sub": "Agents need setup data, tool mocks, and baseline comparisons.",
+        "what": "Learners build reproducible agent eval cases.",
+        "relevance": "This reduces flaky demos and makes failures debuggable.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Use realistic fixtures without hiding integration bugs.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Trace assertions make path regressions testable",
+        "sub": "Required spans and forbidden tools can be checked in code.",
+        "what": "Learners implement workflow-level checks.",
+        "relevance": "This turns agent behavior into CI-testable evidence.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Assert the path before judging the prose.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Promote failures into regression cases",
+        "sub": "The suite should learn from escaped failures.",
+        "what": "Learners define the eval lifecycle.",
+        "relevance": "This keeps the workflow suite aligned with real risk.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Turn production incidents into minimal tasks and trace checks.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "then"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "then"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "then"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "then"
+      }
+    ],
+    "structureType": "dependency"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "Final text is only one output",
+      "sub": "The workflow path can be wrong even when prose is polished.",
+      "summary": "Agent eval starts from the full run trace.",
+      "objectives": [
+        "Explain why final-answer scoring is insufficient.",
+        "Name trace elements to inspect.",
+        "Classify workflow failures."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "An agent answer has a supply chain",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a refund agent writes a correct-looking apology but skipped policy retrieval and called the refund tool without approval. Final prose alone would pass; workflow eval fails it."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Agentic evals should inspect route, tools, arguments, retrieved evidence, approvals, retries, cost, latency, and final response."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "For each user-visible answer, identify the internal steps that must be true."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ],
+          "analogy": "The final answer is the receipt; the trace is the kitchen camera."
+        },
+        {
+          "id": "m1_artifact",
+          "kind": "functionalExample",
+          "title": "Case study: refund trace failure",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The trace shows no retrieval span, one unauthorized tool call, and a final answer with no policy citation. The final answer is fluent but not shippable."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The fix belongs in routing and approval gates, not sentence style."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Define task goal."
+                  }
+                ],
+                [
+                  {
+                    "text": "List required and forbidden trace events."
+                  }
+                ],
+                [
+                  {
+                    "text": "Score final answer against evidence."
+                  }
+                ],
+                [
+                  {
+                    "text": "Bucket failures by workflow component."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Trace need",
+          "prompt": "Why can final-answer scoring miss an agent failure?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Final answers never matter.",
+              "correct": false
+            },
+            {
+              "text": "The agent may use wrong tools, skip evidence, or violate policy before writing plausible text.",
+              "correct": true
+            },
+            {
+              "text": "Tools cannot affect users.",
+              "correct": false
+            }
+          ],
+          "explanation": "Agent correctness includes the path.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb5",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Hard assertions guard contracts",
+      "sub": "Some failures should block immediately.",
+      "summary": "Hard gates protect the workflow boundary.",
+      "objectives": [
+        "Define hard assertions.",
+        "Separate semantic scores from safety gates.",
+        "Use baseline drift metrics."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Contracts should not depend on judge vibes",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Hard assertions include valid schema, only allowed tools, required approval before side effects, expected source retrieved, timeout respected, and no forbidden network/file action."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Semantic scores can judge helpfulness or completeness after hard gates pass. A helpful answer with unauthorized tool use is still a release failure."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Put safety and contract assertions before LLM judges in the report."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ],
+          "analogy": "A smoke detector does not ask whether the room feels cozy."
+        },
+        {
+          "id": "m2_artifact",
+          "kind": "decisionMatrix",
+          "title": "Agent eval assertion classes",
+          "criteria": [
+            "Class",
+            "Examples",
+            "Release behavior"
+          ],
+          "options": [
+            {
+              "name": "Hard contract",
+              "cells": [
+                {
+                  "criterion": "Class",
+                  "text": "Schema, allowed tools, approvals.",
+                  "rating": "good"
+                },
+                {
+                  "criterion": "Examples",
+                  "text": "Unauthorized tool call.",
+                  "rating": "bad"
+                },
+                {
+                  "criterion": "Release behavior",
+                  "text": "Block immediately.",
+                  "rating": "good"
+                }
+              ],
+              "whenToUse": "Safety and integration",
+              "cost": "Low",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Semantic score",
+              "cells": [
+                {
+                  "criterion": "Class",
+                  "text": "Helpfulness, completeness, tone.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Examples",
+                  "text": "Partially useful answer.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Release behavior",
+                  "text": "Threshold or review.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "After hard gates",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Drift metric",
+              "cells": [
+                {
+                  "criterion": "Class",
+                  "text": "Cost, latency, tool count.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Examples",
+                  "text": "30 calls for a simple task.",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Release behavior",
+                  "text": "Compare to baseline.",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Regression detection",
+              "cost": "Low",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m2_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Hard gate",
+          "prompt": "Which failure should block before semantic judging?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "The answer used a synonym.",
+              "correct": false
+            },
+            {
+              "text": "The agent called a forbidden external-send tool.",
+              "correct": true
+            },
+            {
+              "text": "The response was one sentence shorter.",
+              "correct": false
+            }
+          ],
+          "explanation": "Safety contract failures are hard gates.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb5",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Fixtures make agent runs repeatable",
+      "sub": "Agents need setup data, tool mocks, and baseline comparisons.",
+      "summary": "Repeatability comes from controlled setup.",
+      "objectives": [
+        "Design fixtures for agent runs.",
+        "Label mock, recorded, and live tools.",
+        "Compare to baseline."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Fixture design affects trust",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A workflow eval case should include user input, app state, documents, mock tool responses or sandboxed real tools, allowed resources, expected traces, and baseline run."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Tool mocks are useful but dangerous if they diverge from real tools. Keep contract tests against real adapters or recorded traces."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Every fixture should say whether it is mocked, recorded, or live."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ],
+          "analogy": "Fixtures are the stage props that make the play repeatable."
+        },
+        {
+          "id": "m3_artifact",
+          "kind": "functionalExample",
+          "title": "Worked fixture: refund support",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The case includes a customer with standard plan, a policy doc, a ticket ID, and a mock refund tool that records attempted calls. Expected trace: retrieve policy, draft explanation, no refund tool because approval is missing."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A separate integration test checks the real refund adapter schema."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Freeze setup data."
+                  }
+                ],
+                [
+                  {
+                    "text": "Define allowed tools and expected traces."
+                  }
+                ],
+                [
+                  {
+                    "text": "Decide mock, recorded, or live tools."
+                  }
+                ],
+                [
+                  {
+                    "text": "Compare candidate to baseline."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Fixture risk",
+          "prompt": "What is a risk of tool mocks?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "They always make evals impossible.",
+              "correct": false
+            },
+            {
+              "text": "They can hide integration bugs if they differ from real tool behavior.",
+              "correct": true
+            },
+            {
+              "text": "They remove the need for expected traces.",
+              "correct": false
+            }
+          ],
+          "explanation": "Mocks need contract checks.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb5",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Trace assertions make path regressions testable",
+      "sub": "Required spans and forbidden tools can be checked in code.",
+      "summary": "Trace assertions operationalize workflow eval.",
+      "objectives": [
+        "Write required-span checks.",
+        "Write forbidden-tool checks.",
+        "Predict a trace pass/fail result."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Trace checks make invisible failures visible",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A trace assertion can be simple: expected retriever span exists, refund tool is absent, approval span appears before send, final schema is valid."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Use stable operation names and metadata. Assertions based on raw natural-language trace names will be brittle."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "A missing parent span or tool span is a product signal, not just an observability issue."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ],
+          "analogy": "Trace assertions are turnstiles in the workflow path."
+        },
+        {
+          "id": "m4_artifact",
+          "kind": "codeExample",
+          "title": "Trace assertions for an agent run",
+          "language": "python",
+          "code": "trace = [\n    {\"span\": \"router\", \"tool\": None},\n    {\"span\": \"retrieval\", \"source\": \"refund_policy\"},\n    {\"span\": \"draft_answer\", \"tool\": None},\n]\nspans = {s[\"span\"] for s in trace}\ntools = {s.get(\"tool\") for s in trace if s.get(\"tool\")}\nassert \"retrieval\" in spans\nassert \"send_refund\" not in tools\nassert \"draft_answer\" in spans\nprint(\"workflow trace OK\")",
+          "explanation": "The checker verifies required spans and forbidden tool use before semantic scoring.",
+          "predictThenReveal": {
+            "prompt": "Before reading the answer, predict whether the trace passes.",
+            "answer": "It passes because retrieval and draft_answer exist and the forbidden send_refund tool is absent."
+          },
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ]
+        },
+        {
+          "id": "m4_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Trace assertion",
+          "prompt": "What makes trace assertions brittle?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Testing for forbidden tools.",
+              "correct": false
+            },
+            {
+              "text": "Using unstable operation names or missing metadata for important steps.",
+              "correct": true
+            },
+            {
+              "text": "Checking required retrieval.",
+              "correct": false
+            }
+          ],
+          "explanation": "Assertions need stable instrumentation.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb5",
+        "kb6"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Promote failures into regression cases",
+      "sub": "The suite should learn from escaped failures.",
+      "summary": "Agent eval is a feedback loop.",
+      "objectives": [
+        "Add incident-derived cases.",
+        "Track cost and latency drift.",
+        "Assign owners to failure buckets."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression",
+        "rubric"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "Incidents are future tests",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "When a production trace shows an agent overusing tools, missing approval, or citing stale evidence, create the smallest case that would have caught it. Label severity and owner."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Track cost, latency, tool count, and pass rate by slice; a passing agent that takes 30 tool calls for a simple task can still regress."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "The suite should answer “what changed?” after every prompt, model, KB, or tool update."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ],
+          "analogy": "A good incident review leaves a tripwire behind."
+        },
+        {
+          "id": "m5_artifact",
+          "kind": "functionalExample",
+          "title": "Verify an agent workflow eval suite",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Review the suite against real runs."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Cases run the full production path or an intentionally faithful fixture."
+                  }
+                ],
+                [
+                  {
+                    "text": "Hard assertions cover schemas, tools, approvals, retrieval, and safety."
+                  }
+                ],
+                [
+                  {
+                    "text": "Semantic scores evaluate final task success with evidence."
+                  }
+                ],
+                [
+                  {
+                    "text": "Cost, latency, retries, and tool count compare to baseline."
+                  }
+                ],
+                [
+                  {
+                    "text": "Production incidents become minimal regression cases."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ],
+          "personalizedFor": "Agentic Learning Studio production review"
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Regression loop",
+          "prompt": "What should happen after a production agent incident?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Delete the trace.",
+              "correct": false
+            },
+            {
+              "text": "Add a minimal eval case that would have caught the failure.",
+              "correct": true
+            },
+            {
+              "text": "Trust manual demos only.",
+              "correct": false
+            }
+          ],
+          "explanation": "Agent eval suites learn from escaped failures.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression",
+            "rubric"
+          ],
+          "sources": [
+            "kb3",
+            "kb5",
+            "kb6"
+          ]
+        }
+      ],
+      "citations": [
+        "kb3",
+        "kb5",
+        "kb6"
+      ]
+    }
+  ],
+  "glossary": {
+    "eval": {
+      "id": "eval",
+      "label": "Eval",
+      "laymanDefinition": "A repeatable test of model or system behavior against expected criteria.",
+      "technicalNote": "In these lessons, evals are release evidence: they combine cases, assertions, scores, and review rules.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb3"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A structured record of one run, including spans, inputs, outputs, metadata, and scores.",
+      "technicalNote": "Traces make failures diagnosable by showing which retrieval, model, tool, or scoring step produced the result.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb3"
+      ]
+    },
+    "dataset": {
+      "id": "dataset",
+      "label": "Dataset",
+      "laymanDefinition": "A curated set of examples used for evaluation, debugging, or regression checks.",
+      "technicalNote": "A useful eval dataset stores inputs, expected behavior, metadata slices, and source or rubric references.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb3"
+      ]
+    },
+    "judge": {
+      "id": "judge",
+      "label": "LLM-as-judge",
+      "laymanDefinition": "An LLM used to grade or compare outputs with a rubric.",
+      "technicalNote": "LLM judges are semantic scorers, not final authority; their prompts, model, thresholds, and spot checks must be versioned.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb3"
+      ],
+      "acronymExpansion": "Large language model as judge"
+    },
+    "regression": {
+      "id": "regression",
+      "label": "Regression",
+      "laymanDefinition": "A previously working behavior that breaks after a prompt, model, data, or code change.",
+      "technicalNote": "Regression testing protects known capabilities and safety boundaries while allowing harmless wording variation.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb3"
+      ]
+    },
+    "rubric": {
+      "id": "rubric",
+      "label": "Rubric",
+      "laymanDefinition": "A scoring guide that states what a good answer or run must demonstrate.",
+      "technicalNote": "Rubrics make qualitative judgment reviewable by naming criteria, severity, examples, and thresholds.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "kb3"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Evaluating Agentic Workflows",
+    "themes": [
+      {
+        "name": "Agent eval design",
+        "questions": [
+          {
+            "q": "Which workflow steps must be correct for this agent to be safe and useful?",
+            "why": "A multi-step agent can hide errors in intermediate actions and still produce plausible text.",
+            "opts": [
+              "Trace-aware workflow eval",
+              "Final-answer-only judge",
+              "Manual demo only"
+            ],
+            "rot": "Evaluate the full production path with hard trace assertions plus semantic outcome scores."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct agent workflow eval by naming task, fixtures, tool traces, retrieved evidence, approvals, final answer, cost/latency, and baseline comparison."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Agent workflow eval path from task to trace assertions",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "Final text is only one output",
+          "sub": "The workflow path can be wrong even when prose is polished.",
+          "what": "Learners define agent success as trace plus final output.",
+          "relevance": "This catches unsafe or wasteful paths hidden behind helpful language.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Inspect tool calls, retrieval, approvals, and stops alongside the answer.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Hard assertions guard contracts",
+          "sub": "Some failures should block immediately.",
+          "what": "Learners split hard gates from soft scores.",
+          "relevance": "This makes safety and integration failures non-negotiable.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Assert schemas, allowed tools, approvals, and timeouts deterministically.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Fixtures make agent runs repeatable",
+          "sub": "Agents need setup data, tool mocks, and baseline comparisons.",
+          "what": "Learners build reproducible agent eval cases.",
+          "relevance": "This reduces flaky demos and makes failures debuggable.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Use realistic fixtures without hiding integration bugs.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Trace assertions make path regressions testable",
+          "sub": "Required spans and forbidden tools can be checked in code.",
+          "what": "Learners implement workflow-level checks.",
+          "relevance": "This turns agent behavior into CI-testable evidence.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Assert the path before judging the prose.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Promote failures into regression cases",
+          "sub": "The suite should learn from escaped failures.",
+          "what": "Learners define the eval lifecycle.",
+          "relevance": "This keeps the workflow suite aligned with real risk.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Turn production incidents into minimal tasks and trace checks.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "frames"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "then"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "then"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "gates"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "Final text is only one output",
+        "detail": "Agent eval starts from the full run trace."
+      },
+      {
+        "step": 2,
+        "label": "Hard assertions guard contracts",
+        "detail": "Hard gates protect the workflow boundary."
+      },
+      {
+        "step": 3,
+        "label": "Fixtures make agent runs repeatable",
+        "detail": "Repeatability comes from controlled setup."
+      },
+      {
+        "step": 4,
+        "label": "Trace assertions make path regressions testable",
+        "detail": "Trace assertions operationalize workflow eval."
+      },
+      {
+        "step": 5,
+        "label": "Promote failures into regression cases",
+        "detail": "Agent eval is a feedback loop."
+      }
+    ],
+    "checklist": [
+      {
+        "id": "chk_case",
+        "label": "Can you explain the concrete case in \"Final text is only one output\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_artifact",
+        "label": "Does \"Trace assertions make path regressions testable\" produce a reviewable artifact?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Promote failures into regression cases\" define a release gate?",
+        "fromModuleId": "m5"
+      }
+    ],
+    "capstone": {
+      "prompt": "Create an eval plan for a refund-support agent: five golden tasks, allowed tools, expected retrieval, approval rules, max tool count, final rubric, and failure buckets. Next rung: run it in a regression harness.",
+      "scopedTo": "Evaluating Agentic Workflows"
+    }
+  },
+  "citations": {
+    "kb3": {
+      "id": "kb3",
+      "kind": "kb",
+      "title": "KB: LLM Evaluation",
+      "url": "https://platform.openai.com/docs/guides/evals",
+      "asOfDate": "2026-06-22"
+    },
+    "kb5": {
+      "id": "kb5",
+      "kind": "kb",
+      "title": "KB: Regression Testing for Agentic Systems",
+      "url": "https://www.promptfoo.dev/docs/intro/",
+      "asOfDate": "2026-06-22"
+    },
+    "kb6": {
+      "id": "kb6",
+      "kind": "kb",
+      "title": "KB: LLM Observability",
+      "url": "https://langfuse.com/docs/tracing",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}

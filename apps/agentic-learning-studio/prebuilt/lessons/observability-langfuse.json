@@ -1,0 +1,1135 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "topic": "Observability with Langfuse",
+    "title": "Observability with Langfuse",
+    "generatedAt": "2026-06-20",
+    "estTotalMinutes": 40,
+    "thesis": "Observability with Langfuse is practical when learners can apply it to this concrete case: A product team needs to connect user complaints to prompts, tools, costs, and model versions. By the end, they should be able to build or review Langfuse observability dashboard plan for an LLM feature, measure time to diagnose a bad answer, and catch the failure where logs omit the retrieved context that caused the hallucination."
+  },
+  "learnerProfile": {
+    "level": "intermediate",
+    "depth": "conceptual_technical",
+    "examples": "functional_code",
+    "topic": "Observability with Langfuse",
+    "inferred": false,
+    "expandAcronymsOnFirstUse": true,
+    "showTermPopovers": true,
+    "density": "medium",
+    "visualsRequested": true,
+    "explainSyntax": true,
+    "lessonTypes": [
+      "content",
+      "knowledge_check"
+    ]
+  },
+  "mentalMap": {
+    "title": "Observability with Langfuse: mental map",
+    "caption": "Use Langfuse to make an LLM product run replayable: trace, spans, scores, datasets, cost, and privacy controls.",
+    "oneLineThesis": "Langfuse is valuable when a final answer is not enough evidence and the team needs to see the run that produced it.",
+    "nodes": [
+      {
+        "id": "n_m1",
+        "label": "A trace turns one complaint into a replayable run",
+        "sub": "Start from the failed user interaction, not the dashboard.",
+        "what": "Learners see observability as replayable evidence for a run, not generic logging.",
+        "relevance": "This prevents dashboards that count traffic while hiding the failure path.",
+        "moduleId": "m1",
+        "layer": "Problem",
+        "emphasis": "spine",
+        "orient": "Anchor the lesson in one unsupported refund answer and its missing evidence.",
+        "order": 1
+      },
+      {
+        "id": "n_m2",
+        "label": "Spans separate retrieval, model, tools, and scores",
+        "sub": "A useful trace tree mirrors the real AI workflow boundaries.",
+        "what": "Learners design a trace tree that maps to actual LLM components.",
+        "relevance": "This catches failures where a single app span hides the bad retrieval or unsafe tool call.",
+        "moduleId": "m2",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Break the run into components whose failures require different fixes.",
+        "order": 2
+      },
+      {
+        "id": "n_m3",
+        "label": "Datasets and scores connect debugging to evals",
+        "sub": "A trace becomes more valuable when failures become repeatable tests.",
+        "what": "Learners connect observability to the eval loop instead of treating it as after-the-fact logging.",
+        "relevance": "This prevents the same failure from reappearing after a prompt or model change.",
+        "moduleId": "m3",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Show how a failed trace graduates into a scored dataset case.",
+        "order": 3
+      },
+      {
+        "id": "n_m4",
+        "label": "Trace payloads need stable metadata, not noisy names",
+        "sub": "Good fields make traces searchable across releases.",
+        "what": "Learners implement a small trace contract that an AI-generated integration can be checked against.",
+        "relevance": "This avoids beautiful trace screens that cannot answer release questions.",
+        "moduleId": "m4",
+        "layer": "Path",
+        "emphasis": "normal",
+        "orient": "Code a verifier that catches missing spans and unstable metadata.",
+        "order": 4
+      },
+      {
+        "id": "n_m5",
+        "label": "Privacy and ownership make traces usable in production",
+        "sub": "An observability system is also a data product with retention rules.",
+        "what": "Learners turn instrumentation into an operated practice.",
+        "relevance": "This keeps traces from becoming an unmanaged store of private user content.",
+        "moduleId": "m5",
+        "layer": "Synthesis",
+        "emphasis": "spine",
+        "orient": "Close with the governance rules that keep trace data safe and actionable.",
+        "order": 5
+      }
+    ],
+    "edges": [
+      {
+        "from": "n_m1",
+        "to": "n_m2",
+        "label": "contains"
+      },
+      {
+        "from": "n_m2",
+        "to": "n_m3",
+        "label": "feeds"
+      },
+      {
+        "from": "n_m3",
+        "to": "n_m4",
+        "label": "supports"
+      },
+      {
+        "from": "n_m4",
+        "to": "n_m5",
+        "label": "hardens"
+      }
+    ],
+    "structureType": "conceptual"
+  },
+  "modules": [
+    {
+      "id": "m1",
+      "order": 1,
+      "title": "A trace turns one complaint into a replayable run",
+      "sub": "Start from the failed user interaction, not the dashboard.",
+      "summary": "A Langfuse trace records the causal path behind one LLM response.",
+      "objectives": [
+        "Describe trace, span, score, and metadata in one concrete support case.",
+        "Explain why final-answer logs cannot diagnose many LLM failures.",
+        "Name the first fields a trace should capture."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m1_concept",
+          "kind": "conceptual",
+          "title": "The unit of debugging is the run",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Problem anchor: a support assistant tells a customer they are eligible for a refund, but the policy page says the opposite. The product log has only the user message, final answer, latency, and model name. Nobody can tell whether retrieval missed the policy, the prompt ignored it, or a tool returned stale account data."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "In Langfuse, the useful object is the trace: one user request with child spans for retrieval, model calls, tool calls, formatting, and scoring. The trace gives the complaint a replayable shape instead of leaving the team to infer causes from the final text."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Two framings help: for support leads, the trace is an incident timeline; for engineers, it is a causal tree with inputs, outputs, and metadata."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ],
+          "analogy": "A trace is the flight recorder for one LLM run, while a metric dashboard is the airport departures board."
+        },
+        {
+          "id": "m1_case",
+          "kind": "functionalExample",
+          "title": "Worked trace sketch: refund answer incident",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The first trace for the incident is named support_refund_answer and includes session_id, release_sha, prompt_version, model, route, and user_segment. Its child spans are retrieve_policy, call_account_tool, draft_answer, validate_citations, and score_groundedness."
+                }
+              ]
+            },
+            {
+              "t": "ol",
+              "items": [
+                [
+                  {
+                    "text": "Open the user complaint and copy the trace ID into the incident ticket."
+                  }
+                ],
+                [
+                  {
+                    "text": "Check retrieve_policy: did the correct refund-policy chunk appear in top five?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Check call_account_tool: did the account status match the customer?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Check draft_answer: did the prompt include the retrieved policy boundary?"
+                  }
+                ],
+                [
+                  {
+                    "text": "Check score_groundedness: did the evaluator flag unsupported claims?"
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "That artifact is larger than a log line but smaller than a postmortem. It is the minimum evidence needed to decide the next fix."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m1_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Trace purpose",
+          "prompt": "A user reports a hallucinated support answer. What should the first Langfuse trace help you determine?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "How many users visited the chat page yesterday.",
+              "correct": false
+            },
+            {
+              "text": "Which span supplied or lost the evidence used by the answer.",
+              "correct": true
+            },
+            {
+              "text": "Whether the UI color made the answer look trustworthy.",
+              "correct": false
+            }
+          ],
+          "explanation": "Observability starts with the causal run, then rolls up to aggregate reporting.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_observability"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langfuse_tracing",
+        "kb_observability"
+      ]
+    },
+    {
+      "id": "m2",
+      "order": 2,
+      "title": "Spans separate retrieval, model, tools, and scores",
+      "sub": "A useful trace tree mirrors the real AI workflow boundaries.",
+      "summary": "Span design determines whether root cause is visible.",
+      "objectives": [
+        "Choose span boundaries for retrieval, model calls, tool execution, and scoring.",
+        "Avoid hiding distinct failure modes inside one large span.",
+        "Recognize the metadata each span type needs."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m2_concept",
+          "kind": "conceptual",
+          "title": "Span boundaries are debugging boundaries",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A span should answer one question. Retrieval spans answer what evidence was considered. Model spans answer what prompt and parameters were used. Tool spans answer what action was attempted and what came back. Score spans answer how the run was judged."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "If a support flow records one giant span called answer_user, every failure looks like a model problem. If it records source_ids, top_k, reranker_version, tool_name, validated_args, model, prompt_version, and score_name, the same answer becomes diagnosable."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Spaced recall: bring back the trace from module 1 and ask which child span would prove the refund policy was present."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m2_case",
+          "kind": "functionalExample",
+          "title": "Case study: one wrong answer, three different fixes",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Case A: retrieve_policy returns only shipping-policy chunks. Fix the index, metadata filters, or reranker. Case B: retrieve_policy returns the correct refund chunk, but draft_answer omits it. Fix the prompt or context packing. Case C: draft_answer is grounded, but validate_citations fails because source IDs were dropped during formatting. Fix the renderer or schema."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The final answer text looks similar in all three cases. The span tree makes the fixes different."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m2_matrix",
+          "kind": "decisionMatrix",
+          "title": "Span types and their debugging payload",
+          "criteria": [
+            "Span",
+            "Payload to record",
+            "Failure it exposes"
+          ],
+          "options": [
+            {
+              "name": "Retrieval",
+              "cells": [
+                {
+                  "criterion": "Span",
+                  "text": "source IDs, query, filters, top-k, reranker",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Payload to record",
+                  "text": "missing or noisy evidence",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure it exposes",
+                  "text": "Retrieval",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the retrieval row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Model call",
+              "cells": [
+                {
+                  "criterion": "Span",
+                  "text": "model, prompt version, parameters, token use",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Payload to record",
+                  "text": "prompt drift or model-routing surprises",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure it exposes",
+                  "text": "Model call",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the model call row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Tool call",
+              "cells": [
+                {
+                  "criterion": "Span",
+                  "text": "tool name, validated args, status, latency",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Payload to record",
+                  "text": "unsafe, stale, or failing external action",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure it exposes",
+                  "text": "Tool call",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the tool call row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            },
+            {
+              "name": "Score",
+              "cells": [
+                {
+                  "criterion": "Span",
+                  "text": "score name, version, value, threshold",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Payload to record",
+                  "text": "quality regressions after the run",
+                  "rating": "ok"
+                },
+                {
+                  "criterion": "Failure it exposes",
+                  "text": "Score",
+                  "rating": "ok"
+                }
+              ],
+              "whenToUse": "Use when the score row is the relevant design concern.",
+              "cost": "Medium",
+              "complexity": "Medium"
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langfuse_tracing",
+        "kb_observability"
+      ]
+    },
+    {
+      "id": "m3",
+      "order": 3,
+      "title": "Datasets and scores connect debugging to evals",
+      "sub": "A trace becomes more valuable when failures become repeatable tests.",
+      "summary": "Langfuse scores and datasets turn incidents into regression evidence.",
+      "objectives": [
+        "Explain how traces, scores, feedback, and datasets reinforce each other.",
+        "Distinguish online triage from offline regression evaluation.",
+        "Promote a failed run into a test case without copying sensitive data."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m3_concept",
+          "kind": "conceptual",
+          "title": "Scores make traces sortable; datasets make fixes repeatable",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "A trace answers what happened. A score says whether it was acceptable. A dataset lets the team rerun the same kind of case after a prompt, retrieval, or model change. Langfuse is useful because those objects can sit near each other instead of living in separate spreadsheets and notebooks."
+                }
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "For the refund incident, the team can attach groundedness=0.42, citation_valid=false, policy_slice=refund, and severity=high. After redaction, the trace becomes a dataset item with the expected policy section and refusal rule."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_langfuse_eval",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m3_worked",
+          "kind": "functionalExample",
+          "title": "Worked promotion: incident to regression case",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The support lead labels the trace as refund_policy_wrong. The engineer extracts a safe input: \"Can I get a refund after using the subscription for 45 days?\" The reference requires: no automatic refund, cite the terms section, offer escalation if the account has an exception flag."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Keep: user intent, product slice, source IDs, expected facts, score rubric."
+                  }
+                ],
+                [
+                  {
+                    "text": "Remove: customer name, account ID, raw tool token, private notes."
+                  }
+                ],
+                [
+                  {
+                    "text": "Add: prompt version that failed and the release SHA that fixed it."
+                  }
+                ]
+              ]
+            },
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "The next release does not only claim the bug is fixed; it reruns the case."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_langfuse_eval",
+            "kb_observability"
+          ],
+          "personalizedFor": "Agentic Learning Studio"
+        },
+        {
+          "id": "m3_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Trace to eval",
+          "prompt": "When should a production trace become a dataset case?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Only when every token in the trace can be stored forever.",
+              "correct": false
+            },
+            {
+              "text": "When it represents a failure pattern the team wants to prevent from returning.",
+              "correct": true
+            },
+            {
+              "text": "Whenever latency is lower than the median.",
+              "correct": false
+            }
+          ],
+          "explanation": "Datasets should capture representative behavior and risk, with privacy controls.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_langfuse_eval"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langfuse_eval",
+        "kb_observability"
+      ]
+    },
+    {
+      "id": "m4",
+      "order": 4,
+      "title": "Trace payloads need stable metadata, not noisy names",
+      "sub": "Good fields make traces searchable across releases.",
+      "summary": "Metadata design decides whether Langfuse traces can be queried and compared.",
+      "objectives": [
+        "Write a minimal trace payload for an LLM feature.",
+        "Check for high-cardinality names and missing version fields.",
+        "Use predict-then-reveal to identify a missing span."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 9,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m4_concept",
+          "kind": "conceptual",
+          "title": "Stable metadata beats clever trace names",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Trace names should be low-cardinality, such as support_answer or lesson_generation, not support_answer_for_anand_2026_06_23. Put user hash, release SHA, prompt version, model, route, and dataset case ID in metadata fields. That makes filters and dashboards useful without exploding the name space."
+                }
+              ]
+            },
+            {
+              "t": "callout",
+              "tone": "info",
+              "spans": [
+                {
+                  "text": "Verify AI output: check that generated instrumentation records prompt_version, model, source IDs, cost, and release SHA; rejects raw secrets; and uses consistent span names."
+                }
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m4_code",
+          "kind": "codeExample",
+          "title": "Verifier for a Langfuse-style trace contract",
+          "language": "python",
+          "code": "required_spans = {\"retrieve_policy\", \"draft_answer\", \"score_groundedness\"}\nrequired_meta = {\"release_sha\", \"prompt_version\", \"model\", \"route\"}\n\ntrace = {\n    \"name\": \"support_answer\",\n    \"metadata\": {\n        \"release_sha\": \"9f31c2a\",\n        \"prompt_version\": \"refund-v7\",\n        \"model\": \"gpt-5.5\",\n        \"route\": \"support/refunds\",\n    },\n    \"spans\": [\n        {\"name\": \"retrieve_policy\", \"metadata\": {\"top_k\": 5, \"source_ids\": [\"refunds.md#45\"]}},\n        {\"name\": \"draft_answer\", \"metadata\": {\"input_tokens\": 812, \"output_tokens\": 144}},\n        # Try deleting the next span before running the verifier.\n        {\"name\": \"score_groundedness\", \"metadata\": {\"score\": 0.94, \"rubric\": \"grounded-v2\"}},\n    ],\n}\n\nspan_names = {span[\"name\"] for span in trace[\"spans\"]}\nmissing_spans = required_spans - span_names\nmissing_meta = required_meta - set(trace[\"metadata\"])\n\nif missing_spans or missing_meta:\n    raise SystemExit({\"missing_spans\": sorted(missing_spans), \"missing_meta\": sorted(missing_meta)})\n\nprint(\"trace contract ok\")",
+          "explanation": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "This dependency-free check is not the Langfuse SDK. It is the contract you can run in tests against the payload your SDK integration emits."
+                }
+              ]
+            }
+          ],
+          "predictThenReveal": {
+            "prompt": "Predict the output if the score_groundedness span is deleted. What key will the verifier report?",
+            "answer": "It reports missing_spans with score_groundedness. The trace might still show retrieval and the model call, but the release gate cannot tell whether the answer passed the groundedness check."
+          },
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langfuse_tracing",
+        "kb_observability"
+      ]
+    },
+    {
+      "id": "m5",
+      "order": 5,
+      "title": "Privacy and ownership make traces usable in production",
+      "sub": "An observability system is also a data product with retention rules.",
+      "summary": "Production Langfuse usage needs redaction, sampling, ownership, and review loops.",
+      "objectives": [
+        "Name privacy risks in prompt and trace capture.",
+        "Choose sampling and retention rules for sensitive flows.",
+        "Define ownership for scores, datasets, and incident review."
+      ],
+      "termIds": [
+        "eval",
+        "trace",
+        "dataset",
+        "judge",
+        "regression"
+      ],
+      "estMinutes": 8,
+      "loadState": "full",
+      "blocks": [
+        {
+          "id": "m5_concept",
+          "kind": "conceptual",
+          "title": "The trace store is part of your data boundary",
+          "body": [
+            {
+              "t": "p",
+              "spans": [
+                {
+                  "text": "Langfuse can capture the details that make LLM systems debuggable, but those details may include user messages, retrieved private documents, tool outputs, and failed generations. Production use needs a policy for what is captured, what is redacted, who can inspect it, and how long it remains."
+                }
+              ]
+            },
+            {
+              "t": "ul",
+              "items": [
+                [
+                  {
+                    "text": "Redact or hash user identifiers before trace storage."
+                  }
+                ],
+                [
+                  {
+                    "text": "Sample low-risk successful traffic, but keep high-severity failures with review controls."
+                  }
+                ],
+                [
+                  {
+                    "text": "Record policy_version and redaction_version so historical traces are interpretable."
+                  }
+                ],
+                [
+                  {
+                    "text": "Assign an owner for every score and dataset, not only the trace pipeline."
+                  }
+                ]
+              ]
+            }
+          ],
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ],
+          "analogy": "The trace store is a lab notebook with customer data nearby; useful, but governed."
+        },
+        {
+          "id": "m5_decision",
+          "kind": "decisionCallout",
+          "ruleOfThumb": "Capture enough to debug one run, but never store content merely because the SDK can capture it.",
+          "useWhen": "High-impact LLM workflows where failures need root-cause analysis. Teams that can define trace owners, score owners, retention, and redaction. Prompt or model releases that need trace-backed regression cases.",
+          "avoidWhen": "Anonymous toy demos where ordinary logs are sufficient. Flows with sensitive data and no redaction or access-control plan. Dashboards that collect fields no one uses for decisions.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "canon_langfuse_tracing",
+            "kb_observability"
+          ]
+        },
+        {
+          "id": "m5_quiz",
+          "kind": "selfCheckQuiz",
+          "title": "Production readiness",
+          "prompt": "What makes a Langfuse observability rollout production-ready?",
+          "format": "mcq",
+          "options": [
+            {
+              "text": "Capturing every prompt and output forever.",
+              "correct": false
+            },
+            {
+              "text": "Trace usefulness plus privacy controls, ownership, and release feedback loops.",
+              "correct": true
+            },
+            {
+              "text": "Only tracking total token cost by day.",
+              "correct": false
+            }
+          ],
+          "explanation": "LLM observability is both debugging infrastructure and governed product data.",
+          "termIds": [
+            "eval",
+            "trace",
+            "dataset",
+            "judge",
+            "regression"
+          ],
+          "sources": [
+            "kb_observability"
+          ]
+        }
+      ],
+      "citations": [
+        "canon_langfuse_tracing",
+        "kb_observability"
+      ]
+    }
+  ],
+  "glossary": {
+    "eval": {
+      "id": "eval",
+      "label": "Eval",
+      "laymanDefinition": "A repeatable test of model or system behavior against expected criteria.",
+      "technicalNote": "In these lessons, evals are release evidence: they combine cases, assertions, scores, and review rules.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langfuse_tracing"
+      ]
+    },
+    "trace": {
+      "id": "trace",
+      "label": "Trace",
+      "laymanDefinition": "A structured record of one run, including spans, inputs, outputs, metadata, and scores.",
+      "technicalNote": "Traces make failures diagnosable by showing which retrieval, model, tool, or scoring step produced the result.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langfuse_tracing"
+      ]
+    },
+    "dataset": {
+      "id": "dataset",
+      "label": "Dataset",
+      "laymanDefinition": "A curated set of examples used for evaluation, debugging, or regression checks.",
+      "technicalNote": "A useful eval dataset stores inputs, expected behavior, metadata slices, and source or rubric references.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langfuse_tracing"
+      ]
+    },
+    "judge": {
+      "id": "judge",
+      "label": "LLM-as-judge",
+      "laymanDefinition": "An LLM used to grade or compare outputs with a rubric.",
+      "technicalNote": "LLM judges are semantic scorers, not final authority; their prompts, model, thresholds, and spot checks must be versioned.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langfuse_tracing"
+      ],
+      "acronymExpansion": "Large language model as judge"
+    },
+    "regression": {
+      "id": "regression",
+      "label": "Regression",
+      "laymanDefinition": "A previously working behavior that breaks after a prompt, model, data, or code change.",
+      "technicalNote": "Regression testing protects known capabilities and safety boundaries while allowing harmless wording variation.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langfuse_tracing"
+      ]
+    },
+    "rubric": {
+      "id": "rubric",
+      "label": "Rubric",
+      "laymanDefinition": "A scoring guide that states what a good answer or run must demonstrate.",
+      "technicalNote": "Rubrics make qualitative judgment reviewable by naming criteria, severity, examples, and thresholds.",
+      "wrapPolicy": "firstOnly",
+      "sources": [
+        "canon_langfuse_tracing"
+      ]
+    }
+  },
+  "decisionDoc": {
+    "title": "Decision prompts for Observability with Langfuse",
+    "themes": [
+      {
+        "name": "Trace usefulness",
+        "questions": [
+          {
+            "q": "Can the trace explain the exact step that made a bad answer possible?",
+            "why": "A dashboard is useful only when it connects the user complaint to prompt version, retrieval, tool calls, scores, cost, and model routing.",
+            "opts": [
+              "Trace root cause by span",
+              "Only count total requests",
+              "Store every prompt without policy"
+            ],
+            "rot": "Start with the span tree that lets an engineer reproduce one complaint, then add aggregate dashboards."
+          }
+        ]
+      }
+    ]
+  },
+  "synthesis": {
+    "recap": [
+      {
+        "t": "p",
+        "spans": [
+          {
+            "text": "Retrieval prompt: reconstruct Langfuse observability by naming the trace, the span types, the metadata fields, the scoring loop, and the privacy rule that prevents raw user data from becoming debug debt."
+          }
+        ]
+      }
+    ],
+    "referenceArchitecture": {
+      "title": "Langfuse path from user complaint to replayable evidence",
+      "layout": "flow",
+      "nodes": [
+        {
+          "id": "n_m1",
+          "label": "A trace turns one complaint into a replayable run",
+          "sub": "Start from the failed user interaction, not the dashboard.",
+          "what": "Learners see observability as replayable evidence for a run, not generic logging.",
+          "relevance": "This prevents dashboards that count traffic while hiding the failure path.",
+          "moduleId": "m1",
+          "layer": "Problem",
+          "emphasis": "spine",
+          "orient": "Anchor the lesson in one unsupported refund answer and its missing evidence.",
+          "order": 1
+        },
+        {
+          "id": "n_m2",
+          "label": "Spans separate retrieval, model, tools, and scores",
+          "sub": "A useful trace tree mirrors the real AI workflow boundaries.",
+          "what": "Learners design a trace tree that maps to actual LLM components.",
+          "relevance": "This catches failures where a single app span hides the bad retrieval or unsafe tool call.",
+          "moduleId": "m2",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Break the run into components whose failures require different fixes.",
+          "order": 2
+        },
+        {
+          "id": "n_m3",
+          "label": "Datasets and scores connect debugging to evals",
+          "sub": "A trace becomes more valuable when failures become repeatable tests.",
+          "what": "Learners connect observability to the eval loop instead of treating it as after-the-fact logging.",
+          "relevance": "This prevents the same failure from reappearing after a prompt or model change.",
+          "moduleId": "m3",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Show how a failed trace graduates into a scored dataset case.",
+          "order": 3
+        },
+        {
+          "id": "n_m4",
+          "label": "Trace payloads need stable metadata, not noisy names",
+          "sub": "Good fields make traces searchable across releases.",
+          "what": "Learners implement a small trace contract that an AI-generated integration can be checked against.",
+          "relevance": "This avoids beautiful trace screens that cannot answer release questions.",
+          "moduleId": "m4",
+          "layer": "Path",
+          "emphasis": "normal",
+          "orient": "Code a verifier that catches missing spans and unstable metadata.",
+          "order": 4
+        },
+        {
+          "id": "n_m5",
+          "label": "Privacy and ownership make traces usable in production",
+          "sub": "An observability system is also a data product with retention rules.",
+          "what": "Learners turn instrumentation into an operated practice.",
+          "relevance": "This keeps traces from becoming an unmanaged store of private user content.",
+          "moduleId": "m5",
+          "layer": "Synthesis",
+          "emphasis": "spine",
+          "orient": "Close with the governance rules that keep trace data safe and actionable.",
+          "order": 5
+        }
+      ],
+      "edges": [
+        {
+          "from": "n_m1",
+          "to": "n_m2",
+          "label": "contains"
+        },
+        {
+          "from": "n_m2",
+          "to": "n_m3",
+          "label": "feeds evals"
+        },
+        {
+          "from": "n_m3",
+          "to": "n_m4",
+          "label": "makes queryable"
+        },
+        {
+          "from": "n_m4",
+          "to": "n_m5",
+          "label": "governs"
+        }
+      ]
+    },
+    "buildOrder": [
+      {
+        "step": 1,
+        "label": "A trace turns one complaint into a replayable run",
+        "detail": "A Langfuse trace records the causal path behind one LLM response."
+      },
+      {
+        "step": 2,
+        "label": "Spans separate retrieval, model, tools, and scores",
+        "detail": "Span design determines whether root cause is visible."
+      },
+      {
+        "step": 3,
+        "label": "Datasets and scores connect debugging to evals",
+        "detail": "Langfuse scores and datasets turn incidents into regression evidence."
+      },
+      {
+        "step": 4,
+        "label": "Trace payloads need stable metadata, not noisy names",
+        "detail": "Metadata design decides whether Langfuse traces can be queried and compared."
+      },
+      {
+        "step": 5,
+        "label": "Privacy and ownership make traces usable in production",
+        "detail": "Production Langfuse usage needs redaction, sampling, ownership, and review loops."
+      }
+    ],
+    "capstone": {
+      "prompt": "Instrument a small support-answering flow with a trace for the request, spans for retrieval/model/tool work, one score, one cost field, and a redaction rule. Next rung: promote three failed traces into a dataset and gate a prompt release.",
+      "scopedTo": "LLM product observability",
+      "checks": [
+        "A single complaint can be opened as one trace.",
+        "Retrieval and model calls are separate spans.",
+        "The trace records prompt version, model, cost, and release SHA.",
+        "Sensitive content is redacted or sampled before storage."
+      ]
+    },
+    "checklist": [
+      {
+        "id": "chk_anchor",
+        "label": "Can you explain the concrete case in \"A trace turns one complaint into a replayable run\"?",
+        "fromModuleId": "m1"
+      },
+      {
+        "id": "chk_code",
+        "label": "Can a reviewer run or inspect the code in \"Trace payloads need stable metadata, not noisy names\"?",
+        "fromModuleId": "m4"
+      },
+      {
+        "id": "chk_gate",
+        "label": "Does \"Privacy and ownership make traces usable in production\" define the release or production gate?",
+        "fromModuleId": "m5"
+      }
+    ]
+  },
+  "citations": {
+    "canon_langfuse_tracing": {
+      "id": "canon_langfuse_tracing",
+      "kind": "canonical",
+      "title": "Langfuse tracing documentation",
+      "url": "https://langfuse.com/docs/tracing",
+      "asOfDate": "2026-06-22"
+    },
+    "canon_langfuse_eval": {
+      "id": "canon_langfuse_eval",
+      "kind": "canonical",
+      "title": "Langfuse evaluation overview",
+      "url": "https://langfuse.com/docs/evaluation/overview",
+      "asOfDate": "2026-06-22"
+    },
+    "kb_observability": {
+      "id": "kb_observability",
+      "kind": "kb",
+      "title": "KB: Tracing and Observability",
+      "url": "https://langfuse.com/docs/tracing",
+      "asOfDate": "2026-06-22"
+    }
+  }
+}
