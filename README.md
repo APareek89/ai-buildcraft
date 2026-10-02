@@ -2,6 +2,8 @@
 
 # AI Buildcraft
 
+[![Collection checks](https://github.com/APareek89/ai-buildcraft/actions/workflows/validate.yml/badge.svg)](https://github.com/APareek89/ai-buildcraft/actions/workflows/validate.yml) [![Read the visual guide](https://img.shields.io/badge/learn-50_visual_lessons-285be5)](https://apareek89.github.io/ai-buildcraft/)
+
 **Practical AI systems, reusable skills, and hands-on labs.**
 
 Explore how an AI product is built, inspect the decisions inside it, evaluate its behavior, and learn the underlying mechanisms. This collection brings together independently developed applications, portable agent skills, model-training experiments, and interactive visual lessons by **Anand Pareek**.
